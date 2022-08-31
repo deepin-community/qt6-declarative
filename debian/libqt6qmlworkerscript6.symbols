@@ -1,0 +1,43 @@
+# SymbolsHelper-Confirmed: 6.2.0 amd64
+libQt6QmlWorkerScript.so.6 libqt6qmlworkerscript6 #MINVER#
+| libqt6qmlworkerscript6 #MINVER#, qt6-declarative-abi (= 6.2.4)
+* Build-Depends-Packages: qt6-declarative-dev, qt6-declarative-private-dev
+ _Z37qml_register_types_QtQml_WorkerScriptv@Base 6.2.0
+ _ZN18QQuickWorkerScript10classBeginEv@Base 6.2.0
+ _ZN18QQuickWorkerScript11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
+ _ZN18QQuickWorkerScript11qt_metacastEPKc@Base 6.2.0
+ _ZN18QQuickWorkerScript11sendMessageEP14QQmlV4Function@Base 6.2.0
+ _ZN18QQuickWorkerScript12readyChangedEv@Base 6.2.0
+ _ZN18QQuickWorkerScript13sourceChangedEv@Base 6.2.0
+ _ZN18QQuickWorkerScript16staticMetaObjectE@Base 6.2.0
+ _ZN18QQuickWorkerScript17componentCompleteEv@Base 6.2.0
+ _ZN18QQuickWorkerScript5eventEP6QEvent@Base 6.2.0
+ _ZN18QQuickWorkerScript6engineEv@Base 6.2.0
+ _ZN18QQuickWorkerScript7messageERK8QJSValue@Base 6.2.0
+ _ZN18QQuickWorkerScript9setSourceERK4QUrl@Base 6.2.0
+ _ZN18QQuickWorkerScriptC1EP7QObject@Base 6.2.0
+ _ZN18QQuickWorkerScriptC2EP7QObject@Base 6.2.0
+ _ZN18QQuickWorkerScriptD0Ev@Base 6.2.0
+ _ZN18QQuickWorkerScriptD1Ev@Base 6.2.0
+ _ZN18QQuickWorkerScriptD2Ev@Base 6.2.0
+ _ZNK18QQuickWorkerScript10metaObjectEv@Base 6.2.0
+ _ZNK18QQuickWorkerScript5readyEv@Base 6.2.0
+ _ZNK18QQuickWorkerScript6sourceEv@Base 6.2.0
+ _ZTI18QQuickWorkerScript@Base 6.2.0
+ _ZTIN3QV415ExecutionEngine9DeletableE@Base 6.2.0
+ _ZTS18QQuickWorkerScript@Base 6.2.0
+ _ZTSN3QV415ExecutionEngine9DeletableE@Base 6.2.0
+ _ZTV18QQuickWorkerScript@Base 6.2.0
+ (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI4QUrlE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.0
+ (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI4QUrlE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.0
+ (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI4QUrlE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
+ (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI4QUrlE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
+ (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIP7QObjectE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES6_S7_S9_@Base 6.2.0
+ (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIP7QObjectE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS7_E_4_FUNES6_S7_S7_@Base 6.2.0
+ (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIP7QObjectE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES6_S7_@Base 6.2.0
+ (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIbE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES4_S5_S7_@Base 6.2.0
+ (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIbE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS5_E_4_FUNES4_S5_S5_@Base 6.2.0
+ (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIbE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES4_S5_@Base 6.2.0
+ (c++)"non-virtual thunk to QQuickWorkerScript::classBegin()@Base" 6.2.0
+ (c++)"non-virtual thunk to QQuickWorkerScript::componentComplete()@Base" 6.2.0
+ (c++)"non-virtual thunk to QQuickWorkerScript::~QQuickWorkerScript()@Base" 6.2.0

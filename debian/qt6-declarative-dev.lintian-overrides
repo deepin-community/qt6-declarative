@@ -1,0 +1,1 @@
+qt6-declarative-dev: no-code-sections lib*.a (mocs_compilation.cpp.o)

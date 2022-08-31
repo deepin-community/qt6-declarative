@@ -1,0 +1,3 @@
+usr/lib/${DEB_HOST_MULTIARCH}/qt6/qml/QtQuick/Window/libquickwindowplugin.so
+usr/lib/${DEB_HOST_MULTIARCH}/qt6/qml/QtQuick/Window/qmldir
+usr/lib/${DEB_HOST_MULTIARCH}/qt6/qml/QtQuick/Window/quickwindow.qmltypes

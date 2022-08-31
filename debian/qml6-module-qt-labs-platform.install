@@ -1,0 +1,3 @@
+usr/lib/${DEB_HOST_MULTIARCH}/qt6/qml/Qt/labs/platform/libqtlabsplatformplugin.so
+usr/lib/${DEB_HOST_MULTIARCH}/qt6/qml/Qt/labs/platform/plugins.qmltypes
+usr/lib/${DEB_HOST_MULTIARCH}/qt6/qml/Qt/labs/platform/qmldir

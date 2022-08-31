@@ -1,0 +1,3 @@
+usr/lib/${DEB_HOST_MULTIARCH}/qt6/qml/QtQuick/Templates/libqtquicktemplates2plugin.so
+usr/lib/${DEB_HOST_MULTIARCH}/qt6/qml/QtQuick/Templates/plugins.qmltypes
+usr/lib/${DEB_HOST_MULTIARCH}/qt6/qml/QtQuick/Templates/qmldir

@@ -1,0 +1,3 @@
+usr/lib/${DEB_HOST_MULTIARCH}/qt6/qml/Qt/labs/qmlmodels/liblabsmodelsplugin.so
+usr/lib/${DEB_HOST_MULTIARCH}/qt6/qml/Qt/labs/qmlmodels/plugins.qmltypes
+usr/lib/${DEB_HOST_MULTIARCH}/qt6/qml/Qt/labs/qmlmodels/qmldir
