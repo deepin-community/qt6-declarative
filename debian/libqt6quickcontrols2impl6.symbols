@@ -1,4 +1,4 @@
-# SymbolsHelper-Confirmed: 6.2.4 amd64
+# SymbolsHelper-Confirmed: 6.2.4 amd64 arm64
 libQt6QuickControls2Impl.so.6 libqt6quickcontrols2impl6 #MINVER#
 | libqt6quickcontrols2impl6 #MINVER#, qt6-declarative-abi (= 6.2.4)
 * Build-Depends-Packages: qt6-declarative-dev, qt6-declarative-private-dev
@@ -237,8 +237,6 @@ libQt6QuickControls2Impl.so.6 libqt6quickcontrols2impl6 #MINVER#
  _ZNK21QQuickPaddedRectangle7paddingEv@Base 6.2.0
  _ZNK21QQuickPlaceholderText10metaObjectEv@Base 6.2.0
  _ZNK22QQuickIconImagePrivate25calculateDevicePixelRatioEv@Base 6.2.0
- (optional=templinst)_ZNSt14_Function_base13_Base_managerIPFP7QObjectP10QQmlEngineP9QJSEngineEE10_M_managerERSt9_Any_dataRKSA_St18_Manager_operation@Base 6.2.4
- (optional=templinst)_ZNSt17_Function_handlerIFP7QObjectP10QQmlEngineP9QJSEngineEPS6_E9_M_invokeERKSt9_Any_dataOS3_OS5_@Base 6.2.4
  _ZTI11QQuickColor@Base 6.2.0
  _ZTI15QQuickIconImage@Base 6.2.0
  _ZTI15QQuickIconLabel@Base 6.2.0

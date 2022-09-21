@@ -1,4 +1,4 @@
-# SymbolsHelper-Confirmed: 6.2.4 amd64
+# SymbolsHelper-Confirmed: 6.2.4 amd64 arm64
 libQt6LabsQmlModels.so.6 libqt6labsqmlmodels6 #MINVER#
 | libqt6labsqmlmodels6 #MINVER#, qt6-declarative-abi (= 6.2.4)
 * Build-Depends-Packages: qt6-declarative-dev, qt6-declarative-private-dev
@@ -186,8 +186,6 @@ libQt6LabsQmlModels.so.6 libqt6labsqmlmodels6 #MINVER#
  _ZNK20QQmlTableModelColumn9whatsThisEv@Base 6.2.0
  (optional=templinst)_ZNKSt8_Rb_treeI7QStringSt4pairIKS0_8QVariantESt10_Select1stIS4_ESt4lessIS0_ESaIS4_EE4findERS2_@Base 6.2.0
  (optional=templinst)_ZNSt8_Rb_treeI7QStringSt4pairIKS0_8QVariantESt10_Select1stIS4_ESt4lessIS0_ESaIS4_EE16_M_insert_uniqueIS4_EES1_ISt17_Rb_tree_iteratorIS4_EbEOT_@Base 6.2.0
- (optional=templinst)_ZNSt8_Rb_treeI7QStringSt4pairIKS0_8QVariantESt10_Select1stIS4_ESt4lessIS0_ESaIS4_EE7_M_copyINSA_11_Alloc_nodeEEEPSt13_Rb_tree_nodeIS4_EPKSE_PSt18_Rb_tree_node_baseRT_@Base 6.2.4
- (optional=templinst)_ZNSt8_Rb_treeI7QStringSt4pairIKS0_8QVariantESt10_Select1stIS4_ESt4lessIS0_ESaIS4_EE8_M_eraseEPSt13_Rb_tree_nodeIS4_E@Base 6.2.4
  _ZTI14QQmlTableModel@Base 6.2.0
  _ZTI18QQmlDelegateChoice@Base 6.2.0
  _ZTI19QQmlDelegateChooser@Base 6.2.0
