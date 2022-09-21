@@ -1,4 +1,4 @@
-# SymbolsHelper-Confirmed: 6.2.4 amd64
+# SymbolsHelper-Confirmed: 6.2.4 amd64 arm64
 libQt6QuickShapes.so.6 libqt6quickshapes6 #MINVER#
 | libqt6quickshapes6 #MINVER#, qt6-declarative-abi (= 6.2.4)
 * Build-Depends-Packages: qt6-declarative-dev, qt6-declarative-private-dev
@@ -149,10 +149,6 @@ libQt6QuickShapes.so.6 libqt6quickshapes6 #MINVER#
  _ZNK26QQuickShapeConicalGradient5angleEv@Base 6.2.0
  _ZNK26QQuickShapeConicalGradient7centerXEv@Base 6.2.0
  _ZNK26QQuickShapeConicalGradient7centerYEv@Base 6.2.0
- (optional=templinst)_ZNSt14_Function_base13_Base_managerIZN9QMetaType17registerConverterI5QListIdE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS4_EEEEbT1_EUlPKvPvE_E10_M_managerERSt9_Any_dataRKSH_St18_Manager_operation@Base 6.2.4
- (optional=templinst)_ZNSt14_Function_base13_Base_managerIZN9QMetaType19registerMutableViewI5QListIdE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS4_EEEEbT1_EUlPvSC_E_E10_M_managerERSt9_Any_dataRKSF_St18_Manager_operation@Base 6.2.4
- (optional=templinst)_ZNSt17_Function_handlerIFbPKvPvEZN9QMetaType17registerConverterI5QListIdE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS7_EEEEbT1_EUlS1_S2_E_E9_M_invokeERKSt9_Any_dataOS1_OS2_@Base 6.2.4
- (optional=templinst)_ZNSt17_Function_handlerIFbPvS0_EZN9QMetaType19registerMutableViewI5QListIdE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS5_EEEEbT1_EUlS0_S0_E_E9_M_invokeERKSt9_Any_dataOS0_SI_@Base 6.2.4
  _ZTI11QQuickShape@Base 6.2.0
  _ZTI15QQuickShapePath@Base 6.2.0
  _ZTI17QQuickPathPrivate@Base 6.2.0

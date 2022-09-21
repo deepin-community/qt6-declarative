@@ -1,4 +1,4 @@
-# SymbolsHelper-Confirmed: 6.2.4 amd64
+# SymbolsHelper-Confirmed: 6.2.4 amd64 arm64
 libQt6QuickDialogs2.so.6 libqt6quickdialogs2-6 #MINVER#
 | libqt6quickdialogs2-6 #MINVER#, qt6-declarative-abi (= 6.2.4)
 * Build-Depends-Packages: qt6-declarative-dev, qt6-declarative-private-dev
@@ -122,10 +122,6 @@ libQt6QuickDialogs2.so.6 libqt6quickdialogs2-6 #MINVER#
  _ZNK20QQuickAbstractDialog6resultEv@Base 6.2.0
  _ZNK20QQuickAbstractDialog8modalityEv@Base 6.2.0
  _ZNK20QQuickAbstractDialog9isVisibleEv@Base 6.2.0
- (optional=templinst)_ZNSt14_Function_base13_Base_managerIZN9QMetaType17registerConverterI5QListI4QUrlE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS5_EEEEbT1_EUlPKvPvE_E10_M_managerERSt9_Any_dataRKSI_St18_Manager_operation@Base 6.2.4
- (optional=templinst)_ZNSt14_Function_base13_Base_managerIZN9QMetaType19registerMutableViewI5QListI4QUrlE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS5_EEEEbT1_EUlPvSD_E_E10_M_managerERSt9_Any_dataRKSG_St18_Manager_operation@Base 6.2.4
- (optional=templinst)_ZNSt17_Function_handlerIFbPKvPvEZN9QMetaType17registerConverterI5QListI4QUrlE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS8_EEEEbT1_EUlS1_S2_E_E9_M_invokeERKSt9_Any_dataOS1_OS2_@Base 6.2.4
- (optional=templinst)_ZNSt17_Function_handlerIFbPvS0_EZN9QMetaType19registerMutableViewI5QListI4QUrlE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS6_EEEEbT1_EUlS0_S0_E_E9_M_invokeERKSt9_Any_dataOS0_SJ_@Base 6.2.4
  _ZTI16QQuickFileDialog@Base 6.2.0
  _ZTI16QQuickFontDialog@Base 6.2.0
  _ZTI20QQuickAbstractDialog@Base 6.2.0

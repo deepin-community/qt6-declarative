@@ -1,4 +1,4 @@
-# SymbolsHelper-Confirmed: 6.2.4 amd64
+# SymbolsHelper-Confirmed: 6.2.4 amd64 arm64
 libQt6QuickParticles.so.6 libqt6quickparticles6 #MINVER#
 | libqt6quickparticles6 #MINVER#, qt6-declarative-abi (= 6.2.4)
 * Build-Depends-Packages: qt6-declarative-dev, qt6-declarative-private-dev
@@ -139,7 +139,6 @@ libQt6QuickParticles.so.6 libqt6quickparticles6 #MINVER#
  _ZNK22QQuickParticleAffector11isCollidingEP18QQuickParticleData@Base 6.2.0
  _ZNK23QQuickParticleGroupData4nameEv@Base 6.2.0
  (optional=templinst|subst)_ZNSt6vectorIbSaIbEE14_M_fill_insertESt13_Bit_iterator{size_t}b@Base 6.2.0
- (optional=templinst)_ZNSt8_Rb_treeI7QStringSt4pairIKS0_8QVariantESt10_Select1stIS4_ESt4lessIS0_ESaIS4_EE8_M_eraseEPSt13_Rb_tree_nodeIS4_E@Base 6.2.4
  _ZTI20QQuickParticleSystem@Base 6.2.0
  _ZTI21QQuickParticleEmitter@Base 6.2.0
  _ZTI22QQuickParticleAffector@Base 6.2.0
