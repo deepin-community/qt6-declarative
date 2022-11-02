@@ -4,6 +4,12 @@ libQt6QuickParticles.so.6 libqt6quickparticles6 #MINVER#
 * Build-Depends-Packages: qt6-declarative-dev, qt6-declarative-private-dev
  _Z36qml_register_types_QtQuick_Particlesv@Base 6.2.0
  _ZN18QQuickParticleData10extendLifeEfP20QQuickParticleSystem@Base 6.2.0
+ _ZN18QQuickParticleData17setInstantaneousXEfP20QQuickParticleSystem@Base 6.2.4
+ _ZN18QQuickParticleData17setInstantaneousYEfP20QQuickParticleSystem@Base 6.2.4
+ _ZN18QQuickParticleData18setInstantaneousAXEfP20QQuickParticleSystem@Base 6.2.4
+ _ZN18QQuickParticleData18setInstantaneousAYEfP20QQuickParticleSystem@Base 6.2.4
+ _ZN18QQuickParticleData18setInstantaneousVXEfP20QQuickParticleSystem@Base 6.2.4
+ _ZN18QQuickParticleData18setInstantaneousVYEfP20QQuickParticleSystem@Base 6.2.4
  _ZN18QQuickParticleData5cloneERKS_@Base 6.2.0
  _ZN18QQuickParticleData7v4ValueEP20QQuickParticleSystem@Base 6.2.0
  _ZN18QQuickParticleDataC1ERKS_@Base 6.2.0
@@ -131,6 +137,14 @@ libQt6QuickParticles.so.6 libqt6quickparticles6 #MINVER#
  _ZN23QQuickParticleGroupDataC2ERK7QStringP20QQuickParticleSystem@Base 6.2.0
  _ZN23QQuickParticleGroupDataD1Ev@Base 6.2.0
  _ZN23QQuickParticleGroupDataD2Ev@Base 6.2.0
+ _ZNK18QQuickParticleData10stillAliveEP20QQuickParticleSystem@Base 6.2.4
+ _ZNK18QQuickParticleData4curXEP20QQuickParticleSystem@Base 6.2.4
+ _ZNK18QQuickParticleData4curYEP20QQuickParticleSystem@Base 6.2.4
+ _ZNK18QQuickParticleData5aliveEP20QQuickParticleSystem@Base 6.2.4
+ _ZNK18QQuickParticleData5curVXEP20QQuickParticleSystem@Base 6.2.4
+ _ZNK18QQuickParticleData5curVYEP20QQuickParticleSystem@Base 6.2.4
+ _ZNK18QQuickParticleData7curSizeEP20QQuickParticleSystem@Base 6.2.4
+ _ZNK18QQuickParticleData8lifeLeftEP20QQuickParticleSystem@Base 6.2.4
  _ZNK18QQuickParticleData9debugDumpEP20QQuickParticleSystem@Base 6.2.0
  _ZNK20QQuickParticleSystem10metaObjectEv@Base 6.2.0
  _ZNK21QQuickParticleEmitter10metaObjectEv@Base 6.2.0
@@ -138,7 +152,12 @@ libQt6QuickParticles.so.6 libqt6quickparticles6 #MINVER#
  _ZNK22QQuickParticleAffector10metaObjectEv@Base 6.2.0
  _ZNK22QQuickParticleAffector11isCollidingEP18QQuickParticleData@Base 6.2.0
  _ZNK23QQuickParticleGroupData4nameEv@Base 6.2.0
+ (optional=templinst)_ZNK3QV45Value2asINS_7ManagedEEEPKT_v@Base 6.2.4
+ _ZNK6QColor7isValidEv@Base 6.2.4
+ _ZNK6QImage5pixelERK6QPoint@Base 6.2.4
  (optional=templinst|subst)_ZNSt6vectorIbSaIbEE14_M_fill_insertESt13_Bit_iterator{size_t}b@Base 6.2.0
+ (optional=templinst)_ZNSt8_Rb_treeI7QStringSt4pairIKS0_8QVariantESt10_Select1stIS4_ESt4lessIS0_ESaIS4_EE8_M_eraseEPSt13_Rb_tree_nodeIS4_E@Base 6.2.4
+ _ZSt9__fill_a1St13_Bit_iteratorS_RKb@Base 6.2.4
  _ZTI20QQuickParticleSystem@Base 6.2.0
  _ZTI21QQuickParticleEmitter@Base 6.2.0
  _ZTI22QQuickParticleAffector@Base 6.2.0
@@ -150,6 +169,7 @@ libQt6QuickParticles.so.6 libqt6quickparticles6 #MINVER#
  _ZTV20QQuickParticleSystem@Base 6.2.0
  _ZTV21QQuickParticleEmitter@Base 6.2.0
  _ZTV22QQuickParticleAffector@Base 6.2.0
+ _ZTVN3QV415ExecutionEngine9DeletableE@Base 6.2.4
  (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI4QUrlE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.0
  (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI4QUrlE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.0
  (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI4QUrlE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0

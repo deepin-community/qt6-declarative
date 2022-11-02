@@ -1,4 +1,4 @@
-# SymbolsHelper-Confirmed: 6.2.0 amd64
+# SymbolsHelper-Confirmed: 6.2.4 amd64 arm64
 libQt6QmlXmlListModel.so.6 libqt6qmlxmllistmodel6 #MINVER#
 | libqt6qmlxmllistmodel6 #MINVER#, qt6-declarative-abi (= 6.2.4)
 * Build-Depends-Packages: qt6-declarative-dev, qt6-declarative-private-dev
@@ -45,6 +45,7 @@ libQt6QmlXmlListModel.so.6 libqt6qmlxmllistmodel6 #MINVER#
  _ZN20QQmlXmlListModelRole18elementNameChangedEv@Base 6.2.0
  _ZN20QQmlXmlListModelRole20attributeNameChangedEv@Base 6.2.0
  _ZN20QQmlXmlListModelRole7setNameERK7QString@Base 6.2.0
+ _ZN7QString5clearEv@Base 6.2.4
  _ZNK16QQmlXmlListModel10metaObjectEv@Base 6.2.0
  _ZNK16QQmlXmlListModel11errorStringEv@Base 6.2.0
  _ZNK16QQmlXmlListModel4dataERK11QModelIndexi@Base 6.2.0

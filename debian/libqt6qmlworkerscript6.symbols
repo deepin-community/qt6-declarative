@@ -1,4 +1,4 @@
-# SymbolsHelper-Confirmed: 6.2.0 amd64
+# SymbolsHelper-Confirmed: 6.2.4 amd64 arm64
 libQt6QmlWorkerScript.so.6 libqt6qmlworkerscript6 #MINVER#
 | libqt6qmlworkerscript6 #MINVER#, qt6-declarative-abi (= 6.2.4)
 * Build-Depends-Packages: qt6-declarative-dev, qt6-declarative-private-dev
@@ -20,14 +20,22 @@ libQt6QmlWorkerScript.so.6 libqt6qmlworkerscript6 #MINVER#
  _ZN18QQuickWorkerScriptD0Ev@Base 6.2.0
  _ZN18QQuickWorkerScriptD1Ev@Base 6.2.0
  _ZN18QQuickWorkerScriptD2Ev@Base 6.2.0
+ _ZN3QV414QObjectWrapper4wrapEPNS_15ExecutionEngineEP7QObject@Base 6.2.4
+ _ZN3QV45ValueaSERKNS_11ScopedValueE@Base 6.2.4
+ _ZN3QV46Object23setArrayLengthUncheckedEj@Base 6.2.4
  _ZNK18QQuickWorkerScript10metaObjectEv@Base 6.2.0
  _ZNK18QQuickWorkerScript5readyEv@Base 6.2.0
  _ZNK18QQuickWorkerScript6sourceEv@Base 6.2.0
+ _ZNK3QV414StringOrSymbol13toPropertyKeyEv@Base 6.2.4
+ (optional=templinst)_ZNK3QV45Value2asINS_14FunctionObjectEEEPKT_v@Base 6.2.4
+ (optional=templinst)_ZNK3QV45Value2asINS_6StringEEEPKT_v@Base 6.2.4
+ (optional=templinst)_ZNK3QV45Value2asINS_7ManagedEEEPKT_v@Base 6.2.4
  _ZTI18QQuickWorkerScript@Base 6.2.0
  _ZTIN3QV415ExecutionEngine9DeletableE@Base 6.2.0
  _ZTS18QQuickWorkerScript@Base 6.2.0
  _ZTSN3QV415ExecutionEngine9DeletableE@Base 6.2.0
  _ZTV18QQuickWorkerScript@Base 6.2.0
+ _ZTVN3QV415ExecutionEngine9DeletableE@Base 6.2.4
  (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI4QUrlE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.0
  (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI4QUrlE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.0
  (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI4QUrlE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
