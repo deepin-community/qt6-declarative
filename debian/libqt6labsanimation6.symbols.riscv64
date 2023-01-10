@@ -1,0 +1,68 @@
+# SymbolsHelper-Confirmed: 6.2.0 amd64
+libQt6LabsAnimation.so.6 libqt6labsanimation6 #MINVER#
+| libqt6labsanimation6 #MINVER#, qt6-declarative-abi (= 6.2.4)
+* Build-Depends-Packages: qt6-declarative-dev, qt6-declarative-private-dev
+ _Z36qml_register_types_Qt_labs_animationv@Base 6.2.0
+ _ZN18QQuickBoundaryRule10setEnabledEb@Base 6.2.0
+ _ZN18QQuickBoundaryRule10setMaximumEd@Base 6.2.0
+ _ZN18QQuickBoundaryRule10setMinimumEd@Base 6.2.0
+ _ZN18QQuickBoundaryRule11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
+ _ZN18QQuickBoundaryRule11qt_metacastEPKc@Base 6.2.0
+ _ZN18QQuickBoundaryRule13easingChangedEv@Base 6.2.0
+ _ZN18QQuickBoundaryRule14enabledChangedEv@Base 6.2.0
+ _ZN18QQuickBoundaryRule14maximumChangedEv@Base 6.2.0
+ _ZN18QQuickBoundaryRule14minimumChangedEv@Base 6.2.0
+ _ZN18QQuickBoundaryRule14returnToBoundsEv@Base 6.2.0
+ _ZN18QQuickBoundaryRule16staticMetaObjectE@Base 6.2.0
+ _ZN18QQuickBoundaryRule17setOvershootScaleEd@Base 6.2.0
+ _ZN18QQuickBoundaryRule17setReturnDurationEi@Base 6.2.0
+ _ZN18QQuickBoundaryRule18componentFinalizedEv@Base 6.2.0
+ _ZN18QQuickBoundaryRule18setOvershootFilterENS_15OvershootFilterE@Base 6.2.0
+ _ZN18QQuickBoundaryRule19setMaximumOvershootEd@Base 6.2.0
+ _ZN18QQuickBoundaryRule19setMinimumOvershootEd@Base 6.2.0
+ _ZN18QQuickBoundaryRule20peakOvershootChangedEv@Base 6.2.0
+ _ZN18QQuickBoundaryRule21overshootScaleChangedEv@Base 6.2.0
+ _ZN18QQuickBoundaryRule21returnDurationChangedEv@Base 6.2.0
+ _ZN18QQuickBoundaryRule22overshootFilterChangedEv@Base 6.2.0
+ _ZN18QQuickBoundaryRule23currentOvershootChangedEv@Base 6.2.0
+ _ZN18QQuickBoundaryRule23maximumOvershootChangedEv@Base 6.2.0
+ _ZN18QQuickBoundaryRule23minimumOvershootChangedEv@Base 6.2.0
+ _ZN18QQuickBoundaryRule5writeERK8QVariant@Base 6.2.0
+ _ZN18QQuickBoundaryRule9setEasingERK12QEasingCurve@Base 6.2.0
+ _ZN18QQuickBoundaryRule9setTargetERK12QQmlProperty@Base 6.2.0
+ _ZN18QQuickBoundaryRuleC1EP7QObject@Base 6.2.0
+ _ZN18QQuickBoundaryRuleC2EP7QObject@Base 6.2.0
+ _ZN18QQuickBoundaryRuleD0Ev@Base 6.2.0
+ _ZN18QQuickBoundaryRuleD1Ev@Base 6.2.0
+ _ZN18QQuickBoundaryRuleD2Ev@Base 6.2.0
+ _ZNK18QQuickBoundaryRule10metaObjectEv@Base 6.2.0
+ _ZNK18QQuickBoundaryRule13peakOvershootEv@Base 6.2.0
+ _ZNK18QQuickBoundaryRule14overshootScaleEv@Base 6.2.0
+ _ZNK18QQuickBoundaryRule14returnDurationEv@Base 6.2.0
+ _ZNK18QQuickBoundaryRule15overshootFilterEv@Base 6.2.0
+ _ZNK18QQuickBoundaryRule16currentOvershootEv@Base 6.2.0
+ _ZNK18QQuickBoundaryRule16maximumOvershootEv@Base 6.2.0
+ _ZNK18QQuickBoundaryRule16minimumOvershootEv@Base 6.2.0
+ _ZNK18QQuickBoundaryRule6easingEv@Base 6.2.0
+ _ZNK18QQuickBoundaryRule7enabledEv@Base 6.2.0
+ _ZNK18QQuickBoundaryRule7maximumEv@Base 6.2.0
+ _ZNK18QQuickBoundaryRule7minimumEv@Base 6.2.0
+ _ZTI18QQuickBoundaryRule@Base 6.2.0
+ _ZTS18QQuickBoundaryRule@Base 6.2.0
+ _ZTV18QQuickBoundaryRule@Base 6.2.0
+ (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI12QEasingCurveE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.0
+ (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI12QEasingCurveE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.0
+ (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI12QEasingCurveE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
+ (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI12QEasingCurveE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
+ (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIbE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES4_S5_S7_@Base 6.2.0
+ (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIbE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS5_E_4_FUNES4_S5_S5_@Base 6.2.0
+ (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIbE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES4_S5_@Base 6.2.0
+ (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIdE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES4_S5_S7_@Base 6.2.0
+ (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIdE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS5_E_4_FUNES4_S5_S5_@Base 6.2.0
+ (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIdE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES4_S5_@Base 6.2.0
+ (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIiE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES4_S5_S7_@Base 6.2.0
+ (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIiE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS5_E_4_FUNES4_S5_S5_@Base 6.2.0
+ (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIiE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES4_S5_@Base 6.2.0
+ (c++)"non-virtual thunk to QQuickBoundaryRule::setTarget(QQmlProperty const&)@Base" 6.2.0
+ (c++)"non-virtual thunk to QQuickBoundaryRule::write(QVariant const&)@Base" 6.2.0
+ (c++)"non-virtual thunk to QQuickBoundaryRule::~QQuickBoundaryRule()@Base" 6.2.0

@@ -1,0 +1,38 @@
+# SymbolsHelper-Confirmed: 6.2.0 amd64
+libQt6LabsSettings.so.6 libqt6labssettings6 #MINVER#
+| libqt6labssettings6 #MINVER#, qt6-declarative-abi (= 6.2.4)
+* Build-Depends-Packages: qt6-declarative-dev, qt6-declarative-private-dev
+ _Z35qml_register_types_Qt_labs_settingsv@Base 6.2.0
+ _ZN12QQmlSettings10classBeginEv@Base 6.2.0
+ _ZN12QQmlSettings10timerEventEP11QTimerEvent@Base 6.2.0
+ _ZN12QQmlSettings11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
+ _ZN12QQmlSettings11qt_metacastEPKc@Base 6.2.0
+ _ZN12QQmlSettings11setCategoryERK7QString@Base 6.2.0
+ _ZN12QQmlSettings11setFileNameERK7QString@Base 6.2.0
+ _ZN12QQmlSettings16staticMetaObjectE@Base 6.2.0
+ _ZN12QQmlSettings17componentCompleteEv@Base 6.2.0
+ _ZN12QQmlSettings4syncEv@Base 6.2.0
+ _ZN12QQmlSettings8setValueERK7QStringRK8QVariant@Base 6.2.0
+ _ZN12QQmlSettingsC1EP7QObject@Base 6.2.0
+ _ZN12QQmlSettingsC2EP7QObject@Base 6.2.0
+ _ZN12QQmlSettingsD0Ev@Base 6.2.0
+ _ZN12QQmlSettingsD1Ev@Base 6.2.0
+ _ZN12QQmlSettingsD2Ev@Base 6.2.0
+ _ZNK12QQmlSettings10metaObjectEv@Base 6.2.0
+ _ZNK12QQmlSettings5valueERK7QStringRK8QVariant@Base 6.2.0
+ _ZNK12QQmlSettings8categoryEv@Base 6.2.0
+ _ZNK12QQmlSettings8fileNameEv@Base 6.2.0
+ _ZTI12QQmlSettings@Base 6.2.0
+ _ZTS12QQmlSettings@Base 6.2.0
+ _ZTV12QQmlSettings@Base 6.2.0
+ (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QStringE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.0
+ (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QStringE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.0
+ (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QStringE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
+ (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QStringE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
+ (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI8QVariantE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.0
+ (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI8QVariantE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.0
+ (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI8QVariantE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
+ (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI8QVariantE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
+ (c++)"non-virtual thunk to QQmlSettings::classBegin()@Base" 6.2.0
+ (c++)"non-virtual thunk to QQmlSettings::componentComplete()@Base" 6.2.0
+ (c++)"non-virtual thunk to QQmlSettings::~QQmlSettings()@Base" 6.2.0

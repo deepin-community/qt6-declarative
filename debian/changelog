@@ -1,3 +1,9 @@
+qt6-declarative (6.2.4.2-1+dde) UNRELEASED; urgency=medium
+
+  * Add riscv64 symbols
+
+ -- Han Gao <gaohan@iscas.ac.cn>  Tue, 10 Jan 2023 23:49:25 +0800
+
 qt6-declarative (6.2.4.1-1+dde) unstable; urgency=medium
 
   * Update symbols.
