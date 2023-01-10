@@ -1,0 +1,38 @@
+# SymbolsHelper-Confirmed: 6.2.0 amd64
+libQt6QuickDialogs2Utils.so.6 libqt6quickdialogs2utils6 #MINVER#
+| libqt6quickdialogs2utils6 #MINVER#, qt6-declarative-abi (= 6.2.4)
+* Build-Depends-Packages: qt6-declarative-dev, qt6-declarative-private-dev
+ _ZN20QQuickFileNameFilter10setOptionsERK14QSharedPointerI18QFileDialogOptionsE@Base 6.2.0
+ _ZN20QQuickFileNameFilter11nameChangedERK7QString@Base 6.2.0
+ _ZN20QQuickFileNameFilter11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
+ _ZN20QQuickFileNameFilter11qt_metacastEPKc@Base 6.2.0
+ _ZN20QQuickFileNameFilter12globsChangedERK5QListI7QStringE@Base 6.2.0
+ _ZN20QQuickFileNameFilter12indexChangedEi@Base 6.2.0
+ _ZN20QQuickFileNameFilter16staticMetaObjectE@Base 6.2.0
+ _ZN20QQuickFileNameFilter17extensionsChangedERK5QListI7QStringE@Base 6.2.0
+ _ZN20QQuickFileNameFilter6updateERK7QString@Base 6.2.0
+ _ZN20QQuickFileNameFilter8setIndexEi@Base 6.2.0
+ _ZN20QQuickFileNameFilterC1EP7QObject@Base 6.2.0
+ _ZN20QQuickFileNameFilterC2EP7QObject@Base 6.2.0
+ _ZNK20QQuickFileNameFilter10extensionsEv@Base 6.2.0
+ _ZNK20QQuickFileNameFilter10metaObjectEv@Base 6.2.0
+ _ZNK20QQuickFileNameFilter10nameFilterEi@Base 6.2.0
+ _ZNK20QQuickFileNameFilter11nameFiltersEv@Base 6.2.0
+ _ZNK20QQuickFileNameFilter4nameEv@Base 6.2.0
+ _ZNK20QQuickFileNameFilter5globsEv@Base 6.2.0
+ _ZNK20QQuickFileNameFilter5indexEv@Base 6.2.0
+ _ZNK20QQuickFileNameFilter7optionsEv@Base 6.2.0
+ _ZTI20QQuickFileNameFilter@Base 6.2.0
+ _ZTS20QQuickFileNameFilter@Base 6.2.0
+ _ZTV20QQuickFileNameFilter@Base 6.2.0
+ (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI5QListI7QStringEE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES7_S8_SA_@Base 6.2.0
+ (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI5QListI7QStringEE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS8_E_4_FUNES7_S8_S8_@Base 6.2.0
+ (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI5QListI7QStringEE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES7_S8_@Base 6.2.0
+ (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI5QListI7QStringEE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES7_S8_@Base 6.2.0
+ (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QStringE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.0
+ (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QStringE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.0
+ (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QStringE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
+ (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QStringE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
+ (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIiE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES4_S5_S7_@Base 6.2.0
+ (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIiE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS5_E_4_FUNES4_S5_S5_@Base 6.2.0
+ (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIiE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES4_S5_@Base 6.2.0
