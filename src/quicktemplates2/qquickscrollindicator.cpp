@@ -1,38 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2017 The Qt Company Ltd.
-** Contact: http://www.qt.io/licensing/
-**
-** This file is part of the Qt Quick Templates 2 module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL3$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see http://www.qt.io/terms-conditions. For further
-** information use the contact form at http://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPLv3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or later as published by the Free
-** Software Foundation and appearing in the file LICENSE.GPL included in
-** the packaging of this file. Please review the following information to
-** ensure the GNU General Public License version 2.0 requirements will be
-** met: http://www.gnu.org/licenses/gpl-2.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2017 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qquickscrollindicator_p.h"
 #include "qquickcontrol_p_p.h"
@@ -160,9 +127,12 @@ QQuickScrollIndicatorPrivate::VisualArea QQuickScrollIndicatorPrivate::visualAre
     if (minimumSize > size)
         visualPos = position / (1.0 - size) * (1.0 - minimumSize);
 
-    qreal visualSize = qBound<qreal>(0, qMax(size, minimumSize) + qMin<qreal>(0, visualPos), 1.0 - visualPos);
+    qreal maximumSize = qMax<qreal>(0.0, 1.0 - visualPos);
+    qreal visualSize =  qMax<qreal>(minimumSize,
+                                    qMin<qreal>(qMax(size, minimumSize) + qMin<qreal>(0, visualPos),
+                                                maximumSize));
 
-    visualPos = qBound<qreal>(0, visualPos, 1.0 - visualSize);
+    visualPos = qMax<qreal>(0,qMin<qreal>(visualPos,qMax<qreal>(0, 1.0 - visualSize)));
 
     return VisualArea(visualPos, visualSize);
 }
@@ -231,6 +201,10 @@ void QQuickScrollIndicator::setSize(qreal size)
 
     auto oldVisualArea = d->visualArea();
     d->size = size;
+    if (d->size + d->position > 1.0) {
+        setPosition(1.0 - d->size);
+        oldVisualArea = d->visualArea();
+    }
     if (isComponentComplete())
         d->resizeContent();
     emit sizeChanged();
@@ -663,3 +637,5 @@ QAccessible::Role QQuickScrollIndicator::accessibleRole() const
 #endif
 
 QT_END_NAMESPACE
+
+#include "moc_qquickscrollindicator_p.cpp"

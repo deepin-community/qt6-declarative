@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQml module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #ifndef QQMLDATAMODEL_P_H
 #define QQMLDATAMODEL_P_H
@@ -218,6 +182,11 @@ class QQmlDelegateModelAttached : public QObject
     Q_PROPERTY(QQmlDelegateModel *model READ model CONSTANT)
     Q_PROPERTY(QStringList groups READ groups WRITE setGroups NOTIFY groupsChanged)
     Q_PROPERTY(bool isUnresolved READ isUnresolved NOTIFY unresolvedChanged)
+    Q_PROPERTY(bool inPersistedItems READ inPersistedItems WRITE setInPersistedItems NOTIFY groupsChanged)
+    Q_PROPERTY(bool inItems READ inItems WRITE setInItems NOTIFY groupsChanged)
+    Q_PROPERTY(int persistedItemsIndex READ persistedItemsIndex NOTIFY groupsChanged)
+    Q_PROPERTY(int itemsIndex READ itemsIndex NOTIFY groupsChanged)
+
 public:
     QQmlDelegateModelAttached(QObject *parent);
     QQmlDelegateModelAttached(QQmlDelegateModelItem *cacheItem, QObject *parent);
@@ -225,6 +194,14 @@ public:
 
     void resetCurrentIndex();
     void setCacheItem(QQmlDelegateModelItem *item);
+
+    void setInPersistedItems(bool inPersisted);
+    bool inPersistedItems() const;
+    int persistedItemsIndex() const;
+
+    void setInItems(bool inItems);
+    bool inItems() const;
+    int itemsIndex() const;
 
     QQmlDelegateModel *model() const;
 
@@ -240,6 +217,9 @@ public:
 Q_SIGNALS:
     void groupsChanged();
     void unresolvedChanged();
+
+private:
+    void setInGroup(QQmlListCompositor::Group group, bool inGroup);
 
 public:
     QQmlDelegateModelItem *m_cacheItem;

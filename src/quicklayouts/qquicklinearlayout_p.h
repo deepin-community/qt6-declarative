@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the Qt Quick Layouts module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #ifndef QQUICKLINEARLAYOUT_P_H
 #define QQUICKLINEARLAYOUT_P_H
@@ -64,7 +28,7 @@ QT_BEGIN_NAMESPACE
  **/
 class QQuickGridLayoutBasePrivate;
 
-class Q_QUICKLAYOUT_PRIVATE_EXPORT QQuickGridLayoutBase : public QQuickLayout
+class Q_QUICKLAYOUTS_PRIVATE_EXPORT QQuickGridLayoutBase : public QQuickLayout
 {
     Q_OBJECT
 
@@ -79,11 +43,11 @@ public:
 
     explicit QQuickGridLayoutBase(QQuickGridLayoutBasePrivate &dd,
                                   Qt::Orientation orientation,
-                                  QQuickItem *parent = 0);
+                                  QQuickItem *parent = nullptr);
 
     ~QQuickGridLayoutBase();
     void componentComplete() override;
-    void invalidate(QQuickItem *childItem = 0) override;
+    void invalidate(QQuickItem *childItem = nullptr) override;
     Qt::Orientation orientation() const;
     void setOrientation(Qt::Orientation orientation);
     QSizeF sizeHint(Qt::SizeHint whichSizeHint) const override;
@@ -104,7 +68,7 @@ protected:
     void rearrange(const QSizeF &size) override;
     virtual void insertLayoutItems() {}
 
-signals:
+Q_SIGNALS:
     Q_REVISION(1, 1) void layoutDirectionChanged();
 
 private:
@@ -121,7 +85,6 @@ class QQuickGridLayoutBasePrivate : public QQuickLayoutPrivate
 public:
     QQuickGridLayoutBasePrivate() : m_recurRearrangeCounter(0)
                                     , m_rearranging(false)
-                                    , m_updateAfterRearrange(false)
                                     , m_layoutDirection(Qt::LeftToRight)
                                     {}
 
@@ -135,7 +98,6 @@ public:
     Qt::Orientation orientation;
     unsigned m_recurRearrangeCounter : 2;
     unsigned m_rearranging : 1;
-    unsigned m_updateAfterRearrange : 1;
     QVector<QQuickItem *> m_invalidateAfterRearrange;
     Qt::LayoutDirection m_layoutDirection : 2;
 
@@ -148,7 +110,7 @@ public:
  **
  **/
 class QQuickGridLayoutPrivate;
-class Q_QUICKLAYOUT_PRIVATE_EXPORT QQuickGridLayout : public QQuickGridLayoutBase
+class Q_QUICKLAYOUTS_PRIVATE_EXPORT QQuickGridLayout : public QQuickGridLayoutBase
 {
     Q_OBJECT
 
@@ -160,7 +122,7 @@ class Q_QUICKLAYOUT_PRIVATE_EXPORT QQuickGridLayout : public QQuickGridLayoutBas
     QML_NAMED_ELEMENT(GridLayout)
     QML_ADDED_IN_VERSION(1, 0)
 public:
-    explicit QQuickGridLayout(QQuickItem *parent = 0);
+    explicit QQuickGridLayout(QQuickItem *parent = nullptr);
     qreal columnSpacing() const;
     void setColumnSpacing(qreal spacing);
     qreal rowSpacing() const;
@@ -178,7 +140,7 @@ public:
 
     void insertLayoutItems() override;
 
-signals:
+Q_SIGNALS:
     void columnSpacingChanged();
     void rowSpacingChanged();
 
@@ -207,20 +169,20 @@ public:
  **
  **/
 class QQuickLinearLayoutPrivate;
-class QQuickLinearLayout : public QQuickGridLayoutBase
+class Q_QUICKLAYOUTS_PRIVATE_EXPORT QQuickLinearLayout : public QQuickGridLayoutBase
 {
     Q_OBJECT
     Q_PROPERTY(qreal spacing READ spacing WRITE setSpacing NOTIFY spacingChanged)
 public:
     explicit QQuickLinearLayout(Qt::Orientation orientation,
-                                QQuickItem *parent = 0);
+                                QQuickItem *parent = nullptr);
     void insertLayoutItem(QQuickItem *item);
     qreal spacing() const;
     void setSpacing(qreal spacing);
 
     void insertLayoutItems() override;
 
-signals:
+Q_SIGNALS:
     void spacingChanged();
 private:
     Q_DECLARE_PRIVATE(QQuickLinearLayout)
@@ -239,14 +201,14 @@ public:
  ** QQuickRowLayout
  **
  **/
-class Q_QUICKLAYOUT_PRIVATE_EXPORT  QQuickRowLayout : public QQuickLinearLayout
+class Q_QUICKLAYOUTS_PRIVATE_EXPORT  QQuickRowLayout : public QQuickLinearLayout
 {
     Q_OBJECT
     QML_NAMED_ELEMENT(RowLayout)
     QML_ADDED_IN_VERSION(1, 0)
 
 public:
-    explicit QQuickRowLayout(QQuickItem *parent = 0)
+    explicit QQuickRowLayout(QQuickItem *parent = nullptr)
         : QQuickLinearLayout(Qt::Horizontal, parent) {}
 };
 
@@ -256,14 +218,14 @@ public:
  ** QQuickColumnLayout
  **
  **/
-class Q_QUICKLAYOUT_PRIVATE_EXPORT QQuickColumnLayout : public QQuickLinearLayout
+class Q_QUICKLAYOUTS_PRIVATE_EXPORT QQuickColumnLayout : public QQuickLinearLayout
 {
     Q_OBJECT
     QML_NAMED_ELEMENT(ColumnLayout)
     QML_ADDED_IN_VERSION(1, 0)
 
 public:
-    explicit QQuickColumnLayout(QQuickItem *parent = 0)
+    explicit QQuickColumnLayout(QQuickItem *parent = nullptr)
         : QQuickLinearLayout(Qt::Vertical, parent) {}
 };
 

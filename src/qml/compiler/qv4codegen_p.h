@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2017 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQml module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2017 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 #ifndef QV4CODEGEN_P_H
 #define QV4CODEGEN_P_H
 
@@ -80,14 +44,29 @@ struct ControlFlow;
 struct ControlFlowCatch;
 struct ControlFlowFinally;
 
-class Q_QMLCOMPILER_PRIVATE_EXPORT Codegen: protected QQmlJS::AST::Visitor
+class Q_QML_COMPILER_PRIVATE_EXPORT CodegenWarningInterface
+{
+public:
+    virtual void reportVarUsedBeforeDeclaration(const QString &name, const QString &fileName,
+                                                QQmlJS::SourceLocation declarationLocation,
+                                                QQmlJS::SourceLocation accessLocation);
+    virtual ~CodegenWarningInterface() = default;
+};
+
+inline CodegenWarningInterface *defaultCodegenWarningInterface()
+{
+    static CodegenWarningInterface iface;
+    return &iface;
+}
+
+class Q_QML_COMPILER_PRIVATE_EXPORT Codegen: protected QQmlJS::AST::Visitor
 {
 protected:
     using BytecodeGenerator = QV4::Moth::BytecodeGenerator;
     using Instruction = QV4::Moth::Instruction;
 public:
-    Codegen(QV4::Compiler::JSUnitGenerator *jsUnitGenerator, bool strict);
-
+    Codegen(QV4::Compiler::JSUnitGenerator *jsUnitGenerator, bool strict,
+            CodegenWarningInterface *iface = defaultCodegenWarningInterface());
 
     void generateFromProgram(const QString &fileName,
                              const QString &finalUrl,
@@ -279,14 +258,18 @@ public:
             r.name = name;
             return r;
         }
-        static Reference fromMember(const Reference &baseRef, const QString &name,
-                                    Moth::BytecodeGenerator::Label jumpLabel = Moth::BytecodeGenerator::Label(),
-                                    Moth::BytecodeGenerator::Label targetLabel = Moth::BytecodeGenerator::Label()) {
+        static Reference
+        fromMember(const Reference &baseRef, const QString &name,
+                   QQmlJS::SourceLocation sourceLocation = QQmlJS::SourceLocation(),
+                   Moth::BytecodeGenerator::Label jumpLabel = Moth::BytecodeGenerator::Label(),
+                   Moth::BytecodeGenerator::Label targetLabel = Moth::BytecodeGenerator::Label())
+        {
             Q_ASSERT(baseRef.isValid());
             Reference r(baseRef.codegen, Member);
             r.propertyBase = baseRef.asRValue();
             r.propertyNameIndex = r.codegen->registerString(name);
             r.requiresTDZCheck = baseRef.requiresTDZCheck;
+            r.sourceLocation = sourceLocation;
             r.optionalChainJumpLabel.reset(new Moth::BytecodeGenerator::Label(jumpLabel));
             r.optionalChainTargetLabel.reset(new Moth::BytecodeGenerator::Label(targetLabel));
             return r;
@@ -382,6 +365,7 @@ public:
         quint32 isVolatile:1;
         quint32 global:1;
         quint32 qmlGlobal:1;
+        QQmlJS::SourceLocation sourceLocation = QQmlJS::SourceLocation();
         QSharedPointer<Moth::BytecodeGenerator::Label> optionalChainJumpLabel;
         QSharedPointer<Moth::BytecodeGenerator::Label> optionalChainTargetLabel;
 
@@ -530,7 +514,7 @@ public:
     // Returns index in _module->functions
     virtual int defineFunction(const QString &name, QQmlJS::AST::Node *ast,
                                QQmlJS::AST::FormalParameterList *formals,
-                               QQmlJS::AST::StatementList *body);
+                               QQmlJS::AST::StatementList *body, bool storeSourceLocation = false);
 
 protected:
     void statement(QQmlJS::AST::Statement *ast);
@@ -797,6 +781,7 @@ protected:
     bool _fileNameIsUrl;
     ErrorType _errorType = NoError;
     QQmlJS::DiagnosticMessage _error;
+    CodegenWarningInterface *_interface;
 
     class TailCallBlocker
     {

@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQml module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #ifndef QQMLVALUETYPE_P_H
 #define QQMLVALUETYPE_P_H
@@ -67,11 +31,11 @@
 
 QT_BEGIN_NAMESPACE
 
-class Q_QML_PRIVATE_EXPORT QQmlValueType : public QAbstractDynamicMetaObject
+class Q_QML_PRIVATE_EXPORT QQmlValueType : public QDynamicMetaObjectData
 {
 public:
     QQmlValueType() : metaType(QMetaType::UnknownType) {}
-    QQmlValueType(int userType, const QMetaObject *metaObject);
+    QQmlValueType(QMetaType type, const QMetaObject *metaObject);
     ~QQmlValueType();
 
     void *create() const { return metaType.create(); }
@@ -81,9 +45,10 @@ public:
     void destruct(void *gadgetPtr) const { metaType.destruct(gadgetPtr); }
 
     int metaTypeId() const { return metaType.id(); }
+    const QMetaObject *metaObject() const { return dynamicMetaObject; }
 
     // ---- dynamic meta object data interface
-    QAbstractDynamicMetaObject *toDynamicMetaObject(QObject *) override;
+    QMetaObject *toDynamicMetaObject(QObject *) override;
     void objectDestroyed(QObject *) override;
     int metaCall(QObject *obj, QMetaObject::Call type, int _id, void **argv) override;
     // ----
@@ -109,7 +74,17 @@ public:
 
     int metaTypeId() const { return valueType()->metaTypeId(); }
     int metaCall(QMetaObject::Call type, int id, void **argv);
-    QMetaProperty property(int index) { return valueType()->property(index); }
+
+    QMetaProperty property(int index) { return valueType()->metaObject()->property(index); }
+    QVariant readOnGadget(const QMetaProperty &property) const
+    {
+        return property.readOnGadget(m_gadgetPtr);
+    }
+
+    void writeOnGadget(const QMetaProperty &property, const QVariant &value)
+    {
+        property.writeOnGadget(m_gadgetPtr, value);
+    }
 
 private:
     const QQmlValueType *valueType() const;

@@ -1,6 +1,6 @@
-# SymbolsHelper-Confirmed: 6.2.0 amd64
+# SymbolsHelper-Confirmed: 6.4.2 amd64
 libQt6LabsSettings.so.6 libqt6labssettings6 #MINVER#
-| libqt6labssettings6 #MINVER#, qt6-declarative-abi (= 6.2.4)
+| libqt6labssettings6 #MINVER#, qt6-declarative-abi (= 6.4.2)
 * Build-Depends-Packages: qt6-declarative-dev, qt6-declarative-private-dev
  _Z35qml_register_types_Qt_labs_settingsv@Base 6.2.0
  _ZN12QQmlSettings10classBeginEv@Base 6.2.0
@@ -25,14 +25,6 @@ libQt6LabsSettings.so.6 libqt6labssettings6 #MINVER#
  _ZTI12QQmlSettings@Base 6.2.0
  _ZTS12QQmlSettings@Base 6.2.0
  _ZTV12QQmlSettings@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QStringE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QStringE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QStringE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QStringE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI8QVariantE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI8QVariantE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI8QVariantE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI8QVariantE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
  (c++)"non-virtual thunk to QQmlSettings::classBegin()@Base" 6.2.0
  (c++)"non-virtual thunk to QQmlSettings::componentComplete()@Base" 6.2.0
  (c++)"non-virtual thunk to QQmlSettings::~QQmlSettings()@Base" 6.2.0

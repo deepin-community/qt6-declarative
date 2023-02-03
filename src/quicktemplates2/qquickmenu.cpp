@@ -1,38 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2020 The Qt Company Ltd.
-** Contact: http://www.qt.io/licensing/
-**
-** This file is part of the Qt Quick Templates 2 module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL3$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see http://www.qt.io/terms-conditions. For further
-** information use the contact form at http://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPLv3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or later as published by the Free
-** Software Foundation and appearing in the file LICENSE.GPL included in
-** the packaging of this file. Please review the following information to
-** ensure the GNU General Public License version 2.0 requirements will be
-** met: http://www.gnu.org/licenses/gpl-2.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2020 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qquickmenu_p.h"
 #include "qquickmenu_p_p.h"
@@ -193,7 +160,7 @@ static const int SUBMENU_DELAY = 225;
     will be \c true. For more information, see
     \l {Keyboard Focus in Qt Quick}.
 
-    The default value is \c false.
+    The default value is \c true.
 
     \sa {Popup::}{activeFocus}
 */
@@ -237,8 +204,7 @@ void QQuickMenuPrivate::insertItem(int index, QQuickItem *item)
 {
     contentData.append(item);
     item->setParentItem(contentItem);
-    if (qobject_cast<QQuickItemView *>(contentItem))
-        QQuickItemPrivate::get(item)->setCulled(true); // QTBUG-53262
+    QQuickItemPrivate::get(item)->setCulled(true); // QTBUG-53262
     if (complete)
         resizeItem(item);
     QQuickItemPrivate::get(item)->addItemChangeListener(this, QQuickItemPrivate::Destroyed | QQuickItemPrivate::Parent);
@@ -288,11 +254,9 @@ QQuickItem *QQuickMenuPrivate::beginCreateItem()
     if (!delegate)
         return nullptr;
 
-    QQmlContext *creationContext = delegate->creationContext();
-    if (!creationContext)
-        creationContext = qmlContext(q);
-    QQmlContext *context = new QQmlContext(creationContext, q);
-    context->setContextObject(q);
+    QQmlContext *context = delegate->creationContext();
+    if (!context)
+        context = qmlContext(q);
 
     QObject *object = delegate->beginCreate(context);
     QQuickItem *item = qobject_cast<QQuickItem *>(object);
@@ -1067,7 +1031,7 @@ QVariant QQuickMenu::contentModel() const
 }
 
 /*!
-    \qmlproperty list<Object> QtQuick.Controls::Menu::contentData
+    \qmlproperty list<QtObject> QtQuick.Controls::Menu::contentData
     \qmldefault
 
     This property holds the list of content data.

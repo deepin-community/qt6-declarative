@@ -1,38 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2017 The Qt Company Ltd.
-** Contact: http://www.qt.io/licensing/
-**
-** This file is part of the test suite of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL3$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see http://www.qt.io/terms-conditions. For further
-** information use the contact form at http://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPLv3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or later as published by the Free
-** Software Foundation and appearing in the file LICENSE.GPL included in
-** the packaging of this file. Please review the following information to
-** ensure the GNU General Public License version 2.0 requirements will be
-** met: http://www.gnu.org/licenses/gpl-2.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2017 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only WITH Qt-GPL-exception-1.0
 
 #include <qtest.h>
 #include <QtCore/qoperatingsystemversion.h>
@@ -260,6 +227,19 @@ void tst_QQuickApplicationWindow::defaultFocus()
     QVERIFY(item->hasActiveFocus());
 }
 
+static QSizeF getExpectedElementSize()
+{
+#ifndef Q_OS_ANDROID
+    // These values are taken from the QML file.
+    return QSizeF(400.0, 400.0);
+#else
+    // On Android we have to query screen parameters at runtime, because on
+    // Android the Quick element will take the whole screen size.
+    const QSize size = QGuiApplication::primaryScreen()->availableSize();
+    return QSizeF(size);
+#endif
+}
+
 void tst_QQuickApplicationWindow::implicitFill()
 {
     QQmlEngine engine;
@@ -278,17 +258,19 @@ void tst_QQuickApplicationWindow::implicitFill()
     window->show();
     QVERIFY(QTest::qWaitForWindowActive(window));
 
+    const QSizeF expectedSize = getExpectedElementSize();
+
     QQuickItem *stackView = window->property("stackView").value<QQuickItem*>();
     QVERIFY(stackView);
-    QCOMPARE(stackView->width(), 400.0);
-    QCOMPARE(stackView->height(), 400.0);
+    QCOMPARE(stackView->width(), expectedSize.width());
+    QCOMPARE(stackView->height(), expectedSize.height());
 
     QQuickItem *nextItem = window->property("nextItem").value<QQuickItem*>();
     QVERIFY(nextItem);
 
     QVERIFY(QMetaObject::invokeMethod(window, "pushNextItem"));
-    QCOMPARE(nextItem->width(), 400.0);
-    QCOMPARE(nextItem->height(), 400.0);
+    QCOMPARE(nextItem->width(), expectedSize.width());
+    QCOMPARE(nextItem->height(), expectedSize.height());
 }
 
 void tst_QQuickApplicationWindow::attachedProperties()
@@ -519,10 +501,12 @@ void tst_QQuickApplicationWindow::font()
 
     QFont font = window->font();
 
+    const QSizeF expectedSize = getExpectedElementSize();
+
     QQuickControl *mainItem = window->property("mainItem").value<QQuickControl*>();
     QVERIFY(mainItem);
-    QCOMPARE(mainItem->width(), 400.0);
-    QCOMPARE(mainItem->height(), 400.0);
+    QCOMPARE(mainItem->width(), expectedSize.width());
+    QCOMPARE(mainItem->height(), expectedSize.height());
     QCOMPARE(mainItem->font(), font);
 
     QQuickControl *item2 = mainItem->property("item_2").value<QQuickControl*>();
@@ -598,10 +582,12 @@ void tst_QQuickApplicationWindow::locale()
 
     QLocale l = window->locale();
 
+    const QSizeF expectedSize = getExpectedElementSize();
+
     QQuickControl *mainItem = window->property("mainItem").value<QQuickControl*>();
     QVERIFY(mainItem);
-    QCOMPARE(mainItem->width(), 400.0);
-    QCOMPARE(mainItem->height(), 400.0);
+    QCOMPARE(mainItem->width(), expectedSize.width());
+    QCOMPARE(mainItem->height(), expectedSize.height());
     QCOMPARE(mainItem->locale(), l);
 
     QQuickControl *item2 = mainItem->property("item_2").value<QQuickControl*>();
@@ -690,6 +676,9 @@ void tst_QQuickApplicationWindow::activeFocusControl()
 
 void tst_QQuickApplicationWindow::focusAfterPopupClosed()
 {
+#ifdef Q_OS_ANDROID
+    QSKIP("This test crashes in Android emulator because of GLES issues (QTBUG-100991)");
+#endif
     QQmlEngine engine;
     QQmlComponent component(&engine);
     component.loadUrl(testFileUrl("focusAfterPopupClosed.qml"));
@@ -711,7 +700,7 @@ void tst_QQuickApplicationWindow::focusAfterPopupClosed()
 
     QSignalSpy focusScopeSpy(window.data(), SIGNAL(focusScopeKeyPressed()));
     QTest::keyClick(window.data(), Qt::Key_Space);
-    QCOMPARE(focusScopeSpy.count(), 1);
+    QCOMPARE(focusScopeSpy.size(), 1);
 
     // Open the menu.
     QQuickItem* toolButton = window->property("toolButton").value<QQuickItem*>();
@@ -722,14 +711,14 @@ void tst_QQuickApplicationWindow::focusAfterPopupClosed()
 
     // The FocusScope shouldn't receive any key events while the menu is open.
     QTest::keyClick(window.data(), Qt::Key_Space);
-    QCOMPARE(focusScopeSpy.count(), 1);
+    QCOMPARE(focusScopeSpy.size(), 1);
 
     // Close the menu. The FocusScope should regain focus.
     QTest::keyClick(window.data(), Qt::Key_Escape);
     QVERIFY(focusScope->hasActiveFocus());
 
     QTest::keyClick(window.data(), Qt::Key_Space);
-    QCOMPARE(focusScopeSpy.count(), 2);
+    QCOMPARE(focusScopeSpy.size(), 2);
 
     QQuickPopup *focusPopup = window->property("focusPopup").value<QQuickPopup*>();
     QVERIFY(focusPopup);
@@ -740,7 +729,7 @@ void tst_QQuickApplicationWindow::focusAfterPopupClosed()
 
     QSignalSpy focusPopupSpy(window.data(), SIGNAL(focusPopupKeyPressed()));
     QTest::keyClick(window.data(), Qt::Key_Space);
-    QCOMPARE(focusPopupSpy.count(), 1);
+    QCOMPARE(focusPopupSpy.size(), 1);
 
     QQuickMenu *fileMenu = window->property("fileMenu").value<QQuickMenu*>();
     QVERIFY(fileMenu);
@@ -749,21 +738,21 @@ void tst_QQuickApplicationWindow::focusAfterPopupClosed()
 
     // The Popup shouldn't receive any key events while the menu is open.
     QTest::keyClick(window.data(), Qt::Key_Space);
-    QCOMPARE(focusPopupSpy.count(), 1);
+    QCOMPARE(focusPopupSpy.size(), 1);
 
     // Close the menu. The Popup should regain focus.
     QTest::keyClick(window.data(), Qt::Key_Escape);
     QVERIFY(focusPopup->hasActiveFocus());
 
     QTest::keyClick(window.data(), Qt::Key_Space);
-    QCOMPARE(focusPopupSpy.count(), 2);
+    QCOMPARE(focusPopupSpy.size(), 2);
 
     // Close the popup. The FocusScope should regain focus.
     QTest::keyClick(window.data(), Qt::Key_Escape);
     QVERIFY(focusScope->hasActiveFocus());
 
     QTest::keyClick(window.data(), Qt::Key_Space);
-    QCOMPARE(focusScopeSpy.count(), 3);
+    QCOMPARE(focusScopeSpy.size(), 3);
 }
 
 void tst_QQuickApplicationWindow::clearFocusOnDestruction()
@@ -807,7 +796,7 @@ void tst_QQuickApplicationWindow::clearFocusOnDestruction()
        Therefore, if you have good reasons to change the behavior (and not emit
        it) take the test below with a grain of salt.
      */
-    QCOMPARE(spy.count(), 1);
+    QCOMPARE(spy.size(), 1);
 }
 
 void tst_QQuickApplicationWindow::layout()

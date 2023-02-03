@@ -1,38 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2017 The Qt Company Ltd.
-** Contact: http://www.qt.io/licensing/
-**
-** This file is part of the Qt Quick Templates 2 module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL3$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see http://www.qt.io/terms-conditions. For further
-** information use the contact form at http://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPLv3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or later as published by the Free
-** Software Foundation and appearing in the file LICENSE.GPL included in
-** the packaging of this file. Please review the following information to
-** ensure the GNU General Public License version 2.0 requirements will be
-** met: http://www.gnu.org/licenses/gpl-2.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2017 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qquickrangeslider_p.h"
 #include "qquickcontrol_p_p.h"
@@ -380,9 +347,9 @@ public:
 #if QT_CONFIG(quicktemplates2_multitouch)
     bool acceptTouch(const QTouchEvent::TouchPoint &point) override;
 #endif
-    void handlePress(const QPointF &point) override;
-    void handleMove(const QPointF &point) override;
-    void handleRelease(const QPointF &point) override;
+    bool handlePress(const QPointF &point, ulong timestamp) override;
+    bool handleMove(const QPointF &point, ulong timestamp) override;
+    bool handleRelease(const QPointF &point, ulong timestamp) override;
     void handleUngrab() override;
 
     void updateHover(const QPointF &pos);
@@ -467,10 +434,10 @@ bool QQuickRangeSliderPrivate::acceptTouch(const QTouchEvent::TouchPoint &point)
 }
 #endif
 
-void QQuickRangeSliderPrivate::handlePress(const QPointF &point)
+bool QQuickRangeSliderPrivate::handlePress(const QPointF &point, ulong timestamp)
 {
     Q_Q(QQuickRangeSlider);
-    QQuickControlPrivate::handlePress(point);
+    QQuickControlPrivate::handlePress(point, timestamp);
     pressPoint = point;
 
     QQuickItem *firstHandle = first->handle();
@@ -526,12 +493,13 @@ void QQuickRangeSliderPrivate::handlePress(const QPointF &point)
         if (QQuickItem *handle = otherNode->handle())
             handle->setZ(0);
     }
+    return true;
 }
 
-void QQuickRangeSliderPrivate::handleMove(const QPointF &point)
+bool QQuickRangeSliderPrivate::handleMove(const QPointF &point, ulong timestamp)
 {
     Q_Q(QQuickRangeSlider);
-    QQuickControlPrivate::handleMove(point);
+    QQuickControlPrivate::handleMove(point, timestamp);
     QQuickRangeSliderNode *pressedNode = QQuickRangeSliderPrivate::pressedNode(touchId);
     if (pressedNode) {
         const qreal oldPos = pressedNode->position();
@@ -546,17 +514,18 @@ void QQuickRangeSliderPrivate::handleMove(const QPointF &point)
         if (!qFuzzyCompare(pressedNode->position(), oldPos))
             emit pressedNode->moved();
     }
+    return true;
 }
 
-void QQuickRangeSliderPrivate::handleRelease(const QPointF &point)
+bool QQuickRangeSliderPrivate::handleRelease(const QPointF &point, ulong timestamp)
 {
     Q_Q(QQuickRangeSlider);
-    QQuickControlPrivate::handleRelease(point);
+    QQuickControlPrivate::handleRelease(point, timestamp);
     pressPoint = QPointF();
 
     QQuickRangeSliderNode *pressedNode = QQuickRangeSliderPrivate::pressedNode(touchId);
     if (!pressedNode)
-        return;
+        return true;
     QQuickRangeSliderNodePrivate *pressedNodePrivate = QQuickRangeSliderNodePrivate::get(pressedNode);
 
     if (q->keepMouseGrab() || q->keepTouchGrab()) {
@@ -577,6 +546,7 @@ void QQuickRangeSliderPrivate::handleRelease(const QPointF &point)
     }
     pressedNode->setPressed(false);
     pressedNodePrivate->touchId = -1;
+    return true;
 }
 
 void QQuickRangeSliderPrivate::handleUngrab()
@@ -1172,6 +1142,7 @@ void QQuickRangeSlider::hoverEnterEvent(QHoverEvent *event)
     Q_D(QQuickRangeSlider);
     QQuickControl::hoverEnterEvent(event);
     d->updateHover(event->position());
+    event->ignore();
 }
 
 void QQuickRangeSlider::hoverMoveEvent(QHoverEvent *event)
@@ -1179,6 +1150,7 @@ void QQuickRangeSlider::hoverMoveEvent(QHoverEvent *event)
     Q_D(QQuickRangeSlider);
     QQuickControl::hoverMoveEvent(event);
     d->updateHover(event->position());
+    event->ignore();
 }
 
 void QQuickRangeSlider::hoverLeaveEvent(QHoverEvent *event)
@@ -1187,6 +1159,7 @@ void QQuickRangeSlider::hoverLeaveEvent(QHoverEvent *event)
     QQuickControl::hoverLeaveEvent(event);
     d->first->setHovered(false);
     d->second->setHovered(false);
+    event->ignore();
 }
 
 void QQuickRangeSlider::keyReleaseEvent(QKeyEvent *event)
@@ -1201,7 +1174,7 @@ void QQuickRangeSlider::mousePressEvent(QMouseEvent *event)
 {
     Q_D(QQuickRangeSlider);
     QQuickControl::mousePressEvent(event);
-    d->handleMove(event->position());
+    d->handleMove(event->position(), event->timestamp());
     setKeepMouseGrab(true);
 }
 
@@ -1217,7 +1190,7 @@ void QQuickRangeSlider::touchEvent(QTouchEvent *event)
 
             switch (point.state()) {
             case QEventPoint::Pressed:
-                d->handlePress(point.position());
+                d->handlePress(point.position(), event->timestamp());
                 break;
             case QEventPoint::Updated:
                 if (!keepTouchGrab()) {
@@ -1227,10 +1200,10 @@ void QQuickRangeSlider::touchEvent(QTouchEvent *event)
                         setKeepTouchGrab(QQuickWindowPrivate::dragOverThreshold(point.position().y() - point.pressPosition().y(), Qt::YAxis, &point, qRound(d->touchDragThreshold)));
                 }
                 if (keepTouchGrab())
-                    d->handleMove(point.position());
+                    d->handleMove(point.position(), event->timestamp());
                 break;
             case QEventPoint::Released:
-                d->handleRelease(point.position());
+                d->handleRelease(point.position(), event->timestamp());
                 break;
             default:
                 break;
@@ -1337,3 +1310,5 @@ QAccessible::Role QQuickRangeSlider::accessibleRole() const
 #endif
 
 QT_END_NAMESPACE
+
+#include "moc_qquickrangeslider_p.cpp"

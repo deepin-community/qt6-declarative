@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2021 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQml module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2021 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 #include <qv4engine_p.h>
 
 #include <private/qv4compileddata_p.h>
@@ -95,11 +59,7 @@
 #include "qv4urlobject_p.h"
 #include "qv4jscall_p.h"
 #include "qv4variantobject_p.h"
-
-#if QT_CONFIG(qml_sequence_object)
 #include "qv4sequenceobject_p.h"
-#endif
-
 #include "qv4qobjectwrapper_p.h"
 #include "qv4memberdata_p.h"
 #include "qv4arraybuffer_p.h"
@@ -151,19 +111,31 @@ DEFINE_BOOL_CONFIG_OPTION(forceDiskCache, QML_FORCE_DISK_CACHE);
 
 using namespace QV4;
 
+// While engineSerial is odd the statics haven't been initialized. The engine that receives ID 1
+// initializes the statics and sets engineSerial to 2 afterwards.
+// Each engine does engineSerial.fetchAndAddOrdered(2) on creation. Therefore engineSerial stays
+// odd while the statics are being initialized, and stays even afterwards.
+// Any further engines created while the statics are being initialized busy-wait until engineSerial
+// is even.
 static QBasicAtomicInt engineSerial = Q_BASIC_ATOMIC_INITIALIZER(1);
+int ExecutionEngine::s_maxCallDepth = -1;
+int ExecutionEngine::s_jitCallCountThreshold = 3;
+int ExecutionEngine::s_maxJSStackSize = 4 * 1024 * 1024;
+int ExecutionEngine::s_maxGCStackSize = 2 * 1024 * 1024;
 
 ReturnedValue throwTypeError(const FunctionObject *b, const QV4::Value *, const QV4::Value *, int)
 {
     return b->engine()->throwTypeError();
 }
 
-qint32 ExecutionEngine::maxCallDepth = -1;
 
 template <typename ReturnType>
 ReturnType convertJSValueToVariantType(const QJSValue &value)
 {
-    return value.toVariant().value<ReturnType>();
+    const QVariant variant = value.toVariant();
+    return variant.metaType() == QMetaType::fromType<QJSValue>()
+            ? ReturnType()
+            : variant.value<ReturnType>();
 }
 
 struct JSArrayIterator {
@@ -328,6 +300,71 @@ static QSequentialIterable jsvalueToSequence (const QJSValue& value) {
     return QSequentialIterable(QMetaSequence(&sequence), &value);
 }
 
+void ExecutionEngine::initializeStaticMembers()
+{
+    bool ok = false;
+
+    const int envMaxJSStackSize = qEnvironmentVariableIntValue("QV4_JS_MAX_STACK_SIZE", &ok);
+    if (ok && envMaxJSStackSize > 0)
+        s_maxJSStackSize = envMaxJSStackSize;
+
+    const int envMaxGCStackSize = qEnvironmentVariableIntValue("QV4_GC_MAX_STACK_SIZE", &ok);
+    if (ok && envMaxGCStackSize > 0)
+        s_maxGCStackSize = envMaxGCStackSize;
+
+    if (qEnvironmentVariableIsSet("QV4_CRASH_ON_STACKOVERFLOW")) {
+        s_maxCallDepth = std::numeric_limits<qint32>::max();
+    } else {
+        ok = false;
+        s_maxCallDepth = qEnvironmentVariableIntValue("QV4_MAX_CALL_DEPTH", &ok);
+        if (!ok || s_maxCallDepth <= 0) {
+#if defined(QT_NO_DEBUG) && !defined(__SANITIZE_ADDRESS__) && !__has_feature(address_sanitizer)
+#ifdef Q_OS_QNX
+            s_maxCallDepth = 640; // QNX's stack is only 512k by default
+#elif defined(Q_OS_ANDROID)
+            // In experiments, it started crashing at 1059.
+            s_maxCallDepth = 1000;
+#elif defined(Q_OS_WIN)
+            // We've seen crashes around 750.
+            s_maxCallDepth = 640;
+#else
+            s_maxCallDepth = 1234;
+#endif
+#else
+            // no (tail call) optimization is done, so there'll be a lot mare stack frames active
+#ifdef Q_OS_ANDROID
+            // Android's stack seems to be about 1mb.
+            // In experiments, it started crashing at 82.
+            s_maxCallDepth = 80;
+#else
+            s_maxCallDepth = 200;
+#endif
+#endif
+        }
+    }
+
+    Q_ASSERT(s_maxCallDepth > 0);
+
+    ok = false;
+    s_jitCallCountThreshold = qEnvironmentVariableIntValue("QV4_JIT_CALL_THRESHOLD", &ok);
+    if (!ok)
+        s_jitCallCountThreshold = 3;
+    if (qEnvironmentVariableIsSet("QV4_FORCE_INTERPRETER"))
+        s_jitCallCountThreshold = std::numeric_limits<int>::max();
+
+    qMetaTypeId<QJSValue>();
+    qMetaTypeId<QList<int> >();
+
+    if (!QMetaType::hasRegisteredConverterFunction<QJSValue, QVariantMap>())
+        QMetaType::registerConverter<QJSValue, QVariantMap>(convertJSValueToVariantType<QVariantMap>);
+    if (!QMetaType::hasRegisteredConverterFunction<QJSValue, QVariantList>())
+        QMetaType::registerConverter<QJSValue, QVariantList>(convertJSValueToVariantType<QVariantList>);
+    if (!QMetaType::hasRegisteredConverterFunction<QJSValue, QStringList>())
+        QMetaType::registerConverter<QJSValue, QStringList>(convertJSValueToVariantType<QStringList>);
+    if (!QMetaType::hasRegisteredConverterFunction<QJSValue, QSequentialIterable>())
+        QMetaType::registerConverter<QJSValue, QSequentialIterable>(jsvalueToSequence);
+}
+
 ExecutionEngine::ExecutionEngine(QJSEngine *jsEngine)
     : executableAllocator(new QV4::ExecutableAllocator)
     , regExpAllocator(new QV4::ExecutableAllocator)
@@ -336,7 +373,7 @@ ExecutionEngine::ExecutionEngine(QJSEngine *jsEngine)
     , gcStack(new WTF::PageAllocation)
     , globalCode(nullptr)
     , publicEngine(jsEngine)
-    , m_engineId(engineSerial.fetchAndAddOrdered(1))
+    , m_engineId(engineSerial.fetchAndAddOrdered(2))
     , regExpCache(nullptr)
     , m_multiplyWrappedQObjects(nullptr)
 #if QT_CONFIG(qml_jit)
@@ -347,45 +384,26 @@ ExecutionEngine::ExecutionEngine(QJSEngine *jsEngine)
 #endif
     , m_qmlEngine(nullptr)
 {
-    bool ok = false;
-    const int envMaxJSStackSize = qEnvironmentVariableIntValue("QV4_JS_MAX_STACK_SIZE", &ok);
-    if (ok && envMaxJSStackSize > 0)
-        m_maxJSStackSize = envMaxJSStackSize;
-
-    const int envMaxGCStackSize = qEnvironmentVariableIntValue("QV4_GC_MAX_STACK_SIZE", &ok);
-    if (ok && envMaxGCStackSize > 0)
-        m_maxGCStackSize = envMaxGCStackSize;
-
-    memoryManager = new QV4::MemoryManager(this);
-
-    if (maxCallDepth == -1) {
-        if (qEnvironmentVariableIsSet("QV4_CRASH_ON_STACKOVERFLOW")) {
-            maxCallDepth = std::numeric_limits<qint32>::max();
-        } else {
-            ok = false;
-            maxCallDepth = qEnvironmentVariableIntValue("QV4_MAX_CALL_DEPTH", &ok);
-            if (!ok || maxCallDepth <= 0) {
-#if defined(QT_NO_DEBUG) && !defined(__SANITIZE_ADDRESS__) && !__has_feature(address_sanitizer)
-#ifdef Q_OS_QNX
-                maxCallDepth = 640; // QNX's stack is only 512k by default
-#else
-                maxCallDepth = 1234;
-#endif
-#else
-                // no (tail call) optimization is done, so there'll be a lot mare stack frames active
-                maxCallDepth = 200;
-#endif
-            }
+    if (m_engineId == 1) {
+        initializeStaticMembers();
+        engineSerial.storeRelease(2); // make it even
+    } else if (Q_UNLIKELY(m_engineId & 1)) {
+        // This should be rare. You usually don't create lots of engines at the same time.
+        while (engineSerial.loadAcquire() & 1) {
+            QThread::yieldCurrentThread();
         }
     }
-    Q_ASSERT(maxCallDepth > 0);
 
+    // We allocate guard pages around our stacks.
+    const size_t guardPages = 2 * WTF::pageSize();
+
+    memoryManager = new QV4::MemoryManager(this);
     // reserve space for the JS stack
     // we allow it to grow to a bit more than m_maxJSStackSize, as we can overshoot due to ScopedValues
     // allocated outside of JIT'ed methods.
-    *jsStack = WTF::PageAllocation::allocate(m_maxJSStackSize + 256*1024, WTF::OSAllocator::JSVMStackPages,
-                                             /* writable */ true, /* executable */ false,
-                                             /* includesGuardPages */ true);
+    *jsStack = WTF::PageAllocation::allocate(
+                s_maxJSStackSize + 256*1024 + guardPages, WTF::OSAllocator::JSVMStackPages,
+                /* writable */ true, /* executable */ false, /* includesGuardPages */ true);
     jsStackBase = (Value *)jsStack->base();
 #ifdef V4_USE_VALGRIND
     VALGRIND_MAKE_MEM_UNDEFINED(jsStackBase, m_maxJSStackSize + 256*1024);
@@ -393,18 +411,9 @@ ExecutionEngine::ExecutionEngine(QJSEngine *jsEngine)
 
     jsStackTop = jsStackBase;
 
-    *gcStack = WTF::PageAllocation::allocate(m_maxGCStackSize, WTF::OSAllocator::JSVMStackPages,
-                                             /* writable */ true, /* executable */ false,
-                                             /* includesGuardPages */ true);
-
-    {
-        ok = false;
-        jitCallCountThreshold = qEnvironmentVariableIntValue("QV4_JIT_CALL_THRESHOLD", &ok);
-        if (!ok)
-            jitCallCountThreshold = 3;
-        if (qEnvironmentVariableIsSet("QV4_FORCE_INTERPRETER"))
-            jitCallCountThreshold = std::numeric_limits<int>::max();
-    }
+    *gcStack = WTF::PageAllocation::allocate(
+                s_maxGCStackSize + guardPages, WTF::OSAllocator::JSVMStackPages,
+                /* writable */ true, /* executable */ false, /* includesGuardPages */ true);
 
     exceptionValue = jsAlloca(1);
     *exceptionValue = Encode::undefined();
@@ -416,7 +425,7 @@ ExecutionEngine::ExecutionEngine(QJSEngine *jsEngine)
     jsSymbols = jsAlloca(NJSSymbols);
 
     // set up stack limits
-    jsStackLimit = jsStackBase + m_maxJSStackSize/sizeof(Value);
+    jsStackLimit = jsStackBase + s_maxJSStackSize/sizeof(Value);
 
     identifierTable = new IdentifierTable(this);
 
@@ -640,10 +649,8 @@ ExecutionEngine::ExecutionEngine(QJSEngine *jsEngine)
     jsObjects[VariantProto] = memoryManager->allocate<VariantPrototype>();
     Q_ASSERT(variantPrototype()->getPrototypeOf() == objectPrototype()->d());
 
-#if QT_CONFIG(qml_sequence_object)
     ic = newInternalClass(SequencePrototype::staticVTable(), SequencePrototype::defaultPrototype(this));
     jsObjects[SequenceProto] = ScopedValue(scope, memoryManager->allocObject<SequencePrototype>(ic->d()));
-#endif
 
     ExecutionContext *global = rootContext();
 
@@ -719,9 +726,7 @@ ExecutionEngine::ExecutionEngine(QJSEngine *jsEngine)
 
     static_cast<VariantPrototype *>(variantPrototype())->init();
 
-#if QT_CONFIG(qml_sequence_object)
     sequencePrototype()->cast<SequencePrototype>()->init();
-#endif
 
     jsObjects[WeakMap_Ctor] = memoryManager->allocate<WeakMapCtor>(global);
     jsObjects[WeakMapProto] = memoryManager->allocate<WeakMapPrototype>();
@@ -863,18 +868,6 @@ ExecutionEngine::ExecutionEngine(QJSEngine *jsEngine)
     functionPrototype()->insertMember(id_caller(), pd, Attr_Accessor|Attr_ReadOnly_ButConfigurable);
     functionPrototype()->insertMember(id_arguments(), pd, Attr_Accessor|Attr_ReadOnly_ButConfigurable);
 
-    qMetaTypeId<QJSValue>();
-    qMetaTypeId<QList<int> >();
-
-    if (!QMetaType::hasRegisteredConverterFunction<QJSValue, QVariantMap>())
-        QMetaType::registerConverter<QJSValue, QVariantMap>(convertJSValueToVariantType<QVariantMap>);
-    if (!QMetaType::hasRegisteredConverterFunction<QJSValue, QVariantList>())
-        QMetaType::registerConverter<QJSValue, QVariantList>(convertJSValueToVariantType<QVariantList>);
-    if (!QMetaType::hasRegisteredConverterFunction<QJSValue, QStringList>())
-        QMetaType::registerConverter<QJSValue, QStringList>(convertJSValueToVariantType<QStringList>);
-    if (!QMetaType::hasRegisteredConverterFunction<QJSValue, QSequentialIterable>())
-        QMetaType::registerConverter<QJSValue, QSequentialIterable>(jsvalueToSequence);
-
     QV4::QObjectWrapper::initializeBindings(this);
 
     m_delayedCallQueue.init(this);
@@ -962,13 +955,13 @@ Heap::Object *ExecutionEngine::newObject(Heap::InternalClass *internalClass)
 
 Heap::String *ExecutionEngine::newString(const QString &s)
 {
-    return memoryManager->allocWithStringData<String>(s.length() * sizeof(QChar), s);
+    return memoryManager->allocWithStringData<String>(s.size() * sizeof(QChar), s);
 }
 
 Heap::String *ExecutionEngine::newIdentifier(const QString &text)
 {
     Scope scope(this);
-    ScopedString s(scope, memoryManager->allocWithStringData<String>(text.length() * sizeof(QChar), text));
+    ScopedString s(scope, memoryManager->allocWithStringData<String>(text.size() * sizeof(QChar), text));
     s->toPropertyKey();
     return s->d();
 }
@@ -1517,15 +1510,14 @@ static QVariant toVariant(QV4::ExecutionEngine *e, const QV4::Value &value, QMet
 {
     Q_ASSERT (!value.isEmpty());
     QV4::Scope scope(e);
-    int typeHint = metaType.id();
 
     if (const QV4::VariantObject *v = value.as<QV4::VariantObject>())
         return v->d()->data();
 
-    if (typeHint == QMetaType::Bool)
+    if (metaType == QMetaType::fromType<bool>())
         return QVariant(value.toBoolean());
 
-    if (typeHint == QMetaType::QJsonValue)
+    if (metaType == QMetaType::fromType<QJsonValue>())
         return QVariant::fromValue(QV4::JsonObject::toJsonValue(value));
 
     if (metaType == QMetaType::fromType<QJSValue>())
@@ -1533,7 +1525,7 @@ static QVariant toVariant(QV4::ExecutionEngine *e, const QV4::Value &value, QMet
 
     if (value.as<QV4::Object>()) {
         QV4::ScopedObject object(scope, value);
-        if (typeHint == QMetaType::QJsonObject
+        if (metaType == QMetaType::fromType<QJsonObject>()
                    && !value.as<ArrayObject>() && !value.as<FunctionObject>()) {
             return QVariant::fromValue(QV4::JsonObject::toJsonObject(object));
         } else if (QV4::QObjectWrapper *wrapper = object->as<QV4::QObjectWrapper>()) {
@@ -1546,16 +1538,14 @@ static QVariant toVariant(QV4::ExecutionEngine *e, const QV4::Value &value, QMet
             return v->toVariant();
         } else if (QV4::QmlListWrapper *l = object->as<QV4::QmlListWrapper>()) {
             return l->toVariant();
-#if QT_CONFIG(qml_sequence_object)
-        } else if (object->isListType()) {
-            return QV4::SequencePrototype::toVariant(object);
-#endif
+        } else if (QV4::Sequence *s = object->as<QV4::Sequence>()) {
+            return QV4::SequencePrototype::toVariant(s);
         }
     }
 
     if (value.as<ArrayObject>()) {
         QV4::ScopedArrayObject a(scope, value);
-        if (typeHint == qMetaTypeId<QList<QObject *> >()) {
+        if (metaType == QMetaType::fromType<QList<QObject *>>()) {
             QList<QObject *> list;
             uint length = a->getLength();
             QV4::Scoped<QV4::QObjectWrapper> qobjectWrapper(scope);
@@ -1569,17 +1559,16 @@ static QVariant toVariant(QV4::ExecutionEngine *e, const QV4::Value &value, QMet
             }
 
             return QVariant::fromValue<QList<QObject*> >(list);
-        } else if (typeHint == QMetaType::QJsonArray) {
+        } else if (metaType == QMetaType::fromType<QJsonArray>()) {
             return QVariant::fromValue(QV4::JsonObject::toJsonArray(a));
         }
 
         QVariant retn;
-#if QT_CONFIG(qml_sequence_object)
         bool succeeded = false;
-        retn = QV4::SequencePrototype::toVariant(value, typeHint, &succeeded);
+        retn = QV4::SequencePrototype::toVariant(value, metaType, &succeeded);
         if (succeeded)
             return retn;
-#endif
+
         if (metaType.isValid()) {
             retn = QVariant(metaType, nullptr);
             auto retnAsIterable = retn.value<QSequentialIterable>();
@@ -1637,7 +1626,7 @@ static QVariant toVariant(QV4::ExecutionEngine *e, const QV4::Value &value, QMet
     if (String *s = value.stringValue()) {
         const QString &str = s->toQString();
         // QChars are stored as a strings
-        if (typeHint == QMetaType::QChar && str.size() == 1)
+        if (metaType == QMetaType::fromType<QChar>() && str.size() == 1)
             return str.at(0);
         return str;
     }
@@ -1648,7 +1637,7 @@ static QVariant toVariant(QV4::ExecutionEngine *e, const QV4::Value &value, QMet
     if (const QV4::DateObject *d = value.as<DateObject>()) {
         auto dt = d->toQDateTime();
         // See ExecutionEngine::metaTypeFromJS()'s handling of QMetaType::Date:
-        if (typeHint == QMetaType::QDate) {
+        if (metaType == QMetaType::fromType<QDate>()) {
             const auto utc = dt.toUTC();
             if (utc.date() != dt.date() && utc.addSecs(-1).date() == dt.date())
                 dt = utc;
@@ -1713,7 +1702,10 @@ static QVariant objectToVariant(QV4::ExecutionEngine *e, const QV4::Object *o, V
         }
 
         result = list;
-    } else if (!o->as<FunctionObject>()) {
+    } else if (const FunctionObject *f = o->as<FunctionObject>()) {
+        // If it's a FunctionObject, we can only save it as QJSValue.
+        result = QVariant::fromValue(QJSValuePrivate::fromReturnedValue(f->asReturnedValue()));
+    } else {
         QVariantMap map;
         QV4::Scope scope(e);
         QV4::ObjectIterator it(scope, o, QV4::ObjectIterator::EnumerableOnly);
@@ -1744,7 +1736,7 @@ static QVariant objectToVariant(QV4::ExecutionEngine *e, const QV4::Object *o, V
   exactly the same as \a metaType and \a ptr.
  */
 QV4::ReturnedValue ExecutionEngine::fromData(
-        const QMetaType &metaType, const void *ptr, const QVariant *variant)
+        QMetaType metaType, const void *ptr, const QVariant *variant)
 {
     const int type = metaType.id();
     if (type < QMetaType::User) {
@@ -1797,7 +1789,6 @@ QV4::ReturnedValue ExecutionEngine::fromData(
 #endif
             case QMetaType::QObjectStar:
                 return QV4::QObjectWrapper::wrap(this, *reinterpret_cast<QObject* const *>(ptr));
-#if QT_CONFIG(qml_sequence_object)
             case QMetaType::QStringList:
                 {
                 bool succeeded = false;
@@ -1808,7 +1799,6 @@ QV4::ReturnedValue ExecutionEngine::fromData(
                     return retn->asReturnedValue();
                 return QV4::Encode(newArrayObject(*reinterpret_cast<const QStringList *>(ptr)));
                 }
-#endif
             case QMetaType::QVariantList:
                 return variantListToJS(this, *reinterpret_cast<const QVariantList *>(ptr));
             case QMetaType::QVariantMap:
@@ -1858,32 +1848,23 @@ QV4::ReturnedValue ExecutionEngine::fromData(
             // directly against QList<QObject*>?
             const QList<QObject *> &list = *(const QList<QObject *>*)ptr;
             QV4::ScopedArrayObject a(scope, newArrayObject());
-            a->arrayReserve(list.count());
+            a->arrayReserve(list.size());
             QV4::ScopedValue v(scope);
-            for (int ii = 0; ii < list.count(); ++ii)
+            for (int ii = 0; ii < list.size(); ++ii)
                 a->arrayPut(ii, (v = QV4::QObjectWrapper::wrap(this, list.at(ii))));
-            a->setArrayLengthUnchecked(list.count());
+            a->setArrayLengthUnchecked(list.size());
             return a.asReturnedValue();
         } else if (auto flags = metaType.flags(); flags & QMetaType::PointerToQObject) {
-            QV4::ReturnedValue ret = QV4::QObjectWrapper::wrap(this, *reinterpret_cast<QObject* const *>(ptr));
-            if (!flags.testFlag(QMetaType::IsConst))
-                return ret;
-            QV4::ScopedValue v(scope, ret);
-            if (auto obj = v->as<Object>()) {
-                obj->setInternalClass(obj->internalClass()->cryopreserved());
-                return obj->asReturnedValue();
-            } else {
-                return ret;
-            }
+            if (flags.testFlag(QMetaType::IsConst))
+                return QV4::QObjectWrapper::wrapConst(this, *reinterpret_cast<QObject* const *>(ptr));
+            else
+                return QV4::QObjectWrapper::wrap(this, *reinterpret_cast<QObject* const *>(ptr));
         }
 
-#if QT_CONFIG(qml_sequence_object)
         bool succeeded = false;
         QV4::ScopedValue retn(scope, QV4::SequencePrototype::fromData(this, metaType, ptr, &succeeded));
         if (succeeded)
             return retn->asReturnedValue();
-#endif
-
 
         if (QMetaType::canConvert(metaType, QMetaType::fromType<QSequentialIterable>())) {
             QSequentialIterable lst;
@@ -1992,12 +1973,31 @@ QV4::ReturnedValue ExecutionEngine::metaTypeToJS(QMetaType type, const void *dat
 
 int ExecutionEngine::maxJSStackSize() const
 {
-    return m_maxJSStackSize;
+    return s_maxJSStackSize;
 }
 
 int ExecutionEngine::maxGCStackSize() const
 {
-    return m_maxGCStackSize;
+    return s_maxGCStackSize;
+}
+
+/*!
+    \internal
+    Returns \a length converted to int if its safe to
+    pass to \c Scope::alloc.
+    Otherwise it throws a RangeError, and returns 0.
+ */
+int ExecutionEngine::safeForAllocLength(qint64 len64)
+{
+    if (len64 < 0ll || len64 > qint64(std::numeric_limits<int>::max())) {
+        throwRangeError(QStringLiteral("Invalid array length."));
+        return 0;
+    }
+    if (len64 > qint64(this->jsStackLimit - this->jsStackTop)) {
+        throwRangeError(QStringLiteral("Array too large for apply()."));
+        return 0;
+    }
+    return len64;
 }
 
 ReturnedValue ExecutionEngine::global()
@@ -2112,27 +2112,30 @@ bool ExecutionEngine::diskCacheEnabled() const
     return (!disableDiskCache() && !debugger()) || forceDiskCache();
 }
 
-void ExecutionEngine::callInContext(Function *function, QObject *self,
-                                    QQmlRefPointer<QQmlContextData> ctxtdata, int argc, void **args,
+void ExecutionEngine::callInContext(QV4::Function *function, QObject *self,
+                                    QV4::ExecutionContext *context, int argc, void **args,
                                     QMetaType *types)
 {
-    QV4::Scope scope(this);
-    ExecutionContext *ctx = currentStackFrame ? currentContext() : scriptContext();
-    QV4::Scoped<QV4::QmlContext> qmlContext(scope, QV4::QmlContext::create(ctx, ctxtdata, self));
-    QV4::ScopedValue selfValue(scope, QV4::QObjectWrapper::wrap(this, self));
     if (!args) {
         Q_ASSERT(argc == 0);
         void *dummyArgs[] = { nullptr };
         QMetaType dummyTypes[] = { QMetaType::fromType<void>() };
-        function->call(selfValue, dummyArgs, dummyTypes, argc, qmlContext);
+        function->call(self, dummyArgs, dummyTypes, argc, context);
         return;
     }
-
-    if (!types) // both args and types must be present
-        return;
-
+    Q_ASSERT(types); // both args and types must be present
     // implicitly sets the return value, which is args[0]
-    function->call(selfValue, args, types, argc, qmlContext);
+    function->call(self, args, types, argc, context);
+}
+
+QV4::ReturnedValue ExecutionEngine::callInContext(QV4::Function *function, QObject *self,
+                                                  QV4::ExecutionContext *context, int argc,
+                                                  const QV4::Value *argv)
+{
+    QV4::Scope scope(this);
+    QV4::ScopedObject jsSelf(scope, QV4::QObjectWrapper::wrap(this, self));
+    Q_ASSERT(jsSelf);
+    return function->call(jsSelf, argv, argc, context);
 }
 
 void ExecutionEngine::initQmlGlobalObject()
@@ -2175,8 +2178,18 @@ void ExecutionEngine::createQtObject()
     QV4::Scope scope(this);
     QtObject *qtObject = new QtObject(this);
     QJSEngine::setObjectOwnership(qtObject, QJSEngine::JavaScriptOwnership);
-    QV4::ScopedObject qt(scope, QV4::QObjectWrapper::wrap(this, qtObject));
-    globalObject->defineDefaultProperty(QStringLiteral("Qt"), qt);
+
+    QV4::ScopedObject qtObjectWrapper(
+                scope, QV4::QObjectWrapper::wrap(this, qtObject));
+    QV4::ScopedObject qtNamespaceWrapper(
+                scope, QV4::QMetaObjectWrapper::create(this, &Qt::staticMetaObject));
+    QV4::ScopedObject qtObjectProtoWrapper(
+                scope, qtObjectWrapper->getPrototypeOf());
+
+    qtNamespaceWrapper->setPrototypeOf(qtObjectProtoWrapper);
+    qtObjectWrapper->setPrototypeOf(qtNamespaceWrapper);
+
+    globalObject->defineDefaultProperty(QStringLiteral("Qt"), qtObjectWrapper);
 }
 
 const QSet<QString> &ExecutionEngine::illegalNames() const
@@ -2192,7 +2205,7 @@ void ExecutionEngine::setQmlEngine(QQmlEngine *engine)
 
 static void freeze_recursive(QV4::ExecutionEngine *v4, QV4::Object *object)
 {
-    if (object->as<QV4::QObjectWrapper>() || object->internalClass()->isFrozen)
+    if (object->as<QV4::QObjectWrapper>() || object->internalClass()->isFrozen())
         return;
 
     QV4::Scope scope(v4);
@@ -2258,7 +2271,7 @@ int ExecutionEngine::consoleCountHelper(const QString &file, quint16 line, quint
 
 void ExecutionEngine::setExtensionData(int index, Deletable *data)
 {
-    if (m_extensionData.count() <= index)
+    if (m_extensionData.size() <= index)
         m_extensionData.resize(index + 1);
 
     if (m_extensionData.at(index))
@@ -2301,6 +2314,8 @@ bool ExecutionEngine::metaTypeFromJS(const Value &value, QMetaType metaType, voi
     case QMetaType::QByteArray:
         if (const ArrayBuffer *ab = value.as<ArrayBuffer>())
             *reinterpret_cast<QByteArray*>(data) = ab->asByteArray();
+        else if (const String *string = value.as<String>())
+            *reinterpret_cast<QByteArray*>(data) = string->toQString().toUtf8();
         else
             *reinterpret_cast<QByteArray*>(data) = QByteArray();
         return true;
@@ -2442,28 +2457,24 @@ bool ExecutionEngine::metaTypeFromJS(const Value &value, QMetaType metaType, voi
     ;
     }
 
-    {
-        if (metaType.flags() & QMetaType::IsEnumeration) {
-            *reinterpret_cast<int *>(data) = value.toInt32();
-            return true;
-        }
+    if (metaType.flags() & QMetaType::IsEnumeration) {
+        *reinterpret_cast<int *>(data) = value.toInt32();
+        return true;
+    }
 
-        if (metaType == QMetaType::fromType<QQmlListReference>()) {
-            if (const QV4::QmlListWrapper *wrapper = value.as<QV4::QmlListWrapper>()) {
-                *reinterpret_cast<QQmlListReference *>(data) = wrapper->toListReference();
-                return true;
-            }
+    if (metaType == QMetaType::fromType<QQmlListReference>()) {
+        if (const QV4::QmlListWrapper *wrapper = value.as<QV4::QmlListWrapper>()) {
+            *reinterpret_cast<QQmlListReference *>(data) = wrapper->toListReference();
+            return true;
         }
     }
 
-    {
-        if (const QQmlValueTypeWrapper *vtw = value.as<QQmlValueTypeWrapper>()) {
-            const QMetaType valueType = vtw->type();
-            if (valueType == metaType)
-                return vtw->toGadget(data);
-            if (QMetaType::canConvert(valueType, metaType))
-                return QMetaType::convert(valueType, vtw->d()->gadgetPtr(), metaType, data);
-        }
+    if (const QQmlValueTypeWrapper *vtw = value.as<QQmlValueTypeWrapper>()) {
+        const QMetaType valueType = vtw->type();
+        if (valueType == metaType)
+            return vtw->toGadget(data);
+        if (QMetaType::canConvert(valueType, metaType))
+            return QMetaType::convert(valueType, vtw->d()->gadgetPtr(), metaType, data);
     }
 
     // Try to use magic; for compatibility with qjsvalue_cast.
@@ -2519,10 +2530,19 @@ bool ExecutionEngine::metaTypeFromJS(const Value &value, QMetaType metaType, voi
     } else if (!isPointer) {
         QVariant val;
         if (QQml_valueTypeProvider()->createValueType(
-                    metaType.id(), QJSValuePrivate::fromReturnedValue(value.asReturnedValue()), val)) {
+                    metaType, QJSValuePrivate::fromReturnedValue(value.asReturnedValue()), val)) {
             Q_ASSERT(val.metaType() == metaType);
             metaType.destruct(data);
             metaType.construct(data, val.constData());
+            return true;
+        }
+    }
+
+    if (const QV4::Sequence *sequence = value.as<Sequence>()) {
+        const QVariant result = QV4::SequencePrototype::toVariant(sequence);
+        if (result.metaType() == metaType) {
+            metaType.destruct(data);
+            metaType.construct(data, result.constData());
             return true;
         }
     }

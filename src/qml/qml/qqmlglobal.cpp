@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQml module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include <private/qqmlglobal_p.h>
 #include <QtQml/private/qqmlmetatype_p.h>
@@ -48,21 +12,20 @@
 
 QT_BEGIN_NAMESPACE
 
-bool QQmlValueTypeProvider::initValueType(int type, QVariant& dst)
+bool QQmlValueTypeProvider::initValueType(QMetaType metaType, QVariant &dst)
 {
-    const QMetaType metaType(type);
     if (!metaType.isValid())
         return false;
-    dst = QVariant(QMetaType(type));
+    dst = QVariant(metaType);
     return true;
 }
 
-bool QQmlValueTypeProvider::createValueType(int type, const QJSValue &s, QVariant &data)
+bool QQmlValueTypeProvider::createValueType(QMetaType metaType, const QJSValue &s, QVariant &data)
 {
-    const QQmlType qmlType = QQmlMetaType::qmlType(type, QQmlMetaType::TypeIdCategory::MetaType);
+    const QQmlType qmlType = QQmlMetaType::qmlType(metaType);
     if (auto valueTypeFunction = qmlType.createValueTypeFunction()) {
         QVariant result = valueTypeFunction(s);
-        if (result.userType() == type) {
+        if (result.metaType() == metaType) {
             data = std::move(result);
             return true;
         }
@@ -71,32 +34,34 @@ bool QQmlValueTypeProvider::createValueType(int type, const QJSValue &s, QVarian
     return false;
 }
 
-bool QQmlValueTypeProvider::equalValueType(int type, const void *lhs, const QVariant& rhs)
+bool QQmlValueTypeProvider::equalValueType(QMetaType metaType, const void *lhs, const QVariant &rhs)
 {
     Q_ASSERT(lhs);
-    return QMetaType(type).equals(lhs, rhs.constData());
+    return metaType.equals(lhs, rhs.constData());
 }
 
-bool QQmlValueTypeProvider::readValueType(const QVariant& src, void *dst, int type)
+bool QQmlValueTypeProvider::readValueType(QMetaType metaType, const QVariant  &src, void *dst)
 {
     Q_ASSERT(dst);
-    const QMetaType dstType(type);
-    if (!dstType.isValid() || (src.metaType() == dstType && dstType.equals(src.constData(), dst)))
+    if (!metaType.isValid()
+            || (src.metaType() == metaType && metaType.equals(src.constData(), dst))) {
         return false;
+    }
 
-    dstType.destruct(dst);
-    dstType.construct(dst, src.metaType() == dstType ? src.constData() : nullptr);
+    metaType.destruct(dst);
+    metaType.construct(dst, src.metaType() == metaType ? src.constData() : nullptr);
     return true;
 }
 
-bool QQmlValueTypeProvider::writeValueType(int type, const void *src, QVariant& dst)
+bool QQmlValueTypeProvider::writeValueType(QMetaType metaType, const void *src, QVariant &dst)
 {
     Q_ASSERT(src);
-    const QMetaType srcType(type);
-    if (!srcType.isValid() || (dst.metaType() == srcType && srcType.equals(src, dst.constData())))
+    if (!metaType.isValid()
+            || (dst.metaType() == metaType && metaType.equals(src, dst.constData()))) {
         return false;
+    }
 
-    dst = QVariant(srcType, src);
+    dst = QVariant(metaType, src);
     return true;
 }
 

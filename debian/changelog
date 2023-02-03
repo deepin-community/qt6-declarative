@@ -1,3 +1,9 @@
+qt6-declarative (6.4.2-1+dde) UNRELEASED; urgency=medium
+
+  * New upstream version 6.4.2.
+
+ -- Lu YaNing <luyaning@uniontech.com>  Fri, 03 Feb 2023 17:30:08 +0800
+
 qt6-declarative (6.2.4.1-1+dde) unstable; urgency=medium
 
   * Update symbols.

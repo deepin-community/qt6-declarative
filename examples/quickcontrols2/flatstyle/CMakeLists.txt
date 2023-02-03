@@ -1,34 +1,38 @@
-# Generated from flatstyle.pro.
-
 cmake_minimum_required(VERSION 3.16)
 project(flatstyle LANGUAGES CXX)
 
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
-
 set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTORCC ON)
-set(CMAKE_AUTOUIC ON)
 
 if(NOT DEFINED INSTALL_EXAMPLESDIR)
-  set(INSTALL_EXAMPLESDIR "examples")
+    set(INSTALL_EXAMPLESDIR "examples")
 endif()
 
 set(INSTALL_EXAMPLEDIR "${INSTALL_EXAMPLESDIR}/quickcontrols2/flatstyle")
 
-find_package(Qt6 COMPONENTS Core)
-find_package(Qt6 COMPONENTS Gui)
-find_package(Qt6 COMPONENTS Quick)
-find_package(Qt6 COMPONENTS QuickControls2)
-find_package(Qt6 COMPONENTS Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Quick QuickControls2 Widgets)
 
-qt_add_executable(flatstyle
+qt_add_executable(flatstyleexample WIN32 MACOSX_BUNDLE
     main.cpp
 )
-set_target_properties(flatstyle PROPERTIES
-    WIN32_EXECUTABLE TRUE
-    MACOSX_BUNDLE TRUE
+
+qt_add_qml_module(flatstyleexample
+    URI flatstyle
+    VERSION 1.0
+    NO_RESOURCE_TARGET_PATH
+    QML_FILES
+        "MainForm.ui.qml"
+        "flatstyle.qml"
+        "imports/Flat/Button.qml"
+        "imports/Flat/CheckBox.qml"
+        "imports/Flat/Switch.qml"
+        "imports/Theme/Theme.qml"
+    RESOURCES
+        "imports/Flat/qmldir"
+        "imports/Theme/qmldir"
+        "qtquickcontrols2.conf"
 )
-target_link_libraries(flatstyle PUBLIC
+
+target_link_libraries(flatstyleexample PUBLIC
     Qt::Core
     Qt::Gui
     Qt::Quick
@@ -36,28 +40,7 @@ target_link_libraries(flatstyle PUBLIC
     Qt::Widgets
 )
 
-
-# Resources:
-set(qmake_immediate_resource_files
-    "MainForm.ui.qml"
-    "flatstyle.qml"
-    "imports/Flat/Button.qml"
-    "imports/Flat/CheckBox.qml"
-    "imports/Flat/Switch.qml"
-    "imports/Flat/qmldir"
-    "imports/Theme/Theme.qml"
-    "imports/Theme/qmldir"
-    "qtquickcontrols2.conf"
-)
-
-qt6_add_resources(flatstyle "qmake_immediate"
-    PREFIX
-        "/"
-    FILES
-        ${qmake_immediate_resource_files}
-)
-
-install(TARGETS flatstyle
+install(TARGETS flatstyleexample
     RUNTIME DESTINATION "${INSTALL_EXAMPLEDIR}"
     BUNDLE DESTINATION "${INSTALL_EXAMPLEDIR}"
     LIBRARY DESTINATION "${INSTALL_EXAMPLEDIR}"

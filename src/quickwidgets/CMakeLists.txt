@@ -30,18 +30,11 @@ qt_internal_add_module(QuickWidgets
         Qt::QmlPrivate
         Qt::QuickPrivate
         Qt::WidgetsPrivate
+    GENERATE_CPP_EXPORTS
 )
 
 qt_internal_extend_target(QuickWidgets CONDITION QT_FEATURE_accessibility
     SOURCES
         qaccessiblequickwidget.cpp qaccessiblequickwidget_p.h
         qaccessiblequickwidgetfactory.cpp qaccessiblequickwidgetfactory_p.h
-)
-
-## Scopes:
-#####################################################################
-
-qt_internal_extend_target(QuickWidgets CONDITION QT_FEATURE_opengl
-    LIBRARIES
-        Qt::OpenGLPrivate
 )

@@ -1,38 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2021 The Qt Company Ltd.
-** Contact: http://www.qt.io/licensing/
-**
-** This file is part of the Qt Quick Dialogs module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL3$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see http://www.qt.io/terms-conditions. For further
-** information use the contact form at http://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPLv3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or later as published by the Free
-** Software Foundation and appearing in the file LICENSE.GPL included in
-** the packaging of this file. Please review the following information to
-** ensure the GNU General Public License version 2.0 requirements will be
-** met: http://www.gnu.org/licenses/gpl-2.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2021 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qquickfontdialogimpl_p.h"
 #include "qquickfontdialogimpl_p_p.h"
@@ -125,6 +92,11 @@ void QQuickFontDialogImpl::setCurrentFont(const QFont &font, bool selectInListVi
     QQuickFontDialogImplAttached *attached = d->attachedOrWarn();
     if (!attached)
         return;
+
+    if (!attached->familyListView()->model().isValid()) {
+        const QSignalBlocker blocker(attached->sampleEdit());
+        attached->updateFamilies();
+    }
 
     attached->selectFontInListViews(font);
 }
@@ -560,7 +532,7 @@ static int findStyleInModel(const QString &selectedStyle, const QStringList &mod
         auto styleClass = classifyStyleFallback(selectedStyle);
 
         if (styleClass != StyleClass::Unknown)
-            for (int i = 0; i < model.count(); ++i)
+            for (int i = 0; i < model.size(); ++i)
                 if (classifyStyleFallback(model.at(i)) == styleClass)
                     return i;
     }
@@ -725,6 +697,9 @@ void QQuickFontDialogImplAttached::_q_writingSystemChanged(int index)
 
 void QQuickFontDialogImplAttached::searchListView(const QString &s, QQuickListView *listView)
 {
+    if (s.isEmpty())
+        return;
+
     const QStringList model = listView->model().toStringList();
 
     bool redo = false;
@@ -732,7 +707,7 @@ void QQuickFontDialogImplAttached::searchListView(const QString &s, QQuickListVi
     do {
         m_search.append(s);
 
-        for (int i = 0; i < model.count(); ++i) {
+        for (int i = 0; i < model.size(); ++i) {
             if (model.at(i).startsWith(m_search, Qt::CaseInsensitive)) {
                 listView->setCurrentIndex(i);
                 return;
@@ -799,7 +774,7 @@ void QQuickFontDialogImplAttached::_q_sizeEdited()
         auto model = sizeListView()->model().toStringList();
 
         int i;
-        for (i = 0; i < model.count() - 1; ++i) {
+        for (i = 0; i < model.size() - 1; ++i) {
             if (model.at(i).toInt() >= size)
                 break;
         }
@@ -840,9 +815,6 @@ void QQuickFontDialogImplAttachedPrivate::currentFontChanged(const QFont &font)
     }
 
     fontDialogImpl->setCurrentFont(font);
-
-    if (fontDialogImpl->options()->testOption(QFontDialogOptions::NoButtons))
-        emit fontDialogImpl->fontSelected(font);
 }
 
 void QQuickFontDialogImplAttached::selectFontInListViews(const QFont &font)
@@ -861,3 +833,5 @@ void QQuickFontDialogImplAttached::selectFontInListViews(const QFont &font)
 }
 
 QT_END_NAMESPACE
+
+#include "moc_qquickfontdialogimpl_p.cpp"

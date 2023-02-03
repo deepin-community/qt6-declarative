@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQml module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qqmllistwrapper_p.h"
 #include <private/qqmllist_p.h>
@@ -103,8 +67,7 @@ QVariant QmlListWrapper::toVariant() const
 QQmlListReference QmlListWrapper::toListReference() const
 {
     Heap::QmlListWrapper *wrapper = d();
-    return QQmlListReferencePrivate::init(
-                wrapper->property(), QMetaType(wrapper->propertyType), engine()->qmlEngine());
+    return QQmlListReferencePrivate::init(wrapper->property(), QMetaType(wrapper->propertyType));
 }
 
 
@@ -155,6 +118,11 @@ bool QmlListWrapper::virtualPut(Managed *m, PropertyKey id, const Value &value, 
         const int count = prop->count(prop);
         if (count < 0 || index >= uint(count))
             return false;
+
+        if (value.isNull()) {
+            prop->replace(prop, index, nullptr);
+            return true;
+        }
 
         QV4::Scope scope(v4);
         QV4::ScopedObject so(scope, value.toObject(scope.engine));
@@ -251,15 +219,21 @@ ReturnedValue PropertyListPrototype::method_push(const FunctionObject *b, const 
     QmlListWrapper *w = instance->as<QmlListWrapper>();
     if (!w)
         RETURN_UNDEFINED();
-    if (!w->d()->property().append)
+
+    QQmlListProperty<QObject> *property = &w->d()->property();
+    if (!property->append)
         THROW_GENERIC_ERROR("List doesn't define an Append function");
 
     QV4::ScopedObject so(scope);
     for (int i = 0, ei = argc; i < ei; ++i)
     {
-        so = argv[i].toObject(scope.engine);
-        if (QV4::QObjectWrapper *wrapper = so->as<QV4::QObjectWrapper>())
-            w->d()->property().append(&w->d()->property(), wrapper->object() );
+        if (argv[i].isNull()) {
+            property->append(property, nullptr);
+        } else {
+            so = argv[i].toObject(scope.engine);
+            if (QV4::QObjectWrapper *wrapper = so->as<QV4::QObjectWrapper>())
+                property->append(property, wrapper->object() );
+        }
     }
     return Encode::undefined();
 }

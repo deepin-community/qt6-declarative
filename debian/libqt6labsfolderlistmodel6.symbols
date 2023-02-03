@@ -1,6 +1,6 @@
-# SymbolsHelper-Confirmed: 6.2. amd64 arm64
+# SymbolsHelper-Confirmed: 6.4.2 amd64 arm64
 libQt6LabsFolderListModel.so.6 libqt6labsfolderlistmodel6 #MINVER#
-| libqt6labsfolderlistmodel6 #MINVER#, qt6-declarative-abi (= 6.2.4)
+| libqt6labsfolderlistmodel6 #MINVER#, qt6-declarative-abi (= 6.4.2)
 * Build-Depends-Packages: qt6-declarative-dev, qt6-declarative-private-dev
  _Z42qml_register_types_Qt_labs_folderlistmodelv@Base 6.2.0
  _ZN21QQuickFolderListModel10classBeginEv@Base 6.2.0
@@ -28,7 +28,6 @@ libQt6LabsFolderListModel.so.6 libqt6labsfolderlistmodel6 #MINVER#
  _ZN21QQuickFolderListModelD0Ev@Base 6.2.0
  _ZN21QQuickFolderListModelD1Ev@Base 6.2.0
  _ZN21QQuickFolderListModelD2Ev@Base 6.2.0
- _ZN7QString5clearEv@Base 6.2.
  _ZNK21QQuickFolderListModel10metaObjectEv@Base 6.2.0
  _ZNK21QQuickFolderListModel10rootFolderEv@Base 6.2.0
  _ZNK21QQuickFolderListModel10showHiddenEv@Base 6.2.0
@@ -58,28 +57,6 @@ libQt6LabsFolderListModel.so.6 libqt6labsfolderlistmodel6 #MINVER#
  _ZTI21QQuickFolderListModel@Base 6.2.0
  _ZTS21QQuickFolderListModel@Base 6.2.0
  _ZTV21QQuickFolderListModel@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI4QUrlE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI4QUrlE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI4QUrlE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI4QUrlE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI5QListI7QStringEE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES7_S8_SA_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI5QListI7QStringEE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS8_E_4_FUNES7_S8_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI5QListI7QStringEE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES7_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI5QListI7QStringEE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES7_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QStringE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QStringE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QStringE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QStringE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI8QVariantE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI8QVariantE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI8QVariantE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI8QVariantE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIbE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES4_S5_S7_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIbE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS5_E_4_FUNES4_S5_S5_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIbE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES4_S5_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIiE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES4_S5_S7_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIiE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS5_E_4_FUNES4_S5_S5_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIiE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES4_S5_@Base 6.2.0
  (c++)"non-virtual thunk to QQuickFolderListModel::classBegin()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickFolderListModel::componentComplete()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickFolderListModel::~QQuickFolderListModel()@Base" 6.2.0

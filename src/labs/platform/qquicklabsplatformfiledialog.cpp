@@ -1,44 +1,13 @@
-/****************************************************************************
-**
-** Copyright (C) 2017 The Qt Company Ltd.
-** Contact: http://www.qt.io/licensing/
-**
-** This file is part of the Qt Labs Platform module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL3$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see http://www.qt.io/terms-conditions. For further
-** information use the contact form at http://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPLv3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or later as published by the Free
-** Software Foundation and appearing in the file LICENSE.GPL included in
-** the packaging of this file. Please review the following information to
-** ensure the GNU General Public License version 2.0 requirements will be
-** met: http://www.gnu.org/licenses/gpl-2.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2017 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qquicklabsplatformfiledialog_p.h"
 
 #include <QtCore/qlist.h>
 
 QT_BEGIN_NAMESPACE
+
+using namespace Qt::StringLiterals;
 
 /*!
     \qmltype FileDialog
@@ -339,7 +308,7 @@ void QQuickLabsPlatformFileDialog::setNameFilters(const QStringList &filters)
     m_options->setNameFilters(filters);
     if (m_selectedNameFilter) {
         int index = m_selectedNameFilter->index();
-        if (index < 0 || index >= filters.count())
+        if (index < 0 || index >= filters.size())
             index = 0;
         m_selectedNameFilter->update(filters.value(index));
     }
@@ -551,8 +520,13 @@ QUrl QQuickLabsPlatformFileDialog::addDefaultSuffix(const QUrl &file) const
     QUrl url = file;
     const QString path = url.path();
     const QString suffix = m_options->defaultSuffix();
-    if (!suffix.isEmpty() && !path.endsWith(QLatin1Char('/')) && path.lastIndexOf(QLatin1Char('.')) == -1)
+    // Urls with "content" scheme do not require suffixes. Such schemes are
+    // used on Android.
+    const bool isContentScheme = url.scheme() == u"content"_s;
+    if (!isContentScheme && !suffix.isEmpty() && !path.endsWith(QLatin1Char('/'))
+        && path.lastIndexOf(QLatin1Char('.')) == -1) {
         url.setPath(path + QLatin1Char('.') + suffix);
+    }
     return url;
 }
 
@@ -660,3 +634,5 @@ QString QQuickLabsPlatformFileNameFilter::nameFilter(int index) const
 }
 
 QT_END_NAMESPACE
+
+#include "moc_qquicklabsplatformfiledialog_p.cpp"

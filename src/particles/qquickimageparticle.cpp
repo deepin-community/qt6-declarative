@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2019 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQuick module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2021 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include <QtQuick/private/qsgcontext_p.h>
 #include <private/qsgadaptationlayer_p.h>
@@ -52,15 +16,15 @@
 #include <QtQuick/private/qsgplaintexture_p.h>
 #include <private/qqmlglobal_p.h>
 #include <QtQml/qqmlinfo.h>
-#include <cmath>
+#include <QtCore/QtMath>
 #include <QtGui/private/qrhi_p.h>
+
+#include <cmath>
 
 QT_BEGIN_NAMESPACE
 
 // Must match the shader code
 #define UNIFORM_ARRAY_SIZE 64
-
-const qreal CONV = 0.017453292519943295;
 
 class ImageMaterialData
 {
@@ -1017,7 +981,7 @@ void QQuickImageParticle::resetColor()
 {
     m_explicitColor = false;
     for (auto groupId : groupIds()) {
-        for (QQuickParticleData* d : qAsConst(m_system->groupData[groupId]->data)) {
+        for (QQuickParticleData* d : std::as_const(m_system->groupData[groupId]->data)) {
             if (d->colorOwner == this) {
                 d->colorOwner = nullptr;
             }
@@ -1036,7 +1000,7 @@ void QQuickImageParticle::resetRotation()
 {
     m_explicitRotation = false;
     for (auto groupId : groupIds()) {
-        for (QQuickParticleData* d : qAsConst(m_system->groupData[groupId]->data)) {
+        for (QQuickParticleData* d : std::as_const(m_system->groupData[groupId]->data)) {
             if (d->rotationOwner == this) {
                 d->rotationOwner = nullptr;
             }
@@ -1053,7 +1017,7 @@ void QQuickImageParticle::resetDeformation()
 {
     m_explicitDeformation = false;
     for (auto groupId : groupIds()) {
-        for (QQuickParticleData* d : qAsConst(m_system->groupData[groupId]->data)) {
+        for (QQuickParticleData* d : std::as_const(m_system->groupData[groupId]->data)) {
             if (d->deformationOwner == this) {
                 d->deformationOwner = nullptr;
             }
@@ -1078,7 +1042,7 @@ void QQuickImageParticle::createEngine()
 {
     if (m_spriteEngine)
         delete m_spriteEngine;
-    if (m_sprites.count()) {
+    if (m_sprites.size()) {
         m_spriteEngine = new QQuickSpriteEngine(m_sprites, this);
         connect(m_spriteEngine, SIGNAL(stateChanged(int)),
                 this, SLOT(spriteAdvance(int)), Qt::DirectConnection);
@@ -1280,7 +1244,7 @@ void QQuickImageParticle::finishBuildParticleNodes(QSGNode** node)
 
     m_debugMode = m_system->m_debugMode;
 
-    if (m_sprites.count() || m_bypassOptimizations) {
+    if (m_sprites.size() || m_bypassOptimizations) {
         perfLevel = Sprites;
     } else if (m_colorTable || m_sizeTable || m_opacityTable) {
         perfLevel = Tabled;
@@ -1297,7 +1261,7 @@ void QQuickImageParticle::finishBuildParticleNodes(QSGNode** node)
 
     for (auto groupId : groupIds()) {
         //For sharing higher levels, need to have highest used so it renders
-        for (QQuickParticlePainter* p : qAsConst(m_system->groupData[groupId]->painters)) {
+        for (QQuickParticlePainter* p : std::as_const(m_system->groupData[groupId]->painters)) {
             QQuickImageParticle* other = qobject_cast<QQuickImageParticle*>(p);
             if (other){
                 if (other->perfLevel > perfLevel) {
@@ -1652,7 +1616,7 @@ void QQuickImageParticle::spritesUpdate(qreal time)
     ImageMaterialData *state = getState(m_material);
     // Sprite progression handled CPU side, so as to have per-frame control.
     for (auto groupId : groupIds()) {
-        for (QQuickParticleData* mainDatum : qAsConst(m_system->groupData[groupId]->data)) {
+        for (QQuickParticleData* mainDatum : std::as_const(m_system->groupData[groupId]->data)) {
             QSGGeometryNode *node = m_nodes[groupId];
             if (!node)
                 continue;
@@ -1660,7 +1624,7 @@ void QQuickImageParticle::spritesUpdate(qreal time)
             //      This is particularly important for cut-up sprites.
             QQuickParticleData* datum = (mainDatum->animationOwner == this ? mainDatum : getShadowDatum(mainDatum));
             int spriteIdx = 0;
-            for (int i = 0; i<m_startsIdx.count(); i++) {
+            for (int i = 0; i<m_startsIdx.size(); i++) {
                 if (m_startsIdx[i].second == groupId){
                     spriteIdx = m_startsIdx[i].first + datum->index;
                     break;
@@ -1713,12 +1677,12 @@ void QQuickImageParticle::spritesUpdate(qreal time)
 
 void QQuickImageParticle::spriteAdvance(int spriteIdx)
 {
-    if (!m_startsIdx.count())//Probably overly defensive
+    if (!m_startsIdx.size())//Probably overly defensive
         return;
 
     int gIdx = -1;
     int i;
-    for (i = 0; i<m_startsIdx.count(); i++) {
+    for (i = 0; i<m_startsIdx.size(); i++) {
         if (spriteIdx < m_startsIdx[i].first) {
             gIdx = m_startsIdx[i-1].second;
             break;
@@ -1825,10 +1789,13 @@ void QQuickImageParticle::initialize(int gIdx, int pIdx)
             if (m_explicitRotation){
                 if (!datum->rotationOwner)
                     datum->rotationOwner = this;
-                rotation =
-                        (m_rotation + (m_rotationVariation - 2*QRandomGenerator::global()->bounded(m_rotationVariation)) ) * CONV;
-                rotationVelocity =
-                        (m_rotationVelocity + (m_rotationVelocityVariation - 2*QRandomGenerator::global()->bounded(m_rotationVelocityVariation)) ) * CONV;
+                rotation = qDegreesToRadians(
+                    m_rotation + (m_rotationVariation
+                                  - 2 * QRandomGenerator::global()->bounded(m_rotationVariation)));
+                rotationVelocity = qDegreesToRadians(
+                    m_rotationVelocity
+                    + (m_rotationVelocityVariation
+                       - 2 * QRandomGenerator::global()->bounded(m_rotationVelocityVariation)));
                 autoRotate = m_autoRotation ? 1 : 0;
                 if (datum->rotationOwner == this) {
                     datum->rotation = rotation;
@@ -1850,10 +1817,11 @@ void QQuickImageParticle::initialize(int gIdx, int pIdx)
             if (m_explicitColor) {
                 if (!datum->colorOwner)
                     datum->colorOwner = this;
-                color.r = m_color.red() * (1 - redVariation) + QRandomGenerator::global()->bounded(256) * redVariation;
-                color.g = m_color.green() * (1 - greenVariation) + QRandomGenerator::global()->bounded(256) * greenVariation;
-                color.b = m_color.blue() * (1 - blueVariation) + QRandomGenerator::global()->bounded(256) * blueVariation;
-                color.a = m_alpha * m_color.alpha() * (1 - m_alphaVariation) + QRandomGenerator::global()->bounded(256) * m_alphaVariation;
+                const auto rgbColor = m_color.toRgb();
+                color.r = rgbColor.red() * (1 - redVariation) + QRandomGenerator::global()->bounded(256) * redVariation;
+                color.g = rgbColor.green() * (1 - greenVariation) + QRandomGenerator::global()->bounded(256) * greenVariation;
+                color.b = rgbColor.blue() * (1 - blueVariation) + QRandomGenerator::global()->bounded(256) * blueVariation;
+                color.a = m_alpha * rgbColor.alpha() * (1 - m_alphaVariation) + QRandomGenerator::global()->bounded(256) * m_alphaVariation;
                 if (datum->colorOwner == this)
                     datum->color = color;
                 else

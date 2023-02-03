@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQuick module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qquicktextnodeengine_p.h"
 
@@ -57,6 +21,8 @@
 #include <private/qquickitem_p.h>
 
 QT_BEGIN_NAMESPACE
+
+Q_DECLARE_LOGGING_CATEGORY(lcSgText)
 
 QQuickTextNodeEngine::BinaryTreeNodeKey::BinaryTreeNodeKey(BinaryTreeNode *node)
     : fontEngine(QRawFontPrivate::get(node->glyphRun.rawFont())->fontEngine)
@@ -706,7 +672,8 @@ void QQuickTextNodeEngine::addFrameDecorations(QTextDocument *document, QTextFra
         return;
 
     addBorder(boundingRect.adjusted(frameFormat.leftMargin(), frameFormat.topMargin(),
-                                    -frameFormat.rightMargin(), -frameFormat.bottomMargin()),
+                                    -frameFormat.rightMargin() - borderWidth,
+                                    -frameFormat.bottomMargin() - borderWidth),
               borderWidth, borderStyle, borderBrush);
     if (table != nullptr) {
         int rows = table->rows();
@@ -979,11 +946,21 @@ void QQuickTextNodeEngine::mergeFormats(QTextLayout *textLayout, QVarLengthArray
 
 }
 
-void QQuickTextNodeEngine::addTextBlock(QTextDocument *textDocument, const QTextBlock &block, const QPointF &position, const QColor &textColor, const QColor &anchorColor, int selectionStart, int selectionEnd)
+/*!
+    \internal
+    Adds the \a block from the \a textDocument at \a position if its
+    \l {QAbstractTextDocumentLayout::blockBoundingRect()}{bounding rect}
+    intersects the \a viewport, or if \c viewport is not valid
+    (i.e. use a default-constructed QRectF to skip the viewport check).
+
+    \sa QQuickItem::clipRect()
+ */
+void QQuickTextNodeEngine::addTextBlock(QTextDocument *textDocument, const QTextBlock &block, const QPointF &position,
+                                        const QColor &textColor, const QColor &anchorColor, int selectionStart, int selectionEnd, const QRectF &viewport)
 {
     Q_ASSERT(textDocument);
 #if QT_CONFIG(im)
-    int preeditLength = block.isValid() ? block.layout()->preeditAreaText().length() : 0;
+    int preeditLength = block.isValid() ? block.layout()->preeditAreaText().size() : 0;
     int preeditPosition = block.isValid() ? block.layout()->preeditAreaPosition() : -1;
 #endif
 
@@ -994,6 +971,11 @@ void QQuickTextNodeEngine::addTextBlock(QTextDocument *textDocument, const QText
 
     const QTextCharFormat charFormat = block.charFormat();
     const QRectF blockBoundingRect = textDocument->documentLayout()->blockBoundingRect(block).translated(position);
+    if (viewport.isValid()) {
+        if (!blockBoundingRect.intersects(viewport))
+            return;
+        qCDebug(lcSgText) << "adding block with length" << block.length() << ':' << blockBoundingRect << "in viewport" << viewport;
+    }
 
     if (charFormat.background().style() != Qt::NoBrush)
         m_backgrounds.append(qMakePair(blockBoundingRect, charFormat.background().color()));
@@ -1100,14 +1082,14 @@ void QQuickTextNodeEngine::addTextBlock(QTextDocument *textDocument, const QText
                 }
 
                 QQuickTextNodeEngine::SelectionState selectionState =
-                        (selectionStart < textPos + text.length()
+                        (selectionStart < textPos + text.size()
                          && selectionEnd >= textPos)
                         ? QQuickTextNodeEngine::Selected
                         : QQuickTextNodeEngine::Unselected;
 
                 addTextObject(block, QPointF(), charFormat, selectionState, textDocument, textPos);
             }
-            textPos += text.length();
+            textPos += text.size();
         } else {
             if (charFormat.foreground().style() != Qt::NoBrush)
                 setTextColor(charFormat.foreground().color());
@@ -1153,6 +1135,17 @@ void QQuickTextNodeEngine::addTextBlock(QTextDocument *textDocument, const QText
                                              selectionStart, selectionEnd);
     }
 #endif
+
+    // Add block decorations (so far only horizontal rules)
+    if (block.blockFormat().hasProperty(QTextFormat::BlockTrailingHorizontalRulerWidth)) {
+        auto ruleLength = qvariant_cast<QTextLength>(block.blockFormat().property(QTextFormat::BlockTrailingHorizontalRulerWidth));
+        QRectF ruleRect(0, 0, ruleLength.value(blockBoundingRect.width()), 1);
+        ruleRect.moveCenter(blockBoundingRect.center());
+        const QColor ruleColor = block.blockFormat().hasProperty(QTextFormat::BackgroundBrush)
+                               ? qvariant_cast<QBrush>(block.blockFormat().property(QTextFormat::BackgroundBrush)).color()
+                               : m_textColor;
+        m_lines.append(TextDecoration(QQuickTextNodeEngine::Unselected, ruleRect, ruleColor));
+    }
 
     setCurrentLine(QTextLine()); // Reset current line because the text layout changed
     m_hasContents = true;

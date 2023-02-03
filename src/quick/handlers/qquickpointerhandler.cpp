@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2018 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQuick module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2018 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qquickpointerhandler_p.h"
 #include "qquickpointerhandler_p_p.h"
@@ -49,6 +13,7 @@ QT_BEGIN_NAMESPACE
 Q_LOGGING_CATEGORY(lcPointerHandlerDispatch, "qt.quick.handler.dispatch")
 Q_LOGGING_CATEGORY(lcPointerHandlerGrab, "qt.quick.handler.grab")
 Q_LOGGING_CATEGORY(lcPointerHandlerActive, "qt.quick.handler.active")
+Q_DECLARE_LOGGING_CATEGORY(lcHandlerParent)
 
 /*!
     \qmltype PointerHandler
@@ -412,7 +377,7 @@ bool QQuickPointerHandler::approveGrabTransition(QPointerEvent *event, const QEv
             if (!allowed && (d->grabPermissions & ApprovesTakeOverByItems) && proposedGrabber->inherits("QQuickItem"))
                 allowed = true;
         } else {
-            if (!allowed && (d->grabPermissions & ApprovesCancellation))
+            if (d->grabPermissions & ApprovesCancellation)
                 allowed = true;
         }
     }
@@ -436,6 +401,8 @@ bool QQuickPointerHandler::approveGrabTransition(QPointerEvent *event, const QEv
            This handler can take the exclusive grab from another handler of the same class.
     \value PointerHandler.CanTakeOverFromHandlersOfDifferentType
            This handler can take the exclusive grab from any kind of handler.
+    \value PointerHandler.CanTakeOverFromItems
+           This handler can take the exclusive grab from any type of Item.
     \value PointerHandler.CanTakeOverFromAnything
            This handler can take the exclusive grab from any type of Item or Handler.
     \value PointerHandler.ApprovesTakeOverByHandlersOfSameType
@@ -588,6 +555,8 @@ void QQuickPointerHandler::setEnabled(bool enabled)
         return;
 
     d->enabled = enabled;
+    d->onEnabledChanged();
+
     emit enabledChanged();
 }
 
@@ -626,6 +595,23 @@ QQuickItem *QQuickPointerHandler::parentItem() const
     return qmlobject_cast<QQuickItem *>(QObject::parent());
 }
 
+void QQuickPointerHandler::setParentItem(QQuickItem *p)
+{
+    Q_D(QQuickPointerHandler);
+    if (QObject::parent() == p)
+        return;
+
+    qCDebug(lcHandlerParent) << "reparenting handler" << this << ":" << parent() << "->" << p;
+    auto *oldParent = static_cast<QQuickItem *>(QObject::parent());
+    if (oldParent)
+        QQuickItemPrivate::get(oldParent)->removePointerHandler(this);
+    setParent(p);
+    if (p)
+        QQuickItemPrivate::get(p)->addPointerHandler(this);
+    d->onParentChanged(oldParent, p);
+    emit parentChanged();
+}
+
 QQuickItem *QQuickPointerHandler::target() const
 {
     Q_D(const QQuickPointerHandler);
@@ -658,12 +644,15 @@ bool QQuickPointerHandler::event(QEvent *e)
 
 void QQuickPointerHandler::handlePointerEvent(QPointerEvent *event)
 {
+    Q_D(QQuickPointerHandler);
     bool wants = wantsPointerEvent(event);
     qCDebug(lcPointerHandlerDispatch) << metaObject()->className() << objectName()
                                       << "on" << parent()->metaObject()->className() << parent()->objectName()
                                       << (wants ? "WANTS" : "DECLINES") << event;
+    d->currentEvent = event;
     if (wants) {
         handlePointerEventImpl(event);
+        d->lastEventTime = event->timestamp();
     } else {
 #if QT_CONFIG(gestures)
         if (event->type() != QEvent::NativeGesture)
@@ -677,6 +666,7 @@ void QQuickPointerHandler::handlePointerEvent(QPointerEvent *event)
             }
         }
     }
+    d->currentEvent = nullptr;
     QQuickPointerHandlerPrivate::deviceDeliveryTargets(event->device()).append(this);
 }
 
@@ -718,14 +708,11 @@ void QQuickPointerHandler::setActive(bool active)
     }
 }
 
-void QQuickPointerHandler::handlePointerEventImpl(QPointerEvent *event)
+void QQuickPointerHandler::handlePointerEventImpl(QPointerEvent *)
 {
-    Q_D(QQuickPointerHandler);
-    d->currentEvent = event;
 }
 
 /*!
-    \readonly
     \qmlproperty Item QtQuick::PointerHandler::parent
 
     The \l Item which is the scope of the handler; the Item in which it was declared.
@@ -805,3 +792,5 @@ QVector<QObject *> &QQuickPointerHandlerPrivate::deviceDeliveryTargets(const QIn
 }
 
 QT_END_NAMESPACE
+
+#include "moc_qquickpointerhandler_p.cpp"

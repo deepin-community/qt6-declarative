@@ -1,38 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2017 The Qt Company Ltd.
-** Contact: http://www.qt.io/licensing/
-**
-** This file is part of the Qt Quick Templates 2 module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL3$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see http://www.qt.io/terms-conditions. For further
-** information use the contact form at http://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPLv3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or later as published by the Free
-** Software Foundation and appearing in the file LICENSE.GPL included in
-** the packaging of this file. Please review the following information to
-** ensure the GNU General Public License version 2.0 requirements will be
-** met: http://www.gnu.org/licenses/gpl-2.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2017 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qquicktextfield_p.h"
 #include "qquicktextfield_p_p.h"
@@ -49,6 +16,8 @@
 #endif
 
 QT_BEGIN_NAMESPACE
+
+using namespace Qt::StringLiterals;
 
 /*!
     \qmltype TextField
@@ -410,6 +379,10 @@ QQuickTextField::QQuickTextField(QQuickItem *parent)
 #endif
     QObjectPrivate::connect(this, &QQuickTextInput::readOnlyChanged, d, &QQuickTextFieldPrivate::readOnlyChanged);
     QObjectPrivate::connect(this, &QQuickTextInput::echoModeChanged, d, &QQuickTextFieldPrivate::echoModeChanged);
+#if QT_VERSION < QT_VERSION_CHECK(7, 0, 0)
+    if (qEnvironmentVariable("QT_QUICK_CONTROLS_TEXT_SELECTION_BEHAVIOR") == u"old"_s)
+        QQuickTextInput::setOldSelectionDefault();
+#endif
 }
 
 QQuickTextField::~QQuickTextField()
@@ -420,7 +393,11 @@ QQuickTextField::~QQuickTextField()
 
 QFont QQuickTextField::font() const
 {
-    return QQuickTextInput::font();
+    Q_D(const QQuickTextField);
+    QFont font = QQuickTextInput::font();
+    // The resolve mask should inherit from the requestedFont
+    font.setResolveMask(d->extra.value().requestedFont.resolveMask());
+    return font;
 }
 
 void QQuickTextField::setFont(const QFont &font)
@@ -875,15 +852,14 @@ void QQuickTextField::hoverEnterEvent(QHoverEvent *event)
     Q_D(QQuickTextField);
     QQuickTextInput::hoverEnterEvent(event);
     setHovered(d->hoverEnabled);
-    event->setAccepted(d->hoverEnabled);
+    event->ignore();
 }
 
 void QQuickTextField::hoverLeaveEvent(QHoverEvent *event)
 {
-    Q_D(QQuickTextField);
     QQuickTextInput::hoverLeaveEvent(event);
     setHovered(false);
-    event->setAccepted(d->hoverEnabled);
+    event->ignore();
 }
 #endif
 
@@ -910,7 +886,12 @@ void QQuickTextField::mouseMoveEvent(QMouseEvent *event)
             QQuickTextInput::mousePressEvent(d->pressHandler.delayedMousePressEvent);
             d->pressHandler.clearDelayedMouseEvent();
         }
-        if (event->buttons() != Qt::RightButton)
+        const bool isMouse = QQuickDeliveryAgentPrivate::isEventFromMouseOrTouchpad(event)
+    #if QT_VERSION < QT_VERSION_CHECK(7, 0, 0)
+            || d->selectByTouchDrag
+    #endif
+        ;
+        if (event->buttons() != Qt::RightButton && isMouse)
             QQuickTextInput::mouseMoveEvent(event);
     }
 }
@@ -950,3 +931,5 @@ void QQuickTextField::timerEvent(QTimerEvent *event)
 }
 
 QT_END_NAMESPACE
+
+#include "moc_qquicktextfield_p.cpp"

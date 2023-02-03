@@ -1,30 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2019 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the tools applications of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:GPL-EXCEPT$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 3 as published by the Free Software
-** Foundation with exceptions as appearing in the file LICENSE.GPL3-EXCEPT
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2019 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only WITH Qt-GPL-exception-1.0
 
 #include "qcoloroutput_p.h"
 
@@ -35,10 +10,12 @@
 #include <unistd.h>
 #endif
 
+QT_BEGIN_NAMESPACE
+
 class QColorOutputPrivate
 {
 public:
-    QColorOutputPrivate(bool silent) : m_currentColorID(-1), m_silent(silent)
+    QColorOutputPrivate()
     {
         /* - QIODevice::Unbuffered because we want it to appear when the user actually calls,
          *   performance is considered of lower priority.
@@ -67,7 +44,9 @@ public:
     QColorOutput::ColorCode color(int id) const { return m_colorMapping.value(id); }
     bool containsColor(int id) const { return m_colorMapping.contains(id); }
 
+    void setSilent(bool silent) { m_silent = silent; }
     bool isSilent() const { return m_silent; }
+
     void setCurrentColorID(int colorId) { m_currentColorID = colorId; }
 
     bool coloringEnabled() const { return m_coloringEnabled; }
@@ -75,9 +54,9 @@ public:
 private:
     QFile                       m_out;
     QColorOutput::ColorMapping  m_colorMapping;
-    int                         m_currentColorID;
-    bool                        m_coloringEnabled;
-    bool                        m_silent;
+    int                         m_currentColorID = -1;
+    bool                        m_coloringEnabled = false;
+    bool                        m_silent = false;
 
     /*!
      Returns true if it's suitable to send colored output to \c stderr.
@@ -219,10 +198,13 @@ const char *const QColorOutputPrivate::backgrounds[] =
 /*!
   Constructs a ColorOutput instance, ready for use.
  */
-QColorOutput::QColorOutput(bool silent) : d(new QColorOutputPrivate(silent)) {}
+QColorOutput::QColorOutput() : d(new QColorOutputPrivate) {}
 
 // must be here so that QScopedPointer has access to the complete type
 QColorOutput::~QColorOutput() = default;
+
+bool QColorOutput::isSilent() const { return d->isSilent(); }
+void QColorOutput::setSilent(bool silent) { d->setSilent(silent); }
 
 /*!
  Sends \a message to \c stderr, using the color looked up in the color mapping using \a colorID.
@@ -333,3 +315,5 @@ void QColorOutput::insertMapping(int colorID, const ColorCode colorCode)
 {
     d->insertColor(colorID, colorCode);
 }
+
+QT_END_NAMESPACE

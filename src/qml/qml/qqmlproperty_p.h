@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQml module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #ifndef QQMLPROPERTY_P_H
 #define QQMLPROPERTY_P_H
@@ -52,14 +16,15 @@
 //
 
 #include "qqmlproperty.h"
-#include "qqmlengine.h"
 
 #include <private/qobject_p.h>
-#include <private/qtqmlglobal_p.h>
-#include <private/qqmlrefcount_p.h>
 #include <private/qqmlcontextdata_p.h>
 #include <private/qqmlpropertydata_p.h>
 #include <private/qqmlpropertyindex_p.h>
+#include <private/qqmlrefcount_p.h>
+#include <private/qtqmlglobal_p.h>
+
+#include <QtQml/qqmlengine.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -73,6 +38,13 @@ class QQmlBoundSignalExpression;
 class Q_QML_PRIVATE_EXPORT QQmlPropertyPrivate : public QQmlRefCount
 {
 public:
+    enum class InitFlag {
+        None        = 0x0,
+        AllowId     = 0x1,
+        AllowSignal = 0x2
+    };
+    Q_DECLARE_FLAGS(InitFlags, InitFlag);
+
     QQmlRefPointer<QQmlContextData> context;
     QPointer<QQmlEngine> engine;
     QPointer<QObject> object;
@@ -94,7 +66,7 @@ public:
 
     QQmlRefPointer<QQmlContextData> effectiveContext() const;
 
-    void initProperty(QObject *obj, const QString &name);
+    void initProperty(QObject *obj, const QString &name, InitFlags flags = InitFlag::None);
     void initDefault(QObject *obj);
 
     bool isValueType() const;
@@ -105,7 +77,7 @@ public:
     QVariant readValueProperty();
     bool writeValueProperty(const QVariant &, QQmlPropertyData::WriteFlags);
 
-    static QQmlMetaObject rawMetaObjectForType(QQmlEnginePrivate *, int);
+    static QQmlMetaObject rawMetaObjectForType(QMetaType metaType);
     static bool writeEnumProperty(const QMetaProperty &prop, int idx, QObject *object,
                                   const QVariant &value, int flags);
     static bool writeValueProperty(QObject *,
@@ -159,6 +131,7 @@ public:
     static bool write(const QQmlProperty &that, const QVariant &, QQmlPropertyData::WriteFlags);
     static QQmlPropertyIndex propertyIndex(const QQmlProperty &that);
     static QMetaMethod findSignalByName(const QMetaObject *mo, const QByteArray &);
+    static QMetaProperty findPropertyByName(const QMetaObject *mo, const QByteArray &);
     static bool connect(const QObject *sender, int signal_index,
                         const QObject *receiver, int method_index,
                         int type = 0, int *types = nullptr);
@@ -169,11 +142,13 @@ public:
             const QVariant &value, const QQmlRefPointer<QQmlContextData> &ctxt);
     static QQmlProperty create(
             QObject *target, const QString &propertyName,
-            const QQmlRefPointer<QQmlContextData> &context);
+            const QQmlRefPointer<QQmlContextData> &context,
+            QQmlPropertyPrivate::InitFlags flags);
 
 };
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(QQmlPropertyPrivate::BindingFlags)
+Q_DECLARE_OPERATORS_FOR_FLAGS(QQmlPropertyPrivate::InitFlags);
 
 QT_END_NAMESPACE
 

@@ -1,38 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2017 The Qt Company Ltd.
-** Contact: http://www.qt.io/licensing/
-**
-** This file is part of the Qt Quick Templates 2 module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL3$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see http://www.qt.io/terms-conditions. For further
-** information use the contact form at http://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPLv3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or later as published by the Free
-** Software Foundation and appearing in the file LICENSE.GPL included in
-** the packaging of this file. Please review the following information to
-** ensure the GNU General Public License version 2.0 requirements will be
-** met: http://www.gnu.org/licenses/gpl-2.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2017 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qquickcontrol_p_p.h"
 #include "qquickoverlay_p.h"
@@ -74,7 +41,7 @@ QList<QQuickPopup *> QQuickOverlayPrivate::stackingOrderPopups() const
     const QList<QQuickItem *> children = paintOrderChildItems();
 
     QList<QQuickPopup *> popups;
-    popups.reserve(children.count());
+    popups.reserve(children.size());
 
     for (auto it = children.crbegin(), end = children.crend(); it != end; ++it) {
         QQuickPopup *popup = qobject_cast<QQuickPopup *>((*it)->parent());
@@ -422,7 +389,7 @@ void QQuickOverlay::geometryChange(const QRectF &newGeometry, const QRectF &oldG
 {
     Q_D(QQuickOverlay);
     QQuickItem::geometryChange(newGeometry, oldGeometry);
-    for (QQuickPopup *popup : qAsConst(d->allPopups))
+    for (QQuickPopup *popup : std::as_const(d->allPopups))
         QQuickPopupPrivate::get(popup)->resizeOverlay();
 }
 
@@ -543,7 +510,10 @@ bool QQuickOverlay::eventFilter(QObject *object, QEvent *event)
             }
         }
 
-        QQuickWindowPrivate::get(d->window)->handleTouchEvent(static_cast<QTouchEvent *>(event));
+        // setup currentEventDeliveryAgent like in QQuickDeliveryAgent::event
+        QQuickDeliveryAgentPrivate::currentEventDeliveryAgent = d->deliveryAgent();
+        d->deliveryAgentPrivate()->handleTouchEvent(static_cast<QTouchEvent *>(event));
+        QQuickDeliveryAgentPrivate::currentEventDeliveryAgent = nullptr;
 
         // If a touch event hasn't been accepted after being delivered, there
         // were no items interested in touch events at any of the touch points.
@@ -560,7 +530,10 @@ bool QQuickOverlay::eventFilter(QObject *object, QEvent *event)
 #endif
             emit pressed();
 
-        QQuickWindowPrivate::get(d->window)->handleMouseEvent(static_cast<QMouseEvent *>(event));
+        // setup currentEventDeliveryAgent like in QQuickDeliveryAgent::event
+        QQuickDeliveryAgentPrivate::currentEventDeliveryAgent = d->deliveryAgent();
+        d->deliveryAgentPrivate()->handleMouseEvent(static_cast<QMouseEvent *>(event));
+        QQuickDeliveryAgentPrivate::currentEventDeliveryAgent = nullptr;
 
         // If a mouse event hasn't been accepted after being delivered, there
         // was no item interested in mouse events at the mouse point. Make sure
@@ -581,6 +554,30 @@ bool QQuickOverlay::eventFilter(QObject *object, QEvent *event)
             d->handleRelease(d->window->contentItem(), event, nullptr);
         break;
 
+    case QEvent::Wheel: {
+        // If the top item in the drawing-order is blocked by a modal popup, then
+        // eat the event. There is no scenario where the top most item is blocked
+        // by a popup, but an item further down in the drawing order is not.
+        QWheelEvent *we = static_cast<QWheelEvent *>(event);
+        const QVector<QQuickItem *> targetItems = d->deliveryAgentPrivate()->pointerTargets(
+                                    d->window->contentItem(), we, we->point(0), false, false);
+        if (targetItems.isEmpty())
+            break;
+
+        QQuickItem * const topItem = targetItems.first();
+        const auto popups = d->stackingOrderPopups();
+        for (const auto &popup : popups) {
+            if (!popup->overlayEvent(topItem, we))
+                continue;
+            const QQuickItem *popupItem = popup->popupItem();
+            if (!popupItem)
+                continue;
+            if (!popupItem->isAncestorOf(topItem))
+                return true;
+        }
+        break;
+    }
+
     default:
         break;
     }
@@ -590,9 +587,9 @@ bool QQuickOverlay::eventFilter(QObject *object, QEvent *event)
 
 class QQuickOverlayAttachedPrivate : public QObjectPrivate
 {
+public:
     Q_DECLARE_PUBLIC(QQuickOverlayAttached)
 
-public:
     void setWindow(QQuickWindow *newWindow);
 
     QQuickWindow *window = nullptr;
@@ -735,3 +732,5 @@ void QQuickOverlayAttached::setModeless(QQmlComponent *modeless)
 }
 
 QT_END_NAMESPACE
+
+#include "moc_qquickoverlay_p.cpp"

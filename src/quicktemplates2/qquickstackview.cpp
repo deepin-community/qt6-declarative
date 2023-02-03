@@ -1,38 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2017 The Qt Company Ltd.
-** Contact: http://www.qt.io/licensing/
-**
-** This file is part of the Qt Quick Templates 2 module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL3$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see http://www.qt.io/terms-conditions. For further
-** information use the contact form at http://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPLv3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or later as published by the Free
-** Software Foundation and appearing in the file LICENSE.GPL included in
-** the packaging of this file. Please review the following information to
-** ensure the GNU General Public License version 2.0 requirements will be
-** met: http://www.gnu.org/licenses/gpl-2.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2017 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qquickstackview_p.h"
 #include "qquickstackview_p_p.h"
@@ -185,10 +152,10 @@ QT_BEGIN_NAMESPACE
 
     \e{Deep linking} means launching an application into a particular state. For
     example, a newspaper application could be launched into showing a
-    particular article, bypassing the topmost item. In terms of StackView, deep linking means the ability to modify
-    the state of the stack, so much so that it is possible to push a set of
-    items to the top of the stack, or to completely reset the stack to a given
-    state.
+    particular article, bypassing the topmost item. In terms of StackView, deep
+    linking means the ability to modify the state of the stack, so much so that
+    it is possible to push a set of items to the top of the stack, or to
+    completely reset the stack to a given state.
 
     The API for deep linking in StackView is the same as for basic navigation.
     Pushing an array instead of a single item adds all the items in that array
@@ -239,9 +206,9 @@ QT_BEGIN_NAMESPACE
     For each push or pop operation, different transition animations are applied
     to entering and exiting items. These animations define how the entering item
     should animate in, and the exiting item should animate out. The animations
-    can be customized by assigning different \l{Transition}s for the
-    \l pushEnter, \l pushExit, \l popEnter, \l popExit, \l replaceEnter, and
-    \l replaceExit properties of StackView.
+    can be customized by assigning different \l [QML] {Transition} {Transitions}
+    for the \l pushEnter, \l pushExit, \l popEnter, \l popExit, replaceEnter,
+    and \l replaceExit properties of StackView.
 
     \note The transition animations affect each others' transitional behavior.
     Customizing the animation for one and leaving the other may give unexpected
@@ -374,8 +341,8 @@ QT_BEGIN_NAMESPACE
         \li Give the Dialog a size.
     \endlist
 
-    \sa {Customizing StackView}, {Navigation Controls}, {Container Controls},
-        {Focus Management in Qt Quick Controls}
+    \sa {Customizing StackView}, {Navigating with StackView}, {Navigation Controls},
+        {Container Controls}, {Focus Management in Qt Quick Controls}
 */
 
 QQuickStackView::QQuickStackView(QQuickItem *parent)
@@ -420,7 +387,7 @@ bool QQuickStackView::isBusy() const
 int QQuickStackView::depth() const
 {
     Q_D(const QQuickStackView);
-    return d->elements.count();
+    return d->elements.size();
 }
 
 /*!
@@ -481,7 +448,7 @@ QQuickItem *QQuickStackView::find(const QJSValue &callback, LoadBehavior behavio
     if (!engine || !func.isCallable()) // TODO: warning?
         return nullptr;
 
-    for (int i = d->elements.count() - 1; i >= 0; --i) {
+    for (int i = d->elements.size() - 1; i >= 0; --i) {
         QQuickStackElement *element = d->elements.at(i);
         if (behavior == ForceLoad)
             element->load(this);
@@ -594,7 +561,7 @@ void QQuickStackView::push(QQmlV4Function *args)
 
     if (!errors.isEmpty() || elements.isEmpty()) {
         if (!errors.isEmpty()) {
-            for (const QString &error : qAsConst(errors))
+            for (const QString &error : std::as_const(errors))
                 d->warn(error);
         } else {
             d->warn(QStringLiteral("nothing to push"));
@@ -607,9 +574,9 @@ void QQuickStackView::push(QQmlV4Function *args)
     if (!d->elements.isEmpty())
         exit = d->elements.top();
 
-    int oldDepth = d->elements.count();
+    int oldDepth = d->elements.size();
     if (d->pushElements(elements)) {
-        d->depthChange(d->elements.count(), oldDepth);
+        d->depthChange(d->elements.size(), oldDepth);
         QQuickStackElement *enter = d->elements.top();
         d->startTransition(QQuickStackTransition::pushEnter(operation, enter, this),
                            QQuickStackTransition::pushExit(operation, exit, this),
@@ -673,14 +640,14 @@ void QQuickStackView::pop(QQmlV4Function *args)
     QScopedValueRollback<bool> modifyingElements(d->modifyingElements, true);
     QScopedValueRollback<QString> operationNameRollback(d->operation, operationName);
     int argc = args->length();
-    if (d->elements.count() <= 1 || argc > 2) {
+    if (d->elements.size() <= 1 || argc > 2) {
         if (argc > 2)
             d->warn(QStringLiteral("too many arguments"));
         args->setReturnValue(QV4::Encode::null());
         return;
     }
 
-    int oldDepth = d->elements.count();
+    int oldDepth = d->elements.size();
     QQuickStackElement *exit = d->elements.pop();
     QQuickStackElement *enter = d->elements.top();
 
@@ -719,7 +686,7 @@ void QQuickStackView::pop(QQmlV4Function *args)
             d->removing.insert(exit);
             previousItem = exit->item;
         }
-        d->depthChange(d->elements.count(), oldDepth);
+        d->depthChange(d->elements.size(), oldDepth);
         d->startTransition(QQuickStackTransition::popExit(operation, exit, this),
                            QQuickStackTransition::popEnter(operation, enter, this),
                            operation == Immediate);
@@ -744,7 +711,7 @@ void QQuickStackView::pop(QQmlV4Function *args)
 
     \include qquickstackview.qdocinc pop-ownership
 
-    If the \a target argument is specified, all items down to the \target
+    If the \a target argument is specified, all items down to the \a target
     item will be replaced. If \a target is \c null, all items in the stack
     will be replaced. If not specified, only the top item will be replaced.
 
@@ -861,7 +828,7 @@ void QQuickStackView::replace(QQmlV4Function *args)
     QList<QQuickStackElement *> elements = d->parseElements(target ? 1 : 0, args, &errors);
     if (!errors.isEmpty() || elements.isEmpty()) {
         if (!errors.isEmpty()) {
-            for (const QString &error : qAsConst(errors))
+            for (const QString &error : std::as_const(errors))
                 d->warn(error);
         } else {
             d->warn(QStringLiteral("nothing to push"));
@@ -870,13 +837,13 @@ void QQuickStackView::replace(QQmlV4Function *args)
         return;
     }
 
-    int oldDepth = d->elements.count();
+    int oldDepth = d->elements.size();
     QQuickStackElement* exit = nullptr;
     if (!d->elements.isEmpty())
         exit = d->elements.pop();
 
     if (exit != target ? d->replaceElements(target, elements) : d->pushElements(elements)) {
-        d->depthChange(d->elements.count(), oldDepth);
+        d->depthChange(d->elements.size(), oldDepth);
         if (exit) {
             exit->removal = true;
             d->removing.insert(exit);
@@ -947,7 +914,7 @@ void QQuickStackView::clear(Operation operation)
                            QQuickStackTransition::popEnter(operation, nullptr, this), false);
     }
 
-    int oldDepth = d->elements.count();
+    int oldDepth = d->elements.size();
     d->setCurrentItem(nullptr);
     qDeleteAll(d->elements);
     d->elements.clear();
@@ -1148,7 +1115,7 @@ void QQuickStackView::componentComplete()
     QScopedValueRollback<QString> operationNameRollback(d->operation, QStringLiteral("initialItem"));
     QQuickStackElement *element = nullptr;
     QString error;
-    int oldDepth = d->elements.count();
+    int oldDepth = d->elements.size();
     if (QObject *o = d->initialItem.toQObject())
         element = QQuickStackElement::fromObject(o, this, &error);
     else if (d->initialItem.isString())
@@ -1157,7 +1124,7 @@ void QQuickStackView::componentComplete()
         d->warn(error);
         delete element;
     } else if (d->pushElement(element)) {
-        d->depthChange(d->elements.count(), oldDepth);
+        d->depthChange(d->elements.size(), oldDepth);
         d->setCurrentItem(element);
         element->setStatus(QQuickStackView::Active);
     }
@@ -1168,7 +1135,7 @@ void QQuickStackView::geometryChange(const QRectF &newGeometry, const QRectF &ol
     QQuickControl::geometryChange(newGeometry, oldGeometry);
 
     Q_D(QQuickStackView);
-    for (QQuickStackElement *element : qAsConst(d->elements)) {
+    for (QQuickStackElement *element : std::as_const(d->elements)) {
         if (element->item) {
             if (!element->widthValid)
                 element->item->setWidth(newGeometry.width());

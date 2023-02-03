@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2020 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQuick module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2020 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qquickmultipointtoucharea_p.h"
 #include <QtQuick/qquickwindow.h>
@@ -455,7 +419,7 @@ QQuickMultiPointTouchArea::QQuickMultiPointTouchArea(QQuickItem *parent)
 QQuickMultiPointTouchArea::~QQuickMultiPointTouchArea()
 {
     clearTouchLists();
-    for (QObject *obj : qAsConst(_touchPoints)) {
+    for (QObject *obj : std::as_const(_touchPoints)) {
         QQuickTouchPoint *dtp = static_cast<QQuickTouchPoint*>(obj);
         if (!dtp->isQmlDefined())
             delete dtp;
@@ -570,7 +534,7 @@ void QQuickMultiPointTouchArea::grabGesture(QPointingDevice *dev)
     setKeepTouchGrab(true);
 }
 
-void QQuickMultiPointTouchArea::updateTouchData(QEvent *event)
+void QQuickMultiPointTouchArea::updateTouchData(QEvent *event, RemapEventPoints remap)
 {
     bool ended = false;
     bool moved = false;
@@ -578,6 +542,7 @@ void QQuickMultiPointTouchArea::updateTouchData(QEvent *event)
 
     clearTouchLists();
     QList<QEventPoint> touchPoints;
+    bool touchPointsFromEvent = false;
     QPointingDevice *dev = nullptr;
 
     switch (event->type()) {
@@ -586,6 +551,7 @@ void QQuickMultiPointTouchArea::updateTouchData(QEvent *event)
     case QEvent::TouchEnd: {
         QTouchEvent* te = static_cast<QTouchEvent*>(event);
         touchPoints = te->points();
+        touchPointsFromEvent = true;
         dev = const_cast<QPointingDevice *>(te->pointingDevice());
         break;
     }
@@ -612,9 +578,9 @@ void QQuickMultiPointTouchArea::updateTouchData(QEvent *event)
         break;
     }
 
-    int numTouchPoints = touchPoints.count();
+    int numTouchPoints = touchPoints.size();
     //always remove released touches, and make sure we handle all releases before adds.
-    for (const QEventPoint &p : qAsConst(touchPoints)) {
+    for (const QEventPoint &p : std::as_const(touchPoints)) {
         QEventPoint::State touchPointState = p.state();
         int id = p.id();
         if (touchPointState & QEventPoint::State::Released) {
@@ -630,6 +596,8 @@ void QQuickMultiPointTouchArea::updateTouchData(QEvent *event)
     }
     if (numTouchPoints >= _minimumTouchPoints && numTouchPoints <= _maximumTouchPoints) {
         for (QEventPoint &p : touchPoints) {
+            if (touchPointsFromEvent && remap == RemapEventPoints::ToLocal)
+                QMutableEventPoint::setPosition(p, mapFromScene(p.scenePosition()));
             QEventPoint::State touchPointState = p.state();
             int id = p.id();
             if (touchPointState & QEventPoint::State::Released) {
@@ -657,7 +625,7 @@ void QQuickMultiPointTouchArea::updateTouchData(QEvent *event)
         if (!_stealMouse /* !ignoring gesture*/) {
             bool offerGrab = false;
             const int dragThreshold = QGuiApplication::styleHints()->startDragDistance();
-            for (const QEventPoint &p : qAsConst(touchPoints)) {
+            for (const QEventPoint &p : std::as_const(touchPoints)) {
                 if (p.state() == QEventPoint::State::Released)
                     continue;
                 const QPointF &currentPos = p.scenePosition();
@@ -683,7 +651,7 @@ void QQuickMultiPointTouchArea::updateTouchData(QEvent *event)
             emit released(_releasedTouchPoints);
         if (moved)
             emit updated(_movedTouchPoints);
-        if (started)
+        if (started && !_pressedTouchPoints.isEmpty())
             emit pressed(_pressedTouchPoints);
         if (ended || moved || started) emit touchUpdated(_touchPoints.values());
     }
@@ -691,7 +659,7 @@ void QQuickMultiPointTouchArea::updateTouchData(QEvent *event)
 
 void QQuickMultiPointTouchArea::clearTouchLists()
 {
-    for (QObject *obj : qAsConst(_releasedTouchPoints)) {
+    for (QObject *obj : std::as_const(_releasedTouchPoints)) {
         QQuickTouchPoint *dtp = static_cast<QQuickTouchPoint*>(obj);
         if (!dtp->isQmlDefined()) {
             _touchPoints.remove(dtp->pointId());
@@ -708,7 +676,7 @@ void QQuickMultiPointTouchArea::clearTouchLists()
 void QQuickMultiPointTouchArea::addTouchPoint(const QEventPoint *p)
 {
     QQuickTouchPoint *dtp = nullptr;
-    for (QQuickTouchPoint* tp : qAsConst(_touchPrototypes)) {
+    for (QQuickTouchPoint* tp : std::as_const(_touchPrototypes)) {
         if (!tp->inUse()) {
             tp->setInUse(true);
             dtp = tp;
@@ -728,12 +696,15 @@ void QQuickMultiPointTouchArea::addTouchPoint(const QEventPoint *p)
 void QQuickMultiPointTouchArea::addTouchPoint(const QMouseEvent *e)
 {
     QQuickTouchPoint *dtp = nullptr;
-    for (QQuickTouchPoint *tp : qAsConst(_touchPrototypes))
+    for (QQuickTouchPoint *tp : std::as_const(_touchPrototypes)) {
         if (!tp->inUse()) {
             tp->setInUse(true);
             dtp = tp;
             break;
+        } else if (_mouseTouchPoint == tp) {
+            return; // do not allow more than one touchpoint to react to the mouse (QTBUG-83662)
         }
+    }
 
     if (dtp == nullptr)
         dtp = new QQuickTouchPoint(false);
@@ -772,7 +743,7 @@ void QQuickMultiPointTouchArea::setTouchEventsEnabled(bool enable)
 
 void QQuickMultiPointTouchArea::addTouchPrototype(QQuickTouchPoint *prototype)
 {
-    int id = _touchPrototypes.count();
+    int id = _touchPrototypes.size();
     prototype->setPointId(id);
     _touchPrototypes.insert(id, prototype);
 }
@@ -825,7 +796,7 @@ void QQuickMultiPointTouchArea::mousePressEvent(QMouseEvent *event)
     if (event->source() != Qt::MouseEventNotSynthesized && event->source() != Qt::MouseEventSynthesizedByQt)
         return;
 
-    if (_touchPoints.count() >= _minimumTouchPoints - 1 && _touchPoints.count() < _maximumTouchPoints) {
+    if (_touchPoints.size() >= _minimumTouchPoints - 1 && _touchPoints.size() < _maximumTouchPoints) {
         updateTouchData(event);
     }
 }
@@ -873,13 +844,13 @@ void QQuickMultiPointTouchArea::ungrab(bool normalRelease)
     if (!normalRelease)
         ungrabTouchPoints();
 
-    if (_touchPoints.count()) {
-        for (QObject *obj : qAsConst(_touchPoints))
+    if (_touchPoints.size()) {
+        for (QObject *obj : std::as_const(_touchPoints))
             static_cast<QQuickTouchPoint*>(obj)->setPressed(false);
         if (!normalRelease)
             emit canceled(_touchPoints.values());
         clearTouchLists();
-        for (QObject *obj : qAsConst(_touchPoints)) {
+        for (QObject *obj : std::as_const(_touchPoints)) {
             QQuickTouchPoint *dtp = static_cast<QQuickTouchPoint*>(obj);
             if (!dtp->isQmlDefined())
                 delete dtp;
@@ -910,8 +881,8 @@ bool QQuickMultiPointTouchArea::sendMouseEvent(QMouseEvent *event)
     bool stealThisEvent = _stealMouse;
     if ((stealThisEvent || contains(localPos)) && (!grabber || !grabber->keepMouseGrab())) {
         QMutableSinglePointEvent mouseEvent(*event);
-        const auto oldPosition = mouseEvent.mutablePoint().position();
-        mouseEvent.mutablePoint().setPosition(localPos);
+        const auto oldPosition = mouseEvent.position();
+        QMutableEventPoint::setPosition(mouseEvent.point(0), localPos);
         mouseEvent.setSource(Qt::MouseEventSynthesizedByQt);
         mouseEvent.setAccepted(false);
         QMouseEvent *pmouseEvent = static_cast<QMouseEvent *>(static_cast<QSinglePointEvent *>(&mouseEvent));
@@ -933,7 +904,7 @@ bool QQuickMultiPointTouchArea::sendMouseEvent(QMouseEvent *event)
         if (grabber && stealThisEvent && !grabber->keepMouseGrab() && grabber != this)
             grabMouse();
 
-        mouseEvent.mutablePoint().setPosition(oldPosition);
+        QMutableEventPoint::setPosition(mouseEvent.point(0), oldPosition);
         return stealThisEvent;
     }
     if (event->type() == QEvent::MouseButtonRelease) {
@@ -971,12 +942,12 @@ bool QQuickMultiPointTouchArea::childMouseEventFilter(QQuickItem *receiver, QEve
         }
         if (!shouldFilter(event))
             return false;
-        updateTouchData(event);
+        updateTouchData(event, RemapEventPoints::ToLocal);
         return _stealMouse;
     case QEvent::TouchEnd: {
             if (!shouldFilter(event))
                 return false;
-            updateTouchData(event);
+            updateTouchData(event, RemapEventPoints::ToLocal);
             ungrab(true);
         }
         break;

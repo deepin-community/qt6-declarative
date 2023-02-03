@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2019 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQuick module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2019 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qquickboundaryrule_p.h"
 
@@ -74,7 +38,7 @@ public:
     int returnDuration = 100;
     QQuickBoundaryRule::OvershootFilter overshootFilter = QQuickBoundaryRule::OvershootFilter::None;
     bool enabled = true;
-    bool finalized = false;
+    bool completed = false;
 
     qreal easedOvershoot(qreal overshootingValue);
     void resetOvershoot();
@@ -128,7 +92,7 @@ void QQuickBoundaryReturnJob::updateState(QAbstractAnimationJob::State newState,
 
 /*!
     \qmltype BoundaryRule
-    \instantiates QQuickBoundaryRule
+//!    \instantiates QQuickBoundaryRule
     \inqmlmodule Qt.labs.animation
     \ingroup qtquick-transitions-animations
     \ingroup qtquick-interceptors
@@ -146,7 +110,8 @@ void QQuickBoundaryReturnJob::updateState(QAbstractAnimationJob::State newState,
 
     Note that a property cannot have more than one assigned BoundaryRule.
 
-    \sa {Animation and Transitions in Qt Quick}, {Qt Quick Examples - Animation#Behaviors}{Behavior example}, {Qt QML}
+    \sa {Animation and Transitions in Qt Quick}, {Qt Quick Examples - Animation#Behaviors}{Behavior
+example}, {Qt QML}
 */
 
 QQuickBoundaryRule::QQuickBoundaryRule(QObject *parent)
@@ -353,7 +318,7 @@ qreal QQuickBoundaryRule::peakOvershoot() const
 }
 
 /*!
-    \qmlproperty enum QtQuick::BoundaryRule::overshootFilter
+    \qmlproperty enumeration QtQuick::BoundaryRule::overshootFilter
 
     This property specifies the aggregation function that will be applied to
     the intercepted property value.
@@ -467,6 +432,17 @@ void QQuickBoundaryRule::setReturnDuration(int duration)
     emit returnDurationChanged();
 }
 
+void QQuickBoundaryRule::classBegin()
+{
+
+}
+
+void QQuickBoundaryRule::componentComplete()
+{
+    Q_D(QQuickBoundaryRule);
+    d->completed = true;
+}
+
 void QQuickBoundaryRule::write(const QVariant &value)
 {
     bool conversionOk = false;
@@ -476,7 +452,7 @@ void QQuickBoundaryRule::write(const QVariant &value)
         return;
     }
     Q_D(QQuickBoundaryRule);
-    bool bypass = !d->enabled || !d->finalized || QQmlEnginePrivate::designerMode();
+    bool bypass = !d->enabled || !d->completed || QQmlEnginePrivate::designerMode();
     if (bypass) {
         QQmlPropertyPrivate::write(d->property, value,
                                    QQmlPropertyData::BypassInterceptor | QQmlPropertyData::DontRemoveBinding);
@@ -492,18 +468,6 @@ void QQuickBoundaryRule::setTarget(const QQmlProperty &property)
 {
     Q_D(QQuickBoundaryRule);
     d->property = property;
-
-    QQmlEnginePrivate *engPriv = QQmlEnginePrivate::get(qmlEngine(this));
-    static int finalizedIdx = -1;
-    if (finalizedIdx < 0)
-        finalizedIdx = metaObject()->indexOfSlot("componentFinalized()");
-    engPriv->registerFinalizeCallback(this, finalizedIdx);
-}
-
-void QQuickBoundaryRule::componentFinalized()
-{
-    Q_D(QQuickBoundaryRule);
-    d->finalized = true;
 }
 
 /*!

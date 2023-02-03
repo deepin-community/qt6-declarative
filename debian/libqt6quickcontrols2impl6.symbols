@@ -1,6 +1,6 @@
-# SymbolsHelper-Confirmed: 6.2.4 amd64 arm64
+# SymbolsHelper-Confirmed: 6.4.2 amd64
 libQt6QuickControls2Impl.so.6 libqt6quickcontrols2impl6 #MINVER#
-| libqt6quickcontrols2impl6 #MINVER#, qt6-declarative-abi (= 6.2.4)
+| libqt6quickcontrols2impl6 #MINVER#, qt6-declarative-abi (= 6.4.2)
 * Build-Depends-Packages: qt6-declarative-dev, qt6-declarative-private-dev
  _Z40qml_register_types_QtQuick_Controls_implv@Base 6.2.0
  _ZN11QQuickColor11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
@@ -133,6 +133,12 @@ libQt6QuickControls2Impl.so.6 libqt6quickcontrols2impl6 #MINVER#
  _ZN19QQuickMnemonicLabel7setTextERK7QString@Base 6.2.0
  _ZN19QQuickMnemonicLabelC1EP10QQuickItem@Base 6.2.0
  _ZN19QQuickMnemonicLabelC2EP10QQuickItem@Base 6.2.0
+ _ZN19QQuickPlatformTheme11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.3.0
+ _ZN19QQuickPlatformTheme11qt_metacastEPKc@Base 6.3.0
+ _ZN19QQuickPlatformTheme12getThemeHintEN14QPlatformTheme9ThemeHintE@Base 6.4.0
+ _ZN19QQuickPlatformTheme16staticMetaObjectE@Base 6.3.0
+ _ZN19QQuickPlatformThemeC1EP7QObject@Base 6.3.0
+ _ZN19QQuickPlatformThemeC2EP7QObject@Base 6.3.0
  _ZN20QQuickAttachedObject11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
  _ZN20QQuickAttachedObject11qt_metacastEPKc@Base 6.2.0
  _ZN20QQuickAttachedObject16staticMetaObjectE@Base 6.2.0
@@ -182,7 +188,6 @@ libQt6QuickControls2Impl.so.6 libqt6quickcontrols2impl6 #MINVER#
  _ZN22QQuickIconImagePrivateD0Ev@Base 6.2.0
  _ZN22QQuickIconImagePrivateD1Ev@Base 6.2.0
  _ZN22QQuickIconImagePrivateD2Ev@Base 6.2.0
- _ZN7QStringixEx@Base 6.2.4
  _ZNK11QQuickColor10metaObjectEv@Base 6.2.0
  _ZNK11QQuickColor11transparentERK6QColord@Base 6.2.0
  _ZNK11QQuickColor5blendERK6QColorS2_d@Base 6.2.0
@@ -227,6 +232,8 @@ libQt6QuickControls2Impl.so.6 libqt6quickcontrols2impl6 #MINVER#
  _ZNK19QQuickMnemonicLabel10metaObjectEv@Base 6.2.0
  _ZNK19QQuickMnemonicLabel17isMnemonicVisibleEv@Base 6.2.0
  _ZNK19QQuickMnemonicLabel4textEv@Base 6.2.0
+ _ZNK19QQuickPlatformTheme10metaObjectEv@Base 6.3.0
+ _ZNK19QQuickPlatformTheme9themeHintEN14QPlatformTheme9ThemeHintE@Base 6.3.0
  _ZNK20QQuickAttachedObject10metaObjectEv@Base 6.2.0
  _ZNK20QQuickAttachedObject14attachedParentEv@Base 6.2.0
  _ZNK20QQuickAttachedObject16attachedChildrenEv@Base 6.2.0
@@ -249,11 +256,12 @@ libQt6QuickControls2Impl.so.6 libqt6quickcontrols2impl6 #MINVER#
  _ZTI18QQuickAnimatedNode@Base 6.2.0
  _ZTI18QQuickImagePrivate@Base 6.2.0
  _ZTI19QQuickMnemonicLabel@Base 6.2.0
+ _ZTI19QQuickPlatformTheme@Base 6.3.0
  _ZTI20QQuickAttachedObject@Base 6.2.0
  _ZTI21QQuickPaddedRectangle@Base 6.2.0
  _ZTI21QQuickPlaceholderText@Base 6.2.0
  _ZTI22QQuickIconImagePrivate@Base 6.2.0
- _ZTI29QQuickImplicitSizeItemPrivate@Base 6.2.0
+ _ZTI29QQuickImplicitSizeItemPrivate@Base 6.4.2
  _ZTIFP7QObjectP10QQmlEngineP9QJSEngineE@Base 6.2.0
  _ZTIPFP7QObjectP10QQmlEngineP9QJSEngineE@Base 6.2.0
  _ZTS11QQuickColor@Base 6.2.0
@@ -267,6 +275,7 @@ libQt6QuickControls2Impl.so.6 libqt6quickcontrols2impl6 #MINVER#
  _ZTS18QQuickAnimatedNode@Base 6.2.0
  _ZTS18QQuickImagePrivate@Base 6.2.0
  _ZTS19QQuickMnemonicLabel@Base 6.2.0
+ _ZTS19QQuickPlatformTheme@Base 6.3.0
  _ZTS20QQuickAttachedObject@Base 6.2.0
  _ZTS21QQuickPaddedRectangle@Base 6.2.0
  _ZTS21QQuickPlaceholderText@Base 6.2.0
@@ -283,27 +292,13 @@ libQt6QuickControls2Impl.so.6 libqt6quickcontrols2impl6 #MINVER#
  _ZTV17QQuickClippedText@Base 6.2.0
  _ZTV17QQuickTumblerView@Base 6.2.0
  _ZTV18QQuickAnimatedNode@Base 6.2.0
- _ZTV18QQuickImagePrivate@Base 6.2.4
  _ZTV19QQuickMnemonicLabel@Base 6.2.0
+ _ZTV19QQuickPlatformTheme@Base 6.3.0
  _ZTV20QQuickAttachedObject@Base 6.2.0
  _ZTV21QQuickPaddedRectangle@Base 6.2.0
  _ZTV21QQuickPlaceholderText@Base 6.2.0
  _ZTV22QQuickIconImagePrivate@Base 6.2.0
- _ZTV29QQuickImplicitSizeItemPrivate@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QStringE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QStringE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QStringE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QStringE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI8QVariantE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI8QVariantE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI8QVariantE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI8QVariantE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIbE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES4_S5_S7_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIbE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS5_E_4_FUNES4_S5_S5_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIbE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES4_S5_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIdE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES4_S5_S7_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIdE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS5_E_4_FUNES4_S5_S5_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIdE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES4_S5_@Base 6.2.0
+ _ZTV29QQuickImplicitSizeItemPrivate@Base 6.4.2
  (c++)"non-virtual thunk to QQuickIconImage::componentComplete()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickIconImagePrivate::~QQuickIconImagePrivate()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickIconLabel::componentComplete()@Base" 6.2.0

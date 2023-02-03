@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2021 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQml module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2021 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #ifndef QQMLANYBINDINGPTR_P_H
 #define QQMLANYBINDINGPTR_P_H
@@ -78,9 +42,8 @@
 class QQmlAnyBinding {
 public:
 
-    QQmlAnyBinding() = default;
+    constexpr QQmlAnyBinding() noexcept = default;
     QQmlAnyBinding(std::nullptr_t) : d(static_cast<QQmlAbstractBinding *>(nullptr)) {}
-
 
     /*!
         \internal
@@ -274,7 +237,7 @@ public:
     bool hasError() {
         if (isAbstractPropertyBinding()) {
             auto abstractBinding = asAbstractBinding();
-            if (abstractBinding->isValueTypeProxy())
+            if (abstractBinding->kind() != QQmlAbstractBinding::QmlBinding)
                 return false;
             return static_cast<QQmlBinding *>(abstractBinding)->hasError();
         } else {
@@ -286,7 +249,7 @@ public:
         Stores a null binding. For purpose of classification, the null bindings is
         treated as a QQmlAbstractPropertyBindings.
      */
-    QQmlAnyBinding& operator=(std::nullptr_t )
+    QQmlAnyBinding &operator=(std::nullptr_t)
     {
         clear();
         return *this;
@@ -341,7 +304,7 @@ public:
         \internal
         Stores \a binding and keeps a reference to it.
      */
-    QQmlAnyBinding& operator=(QQmlAbstractBinding *binding)
+    QQmlAnyBinding &operator=(QQmlAbstractBinding *binding)
     {
         clear();
         if (binding) {
@@ -355,7 +318,7 @@ public:
         \internal
         Stores the binding stored in \a binding and keeps a reference to it.
      */
-    QQmlAnyBinding& operator=(const QQmlAbstractBinding::Ptr &binding)
+    QQmlAnyBinding &operator=(const QQmlAbstractBinding::Ptr &binding)
     {
         clear();
         if (binding) {
@@ -369,7 +332,7 @@ public:
         \internal
         Stores \a binding's binding, taking ownership from \a binding.
      */
-    QQmlAnyBinding& operator=(QQmlAbstractBinding::Ptr &&binding)
+    QQmlAnyBinding &operator=(QQmlAbstractBinding::Ptr &&binding)
     {
         clear();
         if (binding) {
@@ -382,7 +345,7 @@ public:
         \internal
         Stores the binding stored in \a untypedBinding and keeps a reference to it.
      */
-    QQmlAnyBinding& operator=(const QUntypedPropertyBinding &untypedBinding)
+    QQmlAnyBinding &operator=(const QUntypedPropertyBinding &untypedBinding)
     {
         clear();
         auto binding = QPropertyBindingPrivate::get(untypedBinding);
@@ -398,7 +361,7 @@ public:
         \overload
         Stores the binding stored in \a untypedBinding, taking ownership from it.
      */
-    QQmlAnyBinding& operator=(const QUntypedPropertyBinding &&untypedBinding)
+    QQmlAnyBinding &operator=(QUntypedPropertyBinding &&untypedBinding)
     {
         clear();
         auto binding = QPropertyBindingPrivate::get(untypedBinding);
@@ -409,17 +372,17 @@ public:
         return *this;
     }
 
-    QQmlAnyBinding(const QQmlAnyBinding &other)
-    {
-        *this = other;
-    }
+    QQmlAnyBinding(QQmlAnyBinding &&other) noexcept
+        : d(std::exchange(other.d, QBiPointer<QQmlAbstractBinding, QPropertyBindingPrivate>()))
+    {}
 
-    friend void swap(const QQmlAnyBinding &a, const QQmlAnyBinding &b)
-    {
-        qSwap(a.d, b.d);
-    }
+    QQmlAnyBinding(const QQmlAnyBinding &other) noexcept { *this = other; }
+    QT_MOVE_ASSIGNMENT_OPERATOR_IMPL_VIA_MOVE_AND_SWAP(QQmlAnyBinding)
 
-    QQmlAnyBinding& operator=(const QQmlAnyBinding &other)
+    void swap(QQmlAnyBinding &other) noexcept { d.swap(other.d); }
+    friend void swap(QQmlAnyBinding &lhs, QQmlAnyBinding &rhs) noexcept { lhs.swap(rhs); }
+
+    QQmlAnyBinding &operator=(const QQmlAnyBinding &other) noexcept
     {
         clear();
         if (auto abstractBinding = other.asAbstractBinding())
@@ -439,11 +402,9 @@ public:
         return p1.d != p2.d;
     }
 
-    ~QQmlAnyBinding() {
-        clear();
-    }
+    ~QQmlAnyBinding() noexcept { clear(); }
 private:
-    void clear() {
+    void clear() noexcept {
         if (d.isNull())
             return;
         if (d.isT1()) {
@@ -458,7 +419,7 @@ private:
         }
         d = static_cast<QQmlAbstractBinding *>(nullptr);
     }
-    QBiPointer<QQmlAbstractBinding, QPropertyBindingPrivate> d = static_cast<QQmlAbstractBinding *>(nullptr);
+    QBiPointer<QQmlAbstractBinding, QPropertyBindingPrivate> d;
 };
 
 

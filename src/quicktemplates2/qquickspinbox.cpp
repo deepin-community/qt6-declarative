@@ -1,38 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2017 The Qt Company Ltd.
-** Contact: http://www.qt.io/licensing/
-**
-** This file is part of the Qt Quick Templates 2 module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL3$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see http://www.qt.io/terms-conditions. For further
-** information use the contact form at http://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPLv3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or later as published by the Free
-** Software Foundation and appearing in the file LICENSE.GPL included in
-** the packaging of this file. Please review the following information to
-** ensure the GNU General Public License version 2.0 requirements will be
-** met: http://www.gnu.org/licenses/gpl-2.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2017 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qquickspinbox_p.h"
 #include "qquickcontrol_p_p.h"
@@ -102,6 +69,9 @@ static const int AUTO_REPEAT_INTERVAL = 100;
 
     This signal is emitted when the spin box value has been interactively
     modified by the user by either touch, mouse, wheel, or keys.
+    In the case of interaction via keyboard, the signal is only emitted
+    when the text has been accepted; meaning when the enter or return keys
+    are pressed, or the input field loses focus.
 */
 
 class QQuickSpinBoxPrivate : public QQuickControlPrivate
@@ -131,9 +101,9 @@ public:
     void startPressRepeat();
     void stopPressRepeat();
 
-    void handlePress(const QPointF &point) override;
-    void handleMove(const QPointF &point) override;
-    void handleRelease(const QPointF &point) override;
+    bool handlePress(const QPointF &point, ulong timestamp) override;
+    bool handleMove(const QPointF &point, ulong timestamp) override;
+    bool handleRelease(const QPointF &point, ulong timestamp) override;
     void handleUngrab() override;
 
     void itemImplicitWidthChanged(QQuickItem *item) override;
@@ -337,10 +307,10 @@ void QQuickSpinBoxPrivate::stopPressRepeat()
     }
 }
 
-void QQuickSpinBoxPrivate::handlePress(const QPointF &point)
+bool QQuickSpinBoxPrivate::handlePress(const QPointF &point, ulong timestamp)
 {
     Q_Q(QQuickSpinBox);
-    QQuickControlPrivate::handlePress(point);
+    QQuickControlPrivate::handlePress(point, timestamp);
     QQuickItem *ui = up->indicator();
     QQuickItem *di = down->indicator();
     up->setPressed(ui && ui->isEnabled() && ui->contains(ui->mapFromItem(q, point)));
@@ -350,12 +320,13 @@ void QQuickSpinBoxPrivate::handlePress(const QPointF &point)
     q->setAccessibleProperty("pressed", pressed);
     if (pressed)
         startRepeatDelay();
+    return true;
 }
 
-void QQuickSpinBoxPrivate::handleMove(const QPointF &point)
+bool QQuickSpinBoxPrivate::handleMove(const QPointF &point, ulong timestamp)
 {
     Q_Q(QQuickSpinBox);
-    QQuickControlPrivate::handleMove(point);
+    QQuickControlPrivate::handleMove(point, timestamp);
     QQuickItem *ui = up->indicator();
     QQuickItem *di = down->indicator();
     up->setHovered(ui && ui->isEnabled() && ui->contains(ui->mapFromItem(q, point)));
@@ -367,12 +338,13 @@ void QQuickSpinBoxPrivate::handleMove(const QPointF &point)
     q->setAccessibleProperty("pressed", pressed);
     if (!pressed)
         stopPressRepeat();
+    return true;
 }
 
-void QQuickSpinBoxPrivate::handleRelease(const QPointF &point)
+bool QQuickSpinBoxPrivate::handleRelease(const QPointF &point, ulong timestamp)
 {
     Q_Q(QQuickSpinBox);
-    QQuickControlPrivate::handleRelease(point);
+    QQuickControlPrivate::handleRelease(point, timestamp);
     QQuickItem *ui = up->indicator();
     QQuickItem *di = down->indicator();
 
@@ -391,6 +363,7 @@ void QQuickSpinBoxPrivate::handleRelease(const QPointF &point)
 
     q->setAccessibleProperty("pressed", false);
     stopPressRepeat();
+    return true;
 }
 
 void QQuickSpinBoxPrivate::handleUngrab()
@@ -592,7 +565,8 @@ void QQuickSpinBox::setEditable(bool editable)
     }
     \endcode
 
-    \sa editable, textFromValue, valueFromText, {Control::locale}{locale}
+    \sa editable, textFromValue, valueFromText, {Control::locale}{locale},
+        {Validating Input Text}
 */
 QValidator *QQuickSpinBox::validator() const
 {
@@ -884,6 +858,7 @@ void QQuickSpinBox::hoverEnterEvent(QHoverEvent *event)
     Q_D(QQuickSpinBox);
     QQuickControl::hoverEnterEvent(event);
     d->updateHover(event->position());
+    event->ignore();
 }
 
 void QQuickSpinBox::hoverMoveEvent(QHoverEvent *event)
@@ -891,6 +866,7 @@ void QQuickSpinBox::hoverMoveEvent(QHoverEvent *event)
     Q_D(QQuickSpinBox);
     QQuickControl::hoverMoveEvent(event);
     d->updateHover(event->position());
+    event->ignore();
 }
 
 void QQuickSpinBox::hoverLeaveEvent(QHoverEvent *event)
@@ -899,6 +875,7 @@ void QQuickSpinBox::hoverLeaveEvent(QHoverEvent *event)
     QQuickControl::hoverLeaveEvent(event);
     d->down->setHovered(false);
     d->up->setHovered(false);
+    event->ignore();
 }
 
 void QQuickSpinBox::keyPressEvent(QKeyEvent *event)

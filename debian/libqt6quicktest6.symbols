@@ -1,17 +1,21 @@
-# SymbolsHelper-Confirmed: 6.2.4 amd64 arm64
+# SymbolsHelper-Confirmed: 6.4.0 amd64
 libQt6QuickTest.so.6 libqt6quicktest6 #MINVER#
-| libqt6quicktest6 #MINVER#, qt6-declarative-abi (= 6.2.4)
+| libqt6quicktest6 #MINVER#, qt6-declarative-abi (= 6.4.2)
 * Build-Depends-Packages: qt6-declarative-dev, qt6-declarative-private-dev
  _Z15quick_test_mainiPPcPKcS2_@Base 6.2.0
  _Z25qml_register_types_QtTestv@Base 6.2.0
  _Z26quick_test_main_with_setupiPPcPKcS2_P7QObject@Base 6.2.0
  _ZGVZN15QTestRootObject8instanceEvE6object@Base 6.2.0
+ _ZN10QQuickTest14qWaitForPolishEPK10QQuickItemi@Base 6.4.0
+ _ZN10QQuickTest14qWaitForPolishEPK12QQuickWindowi@Base 6.4.0
  _ZN10QQuickTest18qIsPolishScheduledEPK10QQuickItem@Base 6.2.0
+ _ZN10QQuickTest18qIsPolishScheduledEPK12QQuickWindow@Base 6.4.0
  _ZN10QQuickTest20qWaitForItemPolishedEPK10QQuickItemi@Base 6.2.0
  _ZN13QuickTestUtil11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
  _ZN13QuickTestUtil11qt_metacastEPKc@Base 6.2.0
  _ZN13QuickTestUtil16staticMetaObjectE@Base 6.2.0
  _ZN13QuickTestUtil20dragThresholdChangedEv@Base 6.2.0
+ _ZN13QuickTestUtil21populateClipboardTextEi@Base 6.3.0
  _ZN13QuickTestUtil30printAvailableFunctionsChangedEv@Base 6.2.0
  _ZN14QuickTestEvent10keyReleaseEiii@Base 6.2.0
  _ZN14QuickTestEvent10mouseClickEP7QObjectddiii@Base 6.2.0
@@ -54,6 +58,7 @@ libQt6QuickTest.so.6 libqt6quicktest6 #MINVER#
  _ZN15QuickTestResult12beginDataRunEv@Base 6.2.0
  _ZN15QuickTestResult12fuzzyCompareERK8QVariantS2_d@Base 6.2.0
  _ZN15QuickTestResult12startLoggingEv@Base 6.2.0
+ _ZN15QuickTestResult13failOnWarningERK8QJSValue@Base 6.3.0
  _ZN15QuickTestResult13ignoreWarningERK8QJSValue@Base 6.2.0
  _ZN15QuickTestResult13initTestTableEv@Base 6.2.0
  _ZN15QuickTestResult13nextBenchmarkEv@Base 6.2.0
@@ -110,7 +115,6 @@ libQt6QuickTest.so.6 libqt6quicktest6 #MINVER#
  _ZN24QQuickTouchEventSequence7releaseEiP7QObjectdd@Base 6.2.0
  _ZN24QQuickTouchEventSequenceC1EP14QuickTestEventP7QObject@Base 6.2.0
  _ZN24QQuickTouchEventSequenceC2EP14QuickTestEventP7QObject@Base 6.2.0
- _ZNK11QMetaObject10superClassEv@Base 6.2.4
  _ZNK13QuickTestUtil10callerFileEi@Base 6.2.0
  _ZNK13QuickTestUtil10callerLineEi@Base 6.2.0
  _ZNK13QuickTestUtil10metaObjectEv@Base 6.2.0
@@ -136,11 +140,6 @@ libQt6QuickTest.so.6 libqt6quicktest6 #MINVER#
  _ZNK15QuickTestResult9tagsToRunEv@Base 6.2.0
  _ZNK20QuickTestImageObject10metaObjectEv@Base 6.2.0
  _ZNK24QQuickTouchEventSequence10metaObjectEv@Base 6.2.0
- (optional=templinst)_ZNK3QV45Value2asINS_14FunctionObjectEEEPKT_v@Base 6.2.4
- (optional=templinst)_ZNK3QV45Value2asINS_7ManagedEEEPKT_v@Base 6.2.4
- _ZNK6QImage5pixelERK6QPoint@Base 6.2.4
- _ZNK7QString3argEiii5QChar@Base 6.2.4
- _ZNK7QStringixEx@Base 6.2.4
  _ZTI13QuickTestUtil@Base 6.2.0
  _ZTI14QuickTestEvent@Base 6.2.0
  _ZTI15QTestRootObject@Base 6.2.0
@@ -164,38 +163,3 @@ libQt6QuickTest.so.6 libqt6quicktest6 #MINVER#
  _ZTV20QuickTestImageObject@Base 6.2.0
  _ZTV24QQuickTouchEventSequence@Base 6.2.0
  _ZZN15QTestRootObject8instanceEvE6object@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI4QUrlE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI4QUrlE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI4QUrlE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI4QUrlE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI5QListI7QStringEE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES7_S8_SA_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI5QListI7QStringEE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS8_E_4_FUNES7_S8_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI5QListI7QStringEE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES7_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI5QListI7QStringEE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES7_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI5QSizeE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI5QSizeE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI5QSizeE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QStringE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QStringE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QStringE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QStringE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI8QVariantE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI8QVariantE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI8QVariantE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI8QVariantE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI9QDateTimeE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI9QDateTimeE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI9QDateTimeE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI9QDateTimeE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIP7QObjectE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES6_S7_S9_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIP7QObjectE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS7_E_4_FUNES6_S7_S7_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIP7QObjectE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES6_S7_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIbE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES4_S5_S7_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIbE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS5_E_4_FUNES4_S5_S5_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIbE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES4_S5_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIdE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES4_S5_S7_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIdE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS5_E_4_FUNES4_S5_S5_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIdE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES4_S5_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIiE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES4_S5_S7_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIiE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS5_E_4_FUNES4_S5_S5_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIiE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES4_S5_@Base 6.2.0

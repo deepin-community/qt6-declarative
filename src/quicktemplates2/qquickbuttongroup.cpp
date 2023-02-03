@@ -1,38 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2020 The Qt Company Ltd.
-** Contact: http://www.qt.io/licensing/
-**
-** This file is part of the Qt Quick Templates 2 module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL3$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see http://www.qt.io/terms-conditions. For further
-** information use the contact form at http://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPLv3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or later as published by the Free
-** Software Foundation and appearing in the file LICENSE.GPL included in
-** the packaging of this file. Please review the following information to
-** ensure the GNU General Public License version 2.0 requirements will be
-** met: http://www.gnu.org/licenses/gpl-2.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2020 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qquickbuttongroup_p.h"
 
@@ -151,9 +118,9 @@ QT_BEGIN_NAMESPACE
 
 class QQuickButtonGroupPrivate : public QObjectPrivate
 {
+public:
     Q_DECLARE_PUBLIC(QQuickButtonGroup)
 
-public:
     void clear();
     void buttonClicked();
     void _q_updateCurrent();
@@ -175,7 +142,7 @@ public:
 
 void QQuickButtonGroupPrivate::clear()
 {
-    for (QQuickAbstractButton *button : qAsConst(buttons)) {
+    for (QQuickAbstractButton *button : std::as_const(buttons)) {
         QQuickAbstractButtonPrivate::get(button)->group = nullptr;
         QObjectPrivate::disconnect(button, &QQuickAbstractButton::clicked, this, &QQuickButtonGroupPrivate::buttonClicked);
         QObjectPrivate::disconnect(button, &QQuickAbstractButton::checkedChanged, this, &QQuickButtonGroupPrivate::_q_updateCurrent);
@@ -211,7 +178,7 @@ void QQuickButtonGroupPrivate::updateCheckState()
 
     bool anyChecked = false;
     bool allChecked = !buttons.isEmpty();
-    for (QQuickAbstractButton *button : qAsConst(buttons)) {
+    for (QQuickAbstractButton *button : std::as_const(buttons)) {
         const bool isChecked = button->isChecked();
         anyChecked |= isChecked;
         allChecked &= isChecked;
@@ -238,7 +205,7 @@ void QQuickButtonGroupPrivate::buttons_append(QQmlListProperty<QQuickAbstractBut
 qsizetype QQuickButtonGroupPrivate::buttons_count(QQmlListProperty<QQuickAbstractButton> *prop)
 {
     QQuickButtonGroupPrivate *p = static_cast<QQuickButtonGroupPrivate *>(prop->data);
-    return p->buttons.count();
+    return p->buttons.size();
 }
 
 QQuickAbstractButton *QQuickButtonGroupPrivate::buttons_at(QQmlListProperty<QQuickAbstractButton> *prop, qsizetype index)
@@ -409,7 +376,7 @@ void QQuickButtonGroup::setCheckState(Qt::CheckState state)
         if (d->checkedButton && state == Qt::Unchecked)
             setCheckedButton(nullptr);
     } else {
-        for (QQuickAbstractButton *button : qAsConst(d->buttons))
+        for (QQuickAbstractButton *button : std::as_const(d->buttons))
             button->setChecked(state == Qt::Checked);
     }
     d->settingCheckState = false;

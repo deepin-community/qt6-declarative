@@ -1,38 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2017 The Qt Company Ltd.
-** Contact: http://www.qt.io/licensing/
-**
-** This file is part of the Qt Quick Templates 2 module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL3$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see http://www.qt.io/terms-conditions. For further
-** information use the contact form at http://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPLv3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or later as published by the Free
-** Software Foundation and appearing in the file LICENSE.GPL included in
-** the packaging of this file. Please review the following information to
-** ensure the GNU General Public License version 2.0 requirements will be
-** met: http://www.gnu.org/licenses/gpl-2.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2017 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qquickscrollbar_p.h"
 #include "qquickscrollbar_p_p.h"
@@ -162,19 +129,23 @@ static const QQuickItemPrivate::ChangeTypes verticalChangeTypes = changeTypes | 
 QQuickScrollBarPrivate::VisualArea QQuickScrollBarPrivate::visualArea() const
 {
     qreal visualPos = position;
-    if (minimumSize > size)
+
+    if (minimumSize > size && size != 1.0)
         visualPos = position / (1.0 - size) * (1.0 - minimumSize);
 
-    qreal visualSize = qBound<qreal>(0, qMax(size, minimumSize) + qMin<qreal>(0, visualPos), 1.0 - visualPos);
+    qreal maximumSize = qMax<qreal>(0.0, 1.0 - visualPos);
+    qreal visualSize =  qMax<qreal>(minimumSize,
+                                    qMin<qreal>(qMax(size, minimumSize) + qMin<qreal>(0, visualPos),
+                                                maximumSize));
 
-    visualPos = qBound<qreal>(0, visualPos, 1.0 - visualSize);
+    visualPos = qMax<qreal>(0,qMin<qreal>(visualPos,qMax<qreal>(0, 1.0 - visualSize)));
 
     return VisualArea(visualPos, visualSize);
 }
 
 qreal QQuickScrollBarPrivate::logicalPosition(qreal position) const
 {
-    if (minimumSize > size)
+    if (minimumSize > size && minimumSize != 1.0)
         return position * (1.0 - size) / (1.0 - minimumSize);
     return position;
 }
@@ -283,16 +254,16 @@ void QQuickScrollBarPrivate::itemImplicitHeightChanged(QQuickItem *item)
         emit indicatorButton->implicitIndicatorHeightChanged();
 }
 
-void QQuickScrollBarPrivate::handlePress(const QPointF &point)
+bool QQuickScrollBarPrivate::handlePress(const QPointF &point, ulong timestamp)
 {
     Q_Q(QQuickScrollBar);
-    QQuickControlPrivate::handlePress(point);
+    QQuickControlPrivate::handlePress(point, timestamp);
     if (QQuickIndicatorButton *indicatorButton = q->decreaseVisual()) {
         QQuickItem *decreaseArrow = indicatorButton->indicator();
         if (decreaseArrow && decreaseArrow->contains(q->mapToItem(decreaseArrow, point + QPointF(0.5, 0.5)))) {
             indicatorButton->setPressed(true);
             q->decrease();
-            return;
+            return true;
         }
     }
 
@@ -301,7 +272,7 @@ void QQuickScrollBarPrivate::handlePress(const QPointF &point)
         if (increaseArrow && increaseArrow->contains(q->mapToItem(increaseArrow, point + QPointF(0.5, 0.5)))) {
             increaseObject->setPressed(true);
             q->increase();
-            return;
+            return true;
         }
     }
 
@@ -310,12 +281,13 @@ void QQuickScrollBarPrivate::handlePress(const QPointF &point)
     if (offset < 0 || offset > sz)
         offset = sz / 2;
     q->setPressed(true);
+    return true;
 }
 
-void QQuickScrollBarPrivate::handleMove(const QPointF &point)
+bool QQuickScrollBarPrivate::handleMove(const QPointF &point, ulong timestamp)
 {
     Q_Q(QQuickScrollBar);
-    QQuickControlPrivate::handleMove(point);
+    QQuickControlPrivate::handleMove(point, timestamp);
 
     /*
      * handleMove() will be called as soon as you hold the mouse button down *anywhere* on the
@@ -325,31 +297,35 @@ void QQuickScrollBarPrivate::handleMove(const QPointF &point)
      * scrollbar gently.
      */
     if (!pressed)
-        return;
-    qreal pos = qBound<qreal>(0.0, positionAt(point) - offset, 1.0 - size);
+        return true;
+
+    qreal pos = qMax<qreal>(0.0, qMin<qreal>(positionAt(point) - offset, 1.0 - size));
     if (snapMode == QQuickScrollBar::SnapAlways)
         pos = snapPosition(pos);
     q->setPosition(pos);
+    return true;
 }
 
-void QQuickScrollBarPrivate::handleRelease(const QPointF &point)
+bool QQuickScrollBarPrivate::handleRelease(const QPointF &point, ulong timestamp)
 {
     Q_Q(QQuickScrollBar);
-    QQuickControlPrivate::handleRelease(point);
+    QQuickControlPrivate::handleRelease(point, timestamp);
 
     if (orientation == Qt::Vertical) {
         if (point.y() < q->topPadding() || point.y() >= (q->height() - q->bottomPadding()))
-            return;
+            return true;
     } else /* orientation == Qt::Horizontal */{
         if (point.x() < q->leftPadding() || point.x() >= (q->width() - q->rightPadding()))
-            return;
+            return true;
     }
-    qreal pos = qBound<qreal>(0.0, positionAt(point) - offset, 1.0 - size);
+
+    qreal pos = qMax<qreal>(0.0, qMin<qreal>(positionAt(point) - offset, 1.0 - size));
     if (snapMode != QQuickScrollBar::NoSnap)
         pos = snapPosition(pos);
     q->setPosition(pos);
     offset = 0.0;
     q->setPressed(false);
+    return true;
 }
 
 void QQuickScrollBarPrivate::handleUngrab()
@@ -428,11 +404,20 @@ qreal QQuickScrollBar::size() const
 void QQuickScrollBar::setSize(qreal size)
 {
     Q_D(QQuickScrollBar);
+    if (!qt_is_finite(size))
+        return;
+    size = qBound(0.0, size, 1.0);
     if (qFuzzyCompare(d->size, size))
         return;
+    d->size = size;
 
     auto oldVisualArea = d->visualArea();
-    d->size = size;
+    d->size = qBound(0.0, size, 1.0);
+    if (d->size + d->position > 1.0) {
+        setPosition(1.0 - d->size);
+        oldVisualArea = d->visualArea();
+    }
+
     if (isComponentComplete())
         d->resizeContent();
     emit sizeChanged();
@@ -443,6 +428,11 @@ void QQuickScrollBar::setSize(qreal size)
     \qmlproperty real QtQuick.Controls::ScrollBar::position
 
     This property holds the position of the scroll bar, scaled to \c {0.0 - 1.0}.
+
+    The largest valid scrollbar position is \c {(1.0 - size)}. This gives
+    correct behavior for the most used case where moving the scrollbar
+    to the end will put the end of the document at the lower end of the
+    visible area of the connected Flickable.
 
     \sa {Flickable::visibleArea.yPosition}{Flickable::visibleArea}
 
@@ -460,7 +450,7 @@ qreal QQuickScrollBar::position() const
 void QQuickScrollBar::setPosition(qreal position)
 {
     Q_D(QQuickScrollBar);
-    if (qFuzzyCompare(d->position, position))
+    if (!qt_is_finite(position) || qFuzzyCompare(d->position, position))
         return;
 
     auto oldVisualArea = d->visualArea();
@@ -487,7 +477,7 @@ qreal QQuickScrollBar::stepSize() const
 void QQuickScrollBar::setStepSize(qreal step)
 {
     Q_D(QQuickScrollBar);
-    if (qFuzzyCompare(d->stepSize, step))
+    if (!qt_is_finite(step) || qFuzzyCompare(d->stepSize, step))
         return;
 
     d->stepSize = step;
@@ -731,11 +721,11 @@ qreal QQuickScrollBar::minimumSize() const
 void QQuickScrollBar::setMinimumSize(qreal minimumSize)
 {
     Q_D(QQuickScrollBar);
-    if (qFuzzyCompare(d->minimumSize, minimumSize))
+    if (!qt_is_finite(minimumSize) || qFuzzyCompare(d->minimumSize, minimumSize))
         return;
 
     auto oldVisualArea = d->visualArea();
-    d->minimumSize = minimumSize;
+    d->minimumSize = qBound(0.0, minimumSize, 1.0);
     if (isComponentComplete())
         d->resizeContent();
     emit minimumSizeChanged();
@@ -822,7 +812,7 @@ void QQuickScrollBar::mousePressEvent(QMouseEvent *event)
 {
     Q_D(QQuickScrollBar);
     QQuickControl::mousePressEvent(event);
-    d->handleMove(event->position());
+    d->handleMove(event->position(), event->timestamp());
 }
 
 #if QT_CONFIG(quicktemplates2_hover)
@@ -837,6 +827,7 @@ void QQuickScrollBar::hoverEnterEvent(QHoverEvent *event)
     Q_D(QQuickScrollBar);
     QQuickControl::hoverEnterEvent(event);
     d->updateHover(event->position());
+    event->ignore();
 }
 
 void QQuickScrollBar::hoverMoveEvent(QHoverEvent *event)
@@ -844,6 +835,7 @@ void QQuickScrollBar::hoverMoveEvent(QHoverEvent *event)
     Q_D(QQuickScrollBar);
     QQuickControl::hoverMoveEvent(event);
     d->updateHover(event->position());
+    event->ignore();
 }
 
 void QQuickScrollBar::hoverLeaveEvent(QHoverEvent *event)
@@ -852,6 +844,7 @@ void QQuickScrollBar::hoverLeaveEvent(QHoverEvent *event)
     QQuickControl::hoverLeaveEvent(event);
 
     d->updateHover(QPoint(), false);    //position is not needed when we force it to unhover
+    event->ignore();
 }
 #endif
 
@@ -910,6 +903,7 @@ void QQuickScrollBarAttachedPrivate::setFlickable(QQuickFlickable *item)
         // The latter doesn't remove the listener but only resets its types. Thus, it leaves behind a dangling
         // pointer on destruction.
         QQuickItemPrivate::get(flickable)->removeItemChangeListener(this, QQuickItemPrivate::Geometry);
+        QQuickItemPrivate::get(flickable)->removeItemChangeListener(this, QQuickItemPrivate::Destroyed);
         if (horizontal)
             cleanupHorizontal();
         if (vertical)
@@ -919,7 +913,10 @@ void QQuickScrollBarAttachedPrivate::setFlickable(QQuickFlickable *item)
     flickable = item;
 
     if (item) {
+        // Don't know how to combine these calls into one, and as long as they're separate calls,
+        // the remove* calls above need to be separate too, otherwise they will have no effect.
         QQuickItemPrivate::get(item)->updateOrAddGeometryChangeListener(this, QQuickGeometryChange::Size);
+        QQuickItemPrivate::get(item)->updateOrAddItemChangeListener(this, QQuickItemPrivate::Destroyed);
         if (horizontal)
             initHorizontal();
         if (vertical)
@@ -943,6 +940,14 @@ void QQuickScrollBarAttachedPrivate::initHorizontal()
     if (parent && parent == flickable->parentItem())
         horizontal->stackAfter(flickable);
 
+    // If a scroll bar was previously hidden (due to e.g. setting a new contentItem
+    // on a ScrollView), we need to make sure that we un-hide it.
+    // We don't bother checking if the item is actually the old one, because
+    // if it's not, all of the things the function does (setting parent, visibility, etc.)
+    // should be no-ops anyway.
+    if (auto control = qobject_cast<QQuickControl*>(q_func()->parent()))
+        QQuickControlPrivate::unhideOldItem(control, horizontal);
+
     layoutHorizontal();
     horizontal->setSize(area->property("widthRatio").toReal());
     horizontal->setPosition(area->property("xPosition").toReal());
@@ -963,6 +968,9 @@ void QQuickScrollBarAttachedPrivate::initVertical()
     QQuickItem *parent = vertical->parentItem();
     if (parent && parent == flickable->parentItem())
         vertical->stackAfter(flickable);
+
+    if (auto control = qobject_cast<QQuickControl*>(q_func()->parent()))
+        QQuickControlPrivate::unhideOldItem(control, vertical);
 
     layoutVertical();
     vertical->setSize(area->property("heightRatio").toReal());
@@ -1122,6 +1130,8 @@ void QQuickScrollBarAttachedPrivate::itemImplicitHeightChanged(QQuickItem *item)
 
 void QQuickScrollBarAttachedPrivate::itemDestroyed(QQuickItem *item)
 {
+    if (item == flickable)
+        flickable = nullptr;
     if (item == horizontal)
         horizontal = nullptr;
     if (item == vertical)
@@ -1255,3 +1265,5 @@ void QQuickScrollBarAttached::setVertical(QQuickScrollBar *vertical)
 }
 
 QT_END_NAMESPACE
+
+#include "moc_qquickscrollbar_p.cpp"

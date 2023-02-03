@@ -1,30 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the test suite of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:GPL-EXCEPT$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 3 as published by the Free Software
-** Foundation with exceptions as appearing in the file LICENSE.GPL3-EXCEPT
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only WITH Qt-GPL-exception-1.0
 #include <QtTest/QtTest>
 #include <QtTest/QSignalSpy>
 #include <QtQml/qqmlengine.h>
@@ -85,10 +60,6 @@ private:
 
 void tst_qquickfolderlistmodel::initTestCase()
 {
-#if defined(Q_OS_MACOS) && defined(Q_PROCESSOR_ARM_64)
-    // ### TODO: this is only a temporary workaround for QTBUG-99665
-    QSKIP("Test crashes after running to completion on macos ARM");
-#endif
     // The tests rely on a fixed number of files in the directory with the qml files
     // (the data dir), so disable the disk cache to avoid creating .qmlc files and
     // confusing the test.
@@ -98,28 +69,27 @@ void tst_qquickfolderlistmodel::initTestCase()
 
 void tst_qquickfolderlistmodel::basicProperties()
 {
-#ifdef Q_OS_ANDROID
-    QSKIP("[QTBUG-77335] Initial folder of FolderListModel on Android does not work properly,"
-          " and from there on it is unreliable to change the folder");
-#endif
     QQmlComponent component(&engine, testFileUrl("basic.qml"));
     QTRY_VERIFY2(component.isReady(), qPrintable(component.errorString()));
 
     QAbstractListModel *flm = qobject_cast<QAbstractListModel*>(component.create());
     QVERIFY(flm != nullptr);
+    QSignalSpy folderChangedSpy(flm, SIGNAL(folderChanged()));
     QCOMPARE(flm->property("nameFilters").toStringList(), QStringList() << "*.qml"); // from basic.qml
     QCOMPARE(flm->property("folder").toUrl(), QUrl::fromLocalFile(QDir::currentPath()));
+    folderChangedSpy.wait(); // wait for the initial folder to be processed
 
-    // wait for the initial directory listing (it will find at least the "data" dir,
-    // and other dirs on Windows).
-    QTRY_VERIFY(flm->property("count").toInt() > 0);
-
-    QSignalSpy folderChangedSpy(flm, SIGNAL(folderChanged()));
     flm->setProperty("folder", dataDirectoryUrl());
     QVERIFY(folderChangedSpy.wait());
     QCOMPARE(flm->property("count").toInt(), 9);
     QCOMPARE(flm->property("folder").toUrl(), dataDirectoryUrl());
-    QCOMPARE(flm->property("parentFolder").toUrl(), QUrl::fromLocalFile(QDir(directory()).canonicalPath()));
+#ifndef Q_OS_ANDROID
+    // On Android currentDir points to some dir in qrc://, which is not
+    // considered to be local file, so parentFolder is always
+    // default-constructed QUrl.
+    QCOMPARE(flm->property("parentFolder").toUrl(),
+             QUrl::fromLocalFile(QDir(directory()).canonicalPath()));
+#endif
     QCOMPARE(flm->property("sortField").toInt(), int(Name));
     QCOMPARE(flm->property("nameFilters").toStringList(), QStringList() << "*.qml");
     QCOMPARE(flm->property("sortReversed").toBool(), false);
@@ -198,6 +168,14 @@ void tst_qquickfolderlistmodel::nameFilters()
 
     connect(flm, SIGNAL(rowsRemoved(QModelIndex,int,int)),
             this, SLOT(removed(QModelIndex,int,int)));
+
+#ifdef Q_OS_ANDROID
+    // On Android the default folder is application's "files" dir, which
+    // requires special rights for reading. The test works when started via
+    // androidtestrunner, but fails when launching the APK directly. Set the
+    // initial folder to resources root dir, because it is always readable.
+    flm->setProperty("folder", testFileUrl(""));
+#endif
 
     QTRY_VERIFY(flm->rowCount() > 0);
     // read an invalid directory first...

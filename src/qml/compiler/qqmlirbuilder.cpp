@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the tools applications of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qqmlirbuilder_p.h"
 
@@ -53,6 +17,8 @@
 #endif
 
 QT_USE_NAMESPACE
+
+using namespace Qt::StringLiterals;
 
 static const quint32 emptyStringIndex = 0;
 using namespace QmlIR;
@@ -76,7 +42,7 @@ void Object::simplifyRequiredProperties() {
     for (auto it = this->propertiesBegin(); it != this->propertiesEnd(); ++it) {
         auto requiredIt = required.find(it->nameIndex);
         if (requiredIt != required.end()) {
-            it->isRequired = true;
+            it->setIsRequired(true);
             required.erase(requiredIt);
         }
     }
@@ -106,20 +72,18 @@ bool Parameter::init(QV4::CompiledData::Parameter *param, const QV4::Compiler::J
 
 bool Parameter::initType(QV4::CompiledData::ParameterType *paramType, const QV4::Compiler::JSUnitGenerator *stringGenerator, int typeNameIndex)
 {
-    paramType->indexIsBuiltinType = false;
-    paramType->typeNameIndexOrBuiltinType = 0;
     const QString typeName = stringGenerator->stringForIndex(typeNameIndex);
     auto builtinType = stringToBuiltinType(typeName);
     if (builtinType == QV4::CompiledData::BuiltinType::InvalidBuiltin) {
-        if (typeName.isEmpty() || !typeName.at(0).isUpper())
+        if (typeName.isEmpty()) {
+            paramType->set(false, 0);
             return false;
-        paramType->indexIsBuiltinType = false;
-        paramType->typeNameIndexOrBuiltinType = typeNameIndex;
+        }
         Q_ASSERT(quint32(typeNameIndex) < (1u << 31));
+        paramType->set(false, typeNameIndex);
     } else {
-        paramType->indexIsBuiltinType = true;
-        paramType->typeNameIndexOrBuiltinType = static_cast<quint32>(builtinType);
         Q_ASSERT(quint32(builtinType) < (1u << 31));
+        paramType->set(true, static_cast<quint32>(builtinType));
     }
     return true;
 }
@@ -137,23 +101,10 @@ QV4::CompiledData::BuiltinType Parameter::stringToBuiltinType(const QString &typ
         { "real", strlen("real"), QV4::CompiledData::BuiltinType::Real },
         { "string", strlen("string"), QV4::CompiledData::BuiltinType::String },
         { "url", strlen("url"), QV4::CompiledData::BuiltinType::Url },
-        { "color", strlen("color"), QV4::CompiledData::BuiltinType::Color },
-        // Internally QTime, QDate and QDateTime are all supported.
-        // To be more consistent with JavaScript we expose only
-        // QDateTime as it matches closely with the Date JS type.
-        // We also call it "date" to match.
-        // { "time", strlen("time"), Property::Time },
-        // { "date", strlen("date"), Property::Date },
         { "date", strlen("date"), QV4::CompiledData::BuiltinType::DateTime },
         { "rect", strlen("rect"), QV4::CompiledData::BuiltinType::Rect },
         { "point", strlen("point"), QV4::CompiledData::BuiltinType::Point },
         { "size", strlen("size"), QV4::CompiledData::BuiltinType::Size },
-        { "font", strlen("font"), QV4::CompiledData::BuiltinType::Font },
-        { "vector2d", strlen("vector2d"), QV4::CompiledData::BuiltinType::Vector2D },
-        { "vector3d", strlen("vector3d"), QV4::CompiledData::BuiltinType::Vector3D },
-        { "vector4d", strlen("vector4d"), QV4::CompiledData::BuiltinType::Vector4D },
-        { "quaternion", strlen("quaternion"), QV4::CompiledData::BuiltinType::Quaternion },
-        { "matrix4x4", strlen("matrix4x4"), QV4::CompiledData::BuiltinType::Matrix4x4 },
         { "variant", strlen("variant"), QV4::CompiledData::BuiltinType::Var },
         { "var", strlen("var"), QV4::CompiledData::BuiltinType::Var }
     };
@@ -172,7 +123,7 @@ QV4::CompiledData::BuiltinType Parameter::stringToBuiltinType(const QString &typ
 void Object::init(QQmlJS::MemoryPool *pool, int typeNameIndex, int idIndex,
                   const QV4::CompiledData::Location &loc)
 {
-    Q_ASSERT(loc.line > 0 && loc.column > 0);
+    Q_ASSERT(loc.line() > 0 && loc.column() > 0);
     inheritedTypeNameIndex = typeNameIndex;
     location = loc;
     idNameIndex = idIndex;
@@ -197,8 +148,8 @@ QString IRBuilder::sanityCheckFunctionNames(Object *obj, const QSet<QString> &il
     QSet<int> functionNames;
     for (auto functionit = obj->functionsBegin(); functionit != obj->functionsEnd(); ++functionit) {
         Function *f = functionit.ptr;
-        errorLocation->startLine = f->location.line;
-        errorLocation->startColumn = f->location.column;
+        errorLocation->startLine = f->location.line();
+        errorLocation->startColumn = f->location.column();
         if (functionNames.contains(f->nameIndex))
             return tr("Duplicate method name");
         functionNames.insert(f->nameIndex);
@@ -259,7 +210,7 @@ QString Object::appendProperty(Property *prop, const QString &propertyName, bool
             return tr("Duplicate property name");
 
     for (Alias *a = target->aliases->first; a; a = a->next)
-        if (a->nameIndex == prop->nameIndex)
+        if (a->nameIndex() == prop->nameIndex)
             return tr("Property duplicates alias name");
 
     if (propertyName.constData()->isUpper())
@@ -283,13 +234,13 @@ QString Object::appendAlias(Alias *alias, const QString &aliasName, bool isDefau
         target = this;
 
     const auto aliasWithSameName = std::find_if(target->aliases->begin(), target->aliases->end(), [&alias](const Alias &targetAlias){
-        return targetAlias.nameIndex == alias->nameIndex;
+        return targetAlias.nameIndex() == alias->nameIndex();
     });
     if (aliasWithSameName != target->aliases->end())
         return tr("Duplicate alias name");
 
     const auto aliasSameAsProperty = std::find_if(target->properties->begin(), target->properties->end(), [&alias](const Property &targetProp){
-        return targetProp.nameIndex == alias->nameIndex;
+        return targetProp.nameIndex == alias->nameIndex();
     });
 
     if (aliasSameAsProperty != target->properties->end())
@@ -333,13 +284,17 @@ void Object::appendRequiredPropertyExtraData(RequiredPropertyExtraData *extraDat
 QString Object::appendBinding(Binding *b, bool isListBinding)
 {
     const bool bindingToDefaultProperty = (b->propertyNameIndex == quint32(0));
-    if (!isListBinding && !bindingToDefaultProperty
-        && b->type != QV4::CompiledData::Binding::Type_GroupProperty
-        && b->type != QV4::CompiledData::Binding::Type_AttachedProperty
-        && !(b->flags & QV4::CompiledData::Binding::IsOnAssignment)) {
+    if (!isListBinding
+            && !bindingToDefaultProperty
+            && b->type() != QV4::CompiledData::Binding::Type_GroupProperty
+            && b->type() != QV4::CompiledData::Binding::Type_AttachedProperty
+            && !b->hasFlag(QV4::CompiledData::Binding::IsOnAssignment)) {
         Binding *existing = findBinding(b->propertyNameIndex);
-        if (existing && existing->isValueBinding() == b->isValueBinding() && !(existing->flags & QV4::CompiledData::Binding::IsOnAssignment))
+        if (existing
+                && existing->isValueBinding() == b->isValueBinding()
+                && !existing->hasFlag(QV4::CompiledData::Binding::IsOnAssignment)) {
             return tr("Property value set multiple times");
+        }
     }
     if (bindingToDefaultProperty)
         insertSorted(b);
@@ -407,8 +362,7 @@ void ScriptDirectivesCollector::importFile(const QString &jsfile, const QString 
     import->type = QV4::CompiledData::Import::ImportScript;
     import->uriIndex = jsGenerator->registerString(jsfile);
     import->qualifierIndex = jsGenerator->registerString(module);
-    import->location.line = lineNumber;
-    import->location.column = column;
+    import->location.set(lineNumber, column);
     document->imports << import;
 }
 
@@ -419,8 +373,7 @@ void ScriptDirectivesCollector::importModule(const QString &uri, const QString &
     import->uriIndex = jsGenerator->registerString(uri);
     import->version = IRBuilder::extractVersion(QStringView(version));
     import->qualifierIndex = jsGenerator->registerString(module);
-    import->location.line = lineNumber;
-    import->location.column = column;
+    import->location.set(lineNumber, column);
     document->imports << import;
 }
 
@@ -599,14 +552,12 @@ bool IRBuilder::visit(QQmlJS::AST::UiInlineComponent *ast)
     Q_ASSERT(idx > 0);
     Object* definedObject = _objects.at(idx);
     definedObject->flags |= QV4::CompiledData::Object::IsInlineComponentRoot;
-    definedObject->flags |= QV4::CompiledData::Object::InPartOfInlineComponent;
-    definedObject->isInlineComponent = true;
+    definedObject->flags |= QV4::CompiledData::Object::IsPartOfInlineComponent;
     auto inlineComponent = New<InlineComponent>();
     inlineComponent->nameIndex = registerString(ast->name.toString());
     inlineComponent->objectIndex = idx;
     auto location = ast->firstSourceLocation();
-    inlineComponent->location.line = location.startLine;
-    inlineComponent->location.column = location.startColumn;
+    inlineComponent->location.set(location.startLine, location.startColumn);
     _object->appendInlineComponent(inlineComponent);
     return false;
 }
@@ -719,7 +670,7 @@ bool IRBuilder::defineQMLObject(
     _object->init(pool, registerString(asString(qualifiedTypeNameId)), emptyStringIndex, location);
     _object->declarationsOverride = declarationsOverride;
     if (insideInlineComponent) {
-        _object->flags |= QV4::CompiledData::Object::InPartOfInlineComponent;
+        _object->flags |= QV4::CompiledData::Object::IsPartOfInlineComponent;
     }
 
     // A new object is also a boundary for property declarations.
@@ -802,8 +753,7 @@ bool IRBuilder::visit(QQmlJS::AST::UiImport *node)
         import->version = QTypeRevision();
     }
 
-    import->location.line = node->importToken.startLine;
-    import->location.column = node->importToken.startColumn;
+    import->location.set(node->importToken.startLine, node->importToken.startColumn);
 
     import->uriIndex = registerString(uri);
 
@@ -816,24 +766,69 @@ bool IRBuilder::visit(QQmlJS::AST::UiPragma *node)
 {
     Pragma *pragma = New<Pragma>();
 
-    // For now the only valid pragma is Singleton, so lets validate the input
-    if (!node->name.isNull())
-    {
+    if (!node->name.isNull()) {
         if (node->name == QStringLiteral("Singleton")) {
-            pragma->type = Pragma::PragmaSingleton;
+            pragma->type = Pragma::Singleton;
         } else if (node->name == QStringLiteral("Strict")) {
-            pragma->type = Pragma::PragmaStrict;
+            pragma->type = Pragma::Strict;
+        } else if (node->name == QStringLiteral("ComponentBehavior")) {
+            for (const Pragma *prev : _pragmas) {
+                if (prev->type != Pragma::ComponentBehavior)
+                    continue;
+                recordError(node->pragmaToken,
+                            QCoreApplication::translate(
+                                    "QQmlParser", "Multiple component behavior pragmas found"));
+                return false;
+            }
+
+            pragma->type = Pragma::ComponentBehavior;
+            if (node->value == QLatin1String("Bound")) {
+                pragma->componentBehavior = Pragma::Bound;
+            } else if (node->value == QLatin1String("Unbound")) {
+                pragma->componentBehavior = Pragma::Unbound;
+            } else {
+                recordError(node->pragmaToken,
+                            QCoreApplication::translate(
+                                    "QQmlParser", "Unknown component behavior '%1' in pragma")
+                                    .arg(node->value));
+                return false;
+            }
+        } else if (node->name == QStringLiteral("ListPropertyAssignBehavior")) {
+            for (const Pragma *prev : _pragmas) {
+                if (prev->type != Pragma::ListPropertyAssignBehavior)
+                    continue;
+                recordError(node->pragmaToken, QCoreApplication::translate(
+                                "QQmlParser",
+                                "Multiple list property assign behavior pragmas found"));
+                return false;
+            }
+
+            pragma->type = Pragma::ListPropertyAssignBehavior;
+            if (node->value == QStringLiteral("Replace")) {
+                pragma->listPropertyAssignBehavior = Pragma::Replace;
+            } else if (node->value == QStringLiteral("ReplaceIfNotDefault")) {
+                pragma->listPropertyAssignBehavior = Pragma::ReplaceIfNotDefault;
+            } else if (node->value == QStringLiteral("Append")) {
+                pragma->listPropertyAssignBehavior = Pragma::Append;
+            } else {
+                recordError(node->pragmaToken, QCoreApplication::translate(
+                                "QQmlParser",
+                                "Unknown list property assign behavior '%1' in pragma")
+                            .arg(node->value));
+                return false;
+            }
         } else {
-            recordError(node->pragmaToken, QCoreApplication::translate("QQmlParser","Pragma requires a valid qualifier"));
+            recordError(node->pragmaToken, QCoreApplication::translate(
+                            "QQmlParser", "Unknown pragma '%1'").arg(node->name));
             return false;
         }
     } else {
-        recordError(node->pragmaToken, QCoreApplication::translate("QQmlParser","Pragma requires a valid qualifier"));
+        recordError(node->pragmaToken, QCoreApplication::translate(
+                        "QQmlParser", "Empty pragma found"));
         return false;
     }
 
-    pragma->location.line = node->pragmaToken.startLine;
-    pragma->location.column = node->pragmaToken.startColumn;
+    pragma->location.set(node->pragmaToken.startLine, node->pragmaToken.startColumn);
     _pragmas.append(pragma);
 
     return false;
@@ -866,8 +861,7 @@ bool IRBuilder::visit(QQmlJS::AST::UiEnumDeclaration *node)
     if (enumName.at(0).isLower())
         COMPILE_EXCEPTION(node->enumToken, tr("Scoped enum names must begin with an upper case letter"));
 
-    enumeration->location.line = node->enumToken.startLine;
-    enumeration->location.column = node->enumToken.startColumn;
+    enumeration->location.set(node->enumToken.startLine, node->enumToken.startColumn);
 
     enumeration->enumValues = New<PoolList<EnumValue>>();
 
@@ -886,8 +880,7 @@ bool IRBuilder::visit(QQmlJS::AST::UiEnumDeclaration *node)
             COMPILE_EXCEPTION(e->valueToken, tr("Enum value out of range"));
         enumValue->value = e->value;
 
-        enumValue->location.line = e->memberToken.startLine;
-        enumValue->location.column = e->memberToken.startColumn;
+        enumValue->location.set(e->memberToken.startLine, e->memberToken.startColumn);
         enumeration->enumValues->append(enumValue);
 
         e = e->next;
@@ -911,8 +904,7 @@ bool IRBuilder::visit(QQmlJS::AST::UiPublicMember *node)
         signal->nameIndex = registerString(signalName);
 
         QQmlJS::SourceLocation loc = node->typeToken;
-        signal->location.line = loc.startLine;
-        signal->location.column = loc.startColumn;
+        signal->location.set(loc.startLine, loc.startColumn);
 
         signal->parameters = New<PoolList<Parameter> >();
 
@@ -961,32 +953,21 @@ bool IRBuilder::visit(QQmlJS::AST::UiPublicMember *node)
             const QStringView &name = node->name;
 
             Property *property = New<Property>();
-            property->isReadOnly = node->isReadonlyMember;
-            property->isRequired = node->isRequired;
+            property->setIsReadOnly(node->isReadonly());
+            property->setIsRequired(node->isRequired());
 
-            QV4::CompiledData::BuiltinType builtinPropertyType = Parameter::stringToBuiltinType(memberType);
-            bool typeFound = builtinPropertyType != QV4::CompiledData::BuiltinType::InvalidBuiltin;
-            if (typeFound)
+            const QV4::CompiledData::BuiltinType builtinPropertyType
+                    = Parameter::stringToBuiltinType(memberType);
+            if (builtinPropertyType != QV4::CompiledData::BuiltinType::InvalidBuiltin)
                 property->setBuiltinType(builtinPropertyType);
-
-            if (!typeFound && memberType.at(0).isUpper()) {
-                const QStringView &typeModifier = node->typeModifier;
-
+            else
                 property->setCustomType(registerString(memberType));
-                if (typeModifier == QLatin1String("list")) {
-                    property->isList = true;
-                } else if (!typeModifier.isEmpty()) {
-                    recordError(node->typeModifierToken, QCoreApplication::translate("QQmlParser","Invalid property type modifier"));
-                    return false;
-                }
-                typeFound = true;
-            } else if (!node->typeModifier.isNull()) {
-                recordError(node->typeModifierToken, QCoreApplication::translate("QQmlParser","Unexpected property type modifier"));
-                return false;
-            }
 
-            if (!typeFound) {
-                recordError(node->typeToken, QCoreApplication::translate("QQmlParser","Expected property type"));
+            const QStringView &typeModifier = node->typeModifier;
+            if (typeModifier == QLatin1String("list")) {
+                property->setIsList(true);
+            } else if (!typeModifier.isEmpty()) {
+                recordError(node->typeModifierToken, QCoreApplication::translate("QQmlParser","Invalid property type modifier"));
                 return false;
             }
 
@@ -994,8 +975,7 @@ bool IRBuilder::visit(QQmlJS::AST::UiPublicMember *node)
             property->nameIndex = registerString(propName);
 
             QQmlJS::SourceLocation loc = node->firstSourceLocation();
-            property->location.line = loc.startLine;
-            property->location.column = loc.startColumn;
+            property->location.set(loc.startLine, loc.startColumn);
 
             QQmlJS::SourceLocation errorLocation;
             QString error;
@@ -1003,7 +983,7 @@ bool IRBuilder::visit(QQmlJS::AST::UiPublicMember *node)
             if (illegalNames.contains(propName))
                 error = tr("Illegal property name");
             else
-                error = _object->appendProperty(property, propName, node->isDefaultMember, node->defaultToken, &errorLocation);
+                error = _object->appendProperty(property, propName, node->isDefaultMember(), node->defaultToken(), &errorLocation);
 
             if (!error.isEmpty()) {
                 if (errorLocation.startLine == 0)
@@ -1039,8 +1019,7 @@ bool IRBuilder::visit(QQmlJS::AST::UiSourceElement *node)
 
         Function *f = New<Function>();
         QQmlJS::SourceLocation loc = funDecl->identifierToken;
-        f->location.line = loc.startLine;
-        f->location.column = loc.startColumn;
+        f->location.set(loc.startLine, loc.startColumn);
         f->index = index;
         f->nameIndex = registerString(funDecl->name.toString());
 
@@ -1113,32 +1092,31 @@ QStringView IRBuilder::textRefAt(const QQmlJS::SourceLocation &first, const QQml
 void IRBuilder::setBindingValue(QV4::CompiledData::Binding *binding, QQmlJS::AST::Statement *statement, QQmlJS::AST::Node *parentNode)
 {
     QQmlJS::SourceLocation loc = statement->firstSourceLocation();
-    binding->valueLocation.line = loc.startLine;
-    binding->valueLocation.column = loc.startColumn;
-    binding->type = QV4::CompiledData::Binding::Type_Invalid;
-    if (_propertyDeclaration && _propertyDeclaration->isReadOnly)
-        binding->flags |= QV4::CompiledData::Binding::InitializerForReadOnlyDeclaration;
+    binding->valueLocation.set(loc.startLine, loc.startColumn);
+    binding->setType(QV4::CompiledData::Binding::Type_Invalid);
+    if (_propertyDeclaration && _propertyDeclaration->isReadOnly())
+        binding->setFlag(QV4::CompiledData::Binding::InitializerForReadOnlyDeclaration);
 
     QQmlJS::AST::ExpressionStatement *exprStmt = QQmlJS::AST::cast<QQmlJS::AST::ExpressionStatement *>(statement);
     if (exprStmt) {
         QQmlJS::AST::ExpressionNode * const expr = exprStmt->expression;
         if (QQmlJS::AST::StringLiteral *lit = QQmlJS::AST::cast<QQmlJS::AST::StringLiteral *>(expr)) {
-            binding->type = QV4::CompiledData::Binding::Type_String;
+            binding->setType(QV4::CompiledData::Binding::Type_String);
             binding->stringIndex = registerString(lit->value.toString());
         } else if (QQmlJS::AST::TemplateLiteral *templateLit = QQmlJS::AST::cast<QQmlJS::AST::TemplateLiteral *>(expr);
                    templateLit && templateLit->hasNoSubstitution) {
             // A template literal without substitution is just a string.
             // With substitution, it could however be an arbitrarily complex expression
-            binding->type = QV4::CompiledData::Binding::Type_String;
+            binding->setType(QV4::CompiledData::Binding::Type_String);
             binding->stringIndex = registerString(templateLit->value.toString());
         } else if (expr->kind == QQmlJS::AST::Node::Kind_TrueLiteral) {
-            binding->type = QV4::CompiledData::Binding::Type_Boolean;
+            binding->setType(QV4::CompiledData::Binding::Type_Boolean);
             binding->value.b = true;
         } else if (expr->kind == QQmlJS::AST::Node::Kind_FalseLiteral) {
-            binding->type = QV4::CompiledData::Binding::Type_Boolean;
+            binding->setType(QV4::CompiledData::Binding::Type_Boolean);
             binding->value.b = false;
         } else if (QQmlJS::AST::NumericLiteral *lit = QQmlJS::AST::cast<QQmlJS::AST::NumericLiteral *>(expr)) {
-            binding->type = QV4::CompiledData::Binding::Type_Number;
+            binding->setType(QV4::CompiledData::Binding::Type_Number);
             binding->value.constantValueIndex = jsGenerator->registerConstant(QV4::Encode(lit->value));
         } else if (QQmlJS::AST::CallExpression *call = QQmlJS::AST::cast<QQmlJS::AST::CallExpression *>(expr)) {
             if (QQmlJS::AST::IdentifierExpression *base = QQmlJS::AST::cast<QQmlJS::AST::IdentifierExpression *>(call->base)) {
@@ -1147,21 +1125,21 @@ void IRBuilder::setBindingValue(QV4::CompiledData::Binding *binding, QQmlJS::AST
                 // below.
             }
         } else if (QQmlJS::AST::cast<QQmlJS::AST::FunctionExpression *>(expr)) {
-            binding->flags |= QV4::CompiledData::Binding::IsFunctionExpression;
+            binding->setFlag(QV4::CompiledData::Binding::IsFunctionExpression);
         } else if (QQmlJS::AST::UnaryMinusExpression *unaryMinus = QQmlJS::AST::cast<QQmlJS::AST::UnaryMinusExpression *>(expr)) {
             if (QQmlJS::AST::NumericLiteral *lit = QQmlJS::AST::cast<QQmlJS::AST::NumericLiteral *>(unaryMinus->expression)) {
-                binding->type = QV4::CompiledData::Binding::Type_Number;
+                binding->setType(QV4::CompiledData::Binding::Type_Number);
                 binding->value.constantValueIndex = jsGenerator->registerConstant(QV4::Encode(-lit->value));
             }
         } else if (QQmlJS::AST::cast<QQmlJS::AST::NullExpression *>(expr)) {
-            binding->type = QV4::CompiledData::Binding::Type_Null;
+            binding->setType(QV4::CompiledData::Binding::Type_Null);
             binding->value.nullMarker = 0;
         }
     }
 
     // Do binding instead
-    if (binding->type == QV4::CompiledData::Binding::Type_Invalid) {
-        binding->type = QV4::CompiledData::Binding::Type_Script;
+    if (binding->type() == QV4::CompiledData::Binding::Type_Invalid) {
+        binding->setType(QV4::CompiledData::Binding::Type_Script);
 
         CompiledFunctionOrExpression *expr = New<CompiledFunctionOrExpression>();
         expr->node = statement;
@@ -1178,7 +1156,7 @@ void IRBuilder::setBindingValue(QV4::CompiledData::Binding *binding, QQmlJS::AST
         if (exprStmt)
             nodeForString = exprStmt->expression;
         if (asStringRef(nodeForString) == u"undefined")
-            binding->stringIndex = registerString(u"undefined"_qs);
+            binding->stringIndex = registerString(u"undefined"_s);
         else
             binding->stringIndex = emptyStringIndex;
     }
@@ -1186,119 +1164,17 @@ void IRBuilder::setBindingValue(QV4::CompiledData::Binding *binding, QQmlJS::AST
 
 void IRBuilder::tryGeneratingTranslationBinding(QStringView base, AST::ArgumentList *args, QV4::CompiledData::Binding *binding)
 {
-    if (base == QLatin1String("qsTr")) {
-        QV4::CompiledData::TranslationData translationData;
-        translationData.number = -1;
-        translationData.commentIndex = 0; // empty string
-        translationData.padding = 0;
+    auto registerMainString = [&](QStringView mainString) { return jsGenerator->registerString(mainString.toString()) ; };
+    auto registerCommentString = [&](QStringView commentString) { return jsGenerator->registerString(commentString.toString()); };
+    auto finalizeTranslationData = [&](QV4::CompiledData::Binding::Type type, QV4::CompiledData::TranslationData translationData) {
+        binding->setType(type);
+        if (type == QV4::CompiledData::Binding::Type_Translation || type == QV4::CompiledData::Binding::Type_TranslationById)
+            binding->value.translationDataIndex = jsGenerator->registerTranslation(translationData);
+        else if (type == QV4::CompiledData::Binding::Type_String)
+            binding->stringIndex = translationData.number;
+    };
 
-        if (!args || !args->expression)
-            return; // no arguments, stop
-
-        QStringView translation;
-        if (QQmlJS::AST::StringLiteral *arg1 = QQmlJS::AST::cast<QQmlJS::AST::StringLiteral *>(args->expression)) {
-            translation = arg1->value;
-        } else {
-            return; // first argument is not a string, stop
-        }
-        translationData.stringIndex = jsGenerator->registerString(translation.toString());
-
-        args = args->next;
-
-        if (args) {
-            QQmlJS::AST::StringLiteral *arg2 = QQmlJS::AST::cast<QQmlJS::AST::StringLiteral *>(args->expression);
-            if (!arg2)
-                return; // second argument is not a string, stop
-            translationData.commentIndex = jsGenerator->registerString(arg2->value.toString());
-
-            args = args->next;
-            if (args) {
-                if (QQmlJS::AST::NumericLiteral *arg3 = QQmlJS::AST::cast<QQmlJS::AST::NumericLiteral *>(args->expression)) {
-                    translationData.number = int(arg3->value);
-                    args = args->next;
-                } else {
-                    return; // third argument is not a translation number, stop
-                }
-            }
-        }
-
-        if (args)
-            return; // too many arguments, stop
-
-        binding->type = QV4::CompiledData::Binding::Type_Translation;
-        binding->value.translationDataIndex = jsGenerator->registerTranslation(translationData);
-    } else if (base == QLatin1String("qsTrId")) {
-        QV4::CompiledData::TranslationData translationData;
-        translationData.number = -1;
-        translationData.commentIndex = 0; // empty string, but unused
-        translationData.padding = 0;
-
-        if (!args || !args->expression)
-            return; // no arguments, stop
-
-        QStringView id;
-        if (QQmlJS::AST::StringLiteral *arg1 = QQmlJS::AST::cast<QQmlJS::AST::StringLiteral *>(args->expression)) {
-            id = arg1->value;
-        } else {
-            return; // first argument is not a string, stop
-        }
-        translationData.stringIndex = jsGenerator->registerString(id.toString());
-
-        args = args->next;
-
-        if (args) {
-            if (QQmlJS::AST::NumericLiteral *arg3 = QQmlJS::AST::cast<QQmlJS::AST::NumericLiteral *>(args->expression)) {
-                translationData.number = int(arg3->value);
-                args = args->next;
-            } else {
-                return; // third argument is not a translation number, stop
-            }
-        }
-
-        if (args)
-            return; // too many arguments, stop
-
-        binding->type = QV4::CompiledData::Binding::Type_TranslationById;
-        binding->value.translationDataIndex = jsGenerator->registerTranslation(translationData);
-    } else if (base == QLatin1String("QT_TR_NOOP") || base == QLatin1String("QT_TRID_NOOP")) {
-        if (!args || !args->expression)
-            return; // no arguments, stop
-
-        QStringView str;
-        if (QQmlJS::AST::StringLiteral *arg1 = QQmlJS::AST::cast<QQmlJS::AST::StringLiteral *>(args->expression)) {
-            str = arg1->value;
-        } else {
-            return; // first argument is not a string, stop
-        }
-
-        args = args->next;
-        if (args)
-            return; // too many arguments, stop
-
-        binding->type = QV4::CompiledData::Binding::Type_String;
-        binding->stringIndex = jsGenerator->registerString(str.toString());
-    } else if (base == QLatin1String("QT_TRANSLATE_NOOP")) {
-        if (!args || !args->expression)
-            return; // no arguments, stop
-
-        args = args->next;
-        if (!args || !args->expression)
-            return; // no second arguments, stop
-
-        QStringView str;
-        if (QQmlJS::AST::StringLiteral *arg2 = QQmlJS::AST::cast<QQmlJS::AST::StringLiteral *>(args->expression)) {
-            str = arg2->value;
-        } else {
-            return; // first argument is not a string, stop
-        }
-
-        args = args->next;
-        if (args)
-            return; // too many arguments, stop
-
-        binding->type = QV4::CompiledData::Binding::Type_String;
-        binding->stringIndex = jsGenerator->registerString(str.toString());
-    }
+    tryGeneratingTranslationBindingBase(base, args, registerMainString, registerCommentString, finalizeTranslationData);
 }
 
 void IRBuilder::appendBinding(QQmlJS::AST::UiQualifiedId *name, QQmlJS::AST::Statement *value, QQmlJS::AST::Node *parentNode)
@@ -1333,9 +1209,8 @@ void IRBuilder::appendBinding(const QQmlJS::SourceLocation &qualifiedNameLocatio
     Binding *binding = New<Binding>();
     binding->propertyNameIndex = propertyNameIndex;
     binding->offset = nameLocation.offset;
-    binding->location.line = nameLocation.startLine;
-    binding->location.column = nameLocation.startColumn;
-    binding->flags = 0;
+    binding->location.set(nameLocation.startLine, nameLocation.startColumn);
+    binding->clearFlags();
     setBindingValue(binding, value, parentNode);
     QString error = bindingsTarget()->appendBinding(binding, /*isListBinding*/false);
     if (!error.isEmpty()) {
@@ -1353,27 +1228,26 @@ void IRBuilder::appendBinding(const QQmlJS::SourceLocation &qualifiedNameLocatio
     Binding *binding = New<Binding>();
     binding->propertyNameIndex = propertyNameIndex;
     binding->offset = nameLocation.offset;
-    binding->location.line = nameLocation.startLine;
-    binding->location.column = nameLocation.startColumn;
+    binding->location.set(nameLocation.startLine, nameLocation.startColumn);
 
     const Object *obj = _objects.at(objectIndex);
     binding->valueLocation = obj->location;
 
-    binding->flags = 0;
+    binding->clearFlags();
 
-    if (_propertyDeclaration && _propertyDeclaration->isReadOnly)
-        binding->flags |= QV4::CompiledData::Binding::InitializerForReadOnlyDeclaration;
+    if (_propertyDeclaration && _propertyDeclaration->isReadOnly())
+        binding->setFlag(Binding::InitializerForReadOnlyDeclaration);
 
     // No type name on the initializer means it must be a group property
     if (_objects.at(objectIndex)->inheritedTypeNameIndex == emptyStringIndex)
-        binding->type = QV4::CompiledData::Binding::Type_GroupProperty;
+        binding->setType(Binding::Type_GroupProperty);
     else
-        binding->type = QV4::CompiledData::Binding::Type_Object;
+        binding->setType(Binding::Type_Object);
 
     if (isOnAssignment)
-        binding->flags |= QV4::CompiledData::Binding::IsOnAssignment;
+        binding->setFlag(Binding::IsOnAssignment);
     if (isListItem)
-        binding->flags |= QV4::CompiledData::Binding::IsListItem;
+        binding->setFlag(Binding::IsListItem);
 
     binding->value.objectIndex = objectIndex;
     QString error = bindingsTarget()->appendBinding(binding, isListItem);
@@ -1385,16 +1259,15 @@ void IRBuilder::appendBinding(const QQmlJS::SourceLocation &qualifiedNameLocatio
 bool IRBuilder::appendAlias(QQmlJS::AST::UiPublicMember *node)
 {
     Alias *alias = New<Alias>();
-    alias->flags = 0;
-    if (node->isReadonlyMember)
-        alias->flags |= QV4::CompiledData::Alias::IsReadOnly;
+    alias->clearFlags();
+    if (node->isReadonly())
+        alias->setFlag(QV4::CompiledData::Alias::IsReadOnly);
 
     const QString propName = node->name.toString();
-    alias->nameIndex = registerString(propName);
+    alias->setNameIndex(registerString(propName));
 
     QQmlJS::SourceLocation loc = node->firstSourceLocation();
-    alias->location.line = loc.startLine;
-    alias->location.column = loc.startColumn;
+    alias->location.set(loc.startLine, loc.startColumn);
 
     alias->propertyNameIndex = emptyStringIndex;
 
@@ -1408,8 +1281,7 @@ bool IRBuilder::appendAlias(QQmlJS::AST::UiPublicMember *node)
         rhsLoc = node->statement->firstSourceLocation();
     else
         rhsLoc = node->semicolonToken;
-    alias->referenceLocation.line = rhsLoc.startLine;
-    alias->referenceLocation.column = rhsLoc.startColumn;
+    alias->referenceLocation.set(rhsLoc.startLine, rhsLoc.startColumn);
 
     QStringList aliasReference;
 
@@ -1442,7 +1314,7 @@ bool IRBuilder::appendAlias(QQmlJS::AST::UiPublicMember *node)
      if (illegalNames.contains(propName))
          error = tr("Illegal property name");
      else
-         error = _object->appendAlias(alias, propName, node->isDefaultMember, node->defaultToken, &errorLocation);
+         error = _object->appendAlias(alias, propName, node->isDefaultMember(), node->defaultToken(), &errorLocation);
 
      if (!error.isEmpty()) {
          if (errorLocation.startLine == 0)
@@ -1504,8 +1376,7 @@ bool IRBuilder::setId(const QQmlJS::SourceLocation &idLocation, QQmlJS::AST::Sta
         COMPILE_EXCEPTION(idLocation, tr("Property value set multiple times"));
 
     _object->idNameIndex = registerString(idQString);
-    _object->locationOfIdProperty.line = idLocation.startLine;
-    _object->locationOfIdProperty.column = idLocation.startColumn;
+    _object->locationOfIdProperty.set(idLocation.startLine, idLocation.startColumn);
 
     return true;
 }
@@ -1520,7 +1391,7 @@ bool IRBuilder::resolveQualifiedId(QQmlJS::AST::UiQualifiedId **nameToResolve, O
     // If it's a namespace, prepend the qualifier and we'll resolve it later to the correct type.
     QString currentName = qualifiedIdElement->name.toString();
     if (qualifiedIdElement->next) {
-        for (const QV4::CompiledData::Import* import : qAsConst(_imports))
+        for (const QV4::CompiledData::Import* import : std::as_const(_imports))
             if (import->qualifierIndex != emptyStringIndex
                 && stringAt(import->qualifierIndex) == currentName) {
                 qualifiedIdElement = qualifiedIdElement->next;
@@ -1551,19 +1422,19 @@ bool IRBuilder::resolveQualifiedId(QQmlJS::AST::UiQualifiedId **nameToResolve, O
             binding = New<Binding>();
             binding->propertyNameIndex = propertyNameIndex;
             binding->offset = qualifiedIdElement->identifierToken.offset;
-            binding->location.line = qualifiedIdElement->identifierToken.startLine;
-            binding->location.column = qualifiedIdElement->identifierToken.startColumn;
-            binding->valueLocation.line = qualifiedIdElement->next->identifierToken.startLine;
-            binding->valueLocation.column = qualifiedIdElement->next->identifierToken.startColumn;
-            binding->flags = 0;
+            binding->location.set(qualifiedIdElement->identifierToken.startLine,
+                                  qualifiedIdElement->identifierToken.startColumn);
+            binding->valueLocation.set(qualifiedIdElement->next->identifierToken.startLine,
+                                       qualifiedIdElement->next->identifierToken.startColumn);
+            binding->clearFlags();
 
             if (onAssignment)
-                binding->flags |= QV4::CompiledData::Binding::IsOnAssignment;
+                binding->setFlag(QV4::CompiledData::Binding::IsOnAssignment);
 
             if (isAttachedProperty)
-                binding->type = QV4::CompiledData::Binding::Type_AttachedProperty;
+                binding->setType(QV4::CompiledData::Binding::Type_AttachedProperty);
             else
-                binding->type = QV4::CompiledData::Binding::Type_GroupProperty;
+                binding->setType(QV4::CompiledData::Binding::Type_GroupProperty);
 
             int objIndex = 0;
             if (!defineQMLObject(&objIndex, nullptr, binding->location, nullptr, nullptr))
@@ -1624,7 +1495,7 @@ bool IRBuilder::isStatementNodeScript(QQmlJS::AST::Statement *statement)
 
 bool IRBuilder::isRedundantNullInitializerForPropertyDeclaration(Property *property, QQmlJS::AST::Statement *statement)
 {
-    if (property->isBuiltinType || property->isList)
+    if (property->isBuiltinType() || property->isList())
         return false;
     QQmlJS::AST::ExpressionStatement *exprStmt = QQmlJS::AST::cast<QQmlJS::AST::ExpressionStatement *>(statement);
     if (!exprStmt)
@@ -1635,27 +1506,53 @@ bool IRBuilder::isRedundantNullInitializerForPropertyDeclaration(Property *prope
 
 void QmlUnitGenerator::generate(Document &output, const QV4::CompiledData::DependentTypesHasher &dependencyHasher)
 {
+    using namespace QV4::CompiledData;
+
     output.jsGenerator.stringTable.registerString(output.jsModule.fileName);
     output.jsGenerator.stringTable.registerString(output.jsModule.finalUrl);
 
-    QV4::CompiledData::Unit *jsUnit = nullptr;
+    Unit *jsUnit = nullptr;
 
     // We may already have unit data if we're loading an ahead-of-time generated cache file.
     if (output.javaScriptCompilationUnit.data) {
-        jsUnit = const_cast<QV4::CompiledData::Unit *>(output.javaScriptCompilationUnit.data);
+        jsUnit = const_cast<Unit *>(output.javaScriptCompilationUnit.data);
         output.javaScriptCompilationUnit.dynamicStrings = output.jsGenerator.stringTable.allStrings();
     } else {
-        QV4::CompiledData::Unit *createdUnit;
+        Unit *createdUnit;
         jsUnit = createdUnit = output.jsGenerator.generateUnit();
 
         // enable flag if we encountered pragma Singleton
-        for (Pragma *p : qAsConst(output.pragmas)) {
+        for (Pragma *p : std::as_const(output.pragmas)) {
             switch (p->type) {
-            case Pragma::PragmaSingleton:
-                createdUnit->flags |= QV4::CompiledData::Unit::IsSingleton;
+            case Pragma::Singleton:
+                createdUnit->flags |= Unit::IsSingleton;
                 break;
-            case Pragma::PragmaStrict:
-                createdUnit->flags |= QV4::CompiledData::Unit::IsStrict;
+            case Pragma::Strict:
+                createdUnit->flags |= Unit::IsStrict;
+                break;
+            case Pragma::ComponentBehavior:
+                // ### Qt7: Change the default to Bound by reverting the meaning of the flag.
+                switch (p->componentBehavior) {
+                case Pragma::Bound:
+                    createdUnit->flags |= Unit::ComponentsBound;
+                    break;
+                case Pragma::Unbound:
+                    // this is the default
+                    break;
+                }
+                break;
+            case Pragma::ListPropertyAssignBehavior:
+                switch (p->listPropertyAssignBehavior) {
+                case Pragma::Replace:
+                    createdUnit->flags |= Unit::ListPropertyAssignReplace;
+                    break;
+                case Pragma::ReplaceIfNotDefault:
+                    createdUnit->flags |= Unit::ListPropertyAssignReplaceIfNotDefault;
+                    break;
+                case Pragma::Append:
+                    // this is the default
+                    break;
+                }
                 break;
             }
         }
@@ -1682,7 +1579,7 @@ void QmlUnitGenerator::generate(Document &output, const QV4::CompiledData::Depen
 
     const unsigned int objectOffset = sizeof(QV4::CompiledData::QmlUnit) + importSize;
     uint nextOffset = objectOffset + objectOffsetTableSize;
-    for (Object *o : qAsConst(output.objects)) {
+    for (Object *o : std::as_const(output.objects)) {
         objectOffsets.insert(o, nextOffset);
         nextOffset += QV4::CompiledData::Object::calculateSizeExcludingSignalsAndEnums(o->functionCount(), o->propertyCount(), o->aliasCount(), o->enumCount(), o->signalCount(), o->bindingCount(), o->namedObjectsInComponent.size(), o->inlineComponentCount(), o->requiredPropertyExtraDataCount());
 
@@ -1710,7 +1607,7 @@ void QmlUnitGenerator::generate(Document &output, const QV4::CompiledData::Depen
 
     // write imports
     char *importPtr = data + qmlUnit->offsetToImports;
-    for (const QV4::CompiledData::Import *imp : qAsConst(output.imports)) {
+    for (const QV4::CompiledData::Import *imp : std::as_const(output.imports)) {
         QV4::CompiledData::Import *importToWrite = reinterpret_cast<QV4::CompiledData::Import*>(importPtr);
         *importToWrite = *imp;
         importPtr += sizeof(QV4::CompiledData::Import);
@@ -1726,10 +1623,10 @@ void QmlUnitGenerator::generate(Document &output, const QV4::CompiledData::Depen
         QV4::CompiledData::Object *objectToWrite = reinterpret_cast<QV4::CompiledData::Object*>(objectPtr);
         objectToWrite->inheritedTypeNameIndex = o->inheritedTypeNameIndex;
         objectToWrite->indexOfDefaultPropertyOrAlias = o->indexOfDefaultPropertyOrAlias;
-        objectToWrite->defaultPropertyIsAlias = o->defaultPropertyIsAlias;
-        objectToWrite->flags = o->flags;
+        objectToWrite->setHasAliasAsDefaultProperty(o->defaultPropertyIsAlias);
+        objectToWrite->setFlags(QV4::CompiledData::Object::Flags(o->flags));
         objectToWrite->idNameIndex = o->idNameIndex;
-        objectToWrite->id = o->id;
+        objectToWrite->setObjectId(o->id);
         objectToWrite->location = o->location;
         objectToWrite->locationOfIdProperty = o->locationOfIdProperty;
 
@@ -1819,7 +1716,6 @@ void QmlUnitGenerator::generate(Document &output, const QV4::CompiledData::Depen
         nextOffset += signalTableSize;
 
         quint32_le *enumOffsetTable = reinterpret_cast<quint32_le*>(objectPtr + objectToWrite->offsetToEnums);
-        quint32 enumTableSize = 0;
         char *enumPtr = objectPtr + nextOffset;
         for (const Enum *e = o->firstEnum(); e; e = e->next) {
             *enumOffsetTable++ = enumPtr - objectPtr;
@@ -1834,7 +1730,6 @@ void QmlUnitGenerator::generate(Document &output, const QV4::CompiledData::Depen
                 *enumValueToWrite = *enumValue;
 
             int size = QV4::CompiledData::Enum::calculateSize(e->enumValues->count);
-            enumTableSize += size;
             enumPtr += size;
         }
 
@@ -1904,22 +1799,25 @@ char *QmlUnitGenerator::writeBindings(char *bindingPtr, const Object *o, Binding
             continue;
         QV4::CompiledData::Binding *bindingToWrite = reinterpret_cast<QV4::CompiledData::Binding*>(bindingPtr);
         *bindingToWrite = *b;
-        if (b->type == QV4::CompiledData::Binding::Type_Script)
+        if (b->type() == QV4::CompiledData::Binding::Type_Script)
             bindingToWrite->value.compiledScriptIndex = o->runtimeFunctionIndices.at(b->value.compiledScriptIndex);
         bindingPtr += sizeof(QV4::CompiledData::Binding);
     }
     return bindingPtr;
 }
 
-JSCodeGen::JSCodeGen(Document *document, const QSet<QString> &globalNames)
-    : QV4::Compiler::Codegen(&document->jsGenerator, /*strict mode*/false), document(document)
+JSCodeGen::JSCodeGen(Document *document, const QSet<QString> &globalNames,
+                     QV4::Compiler::CodegenWarningInterface *interface)
+    : QV4::Compiler::Codegen(&document->jsGenerator, /*strict mode*/ false, interface),
+      document(document)
 {
     m_globalNames = globalNames;
     _module = &document->jsModule;
     _fileNameIsUrl = true;
 }
 
-QVector<int> JSCodeGen::generateJSCodeForFunctionsAndBindings(const QList<CompiledFunctionOrExpression> &functions)
+QVector<int> JSCodeGen::generateJSCodeForFunctionsAndBindings(
+        const QList<CompiledFunctionOrExpression> &functions, bool storeSourceLocation)
 {
     auto qmlName = [&](const CompiledFunctionOrExpression &c) {
         if (c.nameIndex != 0)
@@ -1990,68 +1888,31 @@ QVector<int> JSCodeGen::generateJSCodeForFunctionsAndBindings(const QList<Compil
         }
 
         int idx = defineFunction(name, function ? function : qmlFunction.parentNode,
-                                 function ? function->formals : nullptr,
-                                 body);
+                                 function ? function->formals : nullptr, body, storeSourceLocation);
         runtimeFunctionIndices[i] = idx;
     }
 
     return runtimeFunctionIndices;
 }
 
-bool JSCodeGen::generateCodeForComponents(const QVector<quint32> &componentRoots)
+bool JSCodeGen::generateRuntimeFunctions(QmlIR::Object *object, bool storeSourceLocation)
 {
-    for (int i = 0; i < componentRoots.count(); ++i) {
-        if (!compileComponent(componentRoots.at(i)))
-            return false;
-    }
-
-    return compileComponent(/*root object*/0);
-}
-
-bool JSCodeGen::compileComponent(int contextObject)
-{
-    const QmlIR::Object *obj = document->objects.at(contextObject);
-    if (obj->flags & QV4::CompiledData::Object::IsComponent && !obj->isInlineComponent) {
-        Q_ASSERT(obj->bindingCount() == 1);
-        const QV4::CompiledData::Binding *componentBinding = obj->firstBinding();
-        Q_ASSERT(componentBinding->type == QV4::CompiledData::Binding::Type_Object);
-        contextObject = componentBinding->value.objectIndex;
-    }
-
-    return compileJavaScriptCodeInObjectsRecursively(contextObject, contextObject);
-}
-
-bool JSCodeGen::compileJavaScriptCodeInObjectsRecursively(int objectIndex, int scopeObjectIndex)
-{
-    QmlIR::Object *object = document->objects.at(objectIndex);
-    if (object->flags & QV4::CompiledData::Object::IsComponent && !object->isInlineComponent)
+    if (object->functionsAndExpressions->count == 0)
         return true;
 
-    for (auto it = object->inlineComponentsBegin(); it != object->inlineComponentsEnd(); ++it)
-        compileComponent(it->objectIndex);
-
-    if (object->functionsAndExpressions->count > 0) {
-        QList<QmlIR::CompiledFunctionOrExpression> functionsToCompile;
-        for (QmlIR::CompiledFunctionOrExpression *foe = object->functionsAndExpressions->first; foe; foe = foe->next)
-            functionsToCompile << *foe;
-        const QVector<int> runtimeFunctionIndices = generateJSCodeForFunctionsAndBindings(functionsToCompile);
-        if (hasError())
-            return false;
-
-        object->runtimeFunctionIndices.allocate(document->jsParserEngine.pool(),
-                                                runtimeFunctionIndices);
+    QList<QmlIR::CompiledFunctionOrExpression> functionsToCompile;
+    functionsToCompile.reserve(object->functionsAndExpressions->count);
+    for (QmlIR::CompiledFunctionOrExpression *foe = object->functionsAndExpressions->first; foe;
+         foe = foe->next) {
+        functionsToCompile << *foe;
     }
 
-    for (const QmlIR::Binding *binding = object->firstBinding(); binding; binding = binding->next) {
-        if (binding->type < QV4::CompiledData::Binding::Type_Object)
-            continue;
+    const auto runtimeFunctionIndices =
+            generateJSCodeForFunctionsAndBindings(functionsToCompile, storeSourceLocation);
+    if (hasError())
+        return false;
 
-        int target = binding->value.objectIndex;
-        int scope = binding->type == QV4::CompiledData::Binding::Type_Object ? target : scopeObjectIndex;
-
-        if (!compileJavaScriptCodeInObjectsRecursively(binding->value.objectIndex, scope))
-            return false;
-    }
-
+    object->runtimeFunctionIndices.allocate(document->jsParserEngine.pool(),
+                                            runtimeFunctionIndices);
     return true;
 }

@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQml module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qqmljavascriptexpression_p.h"
 #include "qqmljavascriptexpression_p.h"
@@ -129,8 +93,8 @@ QString QQmlJavaScriptExpression::expressionIdentifier() const
 {
     if (auto f = function()) {
         QString url = f->sourceFile();
-        uint lineNumber = f->compiledFunction->location.line;
-        uint columnNumber = f->compiledFunction->location.column;
+        uint lineNumber = f->compiledFunction->location.line();
+        uint columnNumber = f->compiledFunction->location.column();
         return url + QString::asprintf(":%u:%u", lineNumber, columnNumber);
     }
 
@@ -212,7 +176,7 @@ public:
     ~QQmlJavaScriptExpressionCapture()
     {
         if (capture.errorString) {
-            for (int ii = 0; ii < capture.errorString->count(); ++ii)
+            for (int ii = 0; ii < capture.errorString->size(); ++ii)
                 qWarning("%s", qPrintable(capture.errorString->at(ii)));
             delete capture.errorString;
             capture.errorString = nullptr;
@@ -246,17 +210,6 @@ private:
     QQmlPropertyCapture *lastPropertyCapture;
 };
 
-static inline QV4::ReturnedValue thisObject(QObject *scopeObject, QV4::ExecutionEngine *v4)
-{
-    if (scopeObject) {
-        // The result of wrap() can only be null, undefined, or an object.
-        const QV4::ReturnedValue scope = QV4::QObjectWrapper::wrap(v4, scopeObject);
-        if (QV4::Value::fromReturnedValue(scope).isManaged())
-            return scope;
-    }
-    return v4->globalObject->asReturnedValue();
-}
-
 QV4::ReturnedValue QQmlJavaScriptExpression::evaluate(QV4::CallData *callData, bool *isUndefined)
 {
     QQmlEngine *qmlEngine = engine();
@@ -272,7 +225,14 @@ QV4::ReturnedValue QQmlJavaScriptExpression::evaluate(QV4::CallData *callData, b
     QQmlJavaScriptExpressionCapture capture(this, qmlEngine);
 
     QV4::Scope scope(qmlEngine->handle());
-    callData->thisObject = thisObject(scopeObject(), scope.engine);
+
+    if (QObject *thisObject = scopeObject()) {
+        callData->thisObject = QV4::QObjectWrapper::wrap(scope.engine, thisObject);
+        if (callData->thisObject.isNullOrUndefined())
+            callData->thisObject = scope.engine->globalObject;
+    } else {
+        callData->thisObject = scope.engine->globalObject;
+    }
 
     Q_ASSERT(m_qmlScope.valueRef());
     QV4::ScopedValue result(scope, v4Function->call(
@@ -304,14 +264,14 @@ bool QQmlJavaScriptExpression::evaluate(void **a, const QMetaType *types, int ar
     QQmlJavaScriptExpressionCapture capture(this, qmlEngine);
 
     QV4::Scope scope(qmlEngine->handle());
-    QV4::ScopedValue self(scope, thisObject(scopeObject(), scope.engine));
 
     Q_ASSERT(m_qmlScope.valueRef());
     Q_ASSERT(function());
-    const bool isUndefined = !function()->call(
-                self, a, types, argc, static_cast<QV4::ExecutionContext *>(m_qmlScope.valueRef()));
+    const bool resultIsDefined = function()->call(
+                scopeObject(), a, types, argc,
+                static_cast<QV4::ExecutionContext *>(m_qmlScope.valueRef()));
 
-    return !capture.catchException(scope) && !isUndefined;
+    return !capture.catchException(scope) && resultIsDefined;
 }
 
 void QQmlPropertyCapture::captureProperty(QQmlNotifier *n)
@@ -353,7 +313,7 @@ void QQmlPropertyCapture::captureProperty(QObject *o, int c, int n, bool doNotif
     if (c >= 0) {
         const QQmlData *ddata = QQmlData::get(o, /*create=*/false);
         const QMetaObject *metaObjectForBindable = nullptr;
-        if (auto const propCache = ddata ? ddata->propertyCache : nullptr; propCache) {
+        if (auto const propCache = (ddata ? ddata->propertyCache.data() : nullptr)) {
             Q_ASSERT(propCache->property(c));
             if (propCache->property(c)->isBindable())
                 metaObjectForBindable = propCache->metaObject();
@@ -540,7 +500,7 @@ void QQmlJavaScriptExpression::setupFunction(QV4::ExecutionContext *qmlContext, 
         return;
     m_qmlScope.set(qmlContext->engine(), *qmlContext);
     m_v4Function = f;
-    setCompilationUnit(m_v4Function->executableCompilationUnit());
+    m_compilationUnit.reset(m_v4Function->executableCompilationUnit());
 }
 
 void QQmlJavaScriptExpression::setCompilationUnit(const QQmlRefPointer<QV4::ExecutableCompilationUnit> &compilationUnit)

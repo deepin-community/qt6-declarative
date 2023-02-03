@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2019 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the tools applications of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2019 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qml/qqmlprivate.h"
 #include "qv4engine_p.h"
@@ -161,10 +125,10 @@ QV4::Function *ExecutableCompilationUnit::linkToEngine(ExecutionEngine *engine)
            data->regexpTableSize * sizeof(QV4::Value));
     for (uint i = 0; i < data->regexpTableSize; ++i) {
         const CompiledData::RegExp *re = data->regexpAt(i);
-        uint f = re->flags;
+        uint f = re->flags();
         const CompiledData::RegExp::Flags flags = static_cast<CompiledData::RegExp::Flags>(f);
         runtimeRegularExpressions[i] = QV4::RegExp::create(
-                engine, stringAt(re->stringIndex), flags);
+                engine, stringAt(re->stringIndex()), flags);
     }
 
     if (data->lookupTableSize) {
@@ -175,7 +139,7 @@ QV4::Function *ExecutableCompilationUnit::linkToEngine(ExecutionEngine *engine)
             QV4::Lookup *l = runtimeLookups + i;
 
             CompiledData::Lookup::Type type
-                    = CompiledData::Lookup::Type(uint(compiledLookups[i].type_and_flags));
+                    = CompiledData::Lookup::Type(uint(compiledLookups[i].typeAndFlags()));
             if (type == CompiledData::Lookup::Type_Getter)
                 l->getter = QV4::Lookup::getterGeneric;
             else if (type == CompiledData::Lookup::Type_Setter)
@@ -184,7 +148,7 @@ QV4::Function *ExecutableCompilationUnit::linkToEngine(ExecutionEngine *engine)
                 l->globalGetter = QV4::Lookup::globalGetterGeneric;
             else if (type == CompiledData::Lookup::Type_QmlContextPropertyGetter)
                 l->qmlContextPropertyGetter = QQmlContextWrapper::resolveQmlContextPropertyLookupGetter;
-            l->nameIndex = compiledLookups[i].nameIndex;
+            l->nameIndex = compiledLookups[i].nameIndex();
         }
     }
 
@@ -205,8 +169,8 @@ QV4::Function *ExecutableCompilationUnit::linkToEngine(ExecutionEngine *engine)
                 runtimeClasses[i]
                         = runtimeClasses[i]->addMember(
                                 engine->identifierTable->asPropertyKey(
-                                        runtimeStrings[member->nameOffset]),
-                                member->isAccessor
+                                        runtimeStrings[member->nameOffset()]),
+                                member->isAccessor()
                                         ? QV4::Attr_Accessor
                                         : QV4::Attr_Data);
         }
@@ -220,7 +184,7 @@ QV4::Function *ExecutableCompilationUnit::linkToEngine(ExecutionEngine *engine)
     auto advanceAotFunction = [&](int i) -> const QQmlPrivate::AOTCompiledFunction * {
         if (aotFunction) {
             if (aotFunction->functionPtr) {
-                if (aotFunction->index == i)
+                if (aotFunction->extraData == i)
                     return aotFunction++;
             } else {
                 aotFunction = nullptr;
@@ -308,11 +272,9 @@ void ExecutableCompilationUnit::unlink()
     if (engine)
         nextCompilationUnit.remove();
 
-    if (isRegisteredWithEngine) {
+    if (isRegistered) {
         Q_ASSERT(data && propertyCaches.count() > 0 && propertyCaches.at(/*root object*/0));
-        if (qmlEngine)
-            qmlEngine->unregisterInternalCompositeType(this);
-        isRegisteredWithEngine = false;
+        QQmlMetaType::unregisterInternalCompositeType(this);
     }
 
     propertyCaches.clear();
@@ -324,7 +286,7 @@ void ExecutableCompilationUnit::unlink()
 
     dependentScripts.clear();
 
-    typeNameCache = nullptr;
+    typeNameCache.reset();
 
     qDeleteAll(resolvedTypes);
     resolvedTypes.clear();
@@ -335,7 +297,7 @@ void ExecutableCompilationUnit::unlink()
     delete [] runtimeLookups;
     runtimeLookups = nullptr;
 
-    for (QV4::Function *f : qAsConst(runtimeFunctions))
+    for (QV4::Function *f : std::as_const(runtimeFunctions))
         f->destroy();
     runtimeFunctions.clear();
 
@@ -363,14 +325,14 @@ void ExecutableCompilationUnit::markObjects(QV4::MarkStack *markStack)
             if (runtimeClasses[i])
                 runtimeClasses[i]->mark(markStack);
     }
-    for (QV4::Function *f : qAsConst(runtimeFunctions))
+    for (QV4::Function *f : std::as_const(runtimeFunctions))
         if (f && f->internalClass)
             f->internalClass->mark(markStack);
-    for (QV4::Heap::InternalClass *c : qAsConst(runtimeBlocks))
+    for (QV4::Heap::InternalClass *c : std::as_const(runtimeBlocks))
         if (c)
             c->mark(markStack);
 
-    for (QV4::Heap::Object *o : qAsConst(templateObjects))
+    for (QV4::Heap::Object *o : std::as_const(templateObjects))
         if (o)
             o->mark(markStack);
 
@@ -390,7 +352,7 @@ IdentifierHash ExecutableCompilationUnit::createNamedObjectsPerComponent(int com
     const quint32_le *namedObjectIndexPtr = component->namedObjectsInComponentTable();
     for (quint32 i = 0; i < component->nNamedObjectsInComponent; ++i, ++namedObjectIndexPtr) {
         const CompiledData::Object *namedObject = objectAt(*namedObjectIndexPtr);
-        namedObjectCache.add(runtimeStrings[namedObject->idNameIndex], namedObject->id);
+        namedObjectCache.add(runtimeStrings[namedObject->idNameIndex], namedObject->objectId());
     }
     Q_ASSERT(!namedObjectCache.isEmpty());
     return *namedObjectsPerComponentCache.insert(componentObjectIndex, namedObjectCache);
@@ -406,7 +368,7 @@ void ExecutableCompilationUnit::finalizeCompositeType(QQmlEnginePrivate *qmlEngi
         if (!types.isValid())
             types = CompositeMetaTypeIds::fromCompositeName(rootPropertyCache()->className());
         typeIds = types;
-        qmlEngine->registerInternalCompositeType(this);
+        QQmlMetaType::registerInternalCompositeType(this);
 
     } else {
         const QV4::CompiledData::Object *obj = objectAt(/*root object*/0);
@@ -442,13 +404,14 @@ void ExecutableCompilationUnit::finalizeCompositeType(QQmlEnginePrivate *qmlEngi
     // We need to first iterate over all inline components, as the containing component might create instances of them
     // and in that case we need to add its object count
     for (auto nodeIt = nodesSorted.rbegin(); nodeIt != nodesSorted.rend(); ++nodeIt) {
-        const auto &ic = allICs.at(nodeIt->index);
+        const auto &ic = allICs.at(nodeIt->index());
         int lastICRoot = ic.objectIndex;
         for (int i = ic.objectIndex; i<objectCount(); ++i) {
             const QV4::CompiledData::Object *obj = objectAt(i);
-            bool leftCurrentInlineComponent =
-                       (i != lastICRoot && obj->flags & QV4::CompiledData::Object::IsInlineComponentRoot)
-                    || !(obj->flags & QV4::CompiledData::Object::InPartOfInlineComponent);
+            bool leftCurrentInlineComponent
+                    = (i != lastICRoot
+                            && obj->hasFlag(QV4::CompiledData::Object::IsInlineComponentRoot))
+                        || !obj->hasFlag(QV4::CompiledData::Object::IsPartOfInlineComponent);
             if (leftCurrentInlineComponent)
                 break;
             inlineComponentData[lastICRoot].totalBindingCount += obj->nBindings;
@@ -478,9 +441,9 @@ void ExecutableCompilationUnit::finalizeCompositeType(QQmlEnginePrivate *qmlEngi
     int objectCount = 0;
     for (quint32 i = 0, count = this->objectCount(); i < count; ++i) {
         const QV4::CompiledData::Object *obj = objectAt(i);
-        if (obj->flags & QV4::CompiledData::Object::InPartOfInlineComponent) {
+        if (obj->hasFlag(QV4::CompiledData::Object::IsPartOfInlineComponent))
             continue;
-        }
+
         bindingCount += obj->nBindings;
         if (auto *typeRef = resolvedTypes.value(obj->inheritedTypeNameIndex)) {
             const auto type = typeRef->type();
@@ -622,7 +585,9 @@ Heap::Module *ExecutableCompilationUnit::instantiate(ExecutionEngine *engine)
                         referenceErrorMessage += QStringLiteral(" because ");
                         referenceErrorMessage += url.toString(QUrl::RemoveFragment);
                         referenceErrorMessage += QStringLiteral(" is not an object");
-                        engine->throwReferenceError(referenceErrorMessage, fileName(), entry.location.line, entry.location.column);
+                        engine->throwReferenceError(
+                                referenceErrorMessage, fileName(),
+                                entry.location.line(), entry.location.column());
                         return nullptr;
                     }
 
@@ -641,7 +606,9 @@ Heap::Module *ExecutableCompilationUnit::instantiate(ExecutionEngine *engine)
             if (!valuePtr) {
                 QString referenceErrorMessage = QStringLiteral("Unable to resolve import reference ");
                 referenceErrorMessage += importName->toQString();
-                engine->throwReferenceError(referenceErrorMessage, fileName(), entry.location.line, entry.location.column);
+                engine->throwReferenceError(
+                        referenceErrorMessage, fileName(),
+                        entry.location.line(), entry.location.column());
                 return nullptr;
             }
             imports[i] = valuePtr;
@@ -658,7 +625,9 @@ Heap::Module *ExecutableCompilationUnit::instantiate(ExecutionEngine *engine)
         if (!dependentModuleUnit->resolveExport(importName)) {
             QString referenceErrorMessage = QStringLiteral("Unable to resolve re-export reference ");
             referenceErrorMessage += importName->toQString();
-            engine->throwReferenceError(referenceErrorMessage, fileName(), entry.location.line, entry.location.column);
+            engine->throwReferenceError(
+                    referenceErrorMessage, fileName(),
+                    entry.location.line(), entry.location.column());
             return nullptr;
         }
     }
@@ -804,7 +773,7 @@ bool ExecutableCompilationUnit::loadFromDisk(const QUrl &url, const QDateTime &s
     }
 
     const QString sourcePath = QQmlFile::urlToLocalFileOrQrc(url);
-    QScopedPointer<CompilationUnitMapper> cacheFile(new CompilationUnitMapper());
+    auto cacheFile = std::make_unique<CompilationUnitMapper>();
 
     const QStringList cachePaths = { sourcePath + QLatin1Char('c'), localCacheFilePath(url) };
     for (const QString &cachePath : cachePaths) {
@@ -829,7 +798,7 @@ bool ExecutableCompilationUnit::loadFromDisk(const QUrl &url, const QDateTime &s
 
         dataPtrRevert.dismiss();
         free(const_cast<CompiledData::Unit*>(oldDataPtr));
-        backingFile.reset(cacheFile.take());
+        backingFile = std::move(cacheFile);
         return true;
     }
 
@@ -860,9 +829,10 @@ bool ExecutableCompilationUnit::saveToDisk(const QUrl &unitUrl, QString *errorSt
     This function creates a temporary key vector and sorts it to guarantuee a stable
     hash. This is used to calculate a check-sum on dependent meta-objects.
  */
-bool ResolvedTypeReferenceMap::addToHash(QCryptographicHash *hash, QQmlEngine *engine) const
+bool ResolvedTypeReferenceMap::addToHash(
+        QCryptographicHash *hash, QHash<quintptr, QByteArray> *checksums) const
 {
-    std::vector<int> keys (count());
+    std::vector<int> keys (size());
     int i = 0;
     for (auto it = constBegin(), end = constEnd(); it != end; ++it) {
         keys[i] = it.key();
@@ -870,7 +840,7 @@ bool ResolvedTypeReferenceMap::addToHash(QCryptographicHash *hash, QQmlEngine *e
     }
     std::sort(keys.begin(), keys.end());
     for (int key: keys) {
-        if (!this->operator[](key)->addToHash(hash, engine))
+        if (!this->operator[](key)->addToHash(hash, checksums))
             return false;
     }
 
@@ -881,7 +851,7 @@ QString ExecutableCompilationUnit::bindingValueAsString(const CompiledData::Bind
 {
     using namespace CompiledData;
 #if QT_CONFIG(translation)
-    switch (binding->type) {
+    switch (binding->type()) {
     case Binding::Type_TranslationById: {
         const TranslationData &translation
                 = data->translations()[binding->value.translationDataIndex];
@@ -894,7 +864,7 @@ QString ExecutableCompilationUnit::bindingValueAsString(const CompiledData::Bind
         // This code must match that in the qsTr() implementation
         const QString &path = fileName();
         int lastSlash = path.lastIndexOf(QLatin1Char('/'));
-        QStringView context = (lastSlash > -1) ? QStringView{path}.mid(lastSlash + 1, path.length() - lastSlash - 5)
+        QStringView context = (lastSlash > -1) ? QStringView{path}.mid(lastSlash + 1, path.size() - lastSlash - 5)
                                               : QStringView();
         QByteArray contextUtf8 = context.toUtf8();
         QByteArray comment = stringAt(translation.commentIndex).toUtf8();

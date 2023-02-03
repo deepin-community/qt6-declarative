@@ -1,6 +1,6 @@
-# SymbolsHelper-Confirmed: 6.2.4 amd64 arm64
+# SymbolsHelper-Confirmed: 6.4.1 amd64
 libQt6QuickLayouts.so.6 libqt6quicklayouts6 #MINVER#
-| libqt6quicklayouts6 #MINVER#, qt6-declarative-abi (= 6.2.4)
+| libqt6quicklayouts6 #MINVER#, qt6-declarative-abi (= 6.4.2)
 * Build-Depends-Packages: qt6-declarative-dev, qt6-declarative-private-dev
  _Z34qml_register_types_QtQuick_Layoutsv@Base 6.2.0
  _ZN12QQuickLayout10invalidateEP10QQuickItem@Base 6.2.0
@@ -21,6 +21,7 @@ libQt6QuickLayouts.so.6 libqt6quicklayouts6 #MINVER#
  _ZN12QQuickLayout25effectiveSizeHints_helperEP10QQuickItemP6QSizeFPP20QQuickLayoutAttachedb@Base 6.2.0
  _ZN12QQuickLayout25itemImplicitHeightChangedEP10QQuickItem@Base 6.2.0
  _ZN12QQuickLayout26effectiveSizePolicy_helperEP10QQuickItemN2Qt11OrientationEP20QQuickLayoutAttached@Base 6.2.0
+ _ZN12QQuickLayout37maybeSubscribeToBaseLineOffsetChangesEP10QQuickItem@Base 6.4.1
  _ZN12QQuickLayout9rearrangeERK6QSizeF@Base 6.2.0
  _ZN12QQuickLayoutC1ER19QQuickLayoutPrivateP10QQuickItem@Base 6.2.0
  _ZN12QQuickLayoutC2ER19QQuickLayoutPrivateP10QQuickItem@Base 6.2.0
@@ -54,8 +55,8 @@ libQt6QuickLayouts.so.6 libqt6quicklayouts6 #MINVER#
  _ZN17QQuickStackLayout12setAlignmentEP10QQuickItem6QFlagsIN2Qt13AlignmentFlagEE@Base 6.2.0
  _ZN17QQuickStackLayout15setCurrentIndexEi@Base 6.2.0
  _ZN17QQuickStackLayout16staticMetaObjectE@Base 6.2.0
+ _ZN17QQuickStackLayout17childItemsChangedEv@Base 6.4.0
  _ZN17QQuickStackLayout17componentCompleteEv@Base 6.2.0
- _ZN17QQuickStackLayout17updateLayoutItemsEv@Base 6.2.0
  _ZN17QQuickStackLayout19currentIndexChangedEv@Base 6.2.0
  _ZN17QQuickStackLayout20collectItemSizeHintsEP10QQuickItemP6QSizeF@Base 6.2.0
  _ZN17QQuickStackLayout21qmlAttachedPropertiesEP7QObject@Base 6.2.0
@@ -65,6 +66,14 @@ libQt6QuickLayouts.so.6 libqt6quicklayouts6 #MINVER#
  _ZN18QQuickColumnLayout11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
  _ZN18QQuickColumnLayout11qt_metacastEPKc@Base 6.2.0
  _ZN18QQuickColumnLayout16staticMetaObjectE@Base 6.2.0
+ _ZN18QQuickLinearLayout10setSpacingEd@Base 6.4.0
+ _ZN18QQuickLinearLayout11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.4.0
+ _ZN18QQuickLinearLayout11qt_metacastEPKc@Base 6.4.0
+ _ZN18QQuickLinearLayout14spacingChangedEv@Base 6.4.0
+ _ZN18QQuickLinearLayout16staticMetaObjectE@Base 6.4.0
+ _ZN18QQuickLinearLayout17insertLayoutItemsEv@Base 6.4.0
+ _ZN18QQuickLinearLayoutC1EN2Qt11OrientationEP10QQuickItem@Base 6.4.0
+ _ZN18QQuickLinearLayoutC2EN2Qt11OrientationEP10QQuickItem@Base 6.4.0
  _ZN20QQuickGridLayoutBase10invalidateEP10QQuickItem@Base 6.2.0
  _ZN20QQuickGridLayoutBase11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
  _ZN20QQuickGridLayoutBase11qt_metacastEPKc@Base 6.2.0
@@ -134,15 +143,26 @@ libQt6QuickLayouts.so.6 libqt6quicklayouts6 #MINVER#
  _ZN20QQuickLayoutAttached9setColumnEi@Base 6.2.0
  _ZN20QQuickLayoutAttachedC1EP7QObject@Base 6.2.0
  _ZN20QQuickLayoutAttachedC2EP7QObject@Base 6.2.0
+ _ZN25QQuickStackLayoutAttached11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.4.0
+ _ZN25QQuickStackLayoutAttached11qt_metacastEPKc@Base 6.4.0
+ _ZN25QQuickStackLayoutAttached12indexChangedEv@Base 6.4.0
+ _ZN25QQuickStackLayoutAttached13layoutChangedEv@Base 6.4.0
+ _ZN25QQuickStackLayoutAttached16setIsCurrentItemEb@Base 6.4.0
+ _ZN25QQuickStackLayoutAttached16staticMetaObjectE@Base 6.4.0
+ _ZN25QQuickStackLayoutAttached20isCurrentItemChangedEv@Base 6.4.0
+ _ZN25QQuickStackLayoutAttached8setIndexEi@Base 6.4.0
+ _ZN25QQuickStackLayoutAttached9setLayoutEP17QQuickStackLayout@Base 6.4.0
+ _ZN25QQuickStackLayoutAttachedC1EP7QObject@Base 6.4.0
+ _ZN25QQuickStackLayoutAttachedC2EP7QObject@Base 6.4.0
  _ZNK12QQuickLayout10isMirroredEv@Base 6.2.0
  _ZNK12QQuickLayout10metaObjectEv@Base 6.2.0
  _ZNK12QQuickLayout11invalidatedEv@Base 6.2.0
  _ZNK12QQuickLayout12checkAnchorsEP10QQuickItem@Base 6.2.0
- _ZNK12QQuickLayout16shouldIgnoreItemEP10QQuickItemRP20QQuickLayoutAttachedP6QSizeF@Base 6.2.0
+ _ZNK12QQuickLayout16shouldIgnoreItemEP10QQuickItem@Base 6.4.0
  _ZNK12QQuickLayout17_q_dumpLayoutTreeEv@Base 6.2.0
  _ZNK12QQuickLayout22invalidatedArrangementEv@Base 6.2.0
  _ZNK12QQuickLayout23dumpLayoutTreeRecursiveEiR7QString@Base 6.2.0
- _ZNK12QQuickLayout24ensureLayoutItemsUpdatedEv@Base 6.2.0
+ _ZNK12QQuickLayout24ensureLayoutItemsUpdatedE6QFlagsINS_30EnsureLayoutItemsUpdatedOptionEE@Base 6.4.0
  _ZNK12QQuickLayout7isReadyEv@Base 6.2.0
  _ZNK15QQuickRowLayout10metaObjectEv@Base 6.2.0
  _ZNK16QQuickGridLayout10metaObjectEv@Base 6.2.0
@@ -154,12 +174,15 @@ libQt6QuickLayouts.so.6 libqt6quicklayouts6 #MINVER#
  _ZNK17QQuickStackLayout10metaObjectEv@Base 6.2.0
  _ZNK17QQuickStackLayout12currentIndexEv@Base 6.2.0
  _ZNK17QQuickStackLayout16shouldIgnoreItemEP10QQuickItem@Base 6.2.0
+ _ZNK17QQuickStackLayout19cachedItemSizeHintsEi@Base 6.4.0
  _ZNK17QQuickStackLayout5countEv@Base 6.2.0
  _ZNK17QQuickStackLayout6itemAtEi@Base 6.2.0
  _ZNK17QQuickStackLayout7indexOfEP10QQuickItem@Base 6.2.0
  _ZNK17QQuickStackLayout8sizeHintEN2Qt8SizeHintE@Base 6.2.0
  _ZNK17QQuickStackLayout9itemCountEv@Base 6.2.0
  _ZNK18QQuickColumnLayout10metaObjectEv@Base 6.2.0
+ _ZNK18QQuickLinearLayout10metaObjectEv@Base 6.4.0
+ _ZNK18QQuickLinearLayout7spacingEv@Base 6.4.0
  _ZNK20QQuickGridLayoutBase10metaObjectEv@Base 6.2.0
  _ZNK20QQuickGridLayoutBase11orientationEv@Base 6.2.0
  _ZNK20QQuickGridLayoutBase15layoutDirectionEv@Base 6.2.0
@@ -171,40 +194,39 @@ libQt6QuickLayouts.so.6 libqt6quicklayouts6 #MINVER#
  _ZNK20QQuickLayoutAttached12parentLayoutEv@Base 6.2.0
  _ZNK20QQuickLayoutAttached4itemEv@Base 6.2.0
  _ZNK20QQuickLayoutAttached8sizeHintEN2Qt8SizeHintENS0_11OrientationE@Base 6.2.0
- _ZNK7QString3argEiii5QChar@Base 6.2.4
+ _ZNK25QQuickStackLayoutAttached10metaObjectEv@Base 6.4.0
+ _ZNK25QQuickStackLayoutAttached13isCurrentItemEv@Base 6.4.0
+ _ZNK25QQuickStackLayoutAttached5indexEv@Base 6.4.0
+ _ZNK25QQuickStackLayoutAttached6layoutEv@Base 6.4.0
  _ZTI12QQuickLayout@Base 6.2.0
  _ZTI15QQuickRowLayout@Base 6.2.0
  _ZTI16QQuickGridLayout@Base 6.2.0
  _ZTI17QQuickStackLayout@Base 6.2.0
  _ZTI18QQuickColumnLayout@Base 6.2.0
+ _ZTI18QQuickLinearLayout@Base 6.4.0
  _ZTI20QQuickGridLayoutBase@Base 6.2.0
  _ZTI20QQuickLayoutAttached@Base 6.2.0
  _ZTI24QAbstractLayoutStyleInfo@Base 6.2.0
+ _ZTI25QQuickStackLayoutAttached@Base 6.4.0
  _ZTS12QQuickLayout@Base 6.2.0
  _ZTS15QQuickRowLayout@Base 6.2.0
  _ZTS16QQuickGridLayout@Base 6.2.0
  _ZTS17QQuickStackLayout@Base 6.2.0
  _ZTS18QQuickColumnLayout@Base 6.2.0
+ _ZTS18QQuickLinearLayout@Base 6.4.0
  _ZTS20QQuickGridLayoutBase@Base 6.2.0
  _ZTS20QQuickLayoutAttached@Base 6.2.0
  _ZTS24QAbstractLayoutStyleInfo@Base 6.2.0
+ _ZTS25QQuickStackLayoutAttached@Base 6.4.0
  _ZTV12QQuickLayout@Base 6.2.0
  _ZTV15QQuickRowLayout@Base 6.2.0
  _ZTV16QQuickGridLayout@Base 6.2.0
  _ZTV17QQuickStackLayout@Base 6.2.0
  _ZTV18QQuickColumnLayout@Base 6.2.0
+ _ZTV18QQuickLinearLayout@Base 6.4.0
  _ZTV20QQuickGridLayoutBase@Base 6.2.0
  _ZTV20QQuickLayoutAttached@Base 6.2.0
- _ZTV24QAbstractLayoutStyleInfo@Base 6.2.4
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIbE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES4_S5_S7_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIbE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS5_E_4_FUNES4_S5_S5_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIbE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES4_S5_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIdE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES4_S5_S7_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIdE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS5_E_4_FUNES4_S5_S5_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIdE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES4_S5_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIiE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES4_S5_S7_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIiE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS5_E_4_FUNES4_S5_S5_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIiE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES4_S5_@Base 6.2.0
+ _ZTV25QQuickStackLayoutAttached@Base 6.4.0
  (c++)"non-virtual thunk to QQuickGridLayoutBase::componentComplete()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickGridLayoutBase::itemDestroyed(QQuickItem*)@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickGridLayoutBase::itemVisibilityChanged(QQuickItem*)@Base" 6.2.0

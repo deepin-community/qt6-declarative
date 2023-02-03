@@ -1,31 +1,6 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 Research In Motion.
-** Copyright (C) 2019 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the tools applications of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:GPL-EXCEPT$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 3 as published by the Free Software
-** Foundation with exceptions as appearing in the file LICENSE.GPL3-EXCEPT
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 Research In Motion.
+// Copyright (C) 2019 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only WITH Qt-GPL-exception-1.0
 
 #include "conf.h"
 
@@ -61,6 +36,7 @@
 #include <qqmlfileselector.h>
 
 #include <private/qtqmlglobal_p.h>
+#include <private/qqmlimport_p.h>
 #if QT_CONFIG(qml_animation)
 #include <private/qabstractanimation_p.h>
 #endif
@@ -71,6 +47,8 @@
 #include <memory>
 
 #define FILE_OPEN_EVENT_WAIT_TIME 3000 // ms
+
+Q_LOGGING_CATEGORY(lcDeprecated, "qt.tools.qml.deprecated")
 
 enum QmlApplicationType {
     QmlApplicationTypeUnknown
@@ -97,6 +75,7 @@ static int exitTimerId = -1;
 #endif
 static const QString iconResourcePath(QStringLiteral(":/qt-project.org/QmlRuntime/resources/qml-64.png"));
 static const QString confResourcePath(QStringLiteral(":/qt-project.org/QmlRuntime/conf/"));
+static const QString customConfFileName(QStringLiteral("configuration.qml"));
 static bool verboseMode = false;
 static bool quietMode = false;
 static bool glShareContexts = true;
@@ -110,27 +89,31 @@ static void loadConf(const QString &override, bool quiet) // Terminates app on f
         QFileInfo fi;
         fi.setFile(QStandardPaths::locate(QStandardPaths::AppDataLocation, defaultFileName));
         if (fi.exists()) {
-            settingsUrl = QUrl::fromLocalFile(fi.absoluteFilePath());
+            settingsUrl = QQmlImports::urlFromLocalFileOrQrcOrUrl(fi.absoluteFilePath());
         } else {
             // ### If different built-in configs are needed per-platform, just apply QFileSelector to the qrc conf.qml path
             fi.setFile(confResourcePath + defaultFileName);
-            settingsUrl = QUrl::fromLocalFile(fi.absoluteFilePath());
+            settingsUrl = QQmlImports::urlFromLocalFileOrQrcOrUrl(fi.absoluteFilePath());
             builtIn = true;
         }
     } else {
         QFileInfo fi;
         fi.setFile(confResourcePath + override + QLatin1String(".qml"));
         if (fi.exists()) {
-            settingsUrl = QUrl::fromLocalFile(fi.absoluteFilePath());
+            settingsUrl = QQmlImports::urlFromLocalFileOrQrcOrUrl(fi.absoluteFilePath());
             builtIn = true;
         } else {
-            fi.setFile(override);
+            fi.setFile(QDir(QStandardPaths::locate(QStandardPaths::AppConfigLocation, override, QStandardPaths::LocateDirectory)), customConfFileName);
+            if (fi.exists())
+                settingsUrl = QQmlImports::urlFromLocalFileOrQrcOrUrl(fi.absoluteFilePath());
+            else
+                fi.setFile(override);
             if (!fi.exists()) {
                 printf("qml: Couldn't find required configuration file: %s\n",
                        qPrintable(QDir::toNativeSeparators(fi.absoluteFilePath())));
                 exit(1);
             }
-            settingsUrl = QUrl::fromLocalFile(fi.absoluteFilePath());
+            settingsUrl = QQmlImports::urlFromLocalFileOrQrcOrUrl(fi.absoluteFilePath());
         }
     }
 
@@ -167,10 +150,30 @@ void noFilesGiven()
 
 static void listConfFiles()
 {
-    QDir confResourceDir(confResourcePath);
+    const QDir confResourceDir(confResourcePath);
     printf("%s\n", qPrintable(QCoreApplication::translate("main", "Built-in configurations:")));
     for (const QFileInfo &fi : confResourceDir.entryInfoList(QDir::Files))
         printf("  %s\n", qPrintable(fi.baseName()));
+    printf("%s\n", qPrintable(QCoreApplication::translate("main", "Other configurations:")));
+    bool foundOther = false;
+    const QStringList otherLocations = QStandardPaths::standardLocations(QStandardPaths::AppConfigLocation);
+    for (const auto &confDirPath : otherLocations) {
+        const QDir confDir(confDirPath);
+        for (const QFileInfo &fi : confDir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot)) {
+            foundOther = true;
+            if (verboseMode)
+                printf("  %s\n", qPrintable(fi.absoluteFilePath()));
+            else
+                printf("  %s\n", qPrintable(fi.baseName()));
+        }
+    }
+    if (!foundOther)
+        printf("  %s\n", qPrintable(QCoreApplication::translate("main", "none")));
+    if (verboseMode) {
+        printf("%s\n", qPrintable(QCoreApplication::translate("main", "Checked in:")));
+        for (const auto &confDirPath : otherLocations)
+            printf("  %s\n", qPrintable(confDirPath));
+    }
     exit(0);
 }
 
@@ -233,7 +236,7 @@ public Q_SLOTS:
         if (o) {
             checkForWindow(o);
             if (conf && qae)
-                for (PartialScene *ps : qAsConst(conf->completers))
+                for (PartialScene *ps : std::as_const(conf->completers))
                     if (o->inherits(ps->itemType().toUtf8().constData()))
                         contain(o, ps->container());
         }
@@ -242,7 +245,8 @@ public Q_SLOTS:
 
         if (! --expectedFileCount) {
             printf("qml: Did not load any objects, exiting.\n");
-            std::exit(2); // Different return code from qFatal
+            exit(2);
+            QCoreApplication::exit(2);
         }
     }
 
@@ -342,6 +346,7 @@ static void getAppFlags(int argc, char **argv)
 #endif // QT_GUI_LIB
 }
 
+#if QT_DEPRECATED_SINCE(6, 3)
 static void loadDummyDataFiles(QQmlEngine &engine, const QString& directory)
 {
     QDir dir(directory+"/dummydata", "*.qml");
@@ -359,12 +364,13 @@ static void loadDummyDataFiles(QQmlEngine &engine, const QString& directory)
 
         if (dummyData && !quietMode) {
             printf("qml: Loaded dummy data: %s\n",  qPrintable(dir.filePath(qml)));
-            qml.truncate(qml.length()-4);
+            qml.truncate(qml.size()-4);
             engine.rootContext()->setContextProperty(qml, dummyData);
             dummyData->setParent(&engine);
         }
     }
 }
+#endif
 
 int main(int argc, char *argv[])
 {
@@ -402,7 +408,6 @@ int main(int argc, char *argv[])
     QStringList files;
     QString confFile;
     QString translationFile;
-    QString dummyDir;
 
     // Handle main arguments
     QCommandLineParser parser;
@@ -435,9 +440,11 @@ int main(int argc, char *argv[])
     QCommandLineOption translationOption(QStringLiteral("translation"),
         QCoreApplication::translate("main", "Load the given file as the translations file."), QStringLiteral("file"));
     parser.addOption(translationOption);
+#if QT_DEPRECATED_SINCE(6, 3)
     QCommandLineOption dummyDataOption(QStringLiteral("dummy-data"),
-        QCoreApplication::translate("main", "Load QML files from the given directory as context properties."), QStringLiteral("file"));
+        QCoreApplication::translate("main", "Load QML files from the given directory as context properties. (deprecated)"), QStringLiteral("file"));
     parser.addOption(dummyDataOption);
+#endif
 #ifdef QT_GUI_LIB
     // OpenGL options
     QCommandLineOption glDesktopOption(QStringLiteral("desktop"),
@@ -492,6 +499,12 @@ int main(int argc, char *argv[])
         parser.showVersion();
     if (parser.isSet(helpOption))
         parser.showHelp();
+    if (parser.isSet(verboseOption))
+        verboseMode = true;
+    if (parser.isSet(quietOption)) {
+        quietMode = true;
+        verboseMode = false;
+    }
     if (parser.isSet(listConfOption))
         listConfFiles();
     if (applicationType == QmlApplicationTypeUnknown) {
@@ -501,12 +514,6 @@ int main(int argc, char *argv[])
         qWarning() << QCoreApplication::translate("main", "--apptype must be followed by one of the following: core gui\n");
 #endif // QT_WIDGETS_LIB
         parser.showHelp();
-    }
-    if (parser.isSet(verboseOption))
-        verboseMode = true;
-    if (parser.isSet(quietOption)) {
-        quietMode = true;
-        verboseMode = false;
     }
 #if QT_CONFIG(qml_animation)
     if (parser.isSet(slowAnimationsOption))
@@ -540,8 +547,6 @@ int main(int argc, char *argv[])
         confFile = parser.value(configOption);
     if (parser.isSet(translationOption))
         translationFile = parser.value(translationOption);
-    if (parser.isSet(dummyDataOption))
-        dummyDir = parser.value(dummyDataOption);
     if (parser.isSet(rhiOption)) {
         const QString rhiBackend = parser.value(rhiOption);
         if (rhiBackend == QLatin1String("default"))
@@ -581,7 +586,7 @@ int main(int argc, char *argv[])
         QLoggingCategory::setFilterRules(QStringLiteral("*=false"));
     }
 
-    if (files.count() <= 0) {
+    if (files.size() <= 0) {
 #if defined(Q_OS_DARWIN) && defined(QT_GUI_LIB)
         if (applicationType == QmlApplicationTypeGui)
             exitTimerId = static_cast<LoaderApplication *>(app.get())->startTimer(FILE_OPEN_EVENT_WAIT_TIME);
@@ -594,13 +599,20 @@ int main(int argc, char *argv[])
     loadConf(confFile, !verboseMode);
 
     // Load files
-    QScopedPointer<LoadWatcher> lw(new LoadWatcher(&e, files.count()));
+    QScopedPointer<LoadWatcher> lw(new LoadWatcher(&e, files.size()));
 
+#if QT_DEPRECATED_SINCE(6, 3)
+    QString dummyDir;
+    if (parser.isSet(dummyDataOption))
+        dummyDir = parser.value(dummyDataOption);
     // Load dummy data before loading QML-files
-    if (!dummyDir.isEmpty() && QFileInfo (dummyDir).isDir())
+    if (!dummyDir.isEmpty() && QFileInfo (dummyDir).isDir()) {
+        qCWarning(lcDeprecated()) << "Warning: the qml --dummy-data option is deprecated and will be removed in a future version of Qt.";
         loadDummyDataFiles(e, dummyDir);
+    }
+#endif
 
-    for (const QString &path : qAsConst(files)) {
+    for (const QString &path : std::as_const(files)) {
         QUrl url = QUrl::fromUserInput(path, QDir::currentPath(), QUrl::AssumeLocalFile);
         if (verboseMode)
             printf("qml: loading %s\n", qPrintable(url.toString()));

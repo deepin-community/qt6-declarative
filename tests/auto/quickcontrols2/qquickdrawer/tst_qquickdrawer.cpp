@@ -1,38 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2017 The Qt Company Ltd.
-** Contact: http://www.qt.io/licensing/
-**
-** This file is part of the test suite of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL3$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see http://www.qt.io/terms-conditions. For further
-** information use the contact form at http://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPLv3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or later as published by the Free
-** Software Foundation and appearing in the file LICENSE.GPL included in
-** the packaging of this file. Please review the following information to
-** ensure the GNU General Public License version 2.0 requirements will be
-** met: http://www.gnu.org/licenses/gpl-2.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2017 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only WITH Qt-GPL-exception-1.0
 
 #include <QtTest/qtest.h>
 #include <QtTest/qsignalspy.h>
@@ -42,6 +9,9 @@
 #include <QtGui/qstylehints.h>
 #include <QtGui/qguiapplication.h>
 #include <QtGui/qpa/qwindowsysteminterface.h>
+#include <QtGui/qpa/qplatformintegration.h>
+#include <QtGui/private/qguiapplication_p.h>
+#include <QtQml/QQmlComponent>
 #include <QtQuick/private/qquickwindow_p.h>
 #include <QtQuick/private/qquickflickable_p.h>
 #include <QtQuickTestUtils/private/qmlutils_p.h>
@@ -57,6 +27,7 @@
 
 //using namespace QQuickVisualTestUtils;
 using namespace QQuickControlsTestUtils;
+using namespace Qt::StringLiterals;
 
 class tst_QQuickDrawer : public QQmlDataTest
 {
@@ -166,7 +137,7 @@ void tst_QQuickDrawer::invalidEdge()
     QVERIFY(drawer);
 
     // Test an invalid value - it should warn and ignore it.
-    QTest::ignoreMessage(QtWarningMsg, qUtf8Printable(testFileUrl("window.qml").toString() + ":61:5: QML Drawer: invalid edge value - valid values are: Qt.TopEdge, Qt.LeftEdge, Qt.RightEdge, Qt.BottomEdge"));
+    QTest::ignoreMessage(QtWarningMsg, qUtf8Printable(testFileUrl("window.qml").toString() + ":14:5: QML Drawer: invalid edge value - valid values are: Qt.TopEdge, Qt.LeftEdge, Qt.RightEdge, Qt.BottomEdge"));
     drawer->setEdge(static_cast<Qt::Edge>(QQuickDrawer::Right));
     QCOMPARE(drawer->edge(), Qt::LeftEdge);
 }
@@ -254,71 +225,71 @@ void tst_QQuickDrawer::state()
 
     // open programmatically...
     drawer->open();
-    QCOMPARE(visibleChangedSpy.count(), ++visibleChangedCount);
-    QCOMPARE(aboutToShowSpy.count(), ++aboutToShowCount);
-    QCOMPARE(aboutToHideSpy.count(), aboutToHideCount);
-    QCOMPARE(openedSpy.count(), openedCount);
-    QCOMPARE(closedSpy.count(), closedCount);
+    QCOMPARE(visibleChangedSpy.size(), ++visibleChangedCount);
+    QCOMPARE(aboutToShowSpy.size(), ++aboutToShowCount);
+    QCOMPARE(aboutToHideSpy.size(), aboutToHideCount);
+    QCOMPARE(openedSpy.size(), openedCount);
+    QCOMPARE(closedSpy.size(), closedCount);
 
     // ...and wait until fully open
     QVERIFY(openedSpy.wait());
-    QCOMPARE(visibleChangedSpy.count(), visibleChangedCount);
-    QCOMPARE(aboutToShowSpy.count(), aboutToShowCount);
-    QCOMPARE(aboutToHideSpy.count(), aboutToHideCount);
-    QCOMPARE(openedSpy.count(), ++openedCount);
-    QCOMPARE(closedSpy.count(), closedCount);
+    QCOMPARE(visibleChangedSpy.size(), visibleChangedCount);
+    QCOMPARE(aboutToShowSpy.size(), aboutToShowCount);
+    QCOMPARE(aboutToHideSpy.size(), aboutToHideCount);
+    QCOMPARE(openedSpy.size(), ++openedCount);
+    QCOMPARE(closedSpy.size(), closedCount);
 
     // close programmatically...
     drawer->close();
-    QCOMPARE(visibleChangedSpy.count(), visibleChangedCount);
-    QCOMPARE(aboutToShowSpy.count(), aboutToShowCount);
-    QCOMPARE(aboutToHideSpy.count(), ++aboutToHideCount);
-    QCOMPARE(openedSpy.count(), openedCount);
-    QCOMPARE(closedSpy.count(), closedCount);
+    QCOMPARE(visibleChangedSpy.size(), visibleChangedCount);
+    QCOMPARE(aboutToShowSpy.size(), aboutToShowCount);
+    QCOMPARE(aboutToHideSpy.size(), ++aboutToHideCount);
+    QCOMPARE(openedSpy.size(), openedCount);
+    QCOMPARE(closedSpy.size(), closedCount);
 
     // ...and wait until fully closed
     QVERIFY(closedSpy.wait());
-    QCOMPARE(visibleChangedSpy.count(), ++visibleChangedCount);
-    QCOMPARE(aboutToShowSpy.count(), aboutToShowCount);
-    QCOMPARE(aboutToHideSpy.count(), aboutToHideCount);
-    QCOMPARE(openedSpy.count(), openedCount);
-    QCOMPARE(closedSpy.count(), ++closedCount);
+    QCOMPARE(visibleChangedSpy.size(), ++visibleChangedCount);
+    QCOMPARE(aboutToShowSpy.size(), aboutToShowCount);
+    QCOMPARE(aboutToHideSpy.size(), aboutToHideCount);
+    QCOMPARE(openedSpy.size(), openedCount);
+    QCOMPARE(closedSpy.size(), ++closedCount);
 
     // open interactively...
     QTest::mousePress(window, Qt::LeftButton, Qt::NoModifier, QPoint(0, drawer->height() / 2));
     QTest::mouseMove(window, QPoint(drawer->width() * 0.2, drawer->height() / 2), 16);
     QTest::mouseRelease(window, Qt::LeftButton, Qt::NoModifier, QPoint(drawer->width() * 0.8, drawer->height() / 2), 16);
-    QCOMPARE(visibleChangedSpy.count(), ++visibleChangedCount);
-    QCOMPARE(aboutToShowSpy.count(), ++aboutToShowCount);
-    QCOMPARE(aboutToHideSpy.count(), aboutToHideCount);
-    QCOMPARE(openedSpy.count(), openedCount);
-    QCOMPARE(closedSpy.count(), closedCount);
+    QCOMPARE(visibleChangedSpy.size(), ++visibleChangedCount);
+    QCOMPARE(aboutToShowSpy.size(), ++aboutToShowCount);
+    QCOMPARE(aboutToHideSpy.size(), aboutToHideCount);
+    QCOMPARE(openedSpy.size(), openedCount);
+    QCOMPARE(closedSpy.size(), closedCount);
 
     // ...and wait until fully open
     QVERIFY(openedSpy.wait());
-    QCOMPARE(visibleChangedSpy.count(), visibleChangedCount);
-    QCOMPARE(aboutToShowSpy.count(), aboutToShowCount);
-    QCOMPARE(aboutToHideSpy.count(), aboutToHideCount);
-    QCOMPARE(openedSpy.count(), ++openedCount);
-    QCOMPARE(closedSpy.count(), closedCount);
+    QCOMPARE(visibleChangedSpy.size(), visibleChangedCount);
+    QCOMPARE(aboutToShowSpy.size(), aboutToShowCount);
+    QCOMPARE(aboutToHideSpy.size(), aboutToHideCount);
+    QCOMPARE(openedSpy.size(), ++openedCount);
+    QCOMPARE(closedSpy.size(), closedCount);
 
     // close interactively...
     QTest::mousePress(window, Qt::LeftButton, Qt::NoModifier, QPoint(drawer->width(), drawer->height() / 2));
     QTest::mouseMove(window, QPoint(drawer->width() * 0.8, drawer->height() / 2), 16);
     QTest::mouseRelease(window, Qt::LeftButton, Qt::NoModifier, QPoint(drawer->width() * 0.2, drawer->height() / 2), 16);
-    QCOMPARE(visibleChangedSpy.count(), visibleChangedCount);
-    QCOMPARE(aboutToShowSpy.count(), aboutToShowCount);
-    QCOMPARE(aboutToHideSpy.count(), ++aboutToHideCount);
-    QCOMPARE(openedSpy.count(), openedCount);
-    QCOMPARE(closedSpy.count(), closedCount);
+    QCOMPARE(visibleChangedSpy.size(), visibleChangedCount);
+    QCOMPARE(aboutToShowSpy.size(), aboutToShowCount);
+    QCOMPARE(aboutToHideSpy.size(), ++aboutToHideCount);
+    QCOMPARE(openedSpy.size(), openedCount);
+    QCOMPARE(closedSpy.size(), closedCount);
 
     // ...and wait until fully closed
     QVERIFY(closedSpy.wait());
-    QCOMPARE(visibleChangedSpy.count(), ++visibleChangedCount);
-    QCOMPARE(aboutToShowSpy.count(), aboutToShowCount);
-    QCOMPARE(aboutToHideSpy.count(), aboutToHideCount);
-    QCOMPARE(openedSpy.count(), openedCount);
-    QCOMPARE(closedSpy.count(), ++closedCount);
+    QCOMPARE(visibleChangedSpy.size(), ++visibleChangedCount);
+    QCOMPARE(aboutToShowSpy.size(), aboutToShowCount);
+    QCOMPARE(aboutToHideSpy.size(), aboutToHideCount);
+    QCOMPARE(openedSpy.size(), openedCount);
+    QCOMPARE(closedSpy.size(), ++closedCount);
 }
 
 void tst_QQuickDrawer::position_data()
@@ -329,10 +300,26 @@ void tst_QQuickDrawer::position_data()
     QTest::addColumn<QPoint>("to");
     QTest::addColumn<qreal>("position");
 
+    // We need to start swiping exactly from the selected edge, but on Android
+    // ApplicationWindow will be fullscreen instead of the defined size, so
+    // we need to extract the edge values from screen geometry.
+#ifndef Q_OS_ANDROID
+    const int rightMargin = 399;
+    const int bottomMargin = 399;
+#else
+    const QRect screenGeometry = QGuiApplication::primaryScreen()->availableGeometry();
+    const int rightMargin = screenGeometry.right();
+    const int bottomMargin = screenGeometry.bottom();
+#endif
+
     QTest::newRow("top") << Qt::TopEdge << QPoint(100, 0) << QPoint(100, 50) << QPoint(100, 150) << qreal(0.5);
     QTest::newRow("left") << Qt::LeftEdge << QPoint(0, 100) << QPoint(50, 100) << QPoint(150, 100) << qreal(0.5);
-    QTest::newRow("right") << Qt::RightEdge << QPoint(399, 100) << QPoint(350, 100) << QPoint(250, 100) << qreal(0.5);
-    QTest::newRow("bottom") << Qt::BottomEdge << QPoint(100, 399) << QPoint(100, 350) << QPoint(150, 250) << qreal(0.5);
+    QTest::newRow("right") << Qt::RightEdge << QPoint(rightMargin, 100)
+                           << QPoint(rightMargin - 50, 100) << QPoint(rightMargin - 150, 100)
+                           << qreal(0.5);
+    QTest::newRow("bottom") << Qt::BottomEdge << QPoint(100, bottomMargin)
+                            << QPoint(100, bottomMargin - 50) << QPoint(150, bottomMargin - 150)
+                            << qreal(0.5);
 }
 
 void tst_QQuickDrawer::position()
@@ -348,8 +335,7 @@ void tst_QQuickDrawer::position()
 
     QQuickApplicationWindow *window = helper.appWindow;
     window->show();
-    window->requestActivate();
-    QVERIFY(QTest::qWaitForWindowActive(window));
+    QVERIFY(QTest::qWaitForWindowExposed(window));
 
     QQuickDrawer *drawer = helper.appWindow->property("drawer").value<QQuickDrawer*>();
     QVERIFY(drawer);
@@ -396,8 +382,7 @@ void tst_QQuickDrawer::dragMargin()
 
     QQuickApplicationWindow *window = helper.appWindow;
     window->show();
-    window->requestActivate();
-    QVERIFY(QTest::qWaitForWindowActive(window));
+    QVERIFY(QTest::qWaitForWindowExposed(window));
 
     QQuickDrawer *drawer = helper.appWindow->property("drawer").value<QQuickDrawer*>();
     QVERIFY(drawer);
@@ -455,34 +440,34 @@ void tst_QQuickDrawer::reposition()
     QVERIFY(dimmer);
 
     QCOMPARE(geometry(dimmer), QRectF(0, 0, window->width(), window->height()));
-    QTRY_COMPARE(geometry(popupItem), QRectF(0, 0, window->width() / 2, window->height()));
+    QTRY_COMPARE(geometry(popupItem), QRectF(0, 0, window->width() / 2., window->height()));
 
     drawer->setY(100);
     QCOMPARE(geometry(dimmer), QRectF(0, 100, window->width(), window->height() - 100));
-    QCOMPARE(geometry(popupItem), QRectF(0, 100, window->width() / 2, window->height() - 100));
+    QCOMPARE(geometry(popupItem), QRectF(0, 100, window->width() / 2., window->height() - 100));
 
     drawer->setHeight(window->height());
     QCOMPARE(geometry(dimmer), QRectF(0, 100, window->width(), window->height()));
-    QCOMPARE(geometry(popupItem), QRectF(0, 100, window->width() / 2, window->height()));
+    QCOMPARE(geometry(popupItem), QRectF(0, 100, window->width() / 2., window->height()));
 
     drawer->resetHeight();
     QCOMPARE(geometry(dimmer), QRectF(0, 100, window->width(), window->height() - 100));
-    QCOMPARE(geometry(popupItem), QRectF(0, 100, window->width() / 2, window->height() - 100));
+    QCOMPARE(geometry(popupItem), QRectF(0, 100, window->width() / 2., window->height() - 100));
 
     drawer->setParentItem(window->contentItem());
     QCOMPARE(geometry(dimmer), QRectF(0, 150, window->width(), window->height() - 150));
-    QCOMPARE(geometry(popupItem), QRectF(0, 150, window->width() / 2, window->height() - 150));
+    QCOMPARE(geometry(popupItem), QRectF(0, 150, window->width() / 2., window->height() - 150));
 
     drawer->setEdge(Qt::RightEdge);
     QCOMPARE(geometry(dimmer), QRectF(0, 150, window->width(), window->height() - 150));
-    QTRY_COMPARE(geometry(popupItem), QRectF(window->width() - drawer->width(), 150, window->width() / 2, window->height() - 150));
+    QTRY_COMPARE(geometry(popupItem), QRectF(window->width() - drawer->width(), 150, window->width() / 2., window->height() - 150));
 
     window->setWidth(window->width() + 100);
     QTRY_COMPARE(geometry(dimmer), QRectF(0, 150, window->width(), window->height() - 150));
-    QTRY_COMPARE(geometry(popupItem), QRectF(window->width() - drawer->width(), 150, window->width() / 2, window->height() - 150));
+    QTRY_COMPARE(geometry(popupItem), QRectF(window->width() - drawer->width(), 150, window->width() / 2., window->height() - 150));
 
     drawer->close();
-    QTRY_COMPARE(geometry(popupItem), QRectF(window->width(), 150, window->width() / 2, window->height() - 150));
+    QTRY_COMPARE(geometry(popupItem), QRectF(window->width(), 150, window->width() / 2., window->height() - 150));
 
     QQuickDrawer *drawer2 = window->property("drawer2").value<QQuickDrawer *>();
     QVERIFY(drawer2);
@@ -533,18 +518,18 @@ void tst_QQuickDrawer::header()
     QSignalSpy clickSpy(button, SIGNAL(clicked()));
     QVERIFY(clickSpy.isValid());
     QTest::mouseClick(window, Qt::LeftButton, Qt::NoModifier, QPoint(button->x() + button->width() / 2, button->y() + button->height() / 2));
-    QCOMPARE(clickSpy.count(), 1);
+    QCOMPARE(clickSpy.size(), 1);
 }
 
 void tst_QQuickDrawer::dragHandlerInteraction()
 {
-    QQuickControlsApplicationHelper helper(this, u"dragHandlerInteraction.qml"_qs);
+    QQuickControlsApplicationHelper helper(this, u"dragHandlerInteraction.qml"_s);
     QVERIFY2(helper.ready, helper.failureMessage());
 
     auto window = helper.appWindow;;
     QVERIFY(window);
     window->show();
-    QVERIFY(QTest::qWaitForWindowActive(window));
+    QVERIFY(QTest::qWaitForWindowExposed(window));
     QTest::mousePress(window, Qt::LeftButton, Qt::KeyboardModifiers(), QPoint(250, 250));
     QTest::mouseMove(window, QPoint(100, 100));
     QTest::mouseRelease(window, Qt::LeftButton, Qt::KeyboardModifiers(), QPoint(100, 100));
@@ -571,8 +556,7 @@ void tst_QQuickDrawer::hover()
     QVERIFY2(helper.ready, helper.failureMessage());
     QQuickWindow *window = helper.window;
     window->show();
-    window->requestActivate();
-    QVERIFY(QTest::qWaitForWindowActive(window));
+    QVERIFY(QTest::qWaitForWindowExposed(window));
 
     QQuickDrawer *drawer = window->property("drawer").value<QQuickDrawer*>();
     QVERIFY(drawer);
@@ -593,7 +577,7 @@ void tst_QQuickDrawer::hover()
     QSignalSpy openedSpy(drawer, SIGNAL(opened()));
     QVERIFY(openedSpy.isValid());
     drawer->open();
-    QVERIFY(openedSpy.count() == 1 || openedSpy.wait());
+    QVERIFY(openedSpy.size() == 1 || openedSpy.wait());
 
     // hover the background button outside the drawer
     QTest::mouseMove(window, QPoint(window->width() - 1, window->height() - 1));
@@ -611,12 +595,12 @@ void tst_QQuickDrawer::hover()
     QTest::mouseMove(window, QPoint(2, 2));
     QVERIFY(!backgroundButton->isHovered());
     QVERIFY(drawerButton->isHovered());
-    QVERIFY(!drawerItem->isHovered());
+    QVERIFY(drawerItem->isHovered());
 
     QSignalSpy closedSpy(drawer, SIGNAL(closed()));
     QVERIFY(closedSpy.isValid());
     drawer->close();
-    QVERIFY(closedSpy.count() == 1 || closedSpy.wait());
+    QVERIFY(closedSpy.size() == 1 || closedSpy.wait());
 
     // hover the background button after closing the drawer
     QTest::mouseMove(window, QPoint(window->width() / 2, window->height() / 2));
@@ -681,7 +665,7 @@ void tst_QQuickDrawer::wheel()
     QSignalSpy openedSpy(drawer, SIGNAL(opened()));
     QVERIFY(openedSpy.isValid());
     drawer->open();
-    QVERIFY(openedSpy.count() == 1 || openedSpy.wait());
+    QVERIFY(openedSpy.size() == 1 || openedSpy.wait());
 
     {
         // wheel over the drawer content
@@ -741,9 +725,9 @@ void tst_QQuickDrawer::multiple()
 
     // no drawers open, click the content
     QTest::mouseClick(window, Qt::LeftButton);
-    QCOMPARE(contentClickSpy.count(), 1);
-    QCOMPARE(leftClickSpy.count(), 0);
-    QCOMPARE(rightClickSpy.count(), 0);
+    QCOMPARE(contentClickSpy.size(), 1);
+    QCOMPARE(leftClickSpy.size(), 0);
+    QCOMPARE(rightClickSpy.size(), 0);
 
     // drag the left drawer open
     QTest::mousePress(window, Qt::LeftButton, Qt::NoModifier, QPoint(0, window->height() / 2));
@@ -770,30 +754,30 @@ void tst_QQuickDrawer::multiple()
 
     // click the left drawer's button
     QTest::mouseClick(window, Qt::LeftButton);
-    QCOMPARE(contentClickSpy.count(), 1);
-    QCOMPARE(leftClickSpy.count(), 1);
-    QCOMPARE(rightClickSpy.count(), 0);
+    QCOMPARE(contentClickSpy.size(), 1);
+    QCOMPARE(leftClickSpy.size(), 1);
+    QCOMPARE(rightClickSpy.size(), 0);
 
     // click the left drawer's background (button disabled, don't leak through to the right drawer below)
     leftButton->setEnabled(false);
     QTest::mouseClick(window, Qt::LeftButton);
-    QCOMPARE(contentClickSpy.count(), 1);
-    QCOMPARE(leftClickSpy.count(), 1);
-    QCOMPARE(rightClickSpy.count(), 0);
+    QCOMPARE(contentClickSpy.size(), 1);
+    QCOMPARE(leftClickSpy.size(), 1);
+    QCOMPARE(rightClickSpy.size(), 0);
     leftButton->setEnabled(true);
 
     // click the overlay of the left drawer (don't leak through to right drawer below)
     QTest::mouseClick(window, Qt::LeftButton, Qt::NoModifier, QPoint(window->width() - (window->width() - leftDrawer->width()) / 2, window->height() / 2));
-    QCOMPARE(contentClickSpy.count(), 1);
-    QCOMPARE(leftClickSpy.count(), 1);
-    QCOMPARE(rightClickSpy.count(), 0);
+    QCOMPARE(contentClickSpy.size(), 1);
+    QCOMPARE(leftClickSpy.size(), 1);
+    QCOMPARE(rightClickSpy.size(), 0);
     QTRY_VERIFY(!leftDrawer->isVisible());
 
     // click the right drawer's button
     QTest::mouseClick(window, Qt::LeftButton);
-    QCOMPARE(contentClickSpy.count(), 1);
-    QCOMPARE(leftClickSpy.count(), 1);
-    QCOMPARE(rightClickSpy.count(), 1);
+    QCOMPARE(contentClickSpy.size(), 1);
+    QCOMPARE(leftClickSpy.size(), 1);
+    QCOMPARE(rightClickSpy.size(), 1);
 
     // cannot drag the left drawer while the right drawer is open
     QTest::mousePress(window, Qt::LeftButton, Qt::NoModifier, QPoint(0, window->height() / 2));
@@ -807,23 +791,23 @@ void tst_QQuickDrawer::multiple()
     // click the right drawer's background (button disabled, don't leak through to the content below)
     rightButton->setEnabled(false);
     QTest::mouseClick(window, Qt::LeftButton);
-    QCOMPARE(contentClickSpy.count(), 1);
-    QCOMPARE(leftClickSpy.count(), 1);
-    QCOMPARE(rightClickSpy.count(), 1);
+    QCOMPARE(contentClickSpy.size(), 1);
+    QCOMPARE(leftClickSpy.size(), 1);
+    QCOMPARE(rightClickSpy.size(), 1);
     rightButton->setEnabled(true);
 
     // click the overlay of the right drawer (don't leak through to the content below)
     QTest::mouseClick(window, Qt::LeftButton, Qt::NoModifier, QPoint((window->width() - rightDrawer->width()) / 2, window->height() / 2));
-    QCOMPARE(contentClickSpy.count(), 1);
-    QCOMPARE(leftClickSpy.count(), 1);
-    QCOMPARE(rightClickSpy.count(), 1);
+    QCOMPARE(contentClickSpy.size(), 1);
+    QCOMPARE(leftClickSpy.size(), 1);
+    QCOMPARE(rightClickSpy.size(), 1);
     QTRY_VERIFY(!rightDrawer->isVisible());
 
     // no drawers open, click the content
     QTest::mouseClick(window, Qt::LeftButton);
-    QCOMPARE(contentClickSpy.count(), 2);
-    QCOMPARE(leftClickSpy.count(), 1);
-    QCOMPARE(rightClickSpy.count(), 1);
+    QCOMPARE(contentClickSpy.size(), 2);
+    QCOMPARE(leftClickSpy.size(), 1);
+    QCOMPARE(rightClickSpy.size(), 1);
 
     // drag the right drawer open
     QTest::mousePress(window, Qt::LeftButton, Qt::NoModifier, QPoint(window->width() - 1, window->height() / 2));
@@ -898,7 +882,7 @@ void tst_QQuickDrawer::multiTouch()
     QVERIFY2(helper.ready, helper.failureMessage());
     QQuickWindow *window = helper.window;
     window->show();
-    QVERIFY(QTest::qWaitForWindowActive(window));
+    QVERIFY(QTest::qWaitForWindowExposed(window));
 
     QQuickOverlay *overlay = QQuickOverlay::overlay(window);
     QVERIFY(overlay);
@@ -936,33 +920,33 @@ void tst_QQuickDrawer::multiTouch()
     QTest::touchEvent(window, touchDevice.data()).press(0, QPoint(300, 100));
     QVERIFY(popup->isVisible());
     QVERIFY(drawer->isVisible());
-    QCOMPARE(buttonPressedSpy.count(), 0);
-    QCOMPARE(overlayPressedSpy.count(), 1);
+    QCOMPARE(buttonPressedSpy.size(), 0);
+    QCOMPARE(overlayPressedSpy.size(), 1);
 
     // 2nd press (blocked & ignored)
     QTest::touchEvent(window, touchDevice.data()).stationary(0).press(1, QPoint(300, 200));
     QVERIFY(popup->isVisible());
     QVERIFY(drawer->isVisible());
-    QCOMPARE(buttonPressedSpy.count(), 0);
-    QCOMPARE(overlayPressedSpy.count(), 2);
+    QCOMPARE(buttonPressedSpy.size(), 0);
+    QCOMPARE(overlayPressedSpy.size(), 2);
 
     // 2nd release (blocked & ignored)
     QTest::touchEvent(window, touchDevice.data()).stationary(0).release(1, QPoint(300, 200));
     QVERIFY(popup->isVisible());
     QVERIFY(drawer->isVisible());
-    QCOMPARE(buttonPressedSpy.count(), 0);
-    QCOMPARE(buttonReleasedSpy.count(), 0);
-    QCOMPARE(overlayPressedSpy.count(), 2);
-    QCOMPARE(overlayReleasedSpy.count(), 1);
+    QCOMPARE(buttonPressedSpy.size(), 0);
+    QCOMPARE(buttonReleasedSpy.size(), 0);
+    QCOMPARE(overlayPressedSpy.size(), 2);
+    QCOMPARE(overlayReleasedSpy.size(), 1);
 
     // 1st release
     QTest::touchEvent(window, touchDevice.data()).release(0, QPoint(300, 100));
     QVERIFY(popup->isVisible());
     QTRY_VERIFY(!drawer->isVisible());
-    QCOMPARE(buttonPressedSpy.count(), 0);
-    QCOMPARE(buttonReleasedSpy.count(), 0);
-    QCOMPARE(overlayPressedSpy.count(), 2);
-    QCOMPARE(overlayReleasedSpy.count(), 2);
+    QCOMPARE(buttonPressedSpy.size(), 0);
+    QCOMPARE(buttonReleasedSpy.size(), 0);
+    QCOMPARE(overlayPressedSpy.size(), 2);
+    QCOMPARE(overlayReleasedSpy.size(), 2);
 
     drawer->open();
     QVERIFY(drawer->isVisible());
@@ -970,8 +954,8 @@ void tst_QQuickDrawer::multiTouch()
 
     // 1st drag
     QTest::touchEvent(window, touchDevice.data()).press(0, QPoint(300, 100));
-    QCOMPARE(buttonPressedSpy.count(), 0);
-    QCOMPARE(overlayPressedSpy.count(), 3);
+    QCOMPARE(buttonPressedSpy.size(), 0);
+    QCOMPARE(overlayPressedSpy.size(), 3);
     for (int x = 300; x >= 100; x -= 10) {
         QTest::touchEvent(window, touchDevice.data()).move(0, QPoint(x, 100));
         QVERIFY(popup->isVisible());
@@ -981,8 +965,8 @@ void tst_QQuickDrawer::multiTouch()
 
     // 2nd drag (blocked & ignored)
     QTest::touchEvent(window, touchDevice.data()).stationary(0).press(1, QPoint(300, 200));
-    QCOMPARE(buttonPressedSpy.count(), 0);
-    QCOMPARE(overlayPressedSpy.count(), 4);
+    QCOMPARE(buttonPressedSpy.size(), 0);
+    QCOMPARE(overlayPressedSpy.size(), 4);
     for (int x = 300; x >= 0; x -= 10) {
         QTest::touchEvent(window, touchDevice.data()).stationary(0).move(1, QPoint(x, 200));
         QVERIFY(popup->isVisible());
@@ -995,15 +979,15 @@ void tst_QQuickDrawer::multiTouch()
     QVERIFY(popup->isVisible());
     QVERIFY(drawer->isVisible());
     QCOMPARE(drawer->position(), 0.5);
-    QCOMPARE(buttonReleasedSpy.count(), 0);
-    QCOMPARE(overlayReleasedSpy.count(), 3);
+    QCOMPARE(buttonReleasedSpy.size(), 0);
+    QCOMPARE(overlayReleasedSpy.size(), 3);
 
     // 1st release
     QTest::touchEvent(window, touchDevice.data()).release(0, QPoint(300, 100));
     QVERIFY(popup->isVisible());
     QTRY_VERIFY(!drawer->isVisible());
-    QCOMPARE(buttonReleasedSpy.count(), 0);
-    QCOMPARE(overlayReleasedSpy.count(), 4);
+    QCOMPARE(buttonReleasedSpy.size(), 0);
+    QCOMPARE(overlayReleasedSpy.size(), 4);
 }
 
 void tst_QQuickDrawer::grabber()
@@ -1037,10 +1021,10 @@ void tst_QQuickDrawer::grabber()
     QVERIFY(popupClosedSpy.isValid());
 
     popup->open();
-    QTRY_COMPARE(popupOpenedSpy.count(), 1);
+    QTRY_COMPARE(popupOpenedSpy.size(), 1);
 
     QTest::mouseClick(window, Qt::LeftButton, Qt::NoModifier, QPoint(100, 300));
-    QTRY_COMPARE(popupClosedSpy.count(), 1);
+    QTRY_COMPARE(popupClosedSpy.size(), 1);
 }
 
 void tst_QQuickDrawer::interactive_data()
@@ -1052,6 +1036,9 @@ void tst_QQuickDrawer::interactive_data()
 
 void tst_QQuickDrawer::interactive()
 {
+    if (!(QGuiApplicationPrivate::platformIntegration()->hasCapability(QPlatformIntegration::WindowActivation)))
+        QSKIP("Window activation is not supported");
+
     QFETCH(QString, source);
     QQuickControlsApplicationHelper helper(this, source);
     QVERIFY2(helper.ready, helper.failureMessage());
@@ -1075,7 +1062,7 @@ void tst_QQuickDrawer::interactive()
 
     // click outside
     QTest::mouseClick(window, Qt::LeftButton, Qt::NoModifier, QPoint(300, 100));
-    QCOMPARE(aboutToHideSpy.count(), 0);
+    QCOMPARE(aboutToHideSpy.size(), 0);
 
     // drag inside
     QTest::mousePress(window, Qt::LeftButton, Qt::NoModifier, QPoint(drawer->width(), 0));
@@ -1083,7 +1070,7 @@ void tst_QQuickDrawer::interactive()
     QCOMPARE(drawer->position(), 1.0);
     QTest::mouseRelease(window, Qt::LeftButton, Qt::NoModifier, QPoint(0, 0));
     QCOMPARE(drawer->position(), 1.0);
-    QCOMPARE(aboutToHideSpy.count(), 0);
+    QCOMPARE(aboutToHideSpy.size(), 0);
 
     // drag outside
     QTest::mousePress(window, Qt::LeftButton, Qt::NoModifier, QPoint(window->width() - 1, 0));
@@ -1091,11 +1078,11 @@ void tst_QQuickDrawer::interactive()
     QCOMPARE(drawer->position(), 1.0);
     QTest::mouseRelease(window, Qt::LeftButton, Qt::NoModifier, QPoint(0, 0));
     QCOMPARE(drawer->position(), 1.0);
-    QCOMPARE(aboutToHideSpy.count(), 0);
+    QCOMPARE(aboutToHideSpy.size(), 0);
 
     // close on escape
     QTest::keyClick(window, Qt::Key_Escape);
-    QCOMPARE(aboutToHideSpy.count(), 0);
+    QCOMPARE(aboutToHideSpy.size(), 0);
 }
 
 void tst_QQuickDrawer::flickable_data()
@@ -1177,7 +1164,7 @@ void tst_QQuickDrawer::dragOverModalShadow()
     QVERIFY2(helper.ready, helper.failureMessage());
     QQuickWindow *window = helper.window;
     window->show();
-    QVERIFY(QTest::qWaitForWindowActive(window));
+    QVERIFY(QTest::qWaitForWindowExposed(window));
 
     QQuickDrawer *drawer = window->property("drawer").value<QQuickDrawer *>();
     QVERIFY(drawer);
@@ -1234,7 +1221,7 @@ void tst_QQuickDrawer::nonModal()
     QVERIFY2(helper.ready, helper.failureMessage());
     QQuickWindow *window = helper.window;
     window->show();
-    QVERIFY(QTest::qWaitForWindowActive(window));
+    QVERIFY(QTest::qWaitForWindowExposed(window));
 
     QQuickDrawer *drawer = window->property("drawer").value<QQuickDrawer *>();
     QVERIFY(drawer);
@@ -1318,7 +1305,7 @@ void tst_QQuickDrawer::slider()
     QVERIFY2(helper.ready, helper.failureMessage());
     QQuickWindow *window = helper.window;
     window->show();
-    QVERIFY(QTest::qWaitForWindowActive(window));
+    QVERIFY(QTest::qWaitForWindowExposed(window));
 
     QQuickDrawer *drawer = window->property("drawer").value<QQuickDrawer *>();
     QVERIFY(drawer);
@@ -1366,7 +1353,7 @@ void tst_QQuickDrawer::topEdgeScreenEdge()
     QVERIFY2(helper.ready, helper.failureMessage());
     QQuickWindow *window = helper.window;
     window->show();
-    QVERIFY(QTest::qWaitForWindowActive(window));
+    QVERIFY(QTest::qWaitForWindowExposed(window));
 
     QQuickDrawer *drawer = window->property("drawer").value<QQuickDrawer *>();
     QVERIFY(drawer);

@@ -12,13 +12,15 @@ qt_internal_add_qml_module(QuickControls2
     IMPORTS
         QtQuick.Controls.impl/auto
     OPTIONAL_IMPORTS
-        QtQuick.Controls.Basic/auto
         QtQuick.Controls.Fusion/auto
         QtQuick.Controls.Material/auto
         QtQuick.Controls.Imagine/auto
         QtQuick.Controls.Universal/auto
         QtQuick.Controls.Windows/auto
         QtQuick.Controls.macOS/auto
+        QtQuick.Controls.iOS/auto
+    DEFAULT_IMPORTS
+        QtQuick.Controls.Basic/auto
     NO_PLUGIN_OPTIONAL
     NO_GENERATE_PLUGIN_SOURCE
     SOURCES
@@ -39,6 +41,7 @@ qt_internal_add_qml_module(QuickControls2
         Qt::Core
         Qt::Gui
         Qt::Quick
+    GENERATE_CPP_EXPORTS
 )
 
 qt_internal_extend_target(qtquickcontrols2plugin
@@ -62,6 +65,12 @@ add_subdirectory(universal)
 
 if(MACOS)
     add_subdirectory(macos)
+    ### Remove
+    add_subdirectory(ios)
+endif()
+
+if(IOS)
+    add_subdirectory(ios)
 endif()
 
 if(WIN32)
@@ -70,4 +79,16 @@ endif()
 
 qt_internal_add_docs(QuickControls2
     doc/qtquickcontrols.qdocconf
+)
+
+# Make the doc files available to Creator's locator.
+file(GLOB doc_files
+    "${CMAKE_CURRENT_SOURCE_DIR}/doc/snippets/*.qml"
+    "${CMAKE_CURRENT_SOURCE_DIR}/doc/src/*.qdoc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/doc/src/templates/*.qdoc"
+)
+target_sources(QuickControls2
+    PRIVATE
+        ${doc_files}
+        doc/qtquickcontrols.qdocconf
 )

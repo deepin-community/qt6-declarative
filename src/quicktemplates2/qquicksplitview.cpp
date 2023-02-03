@@ -1,38 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2018 The Qt Company Ltd.
-** Contact: http://www.qt.io/licensing/
-**
-** This file is part of the Qt Quick Templates 2 module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL3$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see http://www.qt.io/terms-conditions. For further
-** information use the contact form at http://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPLv3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or later as published by the Free
-** Software Foundation and appearing in the file LICENSE.GPL included in
-** the packaging of this file. Please review the following information to
-** ensure the GNU General Public License version 2.0 requirements will be
-** met: http://www.gnu.org/licenses/gpl-2.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2018 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qquicksplitview_p.h"
 #include "qquicksplitview_p_p.h"
@@ -733,15 +700,14 @@ void QQuickSplitViewPrivate::createHandleItem(int index)
 
     // If we don't use the correct context, it won't be possible to refer to
     // the control's id from within the delegate.
-    QQmlContext *creationContext = m_handle->creationContext();
+    QQmlContext *context = m_handle->creationContext();
     // The component might not have been created in QML, in which case
     // the creation context will be null and we have to create it ourselves.
-    if (!creationContext)
-        creationContext = qmlContext(q);
-    QQmlContext *context = new QQmlContext(creationContext, q);
-    context->setContextObject(q);
+    if (!context)
+        context = qmlContext(q);
     QQuickItem *handleItem = qobject_cast<QQuickItem*>(m_handle->beginCreate(context));
     if (handleItem) {
+        handleItem->setParent(q);
         qCDebug(qlcQQuickSplitView) << "- successfully created handle item" << handleItem << "for split item at index" << index;
 
         // Insert the item to our list of items *before* its parent is set to us,
@@ -750,7 +716,12 @@ void QQuickSplitViewPrivate::createHandleItem(int index)
         m_handleItems.insert(index, handleItem);
 
         handleItem->setParentItem(q);
-
+        // Handles must have priority for press events, so we need to set this.
+        handleItem->setAcceptedMouseButtons(Qt::LeftButton);
+        handleItem->setKeepMouseGrab(true);
+#if QT_CONFIG(cursor)
+        updateCursorHandle(handleItem);
+#endif
         m_handle->completeCreate();
         resizeHandle(handleItem);
     }
@@ -882,6 +853,13 @@ void QQuickSplitViewPrivate::resizeHandles()
         resizeHandle(handleItem);
 }
 
+#if QT_CONFIG(cursor)
+void QQuickSplitViewPrivate::updateCursorHandle(QQuickItem *handleItem)
+{
+    handleItem->setCursor(isHorizontal() ? Qt::SplitHCursor : Qt::SplitVCursor);
+}
+#endif
+
 void QQuickSplitViewPrivate::updateHandleVisibilities()
 {
     // If this is the first item that is visible, we won't have any
@@ -918,7 +896,6 @@ void QQuickSplitViewPrivate::updateHandleVisibilities()
 
 void QQuickSplitViewPrivate::updateHoveredHandle(QQuickItem *hoveredItem)
 {
-    Q_Q(QQuickSplitView);
     qCDebug(qlcQQuickSplitViewMouse) << "updating hovered handle after" << hoveredItem << "was hovered";
 
     const int oldHoveredHandleIndex = m_hoveredHandleIndex;
@@ -943,13 +920,6 @@ void QQuickSplitViewPrivate::updateHoveredHandle(QQuickItem *hoveredItem)
     } else {
         qCDebug(qlcQQuickSplitViewMouse) << "either there is no hovered item or" << hoveredItem << "is not a handle";
     }
-
-#if QT_CONFIG(cursor)
-    if (m_hoveredHandleIndex != -1)
-        q->setCursor(m_orientation == Qt::Horizontal ? Qt::SplitHCursor : Qt::SplitVCursor);
-    else
-        q->setCursor(Qt::ArrowCursor);
-#endif
 }
 
 void QQuickSplitViewPrivate::setResizing(bool resizing)
@@ -976,10 +946,10 @@ QQuickItem *QQuickSplitViewPrivate::getContentItem()
     return new QQuickContentItem(q);
 }
 
-void QQuickSplitViewPrivate::handlePress(const QPointF &point)
+bool QQuickSplitViewPrivate::handlePress(const QPointF &point, ulong timestamp)
 {
     Q_Q(QQuickSplitView);
-    QQuickContainerPrivate::handlePress(point);
+    QQuickContainerPrivate::handlePress(point, timestamp);
 
     QQuickItem *pressedItem = q->childAt(point.x(), point.y());
     const int pressedHandleIndex = m_handleItems.indexOf(pressedItem);
@@ -1009,8 +979,6 @@ void QQuickSplitViewPrivate::handlePress(const QPointF &point)
         m_rightOrBottomItemSizeBeforePress = isHorizontal ? rightOrBottomItem->width() : rightOrBottomItem->height();
         m_handlePosBeforePress = pressedItem->position();
 
-        // Avoid e.g. Flickable stealing our drag if we're inside it.
-        q->setKeepMouseGrab(true);
 
         // Force the attached object to be created since we rely on it.
         QQuickSplitHandleAttached *handleAttached = qobject_cast<QQuickSplitHandleAttached*>(
@@ -1027,11 +995,12 @@ void QQuickSplitViewPrivate::handlePress(const QPointF &point)
             << " size before press=" << m_rightOrBottomItemSizeBeforePress
             << " item=" << rightOrBottomItem;
     }
+    return true;
 }
 
-void QQuickSplitViewPrivate::handleMove(const QPointF &point)
+bool QQuickSplitViewPrivate::handleMove(const QPointF &point, ulong timestamp)
 {
-    QQuickContainerPrivate::handleMove(point);
+    QQuickContainerPrivate::handleMove(point, timestamp);
 
     if (m_pressedHandleIndex != -1) {
         m_mousePos = point;
@@ -1039,12 +1008,12 @@ void QQuickSplitViewPrivate::handleMove(const QPointF &point)
         // resizing to be as responsive and smooth as possible.
         updatePolish();
     }
+    return true;
 }
 
-void QQuickSplitViewPrivate::handleRelease(const QPointF &point)
+bool QQuickSplitViewPrivate::handleRelease(const QPointF &point, ulong timestamp)
 {
-    Q_Q(QQuickSplitView);
-    QQuickContainerPrivate::handleRelease(point);
+    QQuickContainerPrivate::handleRelease(point, timestamp);
 
     if (m_pressedHandleIndex != -1) {
         QQuickItem *pressedHandle = m_handleItems.at(m_pressedHandleIndex);
@@ -1061,7 +1030,7 @@ void QQuickSplitViewPrivate::handleRelease(const QPointF &point)
     m_handlePosBeforePress = QPointF();
     m_leftOrTopItemSizeBeforePress = 0.0;
     m_rightOrBottomItemSizeBeforePress = 0.0;
-    q->setKeepMouseGrab(false);
+    return true;
 }
 
 void QQuickSplitViewPrivate::itemVisibilityChanged(QQuickItem *item)
@@ -1115,7 +1084,6 @@ QQuickSplitView::QQuickSplitView(QQuickItem *parent)
     Q_D(QQuickSplitView);
     d->changeTypes |= QQuickItemPrivate::Visibility;
 
-    setAcceptedMouseButtons(Qt::LeftButton);
     setFiltersChildMouseEvents(true);
 }
 
@@ -1125,7 +1093,6 @@ QQuickSplitView::QQuickSplitView(QQuickSplitViewPrivate &dd, QQuickItem *parent)
     Q_D(QQuickSplitView);
     d->changeTypes |= QQuickItemPrivate::Visibility;
 
-    setAcceptedMouseButtons(Qt::LeftButton);
     setFiltersChildMouseEvents(true);
 }
 
@@ -1163,6 +1130,10 @@ void QQuickSplitView::setOrientation(Qt::Orientation orientation)
 
     d->m_orientation = orientation;
     d->resizeHandles();
+#if QT_CONFIG(cursor)
+    for (QQuickItem *handleItem : d->m_handleItems)
+        d->updateCursorHandle(handleItem);
+#endif
     d->requestLayout();
     emit orientationChanged();
 }
@@ -1398,18 +1369,46 @@ void QQuickSplitView::hoverMoveEvent(QHoverEvent *event)
     d->updateHoveredHandle(hoveredItem);
 }
 
+void QQuickSplitView::hoverLeaveEvent(QHoverEvent *event)
+{
+    Q_UNUSED(event);
+    Q_D(QQuickSplitView);
+    // If SplitView is no longer hovered (e.g. visible set to false), clear handle hovered value
+    d->updateHoveredHandle(nullptr);
+}
+
 bool QQuickSplitView::childMouseEventFilter(QQuickItem *item, QEvent *event)
 {
     Q_D(QQuickSplitView);
     qCDebug(qlcQQuickSplitViewMouse) << "childMouseEventFilter called with" << item << event;
-    if (event->type() != QEvent::HoverEnter)
-        return false;
 
-    // If a child item received a hover enter event, then it means our handle is no longer hovered.
-    // Handles should be purely visual and not accept hover events,
-    // so we should never get hover events for them here.
-    d->updateHoveredHandle(nullptr);
-    return false;
+    if (event->type() == QEvent::MouseButtonPress) {
+        QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
+        const QPointF point = mapFromItem(item, mouseEvent->position());
+        d->handlePress(point, mouseEvent->timestamp());
+
+        // Keep the mouse grab if this item belongs to the handle,
+        // otherwise this event can be stolen e.g. Flickable if we're inside it.
+        if (d->m_pressedHandleIndex != -1)
+            item->setKeepMouseGrab(true);
+    }
+    else if (event->type() == QEvent::MouseButtonRelease) {
+        QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
+        const QPointF point = mapFromItem(item, mouseEvent->position());
+        d->handleRelease(point, mouseEvent->timestamp());
+    }
+    else if (event->type() == QEvent::MouseMove) {
+        QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
+        const QPointF point = mapFromItem(item, mouseEvent->position());
+        d->handleMove(point, mouseEvent->timestamp());
+    }
+
+    // If this event belongs to the handle, filter it. (d->m_pressedHandleIndex != -1) means that
+    // we press or move the handle, so we don't need to propagate it further.
+    if (d->m_pressedHandleIndex != -1)
+        return true;
+
+    return QQuickContainer::childMouseEventFilter(item, event);
 }
 
 void QQuickSplitView::geometryChange(const QRectF &newGeometry, const QRectF &oldGeometry)
@@ -1483,7 +1482,6 @@ void QQuickSplitView::itemRemoved(int index, QQuickItem *item)
             handleAttachedPrivate->setPressed(false);
         }
 
-        setKeepMouseGrab(false);
         d->m_hoveredHandleIndex = -1;
         d->m_pressedHandleIndex = -1;
     }
