@@ -110,7 +110,7 @@ libQt6QuickTest.so.6 libqt6quicktest6 #MINVER#
  _ZN24QQuickTouchEventSequence7releaseEiP7QObjectdd@Base 6.2.0
  _ZN24QQuickTouchEventSequenceC1EP14QuickTestEventP7QObject@Base 6.2.0
  _ZN24QQuickTouchEventSequenceC2EP14QuickTestEventP7QObject@Base 6.2.0
- _ZNK11QMetaObject10superClassEv@Base 6.2.4
+#MISSING: 6.2.4.1-1+dde+u005# _ZNK11QMetaObject10superClassEv@Base 6.2.4
  _ZNK13QuickTestUtil10callerFileEi@Base 6.2.0
  _ZNK13QuickTestUtil10callerLineEi@Base 6.2.0
  _ZNK13QuickTestUtil10metaObjectEv@Base 6.2.0
@@ -136,11 +136,11 @@ libQt6QuickTest.so.6 libqt6quicktest6 #MINVER#
  _ZNK15QuickTestResult9tagsToRunEv@Base 6.2.0
  _ZNK20QuickTestImageObject10metaObjectEv@Base 6.2.0
  _ZNK24QQuickTouchEventSequence10metaObjectEv@Base 6.2.0
- (optional=templinst)_ZNK3QV45Value2asINS_14FunctionObjectEEEPKT_v@Base 6.2.4
- (optional=templinst)_ZNK3QV45Value2asINS_7ManagedEEEPKT_v@Base 6.2.4
- _ZNK6QImage5pixelERK6QPoint@Base 6.2.4
- _ZNK7QString3argEiii5QChar@Base 6.2.4
- _ZNK7QStringixEx@Base 6.2.4
+#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst)_ZNK3QV45Value2asINS_14FunctionObjectEEEPKT_v@Base 6.2.4
+#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst)_ZNK3QV45Value2asINS_7ManagedEEEPKT_v@Base 6.2.4
+#MISSING: 6.2.4.1-1+dde+u005# _ZNK6QImage5pixelERK6QPoint@Base 6.2.4
+#MISSING: 6.2.4.1-1+dde+u005# _ZNK7QString3argEiii5QChar@Base 6.2.4
+#MISSING: 6.2.4.1-1+dde+u005# _ZNK7QStringixEx@Base 6.2.4
  _ZTI13QuickTestUtil@Base 6.2.0
  _ZTI14QuickTestEvent@Base 6.2.0
  _ZTI15QTestRootObject@Base 6.2.0

@@ -18,7 +18,7 @@ libQt6LabsSharedImage.so.6 libqt6labssharedimage6 #MINVER#
  _ZN19SharedImageProviderC1Ev@Base 6.2.0
  _ZN19SharedImageProviderC2Ev@Base 6.2.0
  _ZNK18QSharedImageLoader10metaObjectEv@Base 6.2.0
- _ZNK7QString3argEiii5QChar@Base 6.2.4
+#MISSING: 6.2.4.1-1+dde+u005# _ZNK7QString3argEiii5QChar@Base 6.2.4
  _ZTI18QSharedImageLoader@Base 6.2.0
  _ZTI19SharedImageProvider@Base 6.2.0
  _ZTS18QSharedImageLoader@Base 6.2.0

@@ -28,7 +28,7 @@ libQt6LabsFolderListModel.so.6 libqt6labsfolderlistmodel6 #MINVER#
  _ZN21QQuickFolderListModelD0Ev@Base 6.2.0
  _ZN21QQuickFolderListModelD1Ev@Base 6.2.0
  _ZN21QQuickFolderListModelD2Ev@Base 6.2.0
- _ZN7QString5clearEv@Base 6.2.
+#MISSING: 6.2.4.1-1+dde+u005# _ZN7QString5clearEv@Base 6.2.
  _ZNK21QQuickFolderListModel10metaObjectEv@Base 6.2.0
  _ZNK21QQuickFolderListModel10rootFolderEv@Base 6.2.0
  _ZNK21QQuickFolderListModel10showHiddenEv@Base 6.2.0

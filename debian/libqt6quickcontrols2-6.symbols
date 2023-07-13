@@ -31,7 +31,7 @@ libQt6QuickControls2.so.6 libqt6quickcontrols2-6 #MINVER#
  _ZN18QQuickStylePrivate5styleEv@Base 6.2.0
  _ZN18QQuickStylePrivate8readFontERK14QSharedPointerI9QSettingsE@Base 6.2.0
  _ZN18QQuickStylePrivate8settingsERK7QString@Base 6.2.0
- _ZN7QString5clearEv@Base 6.2.4
+#MISSING: 6.2.4.1-1+dde+u005# _ZN7QString5clearEv@Base 6.2.4
  _ZNK17QQuickStylePlugin10metaObjectEv@Base 6.2.0
  _ZTI17QQuickStylePlugin@Base 6.2.0
  _ZTS17QQuickStylePlugin@Base 6.2.0

@@ -182,7 +182,7 @@ libQt6QuickControls2Impl.so.6 libqt6quickcontrols2impl6 #MINVER#
  _ZN22QQuickIconImagePrivateD0Ev@Base 6.2.0
  _ZN22QQuickIconImagePrivateD1Ev@Base 6.2.0
  _ZN22QQuickIconImagePrivateD2Ev@Base 6.2.0
- _ZN7QStringixEx@Base 6.2.4
+#MISSING: 6.2.4.1-1+dde+u005# _ZN7QStringixEx@Base 6.2.4
  _ZNK11QQuickColor10metaObjectEv@Base 6.2.0
  _ZNK11QQuickColor11transparentERK6QColord@Base 6.2.0
  _ZNK11QQuickColor5blendERK6QColorS2_d@Base 6.2.0
@@ -283,7 +283,7 @@ libQt6QuickControls2Impl.so.6 libqt6quickcontrols2impl6 #MINVER#
  _ZTV17QQuickClippedText@Base 6.2.0
  _ZTV17QQuickTumblerView@Base 6.2.0
  _ZTV18QQuickAnimatedNode@Base 6.2.0
- _ZTV18QQuickImagePrivate@Base 6.2.4
+#MISSING: 6.2.4.1-1+dde+u005# _ZTV18QQuickImagePrivate@Base 6.2.4
  _ZTV19QQuickMnemonicLabel@Base 6.2.0
  _ZTV20QQuickAttachedObject@Base 6.2.0
  _ZTV21QQuickPaddedRectangle@Base 6.2.0
