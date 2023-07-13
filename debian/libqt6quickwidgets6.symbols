@@ -46,7 +46,7 @@ libQt6QuickWidgets.so.6 libqt6quickwidgets6 #MINVER#
  _ZN12QQuickWidgetD0Ev@Base 6.2.0
  _ZN12QQuickWidgetD1Ev@Base 6.2.0
  _ZN12QQuickWidgetD2Ev@Base 6.2.0
- _ZN7QWidget16setMouseTrackingEb@Base 6.2.4
+#MISSING: 6.2.4.1-1+dde+u005# _ZN7QWidget16setMouseTrackingEb@Base 6.2.4
  _ZNK12QQuickWidget10metaObjectEv@Base 6.2.0
  _ZNK12QQuickWidget10resizeModeEv@Base 6.2.0
  _ZNK12QQuickWidget10rootObjectEv@Base 6.2.0
@@ -60,10 +60,10 @@ libQt6QuickWidgets.so.6 libqt6quickwidgets6 #MINVER#
  _ZNK12QQuickWidget6sourceEv@Base 6.2.0
  _ZNK12QQuickWidget6statusEv@Base 6.2.0
  _ZNK12QQuickWidget8sizeHintEv@Base 6.2.0
- _ZNK7QWidget12parentWidgetEv@Base 6.2.4
- _ZNK7QWidget4sizeEv@Base 6.2.4
- _ZNK7QWidget8isWindowEv@Base 6.2.4
- _ZNK7QWidget9isVisibleEv@Base 6.2.4
+#MISSING: 6.2.4.1-1+dde+u005# _ZNK7QWidget12parentWidgetEv@Base 6.2.4
+#MISSING: 6.2.4.1-1+dde+u005# _ZNK7QWidget4sizeEv@Base 6.2.4
+#MISSING: 6.2.4.1-1+dde+u005# _ZNK7QWidget8isWindowEv@Base 6.2.4
+#MISSING: 6.2.4.1-1+dde+u005# _ZNK7QWidget9isVisibleEv@Base 6.2.4
  _ZTI12QQuickWidget@Base 6.2.0
  _ZTI26QQuickRenderControlPrivate@Base 6.2.4
  _ZTS12QQuickWidget@Base 6.2.0

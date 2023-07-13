@@ -45,7 +45,7 @@ libQt6QmlXmlListModel.so.6 libqt6qmlxmllistmodel6 #MINVER#
  _ZN20QQmlXmlListModelRole18elementNameChangedEv@Base 6.2.0
  _ZN20QQmlXmlListModelRole20attributeNameChangedEv@Base 6.2.0
  _ZN20QQmlXmlListModelRole7setNameERK7QString@Base 6.2.0
- _ZN7QString5clearEv@Base 6.2.4
+#MISSING: 6.2.4.1-1+dde+u005# _ZN7QString5clearEv@Base 6.2.4
  _ZNK16QQmlXmlListModel10metaObjectEv@Base 6.2.0
  _ZNK16QQmlXmlListModel11errorStringEv@Base 6.2.0
  _ZNK16QQmlXmlListModel4dataERK11QModelIndexi@Base 6.2.0
