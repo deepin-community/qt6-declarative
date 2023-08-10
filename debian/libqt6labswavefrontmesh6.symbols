@@ -1,6 +1,6 @@
-# SymbolsHelper-Confirmed: 6.2.0 amd64
+# SymbolsHelper-Confirmed: 6.4.0 amd64
 libQt6LabsWavefrontMesh.so.6 libqt6labswavefrontmesh6 #MINVER#
-| libqt6labswavefrontmesh6 #MINVER#, qt6-declarative-abi (= 6.2.4)
+| libqt6labswavefrontmesh6 #MINVER#, qt6-declarative-abi (= 6.4.2)
 * Build-Depends-Packages: qt6-declarative-dev, qt6-declarative-private-dev
  _Z40qml_register_types_Qt_labs_wavefrontmeshv@Base 6.2.0
  _ZN14QWavefrontMesh11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
@@ -31,7 +31,3 @@ libQt6LabsWavefrontMesh.so.6 libqt6labswavefrontmesh6 #MINVER#
  _ZTI14QWavefrontMesh@Base 6.2.0
  _ZTS14QWavefrontMesh@Base 6.2.0
  _ZTV14QWavefrontMesh@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI4QUrlE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI4QUrlE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI4QUrlE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI4QUrlE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0

@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQml module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #ifndef QQMLJSAST_P_H
 #define QQMLJSAST_P_H
@@ -56,10 +20,16 @@
 
 #include <private/qqmljsmemorypool_p.h>
 
-#include <QtCore/qstring.h>
+#include <QtCore/qtaggedpointer.h>
 #include <QtCore/qversionnumber.h>
 
 QT_BEGIN_NAMESPACE
+
+class QString;
+
+namespace QQmlJS {
+    class Parser;
+}
 
 #define QQMLJS_DECLARE_AST_NODE(name) \
   enum { K = Kind_##name };
@@ -253,6 +223,7 @@ public:
         Kind_UiPragma,
         Kind_UiProgram,
         Kind_UiParameterList,
+        Kind_UiPropertyAttributes,
         Kind_UiPublicMember,
         Kind_UiQualifiedId,
         Kind_UiScriptBinding,
@@ -305,12 +276,6 @@ public:
     {
         if (node)
             node->accept(visitor);
-    }
-
-    // ### Remove when we can. This is part of the qmldevtools library, though.
-    inline static void acceptChild(Node *node, BaseVisitor *visitor)
-    {
-        return accept(node, visitor);
     }
 
     virtual void accept0(BaseVisitor *visitor) = 0;
@@ -402,7 +367,7 @@ public:
 
     TypeArgumentList(Type *typeId)
         : typeId(typeId)
-        , next(nullptr)
+        , next(this)
     { kind = K; }
 
     TypeArgumentList(TypeArgumentList *previous, Type *typeId)
@@ -3135,8 +3100,8 @@ class QML_PARSER_EXPORT UiPragma: public Node
 public:
     QQMLJS_DECLARE_AST_NODE(UiPragma)
 
-    UiPragma(QStringView name)
-        : name(name)
+    UiPragma(QStringView name, QStringView value = {})
+        : name(name), value(value)
     { kind = K; }
 
     void accept0(BaseVisitor *visitor) override;
@@ -3149,6 +3114,7 @@ public:
 
 // attributes
     QStringView name;
+    QStringView value;
     SourceLocation pragmaToken;
     SourceLocation semicolonToken;
 };
@@ -3364,6 +3330,46 @@ public:
     SourceLocation colonToken;
 };
 
+class QML_PARSER_EXPORT UiPropertyAttributes : public Node
+{
+    QQMLJS_DECLARE_AST_NODE(UiPropertyAttributes)
+public:
+    UiPropertyAttributes() { kind = K; }
+
+    SourceLocation defaultToken() const { return m_defaultToken; }
+    bool isDefaultMember() const { return defaultToken().isValid(); }
+    SourceLocation requiredToken() const { return m_requiredToken; }
+    bool isRequired() const { return requiredToken().isValid(); }
+    SourceLocation readonlyToken() const { return m_readonlyToken; }
+    bool isReadonly() const { return readonlyToken().isValid(); }
+
+    SourceLocation propertyToken() const { return m_propertyToken; }
+
+    template <bool InvalidIsLargest = true>
+    static bool compareLocationsByBegin(const SourceLocation *& lhs, const SourceLocation *& rhs)
+    {
+        if (lhs->isValid() && rhs->isValid())
+            return lhs->begin() < rhs->begin();
+        else if (lhs->isValid())
+            return InvalidIsLargest;
+        else
+            return !InvalidIsLargest;
+    }
+
+    void accept0(BaseVisitor *) override {} // intentionally do nothing
+
+    SourceLocation firstSourceLocation() const override;
+
+    SourceLocation lastSourceLocation() const override;
+
+private:
+    friend class QQmlJS::Parser;
+    SourceLocation m_defaultToken;
+    SourceLocation m_readonlyToken;
+    SourceLocation m_requiredToken;
+    SourceLocation m_propertyToken;
+};
+
 class QML_PARSER_EXPORT UiPublicMember: public UiObjectMember
 {
 public:
@@ -3371,27 +3377,23 @@ public:
 
     UiPublicMember(UiQualifiedId *memberType,
                    QStringView name)
-        : type(Property), memberType(memberType), name(name), statement(nullptr), binding(nullptr), isDefaultMember(false), isReadonlyMember(false), parameters(nullptr)
+        : type(Property), memberType(memberType), name(name), statement(nullptr), binding(nullptr), parameters(nullptr)
     { kind = K; }
 
     UiPublicMember(UiQualifiedId *memberType,
                    QStringView name,
                    Statement *statement)
-        : type(Property), memberType(memberType), name(name), statement(statement), binding(nullptr), isDefaultMember(false), isReadonlyMember(false), parameters(nullptr)
+        : type(Property), memberType(memberType), name(name), statement(statement), binding(nullptr), parameters(nullptr)
     { kind = K; }
 
     void accept0(BaseVisitor *visitor) override;
 
     SourceLocation firstSourceLocation() const override
     {
-      if (defaultToken.isValid())
-        return defaultToken;
-      else if (readonlyToken.isValid())
-          return readonlyToken;
-      else if (requiredToken.isValid())
-          return requiredToken;
-
-      return propertyToken;
+      if (hasAttributes)
+          return m_attributes->firstSourceLocation();
+      else
+        return m_propertyToken;
     }
 
     SourceLocation lastSourceLocation() const override
@@ -3404,27 +3406,61 @@ public:
       return semicolonToken;
     }
 
+    SourceLocation defaultToken() const
+    {
+        return hasAttributes ? m_attributes->defaultToken() : SourceLocation {};
+    }
+    bool isDefaultMember() const { return defaultToken().isValid(); }
+
+    SourceLocation requiredToken() const
+    {
+        return hasAttributes ? m_attributes->requiredToken() : SourceLocation {};
+    }
+    bool isRequired() const { return requiredToken().isValid(); }
+
+    SourceLocation readonlyToken() const
+    {
+        return hasAttributes ? m_attributes->readonlyToken() : SourceLocation {};
+    }
+    bool isReadonly() const { return readonlyToken().isValid(); }
+
+    void setAttributes(UiPropertyAttributes *attributes)
+    {
+        m_attributes = attributes;
+        hasAttributes = true;
+    }
+
+    SourceLocation propertyToken() const
+    {
+        return hasAttributes ? m_attributes->propertyToken() : m_propertyToken;
+    }
+
+    void setPropertyToken(SourceLocation token)
+    {
+        m_propertyToken = token;
+        hasAttributes = false;
+    }
+
 // attributes
-    enum { Signal, Property } type;
+    enum : bool { Signal, Property } type;
+    bool hasAttributes = false;
     QStringView typeModifier;
     UiQualifiedId *memberType;
     QStringView name;
     Statement *statement; // initialized with a JS expression
     UiObjectMember *binding; // initialized with a QML object or array.
-    bool isDefaultMember;
-    bool isReadonlyMember;
-    bool isRequired = false;
     UiParameterList *parameters;
     // TODO: merge source locations
-    SourceLocation defaultToken;
-    SourceLocation readonlyToken;
-    SourceLocation propertyToken;
-    SourceLocation requiredToken;
     SourceLocation typeModifierToken;
     SourceLocation typeToken;
     SourceLocation identifierToken;
     SourceLocation colonToken;
     SourceLocation semicolonToken;
+private:
+    union {
+        SourceLocation m_propertyToken = SourceLocation {};
+        UiPropertyAttributes *m_attributes;
+    };
 };
 
 class QML_PARSER_EXPORT UiObjectDefinition: public UiObjectMember

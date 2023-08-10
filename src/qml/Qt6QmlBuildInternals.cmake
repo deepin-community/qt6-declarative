@@ -9,6 +9,7 @@ macro(qt_internal_get_internal_add_qml_module_keywords
         internal_option_args internal_single_args internal_multi_args)
     set(${option_args}
         DESIGNER_SUPPORTED
+        FOLLOW_FOREIGN_VERSIONING
         NO_PLUGIN
         NO_PLUGIN_OPTIONAL
         NO_CREATE_PLUGIN_TARGET
@@ -17,6 +18,9 @@ macro(qt_internal_get_internal_add_qml_module_keywords
         NO_GENERATE_QMLDIR
         NO_LINT
         NO_CACHEGEN
+        ENABLE_TYPE_COMPILER
+        __QT_INTERNAL_STATIC_MODULE
+        __QT_INTERNAL_SYSTEM_MODULE
     )
     set(${single_args}
         URI
@@ -26,6 +30,7 @@ macro(qt_internal_get_internal_add_qml_module_keywords
         CLASS_NAME
         CLASSNAME  # TODO: Remove once all other repos have been updated to use
                    #       CLASS_NAME instead.
+        TYPE_COMPILER_NAMESPACE
     )
     set(${multi_args}
         QML_FILES
@@ -33,6 +38,7 @@ macro(qt_internal_get_internal_add_qml_module_keywords
         IMPORTS
         IMPORT_PATH
         OPTIONAL_IMPORTS
+        DEFAULT_IMPORTS
         DEPENDENCIES
         PAST_MAJOR_VERSIONS
     )
@@ -293,6 +299,20 @@ function(qt_internal_add_qml_module target)
         endif()
     endforeach()
 
+    if (arg_FOLLOW_FOREIGN_VERSIONING)
+        message(FATAL_ERROR "Do not set FOLLOW_FOREIGN_VERSIONING for module ${target}. It is already set by default for internal modules.")
+    endif()
+
+    get_target_property(qt_namespace ${QT_CMAKE_EXPORT_NAMESPACE}::Core _qt_namespace)
+    if(qt_namespace)
+        list(APPEND add_qml_module_args NAMESPACE ${qt_namespace})
+    endif()
+
+    if (arg_ENABLE_TYPE_COMPILER AND NOT arg_TYPE_COMPILER_NAMESPACE)
+        # if qmltc namespace is not specified explicitly, use Qt's namespace
+        list(APPEND add_qml_module_args TYPE_COMPILER_NAMESPACE ${qt_namespace})
+    endif()
+
     # Update the backing and plugin targets with qml-specific things.
     qt6_add_qml_module(${target}
         ${add_qml_module_args}
@@ -300,6 +320,7 @@ function(qt_internal_add_qml_module target)
         OUTPUT_DIRECTORY ${arg_OUTPUT_DIRECTORY}
         RESOURCE_PREFIX "/qt-project.org/imports"
         OUTPUT_TARGETS output_targets
+        FOLLOW_FOREIGN_VERSIONING
     )
 
     if(output_targets)

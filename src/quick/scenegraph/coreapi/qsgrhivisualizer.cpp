@@ -1,43 +1,7 @@
-/****************************************************************************
-**
-** Copyright (C) 2019 The Qt Company Ltd.
-** Copyright (C) 2016 Jolla Ltd, author: <gunnar.sletta@jollamobile.com>
-** Copyright (C) 2016 Robin Burchell <robin.burchell@viroteck.net>
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQuick module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2019 The Qt Company Ltd.
+// Copyright (C) 2016 Jolla Ltd, author: <gunnar.sletta@jollamobile.com>
+// Copyright (C) 2016 Robin Burchell <robin.burchell@viroteck.net>
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qsgrhivisualizer_p.h"
 #include <qmath.h>
@@ -311,7 +275,7 @@ QRhiGraphicsPipeline *RhiVisualizer::PipelineCache::pipeline(RhiVisualizer *visu
                                                              quint32 vertexStride,
                                                              bool blendOneOne)
 {
-    for (int i = 0, ie = pipelines.count(); i != ie; ++i) {
+    for (int i = 0, ie = pipelines.size(); i != ie; ++i) {
         const Pipeline &p(pipelines.at(i));
         if (p.topology == topology && p.format == vertexFormat && p.stride == vertexStride)
             return p.ps;
@@ -352,7 +316,7 @@ QRhiGraphicsPipeline *RhiVisualizer::PipelineCache::pipeline(RhiVisualizer *visu
 
 void RhiVisualizer::PipelineCache::releaseResources()
 {
-    for (int i = 0, ie = pipelines.count(); i != ie; ++i)
+    for (int i = 0, ie = pipelines.size(); i != ie; ++i)
         delete pipelines.at(i).ps;
 
     pipelines.clear();
@@ -363,7 +327,7 @@ void RhiVisualizer::ChangeVis::gather(Node *n)
     if (n->type() == QSGNode::GeometryNodeType && n->element()->batch && visualizer->m_visualizeChangeSet.contains(n)) {
         const uint dirty = visualizer->m_visualizeChangeSet.value(n);
         const bool tinted = (dirty & QSGNODE_DIRTY_PARENT) != 0;
-        const QColor color = QColor::fromHsvF((rand() & 1023) / 1023.0f, 0.3f, 1.0f);
+        const QColor color = QColor::fromHsvF((rand() & 1023) / 1023.0f, 0.3f, 1.0f).toRgb();
         const float alpha = 0.5f;
 
         QMatrix4x4 matrix = visualizer->m_renderer->m_current_projection_matrix;
@@ -490,7 +454,7 @@ void RhiVisualizer::BatchVis::gather(Batch *b)
     QMatrix4x4 rotation;
     memcpy(dc.uniforms.data + 64, rotation.constData(), 64);
 
-    QColor color = QColor::fromHsvF((rand() & 1023) / 1023.0, 1.0, 1.0);
+    const QColor color = QColor::fromHsvF((rand() & 1023) / 1023.0, 1.0, 1.0).toRgb();
 
     float c[4] = {
         float(color.redF()),

@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQml module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qqmlvaluetypewrapper_p.h"
 
@@ -281,10 +245,27 @@ PropertyAttributes QQmlValueTypeWrapper::virtualGetOwnProperty(const Managed *m,
 {
     if (id.isString()) {
         const QQmlValueTypeWrapper *r = static_cast<const QQmlValueTypeWrapper *>(m);
-        QQmlPropertyData result = r->dataForPropertyKey(id);
-        if (p && result.isValid())
-            p->value = getGadgetProperty(r->engine(), r->d(), result.propType(), result.coreIndex(), result.isFunction(), result.isEnum());
-        return result.isValid() ? Attr_Data : Attr_Invalid;
+        Q_ASSERT(r);
+
+        const QQmlPropertyData result = r->dataForPropertyKey(id);
+        if (!result.isValid())
+            return Attr_Invalid; // Property doesn't exist. Object shouldn't meddle with it.
+
+        if (!p)
+            return Attr_Data; // Property exists, but we're not interested in the value
+
+        const QQmlValueTypeReference *ref = r->as<const QQmlValueTypeReference>();
+        if (!ref || ref->readReferenceValue()) {
+            // Property exists, and we can retrieve it
+            p->value = getGadgetProperty(
+                        r->engine(), r->d(), result.propType(), result.coreIndex(),
+                        result.isFunction(), result.isEnum());
+        } else {
+            // Property exists, but we can't retrieve it. Make it undefined.
+            p->value = Encode::undefined();
+        }
+
+        return Attr_Data;
     }
 
     return QV4::Object::virtualGetOwnProperty(m, id, p);
@@ -637,7 +618,7 @@ bool QQmlValueTypeWrapper::virtualPut(Managed *m, PropertyKey id, const Value &v
         } else {
             if (Q_UNLIKELY(lcBindingRemoval().isInfoEnabled())) {
                 if (auto binding = QQmlPropertyPrivate::binding(referenceObject, QQmlPropertyIndex(referencePropertyIndex, pd.coreIndex()))) {
-                    Q_ASSERT(!binding->isValueTypeProxy());
+                    Q_ASSERT(binding->kind() == QQmlAbstractBinding::QmlBinding);
                     const auto qmlBinding = static_cast<const QQmlBinding*>(binding);
                     const auto stackFrame = v4->currentStackFrame;
                     qCInfo(lcBindingRemoval,

@@ -2,9 +2,11 @@ usr/lib/qt6/bin/qmldom
 usr/lib/qt6/bin/qmleasing
 usr/lib/qt6/bin/qmlformat
 usr/lib/qt6/bin/qmllint
+usr/lib/qt6/bin/qmlls
 usr/lib/qt6/bin/qmlplugindump
 usr/lib/qt6/bin/qmlpreview
 usr/lib/qt6/bin/qmlprofiler
+usr/lib/qt6/bin/qmltc
 usr/lib/qt6/bin/qmltestrunner
 usr/lib/qt6/bin/qmltime
 usr/lib/qt6/libexec/qmlcachegen

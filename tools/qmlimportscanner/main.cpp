@@ -1,30 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the tools applications of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:GPL-EXCEPT$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 3 as published by the Free Software
-** Foundation with exceptions as appearing in the file LICENSE.GPL3-EXCEPT
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only WITH Qt-GPL-exception-1.0
 
 #include <private/qqmljslexer_p.h>
 #include <private/qqmljsparser_p.h>
@@ -34,24 +9,38 @@
 #include <private/qqmljsresourcefilemapper_p.h>
 
 #include <QtCore/QCoreApplication>
+#include <QtCore/QDebug>
+#include <QtCore/QDateTime>
 #include <QtCore/QDir>
 #include <QtCore/QDirIterator>
 #include <QtCore/QFile>
 #include <QtCore/QFileInfo>
+#include <QtCore/QHash>
 #include <QtCore/QSet>
 #include <QtCore/QStringList>
 #include <QtCore/QMetaObject>
 #include <QtCore/QMetaProperty>
 #include <QtCore/QVariant>
+#include <QtCore/QVariantMap>
 #include <QtCore/QJsonObject>
 #include <QtCore/QJsonArray>
 #include <QtCore/QJsonDocument>
 #include <QtCore/QLibraryInfo>
+#include <QtCore/QLoggingCategory>
 
 #include <iostream>
 #include <algorithm>
+#include <unordered_map>
+#include <unordered_set>
 
 QT_USE_NAMESPACE
+
+using namespace Qt::StringLiterals;
+
+Q_LOGGING_CATEGORY(lcImportScanner, "qt.qml.import.scanner");
+Q_LOGGING_CATEGORY(lcImportScannerFiles, "qt.qml.import.scanner.files");
+
+using FileImportsWithoutDepsCache = QHash<QString, QVariantList>;
 
 namespace {
 
@@ -73,15 +62,14 @@ inline QString linkTargetLiteral()
 {
     return QStringLiteral("linkTarget");
 }
+inline QString componentsLiteral() { return QStringLiteral("components"); }
+inline QString scriptsLiteral() { return QStringLiteral("scripts"); }
+inline QString preferLiteral() { return QStringLiteral("prefer"); }
 
 void printUsage(const QString &appNameIn)
 {
     const std::string appName = appNameIn.toStdString();
-#ifndef QT_BOOTSTRAPPED
     const QString qmlPath = QLibraryInfo::path(QLibraryInfo::QmlImportsPath);
-#else
-    const QString qmlPath = QStringLiteral("/home/user/dev/qt-install/qml");
-#endif
     std::cerr
         << "Usage: " << appName << " -rootPath path/to/app/qml/directory -importPath path/to/qt/qml/directory\n"
            "       " << appName << " -qmlFiles file1 file2 -importPath path/to/qt/qml/directory\n"
@@ -144,8 +132,9 @@ QVariantList findImportsInAst(QQmlJS::AST::UiHeaderItemList *headerItemList, con
     return imports;
 }
 
-QVariantList findQmlImportsInQmlFile(const QString &filePath);
-QVariantList findQmlImportsInJavascriptFile(const QString &filePath);
+QVariantList findQmlImportsInFileWithoutDeps(const QString &filePath,
+                                  FileImportsWithoutDepsCache
+                                  &fileImportsWithoutDepsCache);
 
 static QString versionSuffix(QTypeRevision version)
 {
@@ -155,7 +144,18 @@ static QString versionSuffix(QTypeRevision version)
 
 // Read the qmldir file, extract a list of plugins by
 // parsing the "plugin", "import", and "classname" directives.
-QVariantMap pluginsForModulePath(const QString &modulePath, const QString &version) {
+QVariantMap pluginsForModulePath(const QString &modulePath,
+                                 const QString &version,
+                                 FileImportsWithoutDepsCache
+                                 &fileImportsWithoutDepsCache) {
+    using Cache = QHash<QPair<QString, QString>, QVariantMap>;
+    static Cache pluginsCache;
+    const QPair<QString, QString> cacheKey = std::make_pair(modulePath, version);
+    const Cache::const_iterator it = pluginsCache.find(cacheKey);
+    if (it != pluginsCache.end()) {
+        return *it;
+    }
+
     QFile qmldirFile(modulePath + QLatin1String("/qmldir"));
     if (!qmldirFile.exists()) {
         qWarning() << "qmldir file not found at" << modulePath;
@@ -185,7 +185,6 @@ QVariantMap pluginsForModulePath(const QString &modulePath, const QString &versi
         pluginNameList.append(plugin.name);
         isOptional = plugin.optional;
     }
-
     pluginInfo[pluginsLiteral()] = pluginNameList.join(QLatin1Char(' '));
 
     if (plugins.size() > 1) {
@@ -222,15 +221,23 @@ QVariantMap pluginsForModulePath(const QString &modulePath, const QString &versi
     }
 
     QVariantList importsFromFiles;
+    QStringList componentFiles;
+    QStringList scriptFiles;
     const auto components = parser.components();
     for (const auto &component : components) {
+        const QString componentFullPath = modulePath + QLatin1Char('/') + component.fileName;
+        componentFiles.append(componentFullPath);
         importsFromFiles
-                += findQmlImportsInQmlFile(modulePath + QLatin1Char('/') + component.fileName);
+                += findQmlImportsInFileWithoutDeps(componentFullPath,
+                                                   fileImportsWithoutDepsCache);
     }
     const auto scripts = parser.scripts();
     for (const auto &script : scripts) {
+        const QString scriptFullPath = modulePath + QLatin1Char('/') + script.fileName;
+        scriptFiles.append(scriptFullPath);
         importsFromFiles
-                += findQmlImportsInJavascriptFile(modulePath + QLatin1Char('/') + script.fileName);
+                += findQmlImportsInFileWithoutDeps(scriptFullPath,
+                                                   fileImportsWithoutDepsCache);
     }
 
     for (const QVariant &import : importsFromFiles) {
@@ -243,8 +250,23 @@ QVariantMap pluginsForModulePath(const QString &modulePath, const QString &versi
                     version.isEmpty() ? name : (name + QLatin1Char(' ') + version));
     }
 
-    if (!importsAndDependencies.isEmpty())
+    if (!importsAndDependencies.isEmpty()) {
+        importsAndDependencies.removeDuplicates();
         pluginInfo[dependenciesLiteral()] = importsAndDependencies;
+    }
+    if (!componentFiles.isEmpty()) {
+        componentFiles.sort();
+        pluginInfo[componentsLiteral()] = componentFiles;
+    }
+    if (!scriptFiles.isEmpty()) {
+        scriptFiles.sort();
+        pluginInfo[scriptsLiteral()] = scriptFiles;
+    }
+
+    if (!parser.preferredPath().isEmpty())
+        pluginInfo[preferLiteral()] = parser.preferredPath();
+
+    pluginsCache.insert(cacheKey, pluginInfo);
     return pluginInfo;
 }
 
@@ -259,7 +281,7 @@ QPair<QString, QString> resolveImportPath(const QString &uri, const QString &ver
     QString ver = version;
     QPair<QString, QString> candidate;
     while (true) {
-        for (const QString &qmlImportPath : qAsConst(g_qmlImportPaths)) {
+        for (const QString &qmlImportPath : std::as_const(g_qmlImportPaths)) {
             // Search for the most specific version first, and search
             // also for the version in parent modules. For example:
             // - qml/QtQml/Models.2.0
@@ -275,7 +297,7 @@ QPair<QString, QString> resolveImportPath(const QString &uri, const QString &ver
                 const QDir candidateDir(candidatePath);
                 if (candidateDir.exists()) {
                     const auto newCandidate = qMakePair(candidatePath, relativePath); // import found
-                    if (candidateDir.exists(u"qmldir"_qs)) // if it has a qmldir, we are fine
+                    if (candidateDir.exists(u"qmldir"_s)) // if it has a qmldir, we are fine
                         return newCandidate;
                     else if (candidate.first.isEmpty())
                         candidate = newCandidate;
@@ -291,7 +313,7 @@ QPair<QString, QString> resolveImportPath(const QString &uri, const QString &ver
                     const QDir candidateDir(candidatePath);
                     if (candidateDir.exists()) {
                         const auto newCandidate = qMakePair(candidatePath, relativePath); // import found
-                        if (candidateDir.exists(u"qmldir"_qs))
+                        if (candidateDir.exists(u"qmldir"_s))
                             return newCandidate;
                         else if (candidate.first.isEmpty())
                             candidate = newCandidate;
@@ -314,61 +336,198 @@ QPair<QString, QString> resolveImportPath(const QString &uri, const QString &ver
     return candidate;
 }
 
-// Find absolute file system paths and plugins for a list of modules.
-QVariantList findPathsForModuleImports(const QVariantList &imports)
+// Provides a hasher for module details stored in a QVariantMap disguised as a QVariant..
+// Only supports a subset of types.
+struct ImportVariantHasher {
+   std::size_t operator()(const QVariant &importVariant) const
+   {
+       size_t computedHash = 0;
+       QVariantMap importMap = qvariant_cast<QVariantMap>(importVariant);
+       for (auto it = importMap.constKeyValueBegin(); it != importMap.constKeyValueEnd(); ++it) {
+           const QString &key = it->first;
+           const QVariant &value = it->second;
+
+           if (!value.isValid() || value.isNull()) {
+               computedHash = qHashMulti(computedHash, key, 0);
+               continue;
+           }
+
+           const auto valueTypeId = value.typeId();
+           switch (valueTypeId) {
+           case QMetaType::QString:
+               computedHash = qHashMulti(computedHash, key, value.toString());
+               break;
+           case QMetaType::Bool:
+               computedHash = qHashMulti(computedHash, key, value.toBool());
+               break;
+           case QMetaType::QStringList:
+               computedHash = qHashMulti(computedHash, key, value.toStringList());
+               break;
+           default:
+               Q_ASSERT_X(valueTypeId, "ImportVariantHasher", "Invalid variant type detected");
+               break;
+           }
+       }
+
+       return computedHash;
+   }
+};
+
+using ImportDetailsAndDeps = QPair<QVariantMap, QStringList>;
+
+// Returns the import information as it will be written out to the json / .cmake file.
+// The dependencies are not stored in the same QVariantMap because we don't currently need that
+// information in the output file.
+ImportDetailsAndDeps
+getImportDetails(const QVariant &inputImport,
+                 FileImportsWithoutDepsCache &fileImportsWithoutDepsCache) {
+
+    using Cache = std::unordered_map<QVariant, ImportDetailsAndDeps, ImportVariantHasher>;
+    static Cache cache;
+
+    const Cache::const_iterator it = cache.find(inputImport);
+    if (it != cache.end()) {
+        return it->second;
+    }
+
+    QVariantMap import = qvariant_cast<QVariantMap>(inputImport);
+    QStringList dependencies;
+    if (import.value(typeLiteral()) == moduleLiteral()) {
+        const QString version = import.value(versionLiteral()).toString();
+        const QPair<QString, QString> paths =
+            resolveImportPath(import.value(nameLiteral()).toString(), version);
+        QVariantMap plugininfo;
+        if (!paths.first.isEmpty()) {
+            import.insert(pathLiteral(), paths.first);
+            import.insert(relativePathLiteral(), paths.second);
+            plugininfo = pluginsForModulePath(paths.first,
+                                              version,
+                                              fileImportsWithoutDepsCache);
+        }
+        QString linkTarget = plugininfo.value(linkTargetLiteral()).toString();
+        QString plugins = plugininfo.value(pluginsLiteral()).toString();
+        bool isOptional = plugininfo.value(pluginIsOptionalLiteral(), QVariant(false)).toBool();
+        QString classnames = plugininfo.value(classnamesLiteral()).toString();
+        QStringList components = plugininfo.value(componentsLiteral()).toStringList();
+        QStringList scripts = plugininfo.value(scriptsLiteral()).toStringList();
+        QString prefer = plugininfo.value(preferLiteral()).toString();
+        if (!linkTarget.isEmpty())
+            import.insert(linkTargetLiteral(), linkTarget);
+        if (!plugins.isEmpty())
+            import.insert(QStringLiteral("plugin"), plugins);
+        if (isOptional)
+            import.insert(pluginIsOptionalLiteral(), true);
+        if (!classnames.isEmpty())
+            import.insert(QStringLiteral("classname"), classnames);
+        if (plugininfo.contains(dependenciesLiteral())) {
+            dependencies = plugininfo.value(dependenciesLiteral()).toStringList();
+        }
+        if (!components.isEmpty()) {
+            components.removeDuplicates();
+            import.insert(componentsLiteral(), components);
+        }
+        if (!scripts.isEmpty()) {
+            scripts.removeDuplicates();
+            import.insert(scriptsLiteral(), scripts);
+        }
+        if (!prefer.isEmpty()) {
+            import.insert(preferLiteral(), prefer);
+        }
+    }
+    import.remove(versionLiteral());
+
+    const ImportDetailsAndDeps result = {import, dependencies};
+    cache.insert({inputImport, result});
+    return result;
+}
+
+// Parse a dependency string line into a QVariantMap, to be used as a key when processing imports
+// in getGetDetailedModuleImportsIncludingDependencies.
+QVariantMap dependencyStringToImport(const QString &line) {
+    const auto dep = QStringView{line}.split(QLatin1Char(' '), Qt::SkipEmptyParts);
+    const QString name = dep[0].toString();
+    QVariantMap depImport;
+    depImport[typeLiteral()] = moduleLiteral();
+    depImport[nameLiteral()] = name;
+    if (dep.length() > 1)
+        depImport[versionLiteral()] = dep[1].toString();
+    return depImport;
+}
+
+// Returns details of given input import and its recursive module dependencies.
+// The details include absolute file system paths for the the module plugin, components,
+// etc.
+// An internal cache is used to prevent repeated computation for the same input module.
+QVariantList getGetDetailedModuleImportsIncludingDependencies(
+        const QVariant &inputImport,
+        FileImportsWithoutDepsCache &fileImportsWithoutDepsCache)
 {
+    using Cache = std::unordered_map<QVariant, QVariantList, ImportVariantHasher>;
+    static Cache importsCacheWithDeps;
+
+    const Cache::const_iterator it = importsCacheWithDeps.find(inputImport);
+    if (it != importsCacheWithDeps.end()) {
+        return it->second;
+    }
+
     QVariantList done;
-    QVariantList importsCopy(imports);
+    QVariantList importsToProcess;
+    std::unordered_set<QVariant, ImportVariantHasher> importsSeen;
+    importsToProcess.append(inputImport);
 
-    for (int i = 0; i < importsCopy.length(); ++i) {
-        QVariantMap import = qvariant_cast<QVariantMap>(importsCopy.at(i));
-        if (import.value(typeLiteral()) == moduleLiteral()) {
-            const QString version = import.value(versionLiteral()).toString();
-            const QPair<QString, QString> paths =
-                resolveImportPath(import.value(nameLiteral()).toString(), version);
-            QVariantMap plugininfo;
-            if (!paths.first.isEmpty()) {
-                import.insert(pathLiteral(), paths.first);
-                import.insert(relativePathLiteral(), paths.second);
-                plugininfo = pluginsForModulePath(paths.first, version);
-            }
-            QString linkTarget = plugininfo.value(linkTargetLiteral()).toString();
-            QString plugins = plugininfo.value(pluginsLiteral()).toString();
-            bool isOptional = plugininfo.value(pluginIsOptionalLiteral(), QVariant(false)).toBool();
-            QString classnames = plugininfo.value(classnamesLiteral()).toString();
-            if (!linkTarget.isEmpty())
-                import.insert(linkTargetLiteral(), linkTarget);
-            if (!plugins.isEmpty())
-                import.insert(QStringLiteral("plugin"), plugins);
-            if (isOptional)
-                import.insert(pluginIsOptionalLiteral(), true);
-            if (!classnames.isEmpty())
-                import.insert(QStringLiteral("classname"), classnames);
-            if (plugininfo.contains(dependenciesLiteral())) {
-                const QStringList dependencies = plugininfo.value(dependenciesLiteral()).toStringList();
-                for (const QString &line : dependencies) {
-                    const auto dep = QStringView{line}.split(QLatin1Char(' '), Qt::SkipEmptyParts);
-                    const QString name = dep[0].toString();
-                    QVariantMap depImport;
-                    depImport[typeLiteral()] = moduleLiteral();
-                    depImport[nameLiteral()] = name;
-                    if (dep.length() > 1)
-                        depImport[versionLiteral()] = dep[1].toString();
+    for (int i = 0; i < importsToProcess.length(); ++i) {
+        const QVariant importToProcess = importsToProcess.at(i);
+        auto [details, deps] = getImportDetails(importToProcess, fileImportsWithoutDepsCache);
+        if (details.value(typeLiteral()) == moduleLiteral()) {
+            for (const QString &line : deps) {
+                const QVariantMap depImport = dependencyStringToImport(line);
 
-                    if (!importsCopy.contains(depImport))
-                        importsCopy.append(depImport);
+                // Skip self-dependencies.
+                if (depImport == importToProcess)
+                    continue;
+
+                if (importsSeen.find(depImport) == importsSeen.end()) {
+                    importsToProcess.append(depImport);
+                    importsSeen.insert(depImport);
                 }
             }
         }
-        import.remove(versionLiteral());
-        done.append(import);
+        done.append(details);
     }
+
+    importsCacheWithDeps.insert({inputImport, done});
     return done;
+}
+
+QVariantList mergeImports(const QVariantList &a, const QVariantList &b);
+
+// Returns details of given input imports and their recursive module dependencies.
+QVariantList getGetDetailedModuleImportsIncludingDependencies(
+        const QVariantList &inputImports,
+        FileImportsWithoutDepsCache &fileImportsWithoutDepsCache)
+{
+    QVariantList result;
+
+    // Get rid of duplicates in input module list.
+    QVariantList inputImportsCopy;
+    inputImportsCopy = mergeImports(inputImportsCopy, inputImports);
+
+    // Collect recursive dependencies for each input module and merge into result, discarding
+    // duplicates.
+    for (auto it = inputImportsCopy.begin(); it != inputImportsCopy.end(); ++it) {
+        QVariantList imports = getGetDetailedModuleImportsIncludingDependencies(
+                    *it, fileImportsWithoutDepsCache);
+        result = mergeImports(result, imports);
+    }
+    return result;
 }
 
 // Scan a single qml file for import statements
 QVariantList findQmlImportsInQmlCode(const QString &filePath, const QString &code)
 {
+    qCDebug(lcImportScannerFiles) << "Parsing code and finding imports in" << filePath
+                                  << "TS:" << QDateTime::currentMSecsSinceEpoch();
+
     QQmlJS::Engine engine;
     QQmlJS::Lexer lexer(&engine);
     lexer.setCode(code, /*line = */ 1);
@@ -464,9 +623,17 @@ QVariantList findQmlImportsInJavascriptFile(const QString &filePath)
     return collector.imports;
 }
 
-// Scan a single qml or js file for import statements
-QVariantList findQmlImportsInFile(const QString &filePath)
+// Scan a single qml or js file for import statements without resolving dependencies.
+QVariantList findQmlImportsInFileWithoutDeps(const QString &filePath,
+                                  FileImportsWithoutDepsCache
+                                  &fileImportsWithoutDepsCache)
 {
+    const FileImportsWithoutDepsCache::const_iterator it =
+            fileImportsWithoutDepsCache.find(filePath);
+    if (it != fileImportsWithoutDepsCache.end()) {
+        return *it;
+    }
+
     QVariantList imports;
     if (filePath == QLatin1String("-")) {
         QFile f;
@@ -476,12 +643,47 @@ QVariantList findQmlImportsInFile(const QString &filePath)
         imports = findQmlImportsInQmlFile(filePath);
     } else if (filePath.endsWith(QLatin1String(".js"))) {
         imports = findQmlImportsInJavascriptFile(filePath);
+    } else {
+        qCDebug(lcImportScanner) << "Skipping file because it's not a .qml/.js file";
+        return imports;
     }
 
-    return findPathsForModuleImports(imports);
+    fileImportsWithoutDepsCache.insert(filePath, imports);
+    return imports;
+}
+
+// Scan a single qml or js file for import statements, resolve dependencies and return the full
+// list of modules the file depends on.
+QVariantList findQmlImportsInFile(const QString &filePath,
+                                  FileImportsWithoutDepsCache
+                                  &fileImportsWithoutDepsCache) {
+    const auto fileProcessTimeBegin = QDateTime::currentDateTime();
+
+    QVariantList imports = findQmlImportsInFileWithoutDeps(filePath,
+                                                           fileImportsWithoutDepsCache);
+    if (imports.empty())
+        return imports;
+
+    const auto pathsTimeBegin = QDateTime::currentDateTime();
+
+    qCDebug(lcImportScanner) << "Finding module paths for imported modules in" << filePath
+                             << "TS:" << pathsTimeBegin.toMSecsSinceEpoch();
+    QVariantList importPaths = getGetDetailedModuleImportsIncludingDependencies(
+                imports, fileImportsWithoutDepsCache);
+
+    const auto pathsTimeEnd = QDateTime::currentDateTime();
+    const auto duration = pathsTimeBegin.msecsTo(pathsTimeEnd);
+    const auto fileProcessingDuration = fileProcessTimeBegin.msecsTo(pathsTimeEnd);
+    qCDebug(lcImportScanner) << "Found module paths:" << importPaths.count()
+                             << "TS:" << pathsTimeEnd.toMSecsSinceEpoch()
+                             << "Path resolution duration:" << duration << "msecs";
+    qCDebug(lcImportScanner) << "Scan duration:" << fileProcessingDuration << "msecs";
+    return importPaths;
 }
 
 // Merge two lists of imports, discard duplicates.
+// Empirical tests show that for a small amount of values, the n^2 QVariantList comparison
+// is still faster than using an unordered_set + hashing a complex QVariantMap.
 QVariantList mergeImports(const QVariantList &a, const QVariantList &b)
 {
     QVariantList merged = a;
@@ -511,7 +713,9 @@ struct pathStartsWith {
 
 
 // Scan all qml files in directory for import statements
-QVariantList findQmlImportsInDirectory(const QString &qmlDir)
+QVariantList findQmlImportsInDirectory(const QString &qmlDir,
+                                       FileImportsWithoutDepsCache
+                                       &fileImportsWithoutDepsCache)
 {
     QVariantList ret;
     if (qmlDir.isEmpty())
@@ -545,8 +749,15 @@ QVariantList findQmlImportsInDirectory(const QString &qmlDir)
         }
 
         for (const QFileInfo &x : entries)
-            if (x.isFile())
-                ret = mergeImports(ret, findQmlImportsInFile(x.absoluteFilePath()));
+            if (x.isFile()) {
+                const auto entryAbsolutePath = x.absoluteFilePath();
+                qCDebug(lcImportScanner) << "Scanning file" << entryAbsolutePath
+                                         << "TS:" << QDateTime::currentMSecsSinceEpoch();
+                ret = mergeImports(ret,
+                                   findQmlImportsInFile(
+                                       entryAbsolutePath,
+                                       fileImportsWithoutDepsCache));
+            }
      }
      return ret;
 }
@@ -554,19 +765,29 @@ QVariantList findQmlImportsInDirectory(const QString &qmlDir)
 // Find qml imports recursively from a root set of qml files.
 // The directories in qmlDirs are searched recursively.
 // The files in qmlFiles parsed directly.
-QVariantList findQmlImportsRecursively(const QStringList &qmlDirs, const QStringList &scanFiles)
+QVariantList findQmlImportsRecursively(const QStringList &qmlDirs,
+                                       const QStringList &scanFiles,
+                                       FileImportsWithoutDepsCache
+                                       &fileImportsWithoutDepsCache)
 {
     QVariantList ret;
 
+    qCDebug(lcImportScanner) << "Scanning" << qmlDirs.count() << "root directories and"
+                             << scanFiles.count() << "files.";
+
     // Scan all app root qml directories for imports
     for (const QString &qmlDir : qmlDirs) {
-        QVariantList imports = findQmlImportsInDirectory(qmlDir);
+        qCDebug(lcImportScanner) << "Scanning root" << qmlDir
+                                 << "TS:" << QDateTime::currentMSecsSinceEpoch();
+        QVariantList imports = findQmlImportsInDirectory(qmlDir, fileImportsWithoutDepsCache);
         ret = mergeImports(ret, imports);
     }
 
     // Scan app qml files for imports
     for (const QString &file : scanFiles) {
-        QVariantList imports = findQmlImportsInFile(file);
+        qCDebug(lcImportScanner) << "Scanning file" << file
+                                 << "TS:" << QDateTime::currentMSecsSinceEpoch();
+        QVariantList imports = findQmlImportsInFile(file, fileImportsWithoutDepsCache);
         ret = mergeImports(ret, imports);
     }
 
@@ -589,8 +810,20 @@ QString generateCmakeIncludeFileContent(const QVariantList &importList) {
 
             const QMap<QString, QVariant> &importDict = importVariant.toMap();
             for (auto it = importDict.cbegin(); it != importDict.cend(); ++it) {
-                s << it.key().toUpper() << QLatin1Char(';')
-                  << it.value().toString() << QLatin1Char(';');
+                s << it.key().toUpper() << QLatin1Char(';');
+                // QVariant can implicitly convert QString to the QStringList with the single
+                // element, let's use this.
+                QStringList args = it.value().toStringList();
+                if (args.isEmpty()) {
+                    // This should not happen, but if it does, the result of the
+                    // 'cmake_parse_arguments' call will be incorrect, so follow up semicolon
+                    // indicates that the single-/multiarg option is empty.
+                    s << QLatin1Char(';');
+                } else {
+                    for (auto arg : args) {
+                        s << arg << QLatin1Char(';');
+                    }
+                }
             }
             s << QStringLiteral("\")\n");
             ++importsCount;
@@ -647,11 +880,15 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    // QQmlDirParser returnes QMultiHashes. Ensure deterministic output.
+    QHashSeed::setDeterministicGlobalSeed();
+
     QStringList qmlRootPaths;
     QStringList scanFiles;
     QStringList qmlImportPaths;
     QStringList qrcFiles;
     bool generateCmakeContent = false;
+    QString outputFile;
 
     int i = 1;
     while (i < args.count()) {
@@ -680,6 +917,14 @@ int main(int argc, char *argv[])
              generateCmakeContent = true;
         } else if (arg == QLatin1String("-qrcFiles")) {
             argReceiver = &qrcFiles;
+        } else if (arg == QLatin1String("-output-file")) {
+            if (i >= args.count()) {
+                std::cerr << "-output-file requires an argument\n";
+                return 1;
+            }
+            outputFile = args.at(i);
+            ++i;
+            continue;
         } else {
             std::cerr << qPrintable(appName) << ": Invalid argument: \""
                 << qPrintable(arg) << "\"\n";
@@ -695,8 +940,12 @@ int main(int argc, char *argv[])
                 std::cerr << qPrintable(appName) << ": No such file or directory: \""
                     << qPrintable(arg) << "\"\n";
                 return 1;
-            } else {
+            } else if (argReceiver) {
                 *argReceiver += arg;
+            } else {
+                std::cerr << qPrintable(appName) << ": Invalid argument: \""
+                    << qPrintable(arg) << "\"\n";
+                return 1;
             }
         }
     }
@@ -708,8 +957,13 @@ int main(int argc, char *argv[])
 
     g_qmlImportPaths = qmlImportPaths;
 
+    FileImportsWithoutDepsCache fileImportsWithoutDepsCache;
+
     // Find the imports!
-    QVariantList imports = findQmlImportsRecursively(qmlRootPaths, scanFiles);
+    QVariantList imports = findQmlImportsRecursively(qmlRootPaths,
+                                                     scanFiles,
+                                                     fileImportsWithoutDepsCache
+                                                     );
 
     QByteArray content;
     if (generateCmakeContent) {
@@ -720,6 +974,17 @@ int main(int argc, char *argv[])
         content = QJsonDocument(QJsonArray::fromVariantList(imports)).toJson();
     }
 
-    std::cout << content.constData() << std::endl;
+    if (outputFile.isEmpty()) {
+        std::cout << content.constData() << std::endl;
+    } else {
+        QFile f(outputFile);
+        if (!f.open(QIODevice::WriteOnly | QIODevice::Text)) {
+            std::cerr << qPrintable(appName) << ": Unable to write to output file: \""
+                << qPrintable(outputFile) << "\"\n";
+            return 1;
+        }
+        QTextStream out(&f);
+        out << content << "\n";
+    }
     return 0;
 }

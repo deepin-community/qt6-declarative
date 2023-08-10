@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQuick module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include <private/qquickvaluetypes_p.h>
 
@@ -48,7 +12,7 @@ QT_BEGIN_NAMESPACE
 
 QVariant QQuickColorValueType::create(const QJSValue &params)
 {
-    return params.isString() ? QColor(params.toString()) : QVariant();
+    return params.isString() ? QColor::fromString(params.toString()) : QVariant();
 }
 
 QString QQuickColorValueType::toString() const
@@ -384,7 +348,7 @@ qreal QQuickVector3DValueType::dotProduct(const QVector3D &vec) const
 
 QVector3D QQuickVector3DValueType::times(const QMatrix4x4 &m) const
 {
-    return v * m;
+    return (QVector4D(v, 1) * m).toVector3DAffine();
 }
 
 QVector3D QQuickVector3DValueType::times(const QVector3D &vec) const
@@ -629,6 +593,85 @@ void QQuickQuaternionValueType::setZ(qreal z)
     v.setZ(z);
 }
 
+qreal QQuickQuaternionValueType::dotProduct(const QQuaternion &q) const
+{
+    return QQuaternion::dotProduct(v, q);
+}
+
+QQuaternion QQuickQuaternionValueType::times(const QQuaternion &q) const
+{
+    return v * q;
+}
+
+QVector3D QQuickQuaternionValueType::times(const QVector3D &vec) const
+{
+    return v * vec;
+}
+
+QQuaternion QQuickQuaternionValueType::times(qreal factor) const
+{
+    return v * factor;
+}
+
+QQuaternion QQuickQuaternionValueType::plus(const QQuaternion &q) const
+{
+    return v + q;
+}
+
+QQuaternion QQuickQuaternionValueType::minus(const QQuaternion &q) const
+{
+    return v - q;
+}
+
+QQuaternion QQuickQuaternionValueType::normalized() const
+{
+    return v.normalized();
+}
+
+QQuaternion QQuickQuaternionValueType::inverted() const
+{
+    return v.inverted();
+}
+
+QQuaternion QQuickQuaternionValueType::conjugated() const
+{
+    return v.conjugated();
+}
+
+qreal QQuickQuaternionValueType::length() const
+{
+    return v.length();
+}
+
+QVector3D QQuickQuaternionValueType::toEulerAngles() const
+{
+    return v.toEulerAngles();
+}
+
+QVector4D QQuickQuaternionValueType::toVector4d() const
+{
+    return v.toVector4D();
+}
+
+bool QQuickQuaternionValueType::fuzzyEquals(const QQuaternion &q, qreal epsilon) const
+{
+    qreal absEps = qAbs(epsilon);
+    if (qAbs(v.scalar() - q.scalar()) > absEps)
+        return false;
+    if (qAbs(v.x() - q.x()) > absEps)
+        return false;
+    if (qAbs(v.y() - q.y()) > absEps)
+        return false;
+    if (qAbs(v.z() - q.z()) > absEps)
+        return false;
+    return true;
+}
+
+bool QQuickQuaternionValueType::fuzzyEquals(const QQuaternion &q) const
+{
+    return qFuzzyCompare(v, q);
+}
+
 QVariant QQuickMatrix4x4ValueType::create(const QJSValue &params)
 {
     if (params.isNull() || params.isUndefined())
@@ -671,7 +714,7 @@ QVector4D QQuickMatrix4x4ValueType::times(const QVector4D &vec) const
 
 QVector3D QQuickMatrix4x4ValueType::times(const QVector3D &vec) const
 {
-    return v * vec;
+    return v.map(vec);
 }
 
 QMatrix4x4 QQuickMatrix4x4ValueType::times(qreal factor) const

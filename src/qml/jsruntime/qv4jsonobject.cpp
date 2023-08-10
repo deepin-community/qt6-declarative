@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQml module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 #include <qv4jsonobject_p.h>
 #include <qv4objectproto_p.h>
 #include <qv4numberobject_p.h>
@@ -646,10 +610,32 @@ struct Stringify
     QString makeMember(const QString &key, const Value &v);
 };
 
+class [[nodiscard]] CallDepthAndCycleChecker
+{
+    Q_DISABLE_COPY_MOVE(CallDepthAndCycleChecker);
+
+public:
+    CallDepthAndCycleChecker(Stringify *stringify, Object *o)
+        : m_callDepthRecorder(stringify->v4)
+    {
+        if (stringify->stackContains(o)) {
+            stringify->v4->throwTypeError(
+                        QStringLiteral("Cannot convert circular structure to JSON"));
+        }
+
+        stringify->v4->checkStackLimits();
+    }
+
+    bool foundProblem() const { return m_callDepthRecorder.ee->hasException; }
+
+private:
+    ExecutionEngineCallDepthRecorder<1> m_callDepthRecorder;
+};
+
 static QString quote(const QString &str)
 {
     QString product;
-    const int length = str.length();
+    const int length = str.size();
     product.reserve(length + 2);
     product += u'"';
     for (int i = 0; i < length; ++i) {
@@ -776,10 +762,9 @@ QString Stringify::makeMember(const QString &key, const Value &v)
 
 QString Stringify::JO(Object *o)
 {
-    if (stackContains(o)) {
-        v4->throwTypeError();
+    CallDepthAndCycleChecker check(this, o);
+    if (check.foundProblem())
         return QString();
-    }
 
     Scope scope(v4);
 
@@ -836,10 +821,9 @@ QString Stringify::JO(Object *o)
 
 QString Stringify::JA(Object *a)
 {
-    if (stackContains(a)) {
-        v4->throwTypeError();
+    CallDepthAndCycleChecker check(this, a);
+    if (check.foundProblem())
         return QString();
-    }
 
     Scope scope(a->engine());
 
@@ -901,7 +885,7 @@ ReturnedValue JsonObject::method_parse(const FunctionObject *b, const Value *, c
         jtext = argv[0].toQString();
 
     DEBUG << "parsing source = " << jtext;
-    JsonParser parser(v4, jtext.constData(), jtext.length());
+    JsonParser parser(v4, jtext.constData(), jtext.size());
     QJsonParseError error;
     ReturnedValue result = parser.parse(&error);
     if (error.error != QJsonParseError::NoError) {
@@ -921,9 +905,10 @@ ReturnedValue JsonObject::method_stringify(const FunctionObject *b, const Value 
     if (o) {
         stringify.replacerFunction = o->as<FunctionObject>();
         if (o->isArrayObject()) {
-            uint arrayLen = o->getLength();
+            int arrayLen = scope.engine->safeForAllocLength(o->getLength());
+            CHECK_EXCEPTION();
             stringify.propertyList = static_cast<QV4::String *>(scope.alloc(arrayLen));
-            for (uint i = 0; i < arrayLen; ++i) {
+            for (int i = 0; i < arrayLen; ++i) {
                 Value *v = stringify.propertyList + i;
                 *v = o->get(i);
                 if (v->as<NumberObject>() || v->as<StringObject>() || v->isNumber())
@@ -931,7 +916,7 @@ ReturnedValue JsonObject::method_stringify(const FunctionObject *b, const Value 
                 if (!v->isString()) {
                     v->setM(nullptr);
                 } else {
-                    for (uint j = 0; j <i; ++j) {
+                    for (int j = 0; j <i; ++j) {
                         if (stringify.propertyList[j].m() == v->m()) {
                             v->setM(nullptr);
                             break;
@@ -957,7 +942,7 @@ ReturnedValue JsonObject::method_stringify(const FunctionObject *b, const Value 
 
     ScopedValue arg0(scope, argc ? argv[0] : Value::undefinedValue());
     QString result = stringify.Str(QString(), arg0);
-    if (result.isEmpty() || scope.engine->hasException)
+    if (result.isEmpty() || scope.hasException())
         RETURN_UNDEFINED();
     return Encode(scope.engine->newString(result));
 }

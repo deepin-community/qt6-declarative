@@ -1,41 +1,5 @@
-----------------------------------------------------------------------------
---
 -- Copyright (C) 2016 The Qt Company Ltd.
--- Contact: http://www.qt.io/licensing/
---
--- This file is part of the QtQml module of the Qt Toolkit.
---
--- $QT_BEGIN_LICENSE:LGPL$
--- Commercial License Usage
--- Licensees holding valid commercial Qt licenses may use this file in
--- accordance with the commercial license agreement provided with the
--- Software or, alternatively, in accordance with the terms contained in
--- a written agreement between you and The Qt Company. For licensing terms
--- and conditions see https://www.qt.io/terms-conditions. For further
--- information use the contact form at https://www.qt.io/contact-us.
---
--- GNU Lesser General Public License Usage
--- Alternatively, this file may be used under the terms of the GNU Lesser
--- General Public License version 3 as published by the Free Software
--- Foundation and appearing in the file LICENSE.LGPL3 included in the
--- packaging of this file. Please review the following information to
--- ensure the GNU Lesser General Public License version 3 requirements
--- will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
---
--- GNU General Public License Usage
--- Alternatively, this file may be used under the terms of the GNU
--- General Public License version 2.0 or (at your option) the GNU General
--- Public license version 3 or any later version approved by the KDE Free
--- Qt Foundation. The licenses are as published by the Free Software
--- Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
--- included in the packaging of this file. Please review the following
--- information to ensure the GNU General Public License requirements will
--- be met: https://www.gnu.org/licenses/gpl-2.0.html and
--- https://www.gnu.org/licenses/gpl-3.0.html.
---
--- $QT_END_LICENSE$
---
-----------------------------------------------------------------------------
+-- SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 %parser         QQmlJSGrammar
 %decl           qqmljsparser_p.h
@@ -132,44 +96,9 @@
 
 %start TopLevel
 
-/./****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQml module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+/.// Copyright (C) 2016 The Qt Company Ltd.
+// Contact: https://www.qt.io/licensing/
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include <private/qqmljsengine_p.h>
 #include <private/qqmljslexer_p.h>
@@ -183,44 +112,9 @@
 
 ./
 
-/:/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQml module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+/:// Copyright (C) 2016 The Qt Company Ltd.
+// Contact: https://www.qt.io/licensing/
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 
 //
@@ -315,6 +209,7 @@ public:
       AST::UiPragma *UiPragma;
       AST::UiImport *UiImport;
       AST::UiParameterList *UiParameterList;
+      AST::UiPropertyAttributes *UiPropertyAttributes;
       AST::UiPublicMember *UiPublicMember;
       AST::UiObjectDefinition *UiObjectDefinition;
       AST::UiObjectInitializer *UiObjectInitializer;
@@ -473,6 +368,7 @@ protected:
     SavedToken *last_token = nullptr;
 
     int functionNestingLevel = 0;
+    int classNestingLevel = 0;
 
     enum CoverExpressionType {
         CE_Invalid,
@@ -820,6 +716,16 @@ UiPragma: T_PRAGMA PragmaId Semicolon;
         AST::UiPragma *pragma = new (pool) AST::UiPragma(stringRef(2));
         pragma->pragmaToken = loc(1);
         pragma->semicolonToken = loc(3);
+        sym(1).Node = pragma;
+    } break;
+./
+
+UiPragma: T_PRAGMA PragmaId T_COLON JsIdentifier Semicolon;
+/.
+    case $rule_number: {
+        AST::UiPragma *pragma = new (pool) AST::UiPragma(stringRef(2), stringRef(4));
+        pragma->pragmaToken = loc(1);
+        pragma->semicolonToken = loc(5);
         sym(1).Node = pragma;
     } break;
 ./
@@ -1263,7 +1169,7 @@ UiObjectMember: T_SIGNAL T_IDENTIFIER T_LPAREN UiParameterListOpt T_RPAREN Semic
     case $rule_number: {
         AST::UiPublicMember *node = new (pool) AST::UiPublicMember(nullptr, stringRef(2));
         node->type = AST::UiPublicMember::Signal;
-        node->propertyToken = loc(1);
+        node->setPropertyToken(loc(1));
         node->typeToken = loc(2);
         node->identifierToken = loc(2);
         node->parameters = sym(4).UiParameterList;
@@ -1277,7 +1183,7 @@ UiObjectMember: T_SIGNAL T_IDENTIFIER Semicolon;
     case $rule_number: {
         AST::UiPublicMember *node = new (pool) AST::UiPublicMember(nullptr, stringRef(2));
         node->type = AST::UiPublicMember::Signal;
-        node->propertyToken = loc(1);
+        node->setPropertyToken(loc(1));
         node->typeToken = loc(2);
         node->identifierToken = loc(2);
         node->semicolonToken = loc(3);
@@ -1285,12 +1191,70 @@ UiObjectMember: T_SIGNAL T_IDENTIFIER Semicolon;
     } break;
 ./
 
-UiObjectMemberListPropertyNoInitialiser: T_PROPERTY T_IDENTIFIER T_LT UiPropertyType T_GT QmlIdentifier Semicolon;
+-------------------------------------------------------------------------------
+-- There is some ambiguity in whether required default property should be parsed
+-- as required (default (property)) or as ((required (default)) property)
+-- by reducing after each attribute modifier, we ensure that T_PROPERTY (which
+-- is always available is used as the base case (so we only have to allocate the
+-- node in the T_PROPERY case, and all other rules can assume that the node is
+-- already available).
+--------------------------------------------------------------------------------
+
+AttrRequired:  T_REQUIRED %prec REDUCE_HERE;
+AttrReadonly:  T_READONLY %prec REDUCE_HERE;
+AttrDefault:  T_DEFAULT %prec REDUCE_HERE;
+
+UiPropertyAttributes: AttrRequired UiPropertyAttributes;
+/.
+    case $rule_number: {
+        AST::UiPropertyAttributes *node = sym(2).UiPropertyAttributes;
+        if (node->isRequired())
+            diagnostic_messages.append(compileError(node->requiredToken(), QLatin1String("Duplicated 'required' attribute is not allowed."), QtCriticalMsg));
+        node->m_requiredToken = loc(1);
+        sym(1).UiPropertyAttributes = node;
+    } break;
+./
+
+UiPropertyAttributes: AttrDefault UiPropertyAttributes;
+/.
+    case $rule_number: {
+        AST::UiPropertyAttributes *node = sym(2).UiPropertyAttributes;
+        if (node->isDefaultMember())
+            diagnostic_messages.append(compileError(node->requiredToken(), QLatin1String("Duplicated 'default' attribute is not allowed."), QtCriticalMsg));
+        node->m_defaultToken = loc(1);
+        sym(1).UiPropertyAttributes = node;
+    } break;
+./
+
+UiPropertyAttributes: AttrReadonly UiPropertyAttributes;
+/.
+    case $rule_number: {
+        AST::UiPropertyAttributes *node = sym(2).UiPropertyAttributes;
+        if (node->isReadonly())
+            diagnostic_messages.append(compileError(node->requiredToken(), QLatin1String("Duplicated 'readonly' attribute is not allowed."), QtCriticalMsg));
+        node->m_readonlyToken = loc(1);
+        sym(1).UiPropertyAttributes = node;
+    } break;
+./
+
+UiPropertyAttributes: T_PROPERTY;
+/.
+    case $rule_number: {
+        AST::UiPropertyAttributes *node = new (pool) AST::UiPropertyAttributes();
+        node->m_propertyToken = loc(1);
+        sym(1).UiPropertyAttributes = node;
+    } break;
+./
+
+UiObjectMemberListPropertyNoInitialiser: UiPropertyAttributes T_IDENTIFIER T_LT UiPropertyType T_GT QmlIdentifier Semicolon;
 /.
     case $rule_number: {
         AST::UiPublicMember *node = new (pool) AST::UiPublicMember(sym(4).UiQualifiedId->finish(), stringRef(6));
+        auto attributes = sym(1).UiPropertyAttributes;
+        node->setAttributes(attributes);
+        if (attributes->isReadonly())
+            diagnostic_messages.append(compileError(attributes->readonlyToken(), QLatin1String("Read-only properties require an initializer."), QtWarningMsg));
         node->typeModifier = stringRef(2);
-        node->propertyToken = loc(1);
         node->typeModifierToken = loc(2);
         node->typeToken = loc(4);
         node->identifierToken = loc(6);
@@ -1301,21 +1265,14 @@ UiObjectMemberListPropertyNoInitialiser: T_PROPERTY T_IDENTIFIER T_LT UiProperty
 
 UiObjectMember: UiObjectMemberListPropertyNoInitialiser;
 
-UiObjectMember: T_READONLY UiObjectMemberListPropertyNoInitialiser;
-/.
-    case $rule_number: {
-        AST::UiPublicMember *node = sym(2).UiPublicMember;
-        node->isReadonlyMember = true;
-        node->readonlyToken = loc(1);
-        sym(1).Node = node;
-    } break;
-./
-
-UiObjectMemberPropertyNoInitialiser: T_PROPERTY UiPropertyType QmlIdentifier Semicolon;
+UiObjectMemberPropertyNoInitialiser: UiPropertyAttributes UiPropertyType QmlIdentifier Semicolon;
 /.
     case $rule_number: {
         AST::UiPublicMember *node = new (pool) AST::UiPublicMember(sym(2).UiQualifiedId->finish(), stringRef(3));
-        node->propertyToken = loc(1);
+        auto attributes = sym(1).UiPropertyAttributes;
+        if (attributes->isReadonly())
+            diagnostic_messages.append(compileError(attributes->readonlyToken(), QLatin1String("Read-only properties require an initializer."), QtCriticalMsg));
+        node->setAttributes(attributes);
         node->typeToken = loc(2);
         node->identifierToken = loc(3);
         node->semicolonToken = loc(4);
@@ -1325,86 +1282,6 @@ UiObjectMemberPropertyNoInitialiser: T_PROPERTY UiPropertyType QmlIdentifier Sem
 
 
 UiObjectMember: UiObjectMemberPropertyNoInitialiser;
-
-UiObjectMember: T_DEFAULT UiObjectMemberPropertyNoInitialiser;
-/.
-    case $rule_number: {
-        AST::UiPublicMember *node = sym(2).UiPublicMember;
-        node->isDefaultMember = true;
-        node->defaultToken = loc(1);
-        sym(1).Node = node;
-    } break;
-./
-
-
-UiObjectMember: T_REQUIRED UiObjectMemberListPropertyNoInitialiser;
-/.
-    case $rule_number: {
-        AST::UiPublicMember *node = sym(2).UiPublicMember;
-        node->isRequired = true;
-        node->requiredToken = loc(1);
-        sym(1).Node = node;
-    } break;
-./
-
-UiObjectMember: T_DEFAULT T_REQUIRED UiObjectMemberListPropertyNoInitialiser;
-/.
-    case $rule_number: {
-        AST::UiPublicMember *node = sym(3).UiPublicMember;
-        node->isRequired = true;
-        node->requiredToken = loc(2);
-        node->isDefaultMember = true;
-        node->defaultToken = loc(1);
-        sym(1).Node = node;
-    } break;
-./
-
-UiObjectMember: T_REQUIRED T_DEFAULT UiObjectMemberListPropertyNoInitialiser;
-/.
-    case $rule_number: {
-        AST::UiPublicMember *node = sym(3).UiPublicMember;
-        node->isRequired = true;
-        node->requiredToken = loc(1);
-        node->isDefaultMember = true;
-        node->defaultToken = loc(2);
-        sym(1).Node = node;
-    } break;
-./
-
-UiObjectMember: T_DEFAULT UiObjectMemberListPropertyNoInitialiser;
-/.
-    case $rule_number: {
-        AST::UiPublicMember *node = sym(2).UiPublicMember;
-        node->isDefaultMember = true;
-        node->defaultToken = loc(1);
-        sym(1).Node = node;
-    } break;
-./
-
-UiObjectMember: T_DEFAULT T_REQUIRED UiObjectMemberPropertyNoInitialiser;
-/.
-    case $rule_number: {
-        AST::UiPublicMember *node = sym(3).UiPublicMember;
-        node->isDefaultMember = true;
-        node->defaultToken = loc(1);
-        node->isRequired = true;
-        node->requiredToken = loc(2);
-        sym(1).Node = node;
-    } break;
-./
-
-
-UiObjectMember: T_REQUIRED T_DEFAULT UiObjectMemberPropertyNoInitialiser;
-/.
-    case $rule_number: {
-        AST::UiPublicMember *node = sym(3).UiPublicMember;
-        node->isDefaultMember = true;
-        node->defaultToken = loc(2);
-        node->isRequired = true;
-        node->requiredToken = loc(1);
-        sym(1).Node = node;
-    } break;
-./
 
 OptionalSemicolon: | Semicolon;
 /.
@@ -1424,21 +1301,14 @@ UiRequired: T_REQUIRED QmlIdentifier Semicolon;
 
 UiObjectMember: UiRequired;
 
-UiObjectMember: T_REQUIRED UiObjectMemberPropertyNoInitialiser;
-/.
-    case $rule_number: {
-        AST::UiPublicMember *node = sym(2).UiPublicMember;
-        node->requiredToken = loc(1);
-        node->isRequired = true;
-        sym(1).Node = node;
-    } break;
-./
-
-UiObjectMemberWithScriptStatement: T_PROPERTY UiPropertyType QmlIdentifier T_COLON UiScriptStatement OptionalSemicolon;
+UiObjectMemberWithScriptStatement: UiPropertyAttributes UiPropertyType QmlIdentifier T_COLON UiScriptStatement OptionalSemicolon;
 /.
     case $rule_number: {
         AST::UiPublicMember *node = new (pool) AST::UiPublicMember(sym(2).UiQualifiedId->finish(), stringRef(3), sym(5).Statement);
-        node->propertyToken = loc(1);
+        auto attributes = sym(1).UiPropertyAttributes;
+        if (attributes->isRequired())
+            diagnostic_messages.append(compileError(attributes->requiredToken(), QLatin1String("Required properties with initializer do not make sense."), QtCriticalMsg));
+        node->setAttributes(attributes);
         node->typeToken = loc(2);
         node->identifierToken = loc(3);
         node->colonToken = loc(4);
@@ -1446,34 +1316,34 @@ UiObjectMemberWithScriptStatement: T_PROPERTY UiPropertyType QmlIdentifier T_COL
     } break;
 ./
 
+UiObjectMemberWithScriptStatement: UiPropertyAttributes T_IDENTIFIER T_LT UiPropertyType T_GT QmlIdentifier T_COLON UiScriptStatement OptionalSemicolon;
+/.
+    case $rule_number: {
+        AST::UiPublicMember *node = new (pool) AST::UiPublicMember(sym(4).UiQualifiedId->finish(), stringRef(6), sym(8).Statement);
+        node->typeModifier = stringRef(2);
+        auto attributes = sym(1).UiPropertyAttributes;
+        if (attributes->isRequired())
+            diagnostic_messages.append(compileError(attributes->requiredToken(), QLatin1String("Required properties with initializer do not make sense."), QtCriticalMsg));
+        node->setAttributes(attributes);
+        node->typeModifierToken = loc(2);
+        node->typeToken = loc(4);
+        node->identifierToken = loc(6);
+        node->colonToken = loc(7);
+        sym(1).Node = node;
+    } break;
+./
+
 UiObjectMember: UiObjectMemberWithScriptStatement;
 
-UiObjectMember: T_READONLY UiObjectMemberWithScriptStatement;
-/.
-    case $rule_number: {
-        AST::UiPublicMember *node = sym(2).UiPublicMember;
-        node->isReadonlyMember = true;
-        node->readonlyToken = loc(1);
-        sym(1).Node = node;
-    } break;
-./
-
-UiObjectMember: T_DEFAULT UiObjectMemberWithScriptStatement;
-/.
-    case $rule_number: {
-        AST::UiPublicMember *node = sym(2).UiPublicMember;
-        node->isDefaultMember = true;
-        node->defaultToken = loc(1);
-        sym(1).Node = node;
-    } break;
-./
-
-UiObjectMemberWithArray: T_PROPERTY T_IDENTIFIER T_LT UiPropertyType T_GT QmlIdentifier T_COLON T_LBRACKET UiArrayMemberList T_RBRACKET Semicolon;
+UiObjectMemberWithArray: UiPropertyAttributes T_IDENTIFIER T_LT UiPropertyType T_GT QmlIdentifier T_COLON ExpressionStatementLookahead T_LBRACKET UiArrayMemberList T_RBRACKET Semicolon;
 /.
     case $rule_number: {
         AST::UiPublicMember *node = new (pool) AST::UiPublicMember(sym(4).UiQualifiedId->finish(), stringRef(6));
+        auto attributes = sym(1).UiPropertyAttributes;
+        if (attributes->isRequired())
+            diagnostic_messages.append(compileError(attributes->requiredToken(), QLatin1String("Required properties with initializer do not make sense."), QtCriticalMsg));
+        node->setAttributes(attributes);
         node->typeModifier = stringRef(2);
-        node->propertyToken = loc(1);
         node->typeModifierToken = loc(2);
         node->typeToken = loc(4);
         node->identifierToken = loc(6);
@@ -1481,12 +1351,12 @@ UiObjectMemberWithArray: T_PROPERTY T_IDENTIFIER T_LT UiPropertyType T_GT QmlIde
 
         AST::UiQualifiedId *propertyName = new (pool) AST::UiQualifiedId(stringRef(6));
         propertyName->identifierToken = loc(6);
-        propertyName->next = 0;
+        propertyName->next = nullptr;
 
-        AST::UiArrayBinding *binding = new (pool) AST::UiArrayBinding(propertyName, sym(9).UiArrayMemberList->finish());
+        AST::UiArrayBinding *binding = new (pool) AST::UiArrayBinding(propertyName, sym(10).UiArrayMemberList->finish());
         binding->colonToken = loc(7);
-        binding->lbracketToken = loc(8);
-        binding->rbracketToken = loc(10);
+        binding->lbracketToken = loc(9);
+        binding->rbracketToken = loc(11);
 
         node->binding = binding;
 
@@ -1496,28 +1366,21 @@ UiObjectMemberWithArray: T_PROPERTY T_IDENTIFIER T_LT UiPropertyType T_GT QmlIde
 
 UiObjectMember: UiObjectMemberWithArray;
 
-UiObjectMember: T_READONLY UiObjectMemberWithArray;
-/.
-    case $rule_number: {
-        AST::UiPublicMember *node = sym(2).UiPublicMember;
-        node->isReadonlyMember = true;
-        node->readonlyToken = loc(1);
-        sym(1).Node = node;
-    } break;
-./
-
-UiObjectMemberExpressionStatementLookahead: T_PROPERTY UiPropertyType QmlIdentifier T_COLON ExpressionStatementLookahead UiQualifiedId UiObjectInitializer Semicolon;
+UiObjectMemberExpressionStatementLookahead: UiPropertyAttributes UiPropertyType QmlIdentifier T_COLON ExpressionStatementLookahead UiQualifiedId UiObjectInitializer Semicolon;
 /.
     case $rule_number: {
         AST::UiPublicMember *node = new (pool) AST::UiPublicMember(sym(2).UiQualifiedId->finish(), stringRef(3));
-        node->propertyToken = loc(1);
+        auto attributes = sym(1).UiPropertyAttributes;
+        if (attributes->isRequired())
+            diagnostic_messages.append(compileError(attributes->requiredToken(), QLatin1String("Required properties with initializer do not make sense."), QtWarningMsg));
+        node->setAttributes(attributes);
         node->typeToken = loc(2);
         node->identifierToken = loc(3);
         node->semicolonToken = loc(4); // insert a fake ';' before ':'
 
         AST::UiQualifiedId *propertyName = new (pool) AST::UiQualifiedId(stringRef(3));
         propertyName->identifierToken = loc(3);
-        propertyName->next = 0;
+        propertyName->next = nullptr;
 
         AST::UiObjectBinding *binding = new (pool) AST::UiObjectBinding(
           propertyName, sym(6).UiQualifiedId, sym(7).UiObjectInitializer);
@@ -1530,16 +1393,6 @@ UiObjectMemberExpressionStatementLookahead: T_PROPERTY UiPropertyType QmlIdentif
 ./
 
 UiObjectMember: UiObjectMemberExpressionStatementLookahead;
-
-UiObjectMember: T_READONLY UiObjectMemberExpressionStatementLookahead;
-/.
-    case $rule_number: {
-        AST::UiPublicMember *node = sym(2).UiPublicMember;
-        node->isReadonlyMember = true;
-        node->readonlyToken = loc(1);
-        sym(1).Node = node;
-    } break;
-./
 
 UiObjectMember: GeneratorDeclaration;
 /.
@@ -1721,6 +1574,9 @@ Type: UiQualifiedId;
         sym(1).Type = new (pool) AST::Type(sym(1).UiQualifiedId);
     } break;
 ./
+
+Type: T_VAR;
+/.  case $rule_number: Q_FALLTHROUGH(); ./
 
 Type: T_VOID;
 /.
@@ -2123,6 +1979,7 @@ CoverInitializedName: IdentifierReference Initializer_In;
         if (auto *c = asAnonymousClassDefinition(sym(2).Expression))
             c->name = stringRef(1);
         AST::BinaryExpression *assignment = new (pool) AST::BinaryExpression(left, QSOperator::Assign, sym(2).Expression);
+        assignment->operatorToken = loc(2);
         AST::PatternProperty *node = new (pool) AST::PatternProperty(name, assignment);
         node->colonToken = loc(1);
         sym(1).Node = node;
@@ -4135,7 +3992,7 @@ ArrowFunction_In: ArrowParameters T_ARROW ConciseBodyLookahead T_FORCE_BLOCK Fun
         AST::FunctionExpression *f = new (pool) AST::FunctionExpression(QStringView(), sym(1).FormalParameterList, sym(6).StatementList);
         f->isArrowFunction = true;
         f->functionToken = sym(1).Node ? sym(1).Node->firstSourceLocation().startZeroLengthLocation() : loc(1).startZeroLengthLocation();
-        f->lbraceToken = loc(6);
+        f->lbraceToken = loc(5);
         f->rbraceToken = loc(7);
         sym(1).Node = f;
     } break;
@@ -4422,16 +4279,16 @@ ClassDeclaration_Default: ClassDeclaration;
 ClassLBrace: T_LBRACE;
 /.
     case $rule_number: {
-        lexer->setStaticIsKeyword(true);
+        if (++classNestingLevel == 1)
+            lexer->setStaticIsKeyword(true);
     } break;
 ./
 
 ClassRBrace: T_RBRACE;
-/. case $rule_number: ./
-ClassStaticQualifier: T_STATIC;
 /.
     case $rule_number: {
-        lexer->setStaticIsKeyword(false);
+        if (--classNestingLevel == 0)
+            lexer->setStaticIsKeyword(false);
     } break;
 ./
 
@@ -4486,10 +4343,9 @@ ClassElement: MethodDefinition;
     } break;
 ./
 
-ClassElement: ClassStaticQualifier MethodDefinition;
+ClassElement: T_STATIC MethodDefinition;
 /.
     case $rule_number: {
-        lexer->setStaticIsKeyword(true);
         AST::ClassElementList *node = new (pool) AST::ClassElementList(sym(2).PatternProperty, true);
         sym(1).Node = node;
     } break;

@@ -1,30 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the test suite of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:GPL-EXCEPT$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 3 as published by the Free Software
-** Foundation with exceptions as appearing in the file LICENSE.GPL3-EXCEPT
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only WITH Qt-GPL-exception-1.0
 
 #include <QQmlEngine>
 #include <QQmlContext>
@@ -65,6 +40,7 @@ private slots:
     void clearComponentCache();
     void trimComponentCache();
     void trimComponentCache_data();
+    void clearSingletons();
     void repeatedCompilation();
     void failedCompilation();
     void failedCompilation_data();
@@ -92,6 +68,8 @@ private slots:
     void attachedObjectAsObject();
     void listPropertyAsQJSValue();
     void stringToColor();
+    void qobjectToString();
+    void qtNamespaceInQtObject();
 
 public slots:
     QObject *createAQObjectForOwnershipTest ()
@@ -103,6 +81,50 @@ public slots:
 private:
     QTemporaryDir m_tempDir;
 };
+
+class ObjectCaller : public QObject
+{
+    Q_OBJECT
+
+signals:
+    void doubleReply(const double a);
+};
+
+class CppSingleton : public QObject {
+    Q_OBJECT
+public:
+    static uint instantiations;
+    uint id = 0;
+
+    CppSingleton() : id(++instantiations) {}
+
+    static QObject *create(QQmlEngine *qmlEngine, QJSEngine *jsEngine)
+    {
+        Q_UNUSED(qmlEngine);
+        Q_UNUSED(jsEngine);
+        return new CppSingleton();
+    }
+};
+
+uint CppSingleton::instantiations = 0;
+
+class JsSingleton : public QObject {
+    Q_OBJECT
+public:
+    static uint instantiations;
+    uint id = 0;
+
+    JsSingleton() : id(++instantiations) {}
+
+    static QJSValue create(QQmlEngine *qmlEngine, QJSEngine *jsEngine)
+    {
+        Q_UNUSED(qmlEngine);
+        QJSValue value = jsEngine->newQObject(new JsSingleton());
+        return value;
+    }
+};
+
+uint JsSingleton::instantiations = 0;
 
 void tst_qqmlengine::initTestCase()
 {
@@ -509,6 +531,112 @@ void tst_qqmlengine::trimComponentCache_data()
     // TODO:
     // Test that scripts are unloaded when no longer referenced
     QTest::newRow("ScriptComponent") << "testScriptComponent.qml";
+}
+
+static QJSValue createValueSingleton(QQmlEngine *, QJSEngine *) { return 13u; }
+
+void tst_qqmlengine::clearSingletons()
+{
+    ObjectCaller objectCaller1;
+    ObjectCaller objectCaller2;
+    const int cppInstance = qmlRegisterSingletonInstance(
+                "ClearSingletons", 1, 0, "CppInstance", &objectCaller1);
+
+    QQmlPrivate::SingletonFunctor deprecatedSingletonFunctor;
+    deprecatedSingletonFunctor.m_object = &objectCaller2;
+    const int deprecatedCppInstance = qmlRegisterSingletonType<ObjectCaller>(
+                "ClearSingletons", 1, 0, "DeprecatedCppInstance", deprecatedSingletonFunctor);
+
+    const int cppFactory = qmlRegisterSingletonType<CppSingleton>(
+                "ClearSingletons", 1, 0, "CppFactory", &CppSingleton::create);
+    const int jsValue = qmlRegisterSingletonType(
+                "ClearSingletons", 1, 0, "JsValue", &createValueSingleton);
+    const int jsObject = qmlRegisterSingletonType(
+                "ClearSingletons", 1, 0, "JsObject", &JsSingleton::create);
+    const int qmlObject = qmlRegisterSingletonType(
+                testFileUrl("QmlSingleton.qml"), "ClearSingletons", 1, 0, "QmlSingleton");
+
+    QQmlEngine engine;
+
+    QCOMPARE(engine.singletonInstance<ObjectCaller *>(cppInstance), &objectCaller1);
+    QCOMPARE(engine.singletonInstance<ObjectCaller *>(deprecatedCppInstance), &objectCaller2);
+    const CppSingleton *oldCppSingleton = engine.singletonInstance<CppSingleton *>(cppFactory);
+    QVERIFY(oldCppSingleton != nullptr);
+    const uint oldCppSingletonId = oldCppSingleton->id;
+    QVERIFY(oldCppSingletonId > 0);
+    QCOMPARE(CppSingleton::instantiations, oldCppSingletonId);
+    QCOMPARE(engine.singletonInstance<QJSValue>(jsValue).toUInt(), 13u);
+    const JsSingleton *oldJsSingleton = engine.singletonInstance<JsSingleton *>(jsObject);
+    QVERIFY(oldJsSingleton != nullptr);
+    const uint oldJsSingletonId = oldJsSingleton->id;
+    const QObject *oldQmlSingleton = engine.singletonInstance<QObject *>(qmlObject);
+    QVERIFY(oldQmlSingleton != nullptr);
+
+    QQmlComponent c(&engine);
+    c.setData("import ClearSingletons\n"
+              "import QtQml\n"
+              "QtObject {\n"
+              "    property QtObject a: CppInstance\n"
+              "    property QtObject f: DeprecatedCppInstance\n"
+              "    property QtObject b: CppFactory\n"
+              "    property int c: JsValue\n"
+              "    property QtObject d: JsObject\n"
+              "    property QtObject e: QmlSingleton\n"
+              "}", QUrl());
+    QVERIFY2(c.isReady(), qPrintable(c.errorString()));
+    QScopedPointer<QObject> singletonUser(c.create());
+    QCOMPARE(qvariant_cast<QObject *>(singletonUser->property("a")), &objectCaller1);
+    QCOMPARE(qvariant_cast<QObject *>(singletonUser->property("f")), &objectCaller2);
+    QCOMPARE(qvariant_cast<QObject *>(singletonUser->property("b")), oldCppSingleton);
+    QCOMPARE(singletonUser->property("c").toUInt(), 13u);
+    QCOMPARE(qvariant_cast<QObject *>(singletonUser->property("d")), oldJsSingleton);
+    QCOMPARE(qvariant_cast<QObject *>(singletonUser->property("e")), oldQmlSingleton);
+
+    engine.clearSingletons();
+    QCOMPARE(CppSingleton::instantiations, oldCppSingletonId);
+
+    QCOMPARE(engine.singletonInstance<ObjectCaller *>(cppInstance), &objectCaller1);
+
+    // Singleton instances created with previous versions of qmlRegisterSingletonInstance()
+    // are lost and cannot be accessed anymore. We can only call their synthesized factory
+    // functions once. This is not a big problem as you have to recompile in order to use
+    // clearSingletons() anyway.
+    QTest::ignoreMessage(
+                QtWarningMsg,
+                "<Unknown File>: Singleton registered by registerSingletonInstance "
+                "must only be accessed from one engine");
+    QTest::ignoreMessage(
+                QtCriticalMsg,
+                "<Unknown File>: qmlRegisterSingletonType(): \"DeprecatedCppInstance\" is not "
+                "available because the callback function returns a null pointer.");
+    QCOMPARE(engine.singletonInstance<ObjectCaller *>(deprecatedCppInstance), nullptr);
+
+    QCOMPARE(CppSingleton::instantiations, oldCppSingletonId);
+    const CppSingleton *newCppSingleton = engine.singletonInstance<CppSingleton *>(cppFactory);
+    QVERIFY(newCppSingleton != nullptr); // The pointer may be the same as the old one
+    QCOMPARE(CppSingleton::instantiations, oldCppSingletonId + 1);
+    QCOMPARE(newCppSingleton->id, CppSingleton::instantiations);
+    QCOMPARE(engine.singletonInstance<QJSValue>(jsValue).toUInt(), 13u);
+    const JsSingleton *newJsSingleton = engine.singletonInstance<JsSingleton *>(jsObject);
+    QVERIFY(newJsSingleton != nullptr);
+    QVERIFY(newJsSingleton->id != oldJsSingletonId);
+    const QObject *newQmlSingleton = engine.singletonInstance<QObject *>(qmlObject);
+    QVERIFY(newQmlSingleton != nullptr);
+    QVERIFY(newQmlSingleton != oldQmlSingleton);
+
+    // Holding on to an old singleton instance is OK. We don't delete those.
+    QCOMPARE(qvariant_cast<QObject *>(singletonUser->property("a")), &objectCaller1);
+    QCOMPARE(qvariant_cast<QObject *>(singletonUser->property("f")), &objectCaller2);
+
+    // Deleting the singletons created by factories has cleared their references in QML.
+    // We don't renew them as the point of clearing the singletons is not having any
+    // singletons left afterwards.
+    QCOMPARE(qvariant_cast<QObject *>(singletonUser->property("b")), nullptr);
+    QCOMPARE(qvariant_cast<QObject *>(singletonUser->property("d")), nullptr);
+    QCOMPARE(qvariant_cast<QObject *>(singletonUser->property("e")), nullptr);
+
+    // Value types are unaffected as they are copied.
+    QCOMPARE(singletonUser->property("c").toUInt(), 13u);
 }
 
 void tst_qqmlengine::repeatedCompilation()
@@ -934,6 +1062,7 @@ void tst_qqmlengine::qrcUrls()
     {
         QQmlRefPointer<QQmlTypeData> oneQml(pEngine->typeLoader.getType(QUrl("qrc:/qrcurls.qml")));
         QVERIFY(oneQml.data() != nullptr);
+        QVERIFY(!oneQml->backupSourceCode().isValid());
         QQmlRefPointer<QQmlTypeData> twoQml(pEngine->typeLoader.getType(QUrl("qrc:///qrcurls.qml")));
         QVERIFY(twoQml.data() != nullptr);
         QCOMPARE(oneQml.data(), twoQml.data());
@@ -942,18 +1071,12 @@ void tst_qqmlengine::qrcUrls()
     {
         QQmlRefPointer<QQmlTypeData> oneJS(pEngine->typeLoader.getType(QUrl("qrc:/qrcurls.js")));
         QVERIFY(oneJS.data() != nullptr);
+        QVERIFY(!oneJS->backupSourceCode().isValid());
         QQmlRefPointer<QQmlTypeData> twoJS(pEngine->typeLoader.getType(QUrl("qrc:///qrcurls.js")));
         QVERIFY(twoJS.data() != nullptr);
         QCOMPARE(oneJS.data(), twoJS.data());
     }
 }
-
-class ObjectCaller : public QObject
-{
-    Q_OBJECT
-signals:
-    void doubleReply(const double a);
-};
 
 void tst_qqmlengine::cppSignalAndEval()
 {
@@ -979,32 +1102,6 @@ void tst_qqmlengine::cppSignalAndEval()
     emit objectCaller.doubleReply(1.1234);
     QCOMPARE(object->property("r"), 1.1234);
 }
-
-class CppSingleton : public QObject {
-    Q_OBJECT
-public:
-    CppSingleton() {}
-
-    static QObject *create(QQmlEngine *qmlEngine, QJSEngine *jsEngine)
-    {
-        Q_UNUSED(qmlEngine);
-        Q_UNUSED(jsEngine);
-        return new CppSingleton();
-    }
-};
-
-class JsSingleton : public QObject {
-    Q_OBJECT
-public:
-    JsSingleton() {}
-
-    static QJSValue create(QQmlEngine *qmlEngine, QJSEngine *jsEngine)
-    {
-        Q_UNUSED(qmlEngine);
-        QJSValue value = jsEngine->newQObject(new JsSingleton());
-        return value;
-    }
-};
 
 class SomeQObjectClass : public QObject {
     Q_OBJECT
@@ -1248,7 +1345,9 @@ void tst_qqmlengine::executeRuntimeFunction()
 
     const QUrl url = testFileUrl("runtimeFunctions.qml");
     QQmlComponent component(&engine, url);
+    QVERIFY2(component.isReady(), qPrintable(component.errorString()));
     QScopedPointer<QObject> dummy(component.create());
+    QVERIFY(dummy);
 
     // getConstantValue():
     int constant = 0;
@@ -1277,6 +1376,20 @@ void tst_qqmlengine::executeRuntimeFunction()
                        QMetaType::fromType<QString>() };
     priv->executeRuntimeFunction(url, /* index = */ 2, dummy.get(), /* argc = */ 2, a2, t2);
     QCOMPARE(concatenated, str1 + str2);
+
+    // capture `this`:
+    QCOMPARE(dummy->property("foo").toInt(), 42);
+    QCOMPARE(dummy->property("bar").toInt(), 0);
+    priv->executeRuntimeFunction(url, /* index = */ 4, dummy.get());
+    QCOMPARE(dummy->property("bar").toInt(), 1 + 42 + 1);
+
+    QCOMPARE(dummy->property("baz").toInt(), -100);
+    int y = 1;
+    void *a3[] = { nullptr, const_cast<void *>(reinterpret_cast<const void *>(&y)) };
+    QMetaType t3[] = { QMetaType::fromType<void>(), QMetaType::fromType<int>() };
+    priv->executeRuntimeFunction(url, /* index = */ 6, dummy.get(), 1, a3, t3);
+    QCOMPARE(dummy->property("bar").toInt(), -98);
+    QCOMPARE(dummy->property("baz").toInt(), -100);
 }
 
 class WithQProperty : public QObject
@@ -1434,6 +1547,58 @@ void tst_qqmlengine::stringToColor()
     QCOMPARE(variant.metaType(), metaType);
 
     QCOMPARE(color, variant);
+}
+
+class WithToString : public QObject
+{
+    Q_OBJECT
+    QML_ELEMENT
+public:
+    Q_INVOKABLE QString toString() const { return QStringLiteral("things"); }
+};
+
+class WithToNumber : public QObject
+{
+    Q_OBJECT
+    QML_ELEMENT
+public:
+    Q_INVOKABLE int toString() const { return 4; }
+};
+
+void tst_qqmlengine::qobjectToString()
+{
+    qmlRegisterTypesAndRevisions<WithToString>("WithToString", 1);
+    qmlRegisterTypesAndRevisions<WithToNumber>("WithToString", 1);
+    QQmlEngine engine;
+    QQmlComponent c(&engine);
+    c.setData(R"(
+        import WithToString
+        import QtQml
+
+        WithToString {
+            id: self
+            property QtObject weird: WithToNumber {}
+            objectName: toString() + ' ' + self.toString() + ' ' + weird.toString()
+        }
+    )", QUrl());
+    QVERIFY2(c.isReady(), qPrintable(c.errorString()));
+    QScopedPointer<QObject> o(c.create());
+    QCOMPARE(o->objectName(), QStringLiteral("things things 4"));
+}
+
+void tst_qqmlengine::qtNamespaceInQtObject()
+{
+    QQmlEngine engine;
+    QJSValue qtObject = engine.globalObject().property(QStringLiteral("Qt"));
+
+    // Qt namespace enums are there.
+    QCOMPARE(qtObject.property(QStringLiteral("Checked")).toInt(), 2);
+
+    // QtObject methods are also there.
+    QVERIFY(qtObject.property(QStringLiteral("rect")).isCallable());
+
+    // QObject is also there.
+    QVERIFY(qtObject.hasProperty(QStringLiteral("objectName")));
 }
 
 QTEST_MAIN(tst_qqmlengine)

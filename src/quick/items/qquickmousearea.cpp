@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQuick module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qquickmousearea_p.h"
 #include "qquickmousearea_p_p.h"
@@ -60,7 +24,7 @@ DEFINE_BOOL_CONFIG_OPTION(qmlVisualTouchDebugging, QML_VISUAL_TOUCH_DEBUGGING)
 Q_DECLARE_LOGGING_CATEGORY(lcHoverTrace)
 
 QQuickMouseAreaPrivate::QQuickMouseAreaPrivate()
-: enabled(true), scrollGestureEnabled(true), hovered(false), longPress(false),
+: enabled(true), hoverEnabled(false), scrollGestureEnabled(true), hovered(false), longPress(false),
   moved(false), stealMouse(false), doubleClick(false), preventStealing(false),
   propagateComposedEvents(false), overThreshold(false),
   pressAndHoldInterval(-1)
@@ -153,7 +117,7 @@ bool QQuickMouseAreaPrivate::propagateHelper(QQuickMouseEvent *ev, QQuickItem *i
     }
 
     QList<QQuickItem *> children = itemPrivate->paintOrderChildItems();
-    for (int ii = children.count() - 1; ii >= 0; --ii) {
+    for (int ii = children.size() - 1; ii >= 0; --ii) {
         QQuickItem *child = children.at(ii);
         if (!child->isVisible() || !child->isEnabled())
             continue;
@@ -489,6 +453,7 @@ void QQuickMouseArea::setEnabled(bool a)
     Q_D(QQuickMouseArea);
     if (a != d->enabled) {
         d->enabled = a;
+        setAcceptHoverEvents(a && d->hoverEnabled);
         emit enabledChanged();
     }
 }
@@ -803,12 +768,13 @@ void QQuickMouseArea::mouseReleaseEvent(QMouseEvent *event)
                 d->drag->setActive(false);
 #endif
             // If we don't accept hover, we need to reset containsMouse.
-            if (!acceptHoverEvents())
+            if (!hoverEnabled())
                 setHovered(false);
             QQuickWindow *w = window();
             if (w && w->mouseGrabberItem() == this)
                 ungrabMouse();
-            setKeepMouseGrab(false);
+            if (!d->preventStealing)
+                setKeepMouseGrab(false);
         }
     }
     d->doubleClick = false;
@@ -827,7 +793,8 @@ void QQuickMouseArea::mouseDoubleClickEvent(QMouseEvent *event)
         emit this->doubleClicked(&me);
         if (!me.isAccepted())
             d->propagate(&me, QQuickMouseAreaPrivate::DoubleClick);
-        d->doubleClick = d->isDoubleClickConnected() || me.isAccepted();
+        if (d->pressed)
+            d->doubleClick = d->isDoubleClickConnected() || me.isAccepted();
     }
     QQuickItem::mouseDoubleClickEvent(event);
 }
@@ -836,6 +803,14 @@ void QQuickMouseArea::hoverEnterEvent(QHoverEvent *event)
 {
     Q_D(QQuickMouseArea);
     if (!d->enabled && !d->pressed) {
+        // Note: The fact that MouseArea doesn't update 'containsMouse' when it's disabled, is a
+        // legacy behavior that is different from how hover events are supposed to work; Hover
+        // events are always delivered to both enabled and disabled items (when they explicitly
+        // subscribe for them), to open up for hover effects, like showing tooltips. Because of
+        // this difference, you cannot use a MouseArea to e.g trigger a tooltop on a parent that
+        // is disabled. But since MouseArea has always worked this way, it should (probably) stay
+        // that way to avoid regressions. HoverHandlers do not suffer from this limitation, and
+        // can therefore be used as a replacement to solve such cases.
         QQuickItem::hoverEnterEvent(event);
     } else {
         d->lastPos = event->position();
@@ -849,14 +824,8 @@ void QQuickMouseArea::hoverEnterEvent(QHoverEvent *event)
         me.setPosition(d->lastPos);
     }
 
-    if (auto parentMouseArea = qobject_cast<QQuickMouseArea *>(parentItem())) {
-        if (parentMouseArea->acceptHoverEvents()) {
-            // Special legacy case: if our parent is another MouseArea, and we're
-            // hovered, the parent MouseArea should be hovered too. We achieve this
-            // by simply ignoring the event to not block propagation.
-            event->ignore();
-        }
-    }
+    // A MouseArea should not block hover events
+    event->ignore();
 }
 
 void QQuickMouseArea::hoverMoveEvent(QHoverEvent *event)
@@ -876,32 +845,20 @@ void QQuickMouseArea::hoverMoveEvent(QHoverEvent *event)
         emit positionChanged(&me);
     }
 
-    if (auto parentMouseArea = qobject_cast<QQuickMouseArea *>(parentItem())) {
-        if (parentMouseArea->acceptHoverEvents()) {
-            // Special legacy case: if our parent is another MouseArea, and we're
-            // hovered, the parent MouseArea should be hovered too. We achieve this
-            // by simply ignoring the event to not block propagation.
-            event->ignore();
-        }
-    }
+    // A MouseArea should not block hover events
+    event->ignore();
 }
 
 void QQuickMouseArea::hoverLeaveEvent(QHoverEvent *event)
 {
     Q_D(QQuickMouseArea);
-    if (!d->enabled && !d->pressed)
+    if (!d->enabled && !d->pressed && !d->hovered)
         QQuickItem::hoverLeaveEvent(event);
     else
         setHovered(false);
 
-    if (auto parentMouseArea = qobject_cast<QQuickMouseArea *>(parentItem())) {
-        if (parentMouseArea->acceptHoverEvents()) {
-            // Special legacy case: if our parent is another MouseArea, and we're
-            // hovered, the parent MouseArea should be hovered too. We achieve this
-            // by simply ignoring the event to not block propagation.
-            event->ignore();
-        }
-    }
+    // A MouseArea should not block hover events
+    event->ignore();
 }
 
 #if QT_CONFIG(wheelevent)
@@ -1082,7 +1039,7 @@ void QQuickMouseArea::itemChange(ItemChange change, const ItemChangeData &value)
     Q_D(QQuickMouseArea);
     switch (change) {
     case ItemVisibleHasChanged:
-        if (d->effectiveEnable && d->enabled && acceptHoverEvents() && d->hovered != (isVisible() && isUnderMouse())) {
+        if (d->effectiveEnable && d->enabled && hoverEnabled() && d->hovered != (isVisible() && isUnderMouse())) {
             if (!d->hovered) {
                 QPointF cursorPos = QGuiApplicationPrivate::lastCursorPosition;
                 d->lastScenePos = d->window->mapFromGlobal(cursorPos.toPoint());
@@ -1117,15 +1074,18 @@ void QQuickMouseArea::itemChange(ItemChange change, const ItemChangeData &value)
 */
 bool QQuickMouseArea::hoverEnabled() const
 {
-    return acceptHoverEvents();
+    return d_func()->hoverEnabled;
 }
 
 void QQuickMouseArea::setHoverEnabled(bool h)
 {
-    if (h == acceptHoverEvents())
+    Q_D(QQuickMouseArea);
+    if (h == d->hoverEnabled)
         return;
 
-    setAcceptHoverEvents(h);
+    d->hoverEnabled = h;
+    setAcceptHoverEvents(h && d->enabled);
+
     emit hoverEnabledChanged();
 }
 
@@ -1414,6 +1374,8 @@ void QQuickMouseArea::resetPressAndHoldInterval()
     If \c drag.filterChildren is set to true, a drag can override descendant MouseAreas.  This
     enables a parent MouseArea to handle drags, for example, while descendants handle clicks:
 
+    \snippet qml/mousearea/mouseareadragfilter.qml dragfilter
+
     \c drag.threshold determines the threshold in pixels of when the drag operation should
     start. By default this is bound to a platform dependent value. This property was added in
     Qt Quick 2.2.
@@ -1423,9 +1385,6 @@ void QQuickMouseArea::resetPressAndHoldInterval()
     By default, this property is \c true. This property was added in Qt Quick 2.4
 
     See the \l Drag attached property and \l DropArea if you want to make a drop.
-
-    \snippet qml/mousearea/mouseareadragfilter.qml dragfilter
-
 */
 
 #if QT_CONFIG(quick_draganddrop)

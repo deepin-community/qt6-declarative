@@ -1,30 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the test suite of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:GPL-EXCEPT$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 3 as published by the Free Software
-** Foundation with exceptions as appearing in the file LICENSE.GPL3-EXCEPT
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only WITH Qt-GPL-exception-1.0
 
 #include "tst_qjsvalue.h"
 
@@ -1146,7 +1121,7 @@ void tst_QJSValue::toVariant()
         QVERIFY(func2.isCallable());
         QCOMPARE(func2.call().toInt(), 10);
 
-        QCOMPARE(func.toVariant(), QVariant());
+        QCOMPARE(func.toVariant().metaType(), QMetaType::fromType<QJSValue>());
     }
 }
 
@@ -2871,6 +2846,10 @@ void tst_QJSValue::jsFunctionInVariant()
         QTest::ignoreMessage(QtDebugMsg, "direct call");
         log.callWithInstance(console, {"direct call"});
     }
+
+    const QVariant var = log.toVariant();
+    QCOMPARE(var.metaType(), QMetaType::fromType<QJSValue>());
+    QCOMPARE(var.value<QVariantMap>(), QVariantMap()); // Does not recurse infinitely
 }
 
 void tst_QJSValue::integerToEnum()
@@ -2888,6 +2867,19 @@ void tst_QJSValue::integerToEnum()
 
     QCOMPARE(qjsvalue_cast<int>(intVal), static_cast<int>(QQmlComponent::Error));
     QCOMPARE(qjsvalue_cast<int>(enumVal), static_cast<int>(QQmlComponent::Error));
+}
+
+void tst_QJSValue::sequenceConversion()
+{
+    QJSEngine engine;
+
+    const QList<QRectF> rectList {
+        QRectF(1, 2, 3, 4),
+        QRectF(5, 6, 7, 8),
+    };
+
+    const QJSValue val = engine.toScriptValue(rectList);
+    QCOMPARE(engine.fromScriptValue<QList<QRectF>>(val), rectList);
 }
 
 QTEST_MAIN(tst_QJSValue)

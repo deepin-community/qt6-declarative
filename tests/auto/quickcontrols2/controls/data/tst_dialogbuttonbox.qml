@@ -1,52 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2017 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the test suite of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:BSD$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** BSD License Usage
-** Alternatively, you may use this file under the terms of the BSD license
-** as follows:
-**
-** "Redistribution and use in source and binary forms, with or without
-** modification, are permitted provided that the following conditions are
-** met:
-**   * Redistributions of source code must retain the above copyright
-**     notice, this list of conditions and the following disclaimer.
-**   * Redistributions in binary form must reproduce the above copyright
-**     notice, this list of conditions and the following disclaimer in
-**     the documentation and/or other materials provided with the
-**     distribution.
-**   * Neither the name of The Qt Company Ltd nor the names of its
-**     contributors may be used to endorse or promote products derived
-**     from this software without specific prior written permission.
-**
-**
-** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-** "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-** LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-** A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-** OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-** SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-** LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-** DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-** THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-** (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-** OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2017 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
 
 import QtQuick
 import QtTest
@@ -398,7 +351,7 @@ TestCase {
 
     // QTBUG-72886
     function test_changeCustomButtonText(data) {
-        var control = createTemporaryObject(customButtonBox, testCase, {})
+        var control = createTemporaryObject(data.component, testCase, {})
         verify(control)
 
         var listView = control.contentItem
@@ -407,6 +360,88 @@ TestCase {
         var button = control.okButton
         verify(button)
         button.text = "some longer text";
+
+        // The button should never go outside of the box.
+        tryVerify(function() { return button.mapToItem(control, 0, 0).x >= 0 },
+            1000, "Expected left edge of button to be within left edge of DialogButtonBox (i.e. greater than or equal to 0)" +
+                ", but it's " + button.mapToItem(control, 0, 0).x)
+        tryVerify(function() { return button.mapToItem(control, 0, 0).x + button.width <= control.width },
+            1000, "Expected right edge of button to be within right edge of DialogButtonBox (i.e. less than or equal to " +
+                control.width + "), but it's " + (button.mapToItem(control, 0, 0).x + button.width))
+    }
+
+    Component {
+        id: customButtonBoxInDialog
+
+        Dialog {
+            width: 300
+            visible: true
+
+            footer: DialogButtonBox {
+                objectName: "customButtonBoxInDialog"
+                alignment: Qt.AlignRight
+
+                property alias okButton: okButton
+
+                Button {
+                    id: okButton
+                    text: "OK"
+
+                    DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole
+                }
+            }
+        }
+    }
+
+    Component {
+        id: customButtonBoxTwoButtonsInDialog
+
+        Dialog {
+            width: 300
+            visible: true
+
+            footer: DialogButtonBox {
+                objectName: "customButtonBoxTwoButtonsInDialog"
+                alignment: Qt.AlignRight
+
+                property alias okButton: okButton
+
+                Button {
+                    id: okButton
+                    text: "OK"
+
+                    DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole
+                }
+                Button {
+                    text: "Cancel"
+
+                    DialogButtonBox.buttonRole: DialogButtonBox.RejectRole
+                }
+            }
+        }
+    }
+
+    function test_changeCustomButtonImplicitWidth_data() {
+        return [
+            { tag: "oneButton", component: customButtonBoxInDialog },
+            { tag: "twoButtons", component: customButtonBoxTwoButtonsInDialog },
+        ]
+    }
+
+    // QTBUG-102558
+    function test_changeCustomButtonImplicitWidth(data) {
+        let dialog = createTemporaryObject(data.component, testCase, {})
+        verify(dialog)
+
+        let control = dialog.footer
+        verify(control)
+
+        let listView = control.contentItem
+        waitForRendering(listView)
+
+        let button = control.okButton
+        verify(button)
+        button.implicitWidth *= 1.5
 
         // The button should never go outside of the box.
         tryVerify(function() { return button.mapToItem(control, 0, 0).x >= 0 },
@@ -430,18 +465,102 @@ TestCase {
     }
 
     function test_orderWithNoRoles() {
-        for (var i = 0; i < 10; ++i) {
-            var control = createTemporaryObject(noRolesDialog, testCase)
+        for (let i = 0; i < 10; ++i) {
+            let control = createTemporaryObject(noRolesDialog, testCase)
             verify(control)
 
             control.open()
             tryCompare(control, "opened", true)
-            var footer = control.footer
+            let footer = control.footer
             verify(footer)
-            waitForRendering(footer)
+            waitForItemPolished(footer.contentItem)
             compare(footer.itemAt(0).text, "A")
             compare(footer.itemAt(1).text, "B")
             compare(footer.itemAt(2).text, "C")
+
+            control.destroy()
         }
+    }
+
+    Component {
+        id: contentItemDeletionOrder1
+
+        Item {
+            objectName: "parentItem"
+
+            Item {
+                id: item
+                objectName: "contentItem"
+            }
+            DialogButtonBox {
+                objectName: "control"
+                contentItem: item
+            }
+        }
+    }
+
+    Component {
+        id: contentItemDeletionOrder2
+
+        Item {
+            objectName: "parentItem"
+
+            DialogButtonBox {
+                objectName: "control"
+                contentItem: item
+            }
+            Item {
+                id: item
+                objectName: "contentItem"
+            }
+        }
+    }
+
+    function test_contentItemDeletionOrder() {
+        var control1 = createTemporaryObject(contentItemDeletionOrder1, testCase)
+        verify(control1)
+        var control2 = createTemporaryObject(contentItemDeletionOrder2, testCase)
+        verify(control2)
+    }
+
+    Component {
+        id: backgroundDeletionOrder1
+
+        Item {
+            objectName: "parentItem"
+
+            Item {
+                id: item
+                objectName: "backgroundItem"
+            }
+            DialogButtonBox {
+                objectName: "control"
+                background: item
+            }
+        }
+    }
+
+    Component {
+        id: backgroundDeletionOrder2
+
+        Item {
+            objectName: "parentItem"
+
+            DialogButtonBox {
+                objectName: "control"
+                background: item
+            }
+            Item {
+                id: item
+                objectName: "backgroundItem"
+            }
+        }
+    }
+
+    function test_backgroundDeletionOrder() {
+        var control1 = createTemporaryObject(backgroundDeletionOrder1, testCase)
+        verify(control1)
+        var control2 = createTemporaryObject(backgroundDeletionOrder2, testCase)
+        verify(control2)
     }
 }

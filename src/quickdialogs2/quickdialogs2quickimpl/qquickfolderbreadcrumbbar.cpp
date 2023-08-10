@@ -1,38 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2021 The Qt Company Ltd.
-** Contact: http://www.qt.io/licensing/
-**
-** This file is part of the Qt Quick Dialogs module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL3$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see http://www.qt.io/terms-conditions. For further
-** information use the contact form at http://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPLv3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or later as published by the Free
-** Software Foundation and appearing in the file LICENSE.GPL included in
-** the packaging of this file. Please review the following information to
-** ensure the GNU General Public License version 2.0 requirements will be
-** met: http://www.gnu.org/licenses/gpl-2.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2021 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qquickfolderbreadcrumbbar_p.h"
 #include "qquickfolderbreadcrumbbar_p_p.h"
@@ -51,6 +18,8 @@
 
 #include "qquickfiledialogimpl_p.h"
 #include "qquickfiledialogimpl_p_p.h"
+#include "qquickfolderdialogimpl_p.h"
+#include "qquickfolderdialogimpl_p_p.h"
 
 QT_BEGIN_NAMESPACE
 
@@ -66,13 +35,19 @@ QQuickItem *QQuickFolderBreadcrumbBarPrivate::createDelegateItem(QQmlComponent *
     Q_Q(QQuickFolderBreadcrumbBar);
     // If we don't use the correct context, it won't be possible to refer to
     // the control's id from within the delegates.
-    QQmlContext *creationContext = component->creationContext();
+    QQmlContext *context = component->creationContext();
     // The component might not have been created in QML, in which case
     // the creation context will be null and we have to create it ourselves.
-    if (!creationContext)
-        creationContext = qmlContext(q);
-    QQmlContext *context = new QQmlContext(creationContext, q);
-    context->setContextObject(q);
+    if (!context)
+        context = qmlContext(q);
+
+    // If we have initial properties we assume that all necessary information is passed via
+    // initial properties.
+    if (!component->isBound() && initialProperties.isEmpty()) {
+        context = new QQmlContext(context, q);
+        context->setContextObject(q);
+    }
+
     QQuickItem *item = qobject_cast<QQuickItem*>(component->createWithInitialProperties(initialProperties, context));
     if (item)
         QQml_setParent_noEvent(item, q);
@@ -125,14 +100,14 @@ void QQuickFolderBreadcrumbBarPrivate::repopulate()
 
     QBoolBlocker repopulateGuard(repopulating);
 
-    auto failureCleanup = [=](){
+    auto failureCleanup = [this, q](){
         folderPaths.clear();
         while (q->count() > 0)
             q->removeItem(q->itemAt(0));
     };
 
-    qCDebug(lcDelegates) << "- getting paths for directory" << fileDialog->currentFolder();
-    folderPaths = crumbPathsForFolder(fileDialog->currentFolder());
+    qCDebug(lcDelegates) << "- getting paths for directory" << dialogFolder();
+    folderPaths = crumbPathsForFolder(dialogFolder());
 
     while (q->count() > 0)
         q->removeItem(q->itemAt(0));
@@ -193,7 +168,7 @@ void QQuickFolderBreadcrumbBarPrivate::crumbClicked()
         const QUrl folderUrl = QUrl::fromLocalFile(folderPaths.at(buttonIndex / 2));
         // TODO: don't repopulate the whole model when clicking on crumbs
         qCDebug(lcCurrentItem) << "setting file dialog's folder to" << folderUrl;
-        fileDialog->setCurrentFolder(folderUrl);
+        setDialogFolder(folderUrl);
     }
 }
 
@@ -228,9 +203,9 @@ void QQuickFolderBreadcrumbBarPrivate::executeUpButton(bool complete)
 
 void QQuickFolderBreadcrumbBarPrivate::goUp()
 {
-    QDir dir(QQmlFile::urlToLocalFileOrQrc(fileDialog->currentFolder()));
+    QDir dir(QQmlFile::urlToLocalFileOrQrc(dialogFolder()));
     dir.cdUp();
-    fileDialog->setCurrentFolder(QUrl::fromLocalFile(dir.absolutePath()));
+    setDialogFolder(QUrl::fromLocalFile(dir.absolutePath()));
 }
 
 static inline QString textFieldName()
@@ -258,7 +233,7 @@ void QQuickFolderBreadcrumbBarPrivate::executeTextField(bool complete)
 
 void QQuickFolderBreadcrumbBarPrivate::toggleTextFieldVisibility()
 {
-    textField->setText(QQmlFile::urlToLocalFileOrQrc(fileDialog->currentFolder()));
+    textField->setText(QQmlFile::urlToLocalFileOrQrc(dialogFolder()));
 
     qCDebug(lcTextInput).nospace() << "text field visibility was " << textField->isVisible()
         << "; setting it to " << !textField->isVisible();
@@ -277,14 +252,20 @@ void QQuickFolderBreadcrumbBarPrivate::toggleTextFieldVisibility()
     contentItem->setVisible(!textField->isVisible());
 
     // When the TextField is visible, certain items in the dialog need to be disabled.
-    auto fileDialogPrivate = QQuickFileDialogImplPrivate::get(fileDialog);
-    fileDialogPrivate->updateEnabled();
+    if (auto fileDialog = asFileDialog()) {
+        auto fileDialogPrivate = QQuickFileDialogImplPrivate::get(fileDialog);
+        fileDialogPrivate->updateEnabled();
+    } else if (auto folderDialog = asFolderDialog()) {
+        auto folderDialogPrivate = QQuickFolderDialogImplPrivate::get(folderDialog);
+        folderDialogPrivate->updateEnabled();
+    }
 }
 
 void QQuickFolderBreadcrumbBarPrivate::textFieldAccepted()
 {
     const QUrl fileUrl = QUrl::fromLocalFile(textField->text());
-    const bool mustExist = fileDialog->options()->acceptMode() != QFileDialogOptions::AcceptSave;
+    const auto fileDialog = asFileDialog();
+    const bool mustExist = fileDialog ? fileDialog->options()->acceptMode() != QFileDialogOptions::AcceptSave : true;
     const bool enteredPathIsValidUrl = fileUrl.isValid();
     bool enteredPathExists = false;
     bool enteredPathIsDir = false;
@@ -305,16 +286,16 @@ void QQuickFolderBreadcrumbBarPrivate::textFieldAccepted()
 
     if (enteredPathIsDir && (enteredPathExists || !mustExist)) {
         qCDebug(lcTextInput) << "path entered is a folder; setting folder";
-        fileDialog->setCurrentFolder(fileUrl);
+        setDialogFolder(fileUrl);
     } else if (!enteredPathIsDir && (enteredPathExists || !mustExist)) {
         qCDebug(lcTextInput) << "path entered is a file; setting file and calling accept()";
-        // It's important that we set the currentFile here, as that's what
-        // QQuickPlatformFileDialog::selectedFiles() needs to return, and
-        // QQuickFileDialog::accept() sets its file property based on
-        // selectedFiles().
-        fileDialog->setCurrentFile(fileUrl);
-        fileDialog->setSelectedFile(fileUrl);
-        fileDialog->accept();
+        if (isFileDialog()) {
+            auto fileDialog = asFileDialog();
+            fileDialog->setSelectedFile(fileUrl);
+            fileDialog->accept();
+        } else {
+            setDialogFolder(fileUrl);
+        }
     } else {
         qCDebug(lcTextInput) << "path entered is not valid; not setting file/folder";
     }
@@ -324,7 +305,7 @@ void QQuickFolderBreadcrumbBarPrivate::textFieldAccepted()
     // We should only toggle visibility if the dialog is actually closed, otherwise
     // we'll end up toggling twice, and the text input will be visible the next time
     // the dialog is opened.
-    if (fileDialog->isVisible())
+    if (dialog->isVisible())
         toggleTextFieldVisibility();
 }
 
@@ -356,29 +337,11 @@ void QQuickFolderBreadcrumbBarPrivate::textFieldActiveFocusChanged()
 void QQuickFolderBreadcrumbBarPrivate::handleTextFieldShown()
 {
 #if QT_CONFIG(shortcut)
-    Q_Q(QQuickFolderBreadcrumbBar);
     if (editPathToggleShortcutId == 0)
         return;
 
-    QGuiApplicationPrivate *appPrivate = QGuiApplicationPrivate::instance();
-    qCDebug(lcShortcuts) << "text field was shown; grabbing/ungrabbing relevant shortcuts...";
-
-    // Disable the back/escape shortcuts for QQuickPopup so that the TextField can get them.
-    auto popupItem = qobject_cast<QQuickPopupItem*>(fileDialog->popupItem());
-    popupItem->ungrabShortcut();
-
-    appPrivate->shortcutMap.removeShortcut(editPathToggleShortcutId, q);
-    editPathToggleShortcutId = 0;
-
-    editPathBackShortcutId = appPrivate->shortcutMap.addShortcut(
-        q, Qt::Key_Back, Qt::WindowShortcut, QQuickShortcutContext::matcher);
-    editPathEscapeShortcutId = appPrivate->shortcutMap.addShortcut(
-        q, Qt::Key_Escape, Qt::WindowShortcut, QQuickShortcutContext::matcher);
-
-    qCDebug(lcShortcuts).nospace() << "... shortcut IDs:"
-        << " editPathToggleShortcutId=" << editPathToggleShortcutId
-        << " editPathBackShortcutId=" << editPathBackShortcutId
-        << " editPathEscapeShortcutId=" << editPathEscapeShortcutId;
+    qCDebug(lcShortcuts) << "text field was shown; ungrabbing edit path shortcut";
+    ungrabEditPathShortcut();
 #endif
 }
 
@@ -394,57 +357,54 @@ void QQuickFolderBreadcrumbBarPrivate::handleTextFieldHidden()
     Q_Q(QQuickFolderBreadcrumbBar);
 
     QGuiApplicationPrivate *appPrivate = QGuiApplicationPrivate::instance();
-    qCDebug(lcShortcuts) << "text field was hidden; grabbing/ungrabbing relevant shortcuts...";
+    qCDebug(lcShortcuts) << "text field was hidden; grabbing edit path shortcut";
 
     if (editPathToggleShortcutId == 0) {
         editPathToggleShortcutId = appPrivate->shortcutMap.addShortcut(
             q, Qt::CTRL | Qt::Key_L, Qt::WindowShortcut, QQuickShortcutContext::matcher);
     }
 
-    // When the bar is first completed, this function is called, since the text field starts off hidden.
-    // If removeShortcut is called with a zero id, all shortcuts for the given object will be removed,
-    // and we don't want that.
-    if (editPathBackShortcutId != 0) {
-        appPrivate->shortcutMap.removeShortcut(editPathBackShortcutId, q);
-        editPathBackShortcutId = 0;
-    }
-    if (editPathEscapeShortcutId != 0) {
-        appPrivate->shortcutMap.removeShortcut(editPathEscapeShortcutId, q);
-        editPathEscapeShortcutId = 0;
-    }
-
-    // Re-enable the back/escape shortcuts for QQuickPopup now that TextField no longer needs them.
-    auto popupItem = qobject_cast<QQuickPopupItem*>(fileDialog->popupItem());
-    if (popupItem)
-        popupItem->grabShortcut();
-
-    qCDebug(lcShortcuts).nospace() << "... shortcut IDs: "
-        << " editPathToggleShortcutId=" << editPathToggleShortcutId
-        << " editPathBackShortcutId=" << editPathBackShortcutId
-        << " editPathEscapeShortcutId=" << editPathEscapeShortcutId;
+    qCDebug(lcShortcuts).nospace() << "... editPathToggleShortcutId=" << editPathToggleShortcutId;
 #endif
 }
 
-void QQuickFolderBreadcrumbBarPrivate::ungrabEditPathShortcuts()
+void QQuickFolderBreadcrumbBarPrivate::ungrabEditPathShortcut()
 {
 #if QT_CONFIG(shortcut)
     Q_Q(QQuickFolderBreadcrumbBar);
     QGuiApplicationPrivate *appPrivate = QGuiApplicationPrivate::instance();
-    qCDebug(lcShortcuts) << "ungrabbing all edit path shortcuts";
-
     if (editPathToggleShortcutId != 0) {
         appPrivate->shortcutMap.removeShortcut(editPathToggleShortcutId, q);
         editPathToggleShortcutId = 0;
     }
-    if (editPathBackShortcutId != 0) {
-        appPrivate->shortcutMap.removeShortcut(editPathBackShortcutId, q);
-        editPathBackShortcutId = 0;
-    }
-    if (editPathEscapeShortcutId != 0) {
-        appPrivate->shortcutMap.removeShortcut(editPathEscapeShortcutId, q);
-        editPathEscapeShortcutId = 0;
-    }
 #endif
+}
+
+QQuickFileDialogImpl *QQuickFolderBreadcrumbBarPrivate::asFileDialog() const
+{
+    return qobject_cast<QQuickFileDialogImpl*>(dialog);
+}
+
+QQuickFolderDialogImpl *QQuickFolderBreadcrumbBarPrivate::asFolderDialog() const
+{
+    return qobject_cast<QQuickFolderDialogImpl*>(dialog);
+}
+
+bool QQuickFolderBreadcrumbBarPrivate::isFileDialog() const
+{
+    return asFileDialog();
+}
+
+QUrl QQuickFolderBreadcrumbBarPrivate::dialogFolder() const
+{
+    return dialog->property("currentFolder").toUrl();
+}
+
+void QQuickFolderBreadcrumbBarPrivate::setDialogFolder(const QUrl &folder)
+{
+    Q_Q(QQuickFolderBreadcrumbBar);
+    if (!dialog->setProperty("currentFolder", folder))
+        qmlWarning(q) << "Failed to set currentFolder property of dialog" << dialog->objectName() << "to" << folder;
 }
 
 qreal QQuickFolderBreadcrumbBarPrivate::getContentWidth() const
@@ -532,29 +492,42 @@ QQuickFolderBreadcrumbBar::QQuickFolderBreadcrumbBar(QQuickItem *parent)
     d->changeTypes |= QQuickItemPrivate::Geometry | QQuickItemPrivate::ImplicitWidth | QQuickItemPrivate::ImplicitHeight;
 }
 
-QQuickFileDialogImpl *QQuickFolderBreadcrumbBar::fileDialog() const
+QQuickDialog *QQuickFolderBreadcrumbBar::dialog() const
 {
     Q_D(const QQuickFolderBreadcrumbBar);
-    return d->fileDialog;
+    return d->dialog;
 }
 
-void QQuickFolderBreadcrumbBar::setFileDialog(QQuickFileDialogImpl *fileDialog)
+void QQuickFolderBreadcrumbBar::setDialog(QQuickDialog *dialog)
 {
     Q_D(QQuickFolderBreadcrumbBar);
-    if (fileDialog == d->fileDialog)
+    if (dialog == d->dialog)
         return;
 
-    if (d->fileDialog)
-        QObjectPrivate::disconnect(d->fileDialog, &QQuickFileDialogImpl::currentFolderChanged,
-            d, &QQuickFolderBreadcrumbBarPrivate::folderChanged);
+    if (d->dialog) {
+        if (auto fileDialog = d->asFileDialog()) {
+            // TODO: rename impl's currentFolder too, when name is decided
+            QObjectPrivate::disconnect(fileDialog, &QQuickFileDialogImpl::currentFolderChanged,
+                d, &QQuickFolderBreadcrumbBarPrivate::folderChanged);
+        } else if (auto folderDialog = d->asFolderDialog()) {
+            QObjectPrivate::disconnect(folderDialog, &QQuickFolderDialogImpl::currentFolderChanged,
+                d, &QQuickFolderBreadcrumbBarPrivate::folderChanged);
+        }
+    }
 
-    d->fileDialog = fileDialog;
+    d->dialog = dialog;
 
-    if (d->fileDialog)
-        QObjectPrivate::connect(d->fileDialog, &QQuickFileDialogImpl::currentFolderChanged,
-            d, &QQuickFolderBreadcrumbBarPrivate::folderChanged);
+    if (d->dialog) {
+        if (auto fileDialog = d->asFileDialog()) {
+            QObjectPrivate::connect(fileDialog, &QQuickFileDialogImpl::currentFolderChanged,
+                d, &QQuickFolderBreadcrumbBarPrivate::folderChanged);
+        } else if (auto folderDialog = d->asFolderDialog()) {
+            QObjectPrivate::connect(folderDialog, &QQuickFolderDialogImpl::currentFolderChanged,
+                d, &QQuickFolderBreadcrumbBarPrivate::folderChanged);
+        }
+    }
 
-    emit fileDialogChanged();
+    emit dialogChanged();
 }
 
 QQmlComponent *QQuickFolderBreadcrumbBar::buttonDelegate()
@@ -705,9 +678,7 @@ bool QQuickFolderBreadcrumbBar::event(QEvent *event)
     Q_D(QQuickFolderBreadcrumbBar);
     if (event->type() == QEvent::Shortcut) {
         QShortcutEvent *shortcutEvent = static_cast<QShortcutEvent *>(event);
-        if (shortcutEvent->shortcutId() == d->editPathToggleShortcutId
-                || shortcutEvent->shortcutId() == d->editPathBackShortcutId
-                || shortcutEvent->shortcutId() == d->editPathEscapeShortcutId) {
+        if (shortcutEvent->shortcutId() == d->editPathToggleShortcutId) {
             d->toggleTextFieldVisibility();
             return true;
         } else if (shortcutEvent->shortcutId() == d->goUpShortcutId) {
@@ -716,6 +687,18 @@ bool QQuickFolderBreadcrumbBar::event(QEvent *event)
     }
 #endif
     return QQuickItem::event(event);
+}
+
+void QQuickFolderBreadcrumbBar::keyPressEvent(QKeyEvent *event)
+{
+    Q_D(QQuickFolderBreadcrumbBar);
+
+    if (event->matches(QKeySequence::Cancel) && d->textField->isVisible()) {
+        d->toggleTextFieldVisibility();
+        event->accept();
+    } else {
+        QQuickContainer::keyPressEvent(event);
+    }
 }
 
 void QQuickFolderBreadcrumbBar::componentComplete()
@@ -737,7 +720,7 @@ void QQuickFolderBreadcrumbBar::itemChange(QQuickItem::ItemChange change, const 
     QQuickContainer::itemChange(change, data);
 
     if (change == QQuickItem::ItemVisibleHasChanged && isComponentComplete()) {
-        if (data.boolValue && d->fileDialog->isVisible()) {
+        if (data.boolValue && d->dialog->isVisible()) {
             // It's visible.
             d->handleTextFieldHidden();
 
@@ -753,8 +736,8 @@ void QQuickFolderBreadcrumbBar::itemChange(QQuickItem::ItemChange change, const 
             if (d->contentItem)
                 d->contentItem->setVisible(true);
 
-            // We also need to ungrab all shortcuts when we're not visible.
-            d->ungrabEditPathShortcuts();
+            // We also need to ungrab the edit path shortcut when we're not visible.
+            d->ungrabEditPathShortcut();
 
             if (d->goUpShortcutId != 0) {
                 QGuiApplicationPrivate::instance()->shortcutMap.removeShortcut(d->goUpShortcutId, this);
@@ -790,3 +773,5 @@ QAccessible::Role QQuickFolderBreadcrumbBar::accessibleRole() const
 #endif
 
 QT_END_NAMESPACE
+
+#include "moc_qquickfolderbreadcrumbbar_p.cpp"

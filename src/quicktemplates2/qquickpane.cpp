@@ -1,44 +1,15 @@
-/****************************************************************************
-**
-** Copyright (C) 2017 The Qt Company Ltd.
-** Contact: http://www.qt.io/licensing/
-**
-** This file is part of the Qt Quick Templates 2 module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL3$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see http://www.qt.io/terms-conditions. For further
-** information use the contact form at http://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPLv3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or later as published by the Free
-** Software Foundation and appearing in the file LICENSE.GPL included in
-** the packaging of this file. Please review the following information to
-** ensure the GNU General Public License version 2.0 requirements will be
-** met: http://www.gnu.org/licenses/gpl-2.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2017 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qquickpane_p.h"
 #include "qquickpane_p_p.h"
 #include "qquickcontentitem_p.h"
 
+#include <QtCore/qloggingcategory.h>
+
 QT_BEGIN_NAMESPACE
+
+Q_LOGGING_CATEGORY(lcPane, "qt.quick.controls.pane")
 
 /*!
     \qmltype Pane
@@ -194,7 +165,7 @@ qreal QQuickPanePrivate::getContentWidth() const
         return cw;
 
     const auto contentChildren = contentChildItems();
-    if (contentChildren.count() == 1)
+    if (contentChildren.size() == 1)
         return contentChildren.first()->implicitWidth();
 
     return 0;
@@ -210,7 +181,7 @@ qreal QQuickPanePrivate::getContentHeight() const
         return ch;
 
     const auto contentChildren = contentChildItems();
-    if (contentChildren.count() == 1)
+    if (contentChildren.size() == 1)
         return contentChildren.first()->implicitHeight();
 
     return 0;
@@ -224,6 +195,7 @@ void QQuickPanePrivate::updateContentWidth()
 
     const qreal oldContentWidth = contentWidth;
     contentWidth = implicitContentWidth;
+    qCDebug(lcPane) << "contentWidth of" << q << "changed to" << contentWidth;
     q->contentSizeChange(QSizeF(contentWidth, contentHeight), QSizeF(oldContentWidth, contentHeight));
     emit q->contentWidthChanged();
 }
@@ -236,8 +208,19 @@ void QQuickPanePrivate::updateContentHeight()
 
     const qreal oldContentHeight = contentHeight;
     contentHeight = implicitContentHeight;
+    qCDebug(lcPane) << "contentHeight of" << q << "changed to" << contentHeight;
     q->contentSizeChange(QSizeF(contentWidth, contentHeight), QSizeF(contentWidth, oldContentHeight));
     emit q->contentHeightChanged();
+}
+
+/*
+    A pane needs to be opaque to mouse events, so that events don't get
+    propagated through to controls covered by the pane.
+*/
+bool QQuickPanePrivate::handlePress(const QPointF &point, ulong timestamp)
+{
+    QQuickControlPrivate::handlePress(point, timestamp);
+    return true;
 }
 
 QQuickPane::QQuickPane(QQuickItem *parent)
@@ -340,7 +323,7 @@ void QQuickPane::resetContentHeight()
 }
 
 /*!
-    \qmlproperty list<Object> QtQuick.Controls::Pane::contentData
+    \qmlproperty list<QtObject> QtQuick.Controls::Pane::contentData
     \qmldefault
 
     This property holds the list of content data.

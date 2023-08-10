@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQml module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qqmllistaccessor_p.h"
 
@@ -75,6 +39,7 @@ void QQmlListAccessor::setList(const QVariant &v)
         d = d.value<QJSValue>().toVariant();
         variantsType = d.metaType();
     }
+
     if (!d.isValid()) {
         m_type = Invalid;
     } else if (variantsType == QMetaType::fromType<QStringList>()) {
@@ -85,6 +50,9 @@ void QQmlListAccessor::setList(const QVariant &v)
         m_type = VariantList;
     } else if (variantsType == QMetaType::fromType<QList<QObject *>>()) {
         m_type = ObjectList;
+    } else if (variantsType.flags() & QMetaType::IsQmlList) {
+        d = QVariant::fromValue(QQmlListReference(d));
+        m_type = ListProperty;
     } else if (variantsType == QMetaType::fromType<QQmlListReference>()) {
         m_type = ListProperty;
     } else if (variantsType.flags() & QMetaType::PointerToQObject) {
@@ -111,7 +79,13 @@ void QQmlListAccessor::setList(const QVariant &v)
             d = i;
         }
     } else {
-        m_type = Instance;
+        const QQmlType type = QQmlMetaType::qmlListType(v.metaType());
+        if (type.isSequentialContainer()) {
+            m_metaSequence = type.listMetaSequence();
+            m_type = Sequence;
+        } else {
+            m_type = Instance;
+        }
     }
 }
 
@@ -120,19 +94,22 @@ qsizetype QQmlListAccessor::count() const
     switch(m_type) {
     case StringList:
         Q_ASSERT(d.metaType() == QMetaType::fromType<QStringList>());
-        return reinterpret_cast<const QStringList *>(d.constData())->count();
+        return reinterpret_cast<const QStringList *>(d.constData())->size();
     case UrlList:
         Q_ASSERT(d.metaType() == QMetaType::fromType<QList<QUrl>>());
-        return reinterpret_cast<const QList<QUrl> *>(d.constData())->count();
+        return reinterpret_cast<const QList<QUrl> *>(d.constData())->size();
     case VariantList:
         Q_ASSERT(d.metaType() == QMetaType::fromType<QVariantList>());
-        return reinterpret_cast<const QVariantList *>(d.constData())->count();
+        return reinterpret_cast<const QVariantList *>(d.constData())->size();
     case ObjectList:
         Q_ASSERT(d.metaType() == QMetaType::fromType<QList<QObject *>>());
-        return reinterpret_cast<const QList<QObject *> *>(d.constData())->count();
+        return reinterpret_cast<const QList<QObject *> *>(d.constData())->size();
     case ListProperty:
         Q_ASSERT(d.metaType() == QMetaType::fromType<QQmlListReference>());
         return reinterpret_cast<const QQmlListReference *>(d.constData())->count();
+    case Sequence:
+        Q_ASSERT(m_metaSequence != QMetaSequence());
+        return m_metaSequence.size(d.constData());
     case Instance:
         return 1;
     case Integer:
@@ -163,6 +140,18 @@ QVariant QQmlListAccessor::at(qsizetype idx) const
     case ListProperty:
         Q_ASSERT(d.metaType() == QMetaType::fromType<QQmlListReference>());
         return QVariant::fromValue(reinterpret_cast<const QQmlListReference *>(d.constData())->at(idx));
+    case Sequence: {
+        Q_ASSERT(m_metaSequence != QMetaSequence());
+        QVariant result;
+        const QMetaType valueMetaType = m_metaSequence.valueMetaType();
+        if (valueMetaType == QMetaType::fromType<QVariant>()) {
+            m_metaSequence.valueAtIndex(d.constData(), idx, &result);
+        } else {
+            result = QVariant(valueMetaType);
+            m_metaSequence.valueAtIndex(d.constData(), idx, result.data());
+        }
+        return result;
+    }
     case Instance:
         return d;
     case Integer:

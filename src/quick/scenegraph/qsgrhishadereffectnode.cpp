@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2019 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQuick module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2019 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qsgrhishadereffectnode_p.h"
 #include "qsgdefaultrendercontext_p.h"
@@ -47,6 +11,7 @@
 #include <QQmlFile>
 #include <QFile>
 #include <QFileSelector>
+#include <QMutexLocker>
 
 QT_BEGIN_NAMESPACE
 
@@ -63,14 +28,18 @@ void QSGRhiShaderLinker::reset(const QShader &vs, const QShader &fs)
     m_samplers.clear();
     m_samplerNameMap.clear();
     m_subRectBindings.clear();
+
+    m_constants.reserve(8);
+    m_samplers.reserve(4);
+    m_samplerNameMap.reserve(4);
 }
 
 void QSGRhiShaderLinker::feedConstants(const QSGShaderEffectNode::ShaderData &shader, const QSet<int> *dirtyIndices)
 {
-    Q_ASSERT(shader.shaderInfo.variables.count() == shader.varData.count());
+    Q_ASSERT(shader.shaderInfo.variables.size() == shader.varData.size());
     if (!dirtyIndices) {
         m_constantBufferSize = qMax(m_constantBufferSize, shader.shaderInfo.constantDataSize);
-        for (int i = 0; i < shader.shaderInfo.variables.count(); ++i) {
+        for (int i = 0; i < shader.shaderInfo.variables.size(); ++i) {
             const QSGGuiThreadShaderEffectManager::ShaderInfo::Variable &var(shader.shaderInfo.variables.at(i));
             if (var.type == QSGGuiThreadShaderEffectManager::ShaderInfo::Constant) {
                 const QSGShaderEffectNode::VariableData &vd(shader.varData.at(i));
@@ -111,7 +80,7 @@ void QSGRhiShaderLinker::feedConstants(const QSGShaderEffectNode::ShaderData &sh
 void QSGRhiShaderLinker::feedSamplers(const QSGShaderEffectNode::ShaderData &shader, const QSet<int> *dirtyIndices)
 {
     if (!dirtyIndices) {
-        for (int i = 0; i < shader.shaderInfo.variables.count(); ++i) {
+        for (int i = 0; i < shader.shaderInfo.variables.size(); ++i) {
             const QSGGuiThreadShaderEffectManager::ShaderInfo::Variable &var(shader.shaderInfo.variables.at(i));
             const QSGShaderEffectNode::VariableData &vd(shader.varData.at(i));
             if (var.type == QSGGuiThreadShaderEffectManager::ShaderInfo::Sampler) {
@@ -178,11 +147,18 @@ struct QSGRhiShaderMaterialTypeCache
     void reset() { qDeleteAll(m_types); m_types.clear(); }
 
     struct Key {
-        QShader blob[2];
-        Key() { }
-        Key(const QShader &vs, const QShader &fs) { blob[0] = vs; blob[1] = fs; }
+        QShader vs;
+        QShader fs;
+        size_t hash;
+        Key(const QShader &vs, const QShader &fs)
+            : vs(vs),
+              fs(fs)
+        {
+            QtPrivate::QHashCombine hashGen;
+            hash = hashGen(hashGen(0, vs), fs);
+        }
         bool operator==(const Key &other) const {
-            return blob[0] == other.blob[0] && blob[1] == other.blob[1];
+            return vs == other.vs && fs == other.fs;
         }
     };
     QHash<Key, QSGMaterialType *> m_types;
@@ -190,10 +166,7 @@ struct QSGRhiShaderMaterialTypeCache
 
 size_t qHash(const QSGRhiShaderMaterialTypeCache::Key &key, size_t seed = 0)
 {
-    size_t hash = seed;
-    for (int i = 0; i < 2; ++i)
-        hash = hash * 31337 + qHash(key.blob[i]);
-    return hash;
+    return seed ^ key.hash;
 }
 
 QSGMaterialType *QSGRhiShaderMaterialTypeCache::get(const QShader &vs, const QShader &fs)
@@ -207,7 +180,8 @@ QSGMaterialType *QSGRhiShaderMaterialTypeCache::get(const QShader &vs, const QSh
     return t;
 }
 
-static QSGRhiShaderMaterialTypeCache shaderMaterialTypeCache;
+static QHash<void *, QSGRhiShaderMaterialTypeCache> shaderMaterialTypeCache;
+static QMutex shaderMaterialTypeCacheMutex;
 
 class QSGRhiShaderEffectMaterialShader : public QSGMaterialShader
 {
@@ -228,7 +202,23 @@ QSGRhiShaderEffectMaterialShader::QSGRhiShaderEffectMaterialShader(const QSGRhiS
 
 static inline QColor qsg_premultiply_color(const QColor &c)
 {
-    return QColor::fromRgbF(c.redF() * c.alphaF(), c.greenF() * c.alphaF(), c.blueF() * c.alphaF(), c.alphaF());
+    float r, g, b, a;
+    c.getRgbF(&r, &g, &b, &a);
+    return QColor::fromRgbF(r * a, g * a, b * a, a);
+}
+
+template<typename T>
+static inline void fillUniformBlockMember(char *dst, const T *value, int valueCount, int fieldSizeBytes)
+{
+    const size_t valueBytes = sizeof(T) * valueCount;
+    const size_t fieldBytes = fieldSizeBytes;
+    if (valueBytes <= fieldBytes) {
+        memcpy(dst, value, valueBytes);
+        if (valueBytes < fieldBytes)
+            memset(dst + valueBytes, 0, fieldBytes - valueBytes);
+    } else {
+        memcpy(dst, value, fieldBytes);
+    }
 }
 
 bool QSGRhiShaderEffectMaterialShader::updateUniformData(RenderState &state, QSGMaterial *newMaterial, QSGMaterial *oldMaterial)
@@ -246,15 +236,13 @@ bool QSGRhiShaderEffectMaterialShader::updateUniformData(RenderState &state, QSG
         if (c.specialType == QSGShaderEffectNode::VariableData::Opacity) {
             if (state.isOpacityDirty()) {
                 const float f = state.opacity();
-                Q_ASSERT(sizeof(f) == c.size);
-                memcpy(dst, &f, sizeof(f));
+                fillUniformBlockMember<float>(dst, &f, 1, c.size);
                 changed = true;
             }
         } else if (c.specialType == QSGShaderEffectNode::VariableData::Matrix) {
             if (state.isMatrixDirty()) {
-                const int sz = 16 * sizeof(float);
-                Q_ASSERT(sz == c.size);
-                memcpy(dst, state.combinedMatrix().constData(), sz);
+                const QMatrix4x4 m = state.combinedMatrix();
+                fillUniformBlockMember<float>(dst, m.constData(), 16, c.size);
                 changed = true;
             }
         } else if (c.specialType == QSGShaderEffectNode::VariableData::SubRect) {
@@ -269,40 +257,34 @@ bool QSGRhiShaderEffectMaterialShader::updateUniformData(RenderState &state, QSG
             }
             const float f[4] = { float(subRect.x()), float(subRect.y()),
                                  float(subRect.width()), float(subRect.height()) };
-            Q_ASSERT(sizeof(f) == c.size);
-            memcpy(dst, f, sizeof(f));
+            fillUniformBlockMember<float>(dst, f, 4, c.size);
         } else if (c.specialType == QSGShaderEffectNode::VariableData::None) {
             changed = true;
             switch (int(c.value.userType())) {
             case QMetaType::QColor: {
-                const QColor v = qsg_premultiply_color(qvariant_cast<QColor>(c.value));
+                const QColor v = qsg_premultiply_color(qvariant_cast<QColor>(c.value)).toRgb();
                 const float f[4] = { float(v.redF()), float(v.greenF()), float(v.blueF()), float(v.alphaF()) };
-                Q_ASSERT(sizeof(f) == c.size);
-                memcpy(dst, f, sizeof(f));
+                fillUniformBlockMember<float>(dst, f, 4, c.size);
                 break;
             }
             case QMetaType::Float: {
                 const float f = qvariant_cast<float>(c.value);
-                Q_ASSERT(sizeof(f) == c.size);
-                memcpy(dst, &f, sizeof(f));
+                fillUniformBlockMember<float>(dst, &f, 1, c.size);
                 break;
             }
             case QMetaType::Double: {
                 const float f = float(qvariant_cast<double>(c.value));
-                Q_ASSERT(sizeof(f) == c.size);
-                memcpy(dst, &f, sizeof(f));
+                fillUniformBlockMember<float>(dst, &f, 1, c.size);
                 break;
             }
             case QMetaType::Int: {
-                const int i = c.value.toInt();
-                Q_ASSERT(sizeof(i) == c.size);
-                memcpy(dst, &i, sizeof(i));
+                const qint32 i = c.value.toInt();
+                fillUniformBlockMember<qint32>(dst, &i, 1, c.size);
                 break;
             }
             case QMetaType::Bool: {
-                const bool b = c.value.toBool();
-                Q_ASSERT(sizeof(b) == c.size);
-                memcpy(dst, &b, sizeof(b));
+                const qint32 b = c.value.toBool();
+                fillUniformBlockMember<qint32>(dst, &b, 1, c.size);
                 break;
             }
             case QMetaType::QTransform: { // mat3
@@ -312,67 +294,65 @@ bool QSGRhiShaderEffectMaterialShader::updateUniformData(RenderState &state, QSG
                     { float(v.m21()), float(v.m22()), float(v.m23()) },
                     { float(v.m31()), float(v.m32()), float(v.m33()) }
                 };
-                Q_ASSERT(sizeof(m) == c.size);
-                memcpy(dst, m[0], sizeof(m));
+                // stored as 4 floats per column, 1 unused
+                memset(dst, 0, c.size);
+                const size_t bytesPerColumn = 4 * sizeof(float);
+                if (c.size >= bytesPerColumn)
+                    fillUniformBlockMember<float>(dst, m[0], 3, 3 * sizeof(float));
+                if (c.size >= 2 * bytesPerColumn)
+                    fillUniformBlockMember<float>(dst + bytesPerColumn, m[1], 3, 3 * sizeof(float));
+                if (c.size >= 3 * bytesPerColumn)
+                    fillUniformBlockMember<float>(dst + 2 * bytesPerColumn, m[2], 3, 3 * sizeof(float));
                 break;
             }
             case QMetaType::QSize:
             case QMetaType::QSizeF: { // vec2
                 const QSizeF v = c.value.toSizeF();
                 const float f[2] = { float(v.width()), float(v.height()) };
-                Q_ASSERT(sizeof(f) == c.size);
-                memcpy(dst, f, sizeof(f));
+                fillUniformBlockMember<float>(dst, f, 2, c.size);
                 break;
             }
             case QMetaType::QPoint:
             case QMetaType::QPointF: { // vec2
                 const QPointF v = c.value.toPointF();
                 const float f[2] = { float(v.x()), float(v.y()) };
-                Q_ASSERT(sizeof(f) == c.size);
-                memcpy(dst, f, sizeof(f));
+                fillUniformBlockMember<float>(dst, f, 2, c.size);
                 break;
             }
             case QMetaType::QRect:
             case QMetaType::QRectF: { // vec4
                 const QRectF v = c.value.toRectF();
                 const float f[4] = { float(v.x()), float(v.y()), float(v.width()), float(v.height()) };
-                Q_ASSERT(sizeof(f) == c.size);
-                memcpy(dst, f, sizeof(f));
+                fillUniformBlockMember<float>(dst, f, 4, c.size);
                 break;
             }
             case QMetaType::QVector2D: { // vec2
                 const QVector2D v = qvariant_cast<QVector2D>(c.value);
                 const float f[2] = { float(v.x()), float(v.y()) };
-                Q_ASSERT(sizeof(f) == c.size);
-                memcpy(dst, f, sizeof(f));
+                fillUniformBlockMember<float>(dst, f, 2, c.size);
                 break;
             }
             case QMetaType::QVector3D: { // vec3
                 const QVector3D v = qvariant_cast<QVector3D>(c.value);
                 const float f[3] = { float(v.x()), float(v.y()), float(v.z()) };
-                Q_ASSERT(sizeof(f) == c.size);
-                memcpy(dst, f, sizeof(f));
+                fillUniformBlockMember<float>(dst, f, 3, c.size);
                 break;
             }
             case QMetaType::QVector4D: { // vec4
                 const QVector4D v = qvariant_cast<QVector4D>(c.value);
                 const float f[4] = { float(v.x()), float(v.y()), float(v.z()), float(v.w()) };
-                Q_ASSERT(sizeof(f) == c.size);
-                memcpy(dst, f, sizeof(f));
+                fillUniformBlockMember<float>(dst, f, 4, c.size);
                 break;
             }
             case QMetaType::QQuaternion: { // vec4
                 const QQuaternion v = qvariant_cast<QQuaternion>(c.value);
                 const float f[4] = { float(v.x()), float(v.y()), float(v.z()), float(v.scalar()) };
-                Q_ASSERT(sizeof(f) == c.size);
-                memcpy(dst, f, sizeof(f));
+                fillUniformBlockMember<float>(dst, f, 4, c.size);
                 break;
             }
             case QMetaType::QMatrix4x4: { // mat4
-                const QMatrix4x4 v = qvariant_cast<QMatrix4x4>(c.value);
-                const int sz = 16 * sizeof(float);
-                Q_ASSERT(sz == c.size);
-                memcpy(dst, v.constData(), sz);
+                const QMatrix4x4 m = qvariant_cast<QMatrix4x4>(c.value);
+                fillUniformBlockMember<float>(dst, m.constData(), 16, c.size);
                 break;
             }
             default:
@@ -477,7 +457,7 @@ int QSGRhiShaderEffectMaterial::compare(const QSGMaterial *other) const
     if (int diff = m_cullMode - o->m_cullMode)
         return diff;
 
-    if (int diff = m_textureProviders.count() - o->m_textureProviders.count())
+    if (int diff = m_textureProviders.size() - o->m_textureProviders.size())
         return diff;
 
     if (m_linker.m_constants != o->m_linker.m_constants)
@@ -489,7 +469,7 @@ int QSGRhiShaderEffectMaterial::compare(const QSGMaterial *other) const
     if (hasAtlasTexture(o->m_textureProviders) && !o->m_geometryUsesTextureSubRect)
         return 1;
 
-    for (int binding = 0, count = m_textureProviders.count(); binding != count; ++binding) {
+    for (int binding = 0, count = m_textureProviders.size(); binding != count; ++binding) {
         QSGTextureProvider *tp1 = m_textureProviders.at(binding);
         QSGTextureProvider *tp2 = o->m_textureProviders.at(binding);
         if (tp1 && tp2) {
@@ -576,9 +556,9 @@ void QSGRhiShaderEffectMaterial::updateTextureProviders(bool layoutChange)
 }
 
 QSGRhiShaderEffectNode::QSGRhiShaderEffectNode(QSGDefaultRenderContext *rc)
-    : m_rc(rc),
-      m_material(this)
+    : m_material(this)
 {
+    Q_UNUSED(rc);
     setFlag(UsePreprocess, true);
     setMaterial(&m_material);
 }
@@ -589,7 +569,7 @@ QRectF QSGRhiShaderEffectNode::updateNormalizedTextureSubRect(bool supportsAtlas
     bool geometryUsesTextureSubRect = false;
     if (supportsAtlasTextures) {
         QSGTextureProvider *tp = nullptr;
-        for (int binding = 0, count = m_material.m_textureProviders.count(); binding != count; ++binding) {
+        for (int binding = 0, count = m_material.m_textureProviders.size(); binding != count; ++binding) {
             if (QSGTextureProvider *candidate = m_material.m_textureProviders.at(binding)) {
                 if (!tp) {
                     tp = candidate;
@@ -657,7 +637,12 @@ void QSGRhiShaderEffectNode::syncMaterial(SyncData *syncData)
             m_material.m_fragmentShader = defaultFragmentShader;
         }
 
-        m_material.m_materialType = shaderMaterialTypeCache.get(m_material.m_vertexShader, m_material.m_fragmentShader);
+        {
+            QMutexLocker lock(&shaderMaterialTypeCacheMutex);
+            m_material.m_materialType = shaderMaterialTypeCache[syncData->materialTypeCacheKey].get(m_material.m_vertexShader,
+                                                                                                    m_material.m_fragmentShader);
+        }
+
         m_material.m_linker.reset(m_material.m_vertexShader, m_material.m_fragmentShader);
 
         if (m_material.m_hasCustomVertexShader) {
@@ -705,7 +690,7 @@ void QSGRhiShaderEffectNode::syncMaterial(SyncData *syncData)
             v.bindPoint = 1;
             v.type = QSGGuiThreadShaderEffectManager::ShaderInfo::Sampler;
             defaultSD.shaderInfo.variables.append(v);
-            for (const QSGShaderEffectNode::VariableData &extVarData : qAsConst(syncData->fragment.shader->varData)) {
+            for (const QSGShaderEffectNode::VariableData &extVarData : std::as_const(syncData->fragment.shader->varData)) {
                 if (extVarData.specialType == QSGShaderEffectNode::VariableData::Source) {
                     vd.value = extVarData.value;
                     break;
@@ -775,9 +760,10 @@ void QSGRhiShaderEffectNode::preprocess()
     }
 }
 
-void QSGRhiShaderEffectNode::cleanupMaterialTypeCache()
+void QSGRhiShaderEffectNode::cleanupMaterialTypeCache(void *materialTypeCacheKey)
 {
-    shaderMaterialTypeCache.reset();
+    QMutexLocker lock(&shaderMaterialTypeCacheMutex);
+    shaderMaterialTypeCache[materialTypeCacheKey].reset();
 }
 
 bool QSGRhiGuiThreadShaderEffectManager::hasSeparateSamplerAndTextureObjects() const
@@ -848,7 +834,7 @@ bool QSGRhiGuiThreadShaderEffectManager::reflect(ShaderInfo *result)
 
     int ubufBinding = -1;
     const QVector<QShaderDescription::UniformBlock> ubufs = desc.uniformBlocks();
-    const int ubufCount = ubufs.count();
+    const int ubufCount = ubufs.size();
     for (int i = 0; i < ubufCount; ++i) {
         const QShaderDescription::UniformBlock &ubuf(ubufs[i]);
         if (ubufBinding == -1 && ubuf.binding >= 0) {
@@ -869,7 +855,7 @@ bool QSGRhiGuiThreadShaderEffectManager::reflect(ShaderInfo *result)
     }
 
     const QVector<QShaderDescription::InOutVariable> combinedImageSamplers = desc.combinedImageSamplers();
-    const int samplerCount = combinedImageSamplers.count();
+    const int samplerCount = combinedImageSamplers.size();
     for (int i = 0; i < samplerCount; ++i) {
         const QShaderDescription::InOutVariable &combinedImageSampler(combinedImageSamplers[i]);
         ShaderInfo::Variable v;
@@ -883,3 +869,5 @@ bool QSGRhiGuiThreadShaderEffectManager::reflect(ShaderInfo *result)
 }
 
 QT_END_NAMESPACE
+
+#include "moc_qsgrhishadereffectnode_p.cpp"

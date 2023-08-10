@@ -1,38 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2017 The Qt Company Ltd.
-** Contact: http://www.qt.io/licensing/
-**
-** This file is part of the Qt Quick Templates 2 module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL3$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see http://www.qt.io/terms-conditions. For further
-** information use the contact form at http://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPLv3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or later as published by the Free
-** Software Foundation and appearing in the file LICENSE.GPL included in
-** the packaging of this file. Please review the following information to
-** ensure the GNU General Public License version 2.0 requirements will be
-** met: http://www.gnu.org/licenses/gpl-2.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2017 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qquickstackview_p_p.h"
 #include "qquickstackelement_p_p.h"
@@ -142,7 +109,7 @@ QList<QQuickStackElement *> QQuickStackViewPrivate::parseElements(int from, QQml
 QQuickStackElement *QQuickStackViewPrivate::findElement(QQuickItem *item) const
 {
     if (item) {
-        for (QQuickStackElement *e : qAsConst(elements)) {
+        for (QQuickStackElement *e : std::as_const(elements)) {
             if (e->item == item)
                 return e;
         }
@@ -198,7 +165,7 @@ bool QQuickStackViewPrivate::pushElements(const QList<QQuickStackElement *> &ele
     Q_Q(QQuickStackView);
     if (!elems.isEmpty()) {
         for (QQuickStackElement *e : elems) {
-            e->setIndex(elements.count());
+            e->setIndex(elements.size());
             elements += e;
         }
         return elements.top()->load(q);
@@ -216,7 +183,7 @@ bool QQuickStackViewPrivate::pushElement(QQuickStackElement *element)
 bool QQuickStackViewPrivate::popElements(QQuickStackElement *element)
 {
     Q_Q(QQuickStackView);
-    while (elements.count() > 1 && elements.top() != element) {
+    while (elements.size() > 1 && elements.top() != element) {
         delete elements.pop();
         if (!element)
             break;
@@ -285,7 +252,7 @@ void QQuickStackViewPrivate::completeTransition(QQuickStackElement *element, QQu
             // the animation timer.
             // This allows us to correctly restore all the properties affected
             // by the push/pop animations.
-            element->completeTransition(transition);
+            ACTION_IF_DELETED(element, element->completeTransition(transition), return);
         } else if (element->item) {
             // At least try to move the item to its desired place. This,
             // however, is only a partly correct solution, because a lot more
@@ -320,7 +287,7 @@ void QQuickStackViewPrivate::viewItemTransitionFinished(QQuickItemViewTransition
         QList<QQuickStackElement*> removedElements = removed;
         removed.clear();
 
-        for (QQuickStackElement *removedElement : qAsConst(removedElements)) {
+        for (QQuickStackElement *removedElement : std::as_const(removedElements)) {
             // If an element with the same item is found in the active stack list,
             // forget about the item so that we don't hide it.
             if (removedElement->item && findElement(removedElement->item)) {

@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQml module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #ifndef QQMLPRIVATE_H
 #define QQMLPRIVATE_H
@@ -50,9 +14,6 @@
 //
 // We mean it.
 //
-
-#include <functional>
-#include <type_traits>
 
 #include <QtQml/qtqmlglobal.h>
 #include <QtQml/qqmlparserstatus.h>
@@ -70,10 +31,15 @@
 #include <QtCore/qmetacontainer.h>
 #include <QtCore/qdebug.h>
 
+#include <functional>
+#include <type_traits>
+#include <limits>
+
 QT_BEGIN_NAMESPACE
 
 class QQmlPropertyValueInterceptor;
 class QQmlContextData;
+class QQmlFinalizerHook;
 
 namespace QQmlPrivate {
 struct CachedQmlUnit;
@@ -139,10 +105,13 @@ namespace QQmlPrivate
             // the size that was allocated.
             ::operator delete (ptr);
         }
+#ifdef Q_CC_MSVC
         static void operator delete(void *, void *) {
             // Deliberately empty placement delete operator.
             // Silences MSVC warning C4291: no matching operator delete found
+            // On MinGW it causes -Wmismatched-new-delete, though.
         }
+#endif
     };
 
     enum class ConstructionMode
@@ -475,6 +444,7 @@ namespace QQmlPrivate
         QQmlCustomParser *customParser;
 
         QTypeRevision revision;
+        int finalizerCast;
         // If this is extended ensure "version" is bumped!!!
     };
 
@@ -507,6 +477,10 @@ namespace QQmlPrivate
 
         QQmlCustomParser *(*customParserFactory)();
         QVector<int> *qmlTypeIds;
+        int finalizerCast;
+
+        bool forceAnonymous;
+        QMetaSequence listMetaSequence;
     };
 
     struct RegisterInterface {
@@ -584,7 +558,11 @@ namespace QQmlPrivate
         int structVersion;
         const char *uri;
         QTypeRevision version;
+
+        // ### Qt7: Remove typeName. It's ignored because the only valid name is "list",
+        //          and that's automatic.
         const char *typeName;
+
         QMetaType typeId;
         QMetaSequence metaSequence;
         QTypeRevision revision;
@@ -603,10 +581,15 @@ namespace QQmlPrivate
     };
 
     struct Q_QML_EXPORT AOTCompiledContext {
+        enum: uint { InvalidStringId = (std::numeric_limits<uint>::max)() };
+
         QQmlContextData *qmlContext;
         QObject *qmlScopeObject;
         QJSEngine *engine;
-        QV4::ExecutableCompilationUnit *compilationUnit;
+        union {
+            QV4::ExecutableCompilationUnit *compilationUnit;
+            qintptr extraData;
+        };
 
         QQmlEngine *qmlEngine() const;
 
@@ -619,6 +602,7 @@ namespace QQmlPrivate
         bool captureQmlContextPropertyLookup(uint index) const;
         QMetaType lookupResultMetaType(uint index) const;
         void storeNameSloppy(uint nameIndex, void *value, QMetaType type) const;
+        QJSValue javaScriptGlobalProperty(uint nameIndex) const;
 
         // All of these lookup functions should be used as follows:
         //
@@ -659,11 +643,14 @@ namespace QQmlPrivate
         bool loadScopeObjectPropertyLookup(uint index, void *target) const;
         void initLoadScopeObjectPropertyLookup(uint index, QMetaType type) const;
 
-        bool loadTypeLookup(uint index, void *target) const;
-        void initLoadTypeLookup(uint index) const;
+        bool loadSingletonLookup(uint index, void *target) const;
+        void initLoadSingletonLookup(uint index, uint importNamespace) const;
 
         bool loadAttachedLookup(uint index, QObject *object, void *target) const;
-        void initLoadAttachedLookup(uint index, QObject *object) const;
+        void initLoadAttachedLookup(uint index, uint importNamespace, QObject *object) const;
+
+        bool loadTypeLookup(uint index, void *target) const;
+        void initLoadTypeLookup(uint index, uint importNamespace) const;
 
         bool getObjectLookup(uint index, QObject *object, void *target) const;
         void initGetObjectLookup(uint index, QObject *object, QMetaType type) const;
@@ -683,7 +670,7 @@ namespace QQmlPrivate
     };
 
     struct AOTCompiledFunction {
-        int index;
+        qintptr extraData;
         QMetaType returnType;
         QList<QMetaType> argumentTypes;
         void (*functionPtr)(const AOTCompiledContext *context, void *resultPtr, void **arguments);
@@ -717,12 +704,26 @@ namespace QQmlPrivate
 
     int Q_QML_EXPORT qmlregister(RegistrationType, void *);
     void Q_QML_EXPORT qmlunregister(RegistrationType, quintptr);
+
+#if QT_DEPRECATED_SINCE(6, 3)
     struct Q_QML_EXPORT SingletonFunctor
+    {
+        QT_DEPRECATED QObject *operator()(QQmlEngine *, QJSEngine *);
+        QPointer<QObject> m_object;
+        bool alreadyCalled = false;
+    };
+#endif
+
+    struct Q_QML_EXPORT SingletonInstanceFunctor
     {
         QObject *operator()(QQmlEngine *, QJSEngine *);
 
         QPointer<QObject> m_object;
-        bool alreadyCalled = false;
+
+        // Not a QPointer, so that you cannot assign it to a different
+        // engine when the first one is deleted.
+        // That would mess up the QML contexts.
+        QQmlEngine *m_engine = nullptr;
     };
 
     static int indexOfOwnClassInfo(const QMetaObject *metaObject, const char *key, int startOffset = -1)
@@ -797,6 +798,18 @@ namespace QQmlPrivate
         return elementName;
     }
 
+    template<typename>
+    struct QmlMarkerFunction;
+
+    template<typename Ret, typename Class>
+    struct QmlMarkerFunction<Ret (Class::*)()>
+    {
+        using ClassType = Class;
+    };
+
+    template<typename T, typename Marker>
+    using QmlTypeHasMarker = std::is_same<T, typename QmlMarkerFunction<Marker>::ClassType>;
+
     template<class T, class = std::void_t<>>
     struct QmlExtended
     {
@@ -806,7 +819,9 @@ namespace QQmlPrivate
     template<class T>
     struct QmlExtended<T, std::void_t<typename T::QmlExtendedType>>
     {
-        using Type = typename T::QmlExtendedType;
+        using Type = typename std::conditional<
+                QmlTypeHasMarker<T, decltype(&T::qt_qmlMarker_extended)>::value,
+                typename T::QmlExtendedType, void>::type;
     };
 
     template<class T, class = std::void_t<>>
@@ -818,7 +833,13 @@ namespace QQmlPrivate
     template<class T>
     struct QmlExtendedNamespace<T, std::void_t<decltype(T::qmlExtendedNamespace())>>
     {
-        static constexpr const QMetaObject *metaObject() { return T::qmlExtendedNamespace(); }
+        static constexpr const QMetaObject *metaObject()
+        {
+            if constexpr (QmlTypeHasMarker<T, decltype(&T::qt_qmlMarker_extendedNamespace)>::value)
+                return T::qmlExtendedNamespace();
+            else
+                return nullptr;
+        }
     };
 
     template<class T, class = std::void_t<>>
@@ -886,6 +907,12 @@ namespace QQmlPrivate
     template<class T>
     struct QmlMetaType
     {
+        static constexpr bool hasAcceptableCtors()
+        {
+            return std::is_base_of_v<QObject, T>
+                    || (std::is_default_constructible_v<T> && std::is_copy_constructible_v<T>);
+        }
+
         static QMetaType self()
         {
             if constexpr (std::is_base_of_v<QObject, T>)
@@ -899,7 +926,15 @@ namespace QQmlPrivate
             if constexpr (std::is_base_of_v<QObject, T>)
                 return QMetaType::fromType<QQmlListProperty<T>>();
             else
-                return QMetaType();
+                return QMetaType::fromType<QList<T>>();
+        }
+
+        static QMetaSequence sequence()
+        {
+            if constexpr (std::is_base_of_v<QObject, T>)
+                return QMetaSequence();
+            else
+                return QMetaSequence::fromContainer<QList<T>>();
         }
     };
 
@@ -908,6 +943,7 @@ namespace QQmlPrivate
                                           const QMetaObject *classInfoMetaObject,
                                           QVector<int> *qmlTypeIds, const QMetaObject *extension)
     {
+        static_assert(std::is_base_of_v<QObject, T>);
         RegisterSingletonTypeAndRevisions api = {
             0,
 
@@ -933,14 +969,32 @@ namespace QQmlPrivate
     template<typename T, typename E>
     void qmlRegisterTypeAndRevisions(const char *uri, int versionMajor,
                                      const QMetaObject *classInfoMetaObject,
-                                     QVector<int> *qmlTypeIds, const QMetaObject *extension)
+                                     QVector<int> *qmlTypeIds, const QMetaObject *extension,
+                                     bool forceAnonymous = false)
     {
+#if QT_DEPRECATED_SINCE(6, 4)
+        // ### Qt7: Remove the warnings, and leave only the static asserts below.
+        if (!QmlMetaType<T>::hasAcceptableCtors()) {
+            qWarning() << QMetaType::fromType<T>().name()
+                       << "is neither a QObject, nor default- and copy-constructible."
+                       << "You should not use it as a QML type.";
+        }
+        if (!std::is_base_of_v<QObject, T> && QQmlTypeInfo<T>::hasAttachedProperties) {
+            qWarning() << QMetaType::fromType<T>().name()
+                       << "is not a QObject, but has attached properties. This won't work.";
+        }
+#else
+        static_assert(QmlMetaType<T>::hasAcceptableCtors());
+        static_assert(std::is_base_of_v<QObject, T> || !QQmlTypeInfo<T>::hasAttachedProperties);
+#endif
+
         RegisterTypeAndRevisions type = {
-            0,
+            3,
             QmlMetaType<T>::self(),
             QmlMetaType<T>::list(),
             int(sizeof(T)),
-            Constructors<T>::createInto, nullptr,
+            Constructors<T>::createInto,
+            nullptr,
             ValueType<T, E>::create,
 
             uri,
@@ -960,7 +1014,11 @@ namespace QQmlPrivate
             extension ? extension : ExtendedType<E>::staticMetaObject(),
 
             &qmlCreateCustomParser<T>,
-            qmlTypeIds
+            qmlTypeIds,
+            StaticCastSelector<T, QQmlFinalizerHook>::cast(),
+
+            forceAnonymous,
+            QmlMetaType<T>::sequence(),
         };
 
         // Initialize the extension so that we can find it by name or ID.
@@ -990,7 +1048,7 @@ namespace QQmlPrivate
     template<>
     void Q_QML_EXPORT qmlRegisterTypeAndRevisions<QQmlTypeNotAvailable, void>(
             const char *uri, int versionMajor, const QMetaObject *classInfoMetaObject,
-            QVector<int> *qmlTypeIds, const QMetaObject *);
+            QVector<int> *qmlTypeIds, const QMetaObject *, bool);
 
     constexpr QtPrivate::QMetaTypeInterface metaTypeForNamespace(
             const QtPrivate::QMetaTypeInterface::MetaObjectFn &metaObjectFunction, const char *name)
@@ -1015,6 +1073,8 @@ namespace QQmlPrivate
             /*.legacyRegisterOp=*/ nullptr
         };
     }
+
+    Q_QML_EXPORT QObject *qmlExtendedObject(QObject *, int);
 
 } // namespace QQmlPrivate
 

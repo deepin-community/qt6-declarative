@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQml module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qqmllistmodel_p_p.h"
 #include "qqmllistmodelworkeragent_p.h"
@@ -129,8 +93,28 @@ const ListLayout::Role &ListLayout::getRoleOrCreate(QV4::String *key, Role::Data
 
 const ListLayout::Role &ListLayout::createRole(const QString &key, ListLayout::Role::DataType type)
 {
-    const int dataSizes[] = { sizeof(StringOrTranslation), sizeof(double), sizeof(bool), sizeof(ListModel *), sizeof(ListElement::GuardedQObjectPointer), sizeof(QVariantMap), sizeof(QDateTime), sizeof(QUrl), sizeof(QJSValue) };
-    const int dataAlignments[] = { alignof(StringOrTranslation), alignof(double), alignof(bool), alignof(ListModel *), alignof(QObject *), alignof(QVariantMap), alignof(QDateTime), alignof(QUrl), alignof(QJSValue) };
+    const int dataSizes[] = {
+        sizeof(StringOrTranslation),
+        sizeof(double),
+        sizeof(bool),
+        sizeof(ListModel *),
+        sizeof(ListElement::GuardedQObjectPointer),
+        sizeof(QVariantMap),
+        sizeof(QDateTime),
+        sizeof(QUrl),
+        sizeof(QJSValue)
+    };
+    const int dataAlignments[] = {
+        alignof(StringOrTranslation),
+        alignof(double),
+        alignof(bool),
+        alignof(ListModel *),
+        alignof(QObject *),
+        alignof(QVariantMap),
+        alignof(QDateTime),
+        alignof(QUrl),
+        alignof(QJSValue)
+    };
 
     Role *r = new Role;
     r->name = key;
@@ -156,7 +140,7 @@ const ListLayout::Role &ListLayout::createRole(const QString &key, ListLayout::R
         currentBlockOffset = dataOffset + dataSize;
     }
 
-    int roleIndex = roles.count();
+    int roleIndex = roles.size();
     r->index = roleIndex;
 
     roles.append(r);
@@ -167,7 +151,7 @@ const ListLayout::Role &ListLayout::createRole(const QString &key, ListLayout::R
 
 ListLayout::ListLayout(const ListLayout *other) : currentBlock(0), currentBlockOffset(0)
 {
-    const int otherRolesCount = other->roles.count();
+    const int otherRolesCount = other->roles.size();
     roles.reserve(otherRolesCount);
     for (int i=0 ; i < otherRolesCount; ++i) {
         Role *role = new Role(other->roles[i]);
@@ -185,8 +169,8 @@ ListLayout::~ListLayout()
 
 void ListLayout::sync(ListLayout *src, ListLayout *target)
 {
-    int roleOffset = target->roles.count();
-    int newRoleCount = src->roles.count() - roleOffset;
+    int roleOffset = target->roles.size();
+    int newRoleCount = src->roles.size() - roleOffset;
 
     for (int i=0 ; i < newRoleCount ; ++i) {
         Role *role = new Role(src->roles[roleOffset + i]);
@@ -224,10 +208,10 @@ const ListLayout::Role *ListLayout::getRoleOrCreate(const QString &key, const QV
         case QMetaType::Double:      type = Role::Number;      break;
         case QMetaType::Int:         type = Role::Number;      break;
         case QMetaType::Bool:        type = Role::Bool;        break;
-        case QMetaType::QString:      type = Role::String;      break;
-        case QMetaType::QVariantMap:         type = Role::VariantMap;  break;
-        case QMetaType::QDateTime:    type = Role::DateTime;    break;
-    case QMetaType::QUrl:            type = Role::Url;         break;
+        case QMetaType::QString:     type = Role::String;      break;
+        case QMetaType::QVariantMap: type = Role::VariantMap;  break;
+        case QMetaType::QDateTime:   type = Role::DateTime;    break;
+        case QMetaType::QUrl:        type = Role::Url;         break;
         default:    {
             if (data.userType() == qMetaTypeId<QJSValue>() &&
                 data.value<QJSValue>().isCallable()) {
@@ -287,7 +271,7 @@ void StringOrTranslation::setString(const QString &s)
     QString::DataPointer dataPointer = mutableString.data_ptr();
     arrayData = dataPointer->d_ptr();
     stringData = dataPointer->data();
-    stringSize = mutableString.length();
+    stringSize = mutableString.size();
     if (arrayData)
         arrayData->ref();
 }
@@ -1649,7 +1633,7 @@ ModelNodeMetaObject::~ModelNodeMetaObject()
 {
 }
 
-QAbstractDynamicMetaObject *ModelNodeMetaObject::toDynamicMetaObject(QObject *object)
+QMetaObject *ModelNodeMetaObject::toDynamicMetaObject(QObject *object)
 {
     if (!m_initialized) {
         m_initialized = true;
@@ -1687,10 +1671,10 @@ void ModelNodeMetaObject::updateValues()
 void ModelNodeMetaObject::updateValues(const QVector<int> &roles)
 {
     if (!m_initialized) {
-        emitDirectNotifies(roles.constData(), roles.count());
+        emitDirectNotifies(roles.constData(), roles.size());
         return;
     }
-    int roleCount = roles.count();
+    int roleCount = roles.size();
     for (int i=0 ; i < roleCount ; ++i) {
         int roleIndex = roles.at(i);
         const ListLayout::Role &role = m_model->m_listModel->getExistingRole(roleIndex);
@@ -1888,7 +1872,7 @@ void DynamicRoleModelNode::updateValues(const QVariantMap &object, QVector<int> 
 
         int roleIndex = m_owner->m_roles.indexOf(key);
         if (roleIndex == -1) {
-            roleIndex = m_owner->m_roles.count();
+            roleIndex = m_owner->m_roles.size();
             m_owner->m_roles.append(key);
         }
 
@@ -2188,7 +2172,7 @@ bool QQmlListModel::sync(QQmlListModel *src, QQmlListModel *target)
 
     // Build hash of elements <-> uid for each of the lists
     QHash<int, ElementSync> elementHash;
-    for (int i = 0 ; i < target->m_modelObjects.count(); ++i) {
+    for (int i = 0 ; i < target->m_modelObjects.size(); ++i) {
         DynamicRoleModelNode *e = target->m_modelObjects.at(i);
         int uid = e->getUid();
         ElementSync sync;
@@ -2196,7 +2180,7 @@ bool QQmlListModel::sync(QQmlListModel *src, QQmlListModel *target)
         sync.targetIndex = i;
         elementHash.insert(uid, sync);
     }
-    for (int i = 0 ; i < src->m_modelObjects.count(); ++i) {
+    for (int i = 0 ; i < src->m_modelObjects.size(); ++i) {
         DynamicRoleModelNode *e = src->m_modelObjects.at(i);
         int uid = e->getUid();
 
@@ -2215,7 +2199,7 @@ bool QQmlListModel::sync(QQmlListModel *src, QQmlListModel *target)
 
     // Get list of elements that are in the target but no longer in the source. These get deleted first.
     int rowsRemoved = 0;
-    for (int i = 0 ; i < target->m_modelObjects.count() ; ++i) {
+    for (int i = 0 ; i < target->m_modelObjects.size() ; ++i) {
         DynamicRoleModelNode *element = target->m_modelObjects.at(i);
         ElementSync &s = elementHash.find(element->getUid()).value();
         Q_ASSERT(s.targetIndex >= 0);
@@ -2236,7 +2220,7 @@ bool QQmlListModel::sync(QQmlListModel *src, QQmlListModel *target)
 
     // Clear the target list, and append in correct order from the source
     target->m_modelObjects.clear();
-    for (int i = 0 ; i < src->m_modelObjects.count() ; ++i) {
+    for (int i = 0 ; i < src->m_modelObjects.size() ; ++i) {
         DynamicRoleModelNode *element = src->m_modelObjects.at(i);
         ElementSync &s = elementHash.find(element->getUid()).value();
         Q_ASSERT(s.srcIndex >= 0);
@@ -2254,7 +2238,7 @@ bool QQmlListModel::sync(QQmlListModel *src, QQmlListModel *target)
     // to ensure things are kept in the correct order, emit inserts and moves first. This shouls ensure all persistent
     // model indices are updated correctly
     int rowsInserted = 0;
-    for (int i = 0 ; i < target->m_modelObjects.count() ; ++i) {
+    for (int i = 0 ; i < target->m_modelObjects.size() ; ++i) {
         DynamicRoleModelNode *element = target->m_modelObjects.at(i);
         ElementSync &s = elementHash.find(element->getUid()).value();
         Q_ASSERT(s.srcIndex >= 0);
@@ -2373,7 +2357,7 @@ QHash<int, QByteArray> QQmlListModel::roleNames() const
     QHash<int, QByteArray> roleNames;
 
     if (m_dynamicRoles) {
-        for (int i = 0 ; i < m_roles.count() ; ++i)
+        for (int i = 0 ; i < m_roles.size() ; ++i)
             roleNames.insert(i, m_roles.at(i).toUtf8());
     } else {
         for (int i = 0 ; i < m_listModel->roleCount() ; ++i) {
@@ -2420,7 +2404,7 @@ void QQmlListModel::setDynamicRoles(bool enableDynamicRoles)
             else
                 m_dynamicRoles = true;
         } else {
-            if (m_roles.count()) {
+            if (m_roles.size()) {
                 qmlWarning(this) << tr("unable to enable static roles as this model is not empty");
             } else {
                 m_dynamicRoles = false;
@@ -2437,7 +2421,7 @@ void QQmlListModel::setDynamicRoles(bool enableDynamicRoles)
 */
 int QQmlListModel::count() const
 {
-    return m_dynamicRoles ? m_modelObjects.count() : m_listModel->elementCount();
+    return m_dynamicRoles ? m_modelObjects.size() : m_listModel->elementCount();
 }
 
 /*!
@@ -2518,6 +2502,16 @@ void QQmlListModel::updateTranslations()
     if (m_dynamicRoles)
         return;
     Q_ASSERT(m_listModel);
+
+    QList<int> roles;
+    for (int i = 0, end = m_listModel->roleCount(); i != end; ++i) {
+        if (m_listModel->getExistingRole(i).type == ListLayout::Role::String)
+            roles.append(i);
+    }
+
+    if (!roles.isEmpty())
+        emitItemsChanged(0, rowCount(QModelIndex()), roles);
+
     m_listModel->updateTranslations();
 }
 
@@ -2684,7 +2678,7 @@ void QQmlListModel::append(QQmlV4Function *args)
             int index;
 
             if (m_dynamicRoles) {
-                index = m_modelObjects.count();
+                index = m_modelObjects.size();
                 emitItemsAboutToBeInserted(index, 1);
                 m_modelObjects.append(DynamicRoleModelNode::create(scope.engine->variantMapFromJS(argObject), this));
             } else {
@@ -2810,7 +2804,7 @@ void QQmlListModel::set(int index, const QJSValue &value)
             m_listModel->set(index, object, &roles);
         }
 
-        if (roles.count())
+        if (roles.size())
             emitItemsChanged(index, 1, roles);
     }
 }
@@ -2838,7 +2832,7 @@ void QQmlListModel::setProperty(int index, const QString& property, const QVaria
     if (m_dynamicRoles) {
         int roleIndex = m_roles.indexOf(property);
         if (roleIndex == -1) {
-            roleIndex = m_roles.count();
+            roleIndex = m_roles.size();
             m_roles.append(property);
         }
         if (m_modelObjects[index]->setValue(property.toUtf8(), value))
@@ -2866,7 +2860,7 @@ void QQmlListModel::sync()
 
 bool QQmlListModelParser::verifyProperty(const QQmlRefPointer<QV4::ExecutableCompilationUnit> &compilationUnit, const QV4::CompiledData::Binding *binding)
 {
-    if (binding->type >= QV4::CompiledData::Binding::Type_Object) {
+    if (binding->type() >= QV4::CompiledData::Binding::Type_Object) {
         const quint32 targetObjectIndex = binding->value.objectIndex;
         const QV4::CompiledData::Object *target = compilationUnit->objectAt(targetObjectIndex);
         QString objName = compilationUnit->stringAt(target->inheritedTypeNameIndex);
@@ -2894,12 +2888,11 @@ bool QQmlListModelParser::verifyProperty(const QQmlRefPointer<QV4::ExecutableCom
             if (!verifyProperty(compilationUnit, binding))
                 return false;
         }
-    } else if (binding->type == QV4::CompiledData::Binding::Type_Script) {
+    } else if (binding->type() == QV4::CompiledData::Binding::Type_Script) {
         QString scriptStr = compilationUnit->bindingValueAsScriptString(binding);
         if (!binding->isFunctionExpression() && !definesEmptyList(scriptStr)) {
-            QByteArray script = scriptStr.toUtf8();
             bool ok;
-            evaluateEnum(script, &ok);
+            evaluateEnum(scriptStr, &ok);
             if (!ok) {
                 error(binding, QQmlListModel::tr("ListElement: cannot use script for property value"));
                 return false;
@@ -2917,7 +2910,8 @@ bool QQmlListModelParser::applyProperty(
     const QString elementName = compilationUnit->stringAt(binding->propertyNameIndex);
 
     bool roleSet = false;
-    if (binding->type >= QV4::CompiledData::Binding::Type_Object) {
+    const QV4::CompiledData::Binding::Type bindingType = binding->type();
+    if (bindingType >= QV4::CompiledData::Binding::Type_Object) {
         const quint32 targetObjectIndex = binding->value.objectIndex;
         const QV4::CompiledData::Object *target = compilationUnit->objectAt(targetObjectIndex);
 
@@ -2951,13 +2945,13 @@ bool QQmlListModelParser::applyProperty(
             value = QVariant::fromValue<const QV4::CompiledData::Binding*>(binding);
         } else if (binding->evaluatesToString()) {
             value = compilationUnit->bindingValueAsString(binding);
-        } else if (binding->type == QV4::CompiledData::Binding::Type_Number) {
+        } else if (bindingType == QV4::CompiledData::Binding::Type_Number) {
             value = compilationUnit->bindingValueAsNumber(binding);
-        } else if (binding->type == QV4::CompiledData::Binding::Type_Boolean) {
+        } else if (bindingType == QV4::CompiledData::Binding::Type_Boolean) {
             value = binding->valueAsBoolean();
-        } else if (binding->type == QV4::CompiledData::Binding::Type_Null) {
+        } else if (bindingType == QV4::CompiledData::Binding::Type_Null) {
             value = QVariant::fromValue(nullptr);
-        } else if (binding->type == QV4::CompiledData::Binding::Type_Script) {
+        } else if (bindingType == QV4::CompiledData::Binding::Type_Script) {
             QString scriptStr = compilationUnit->bindingValueAsScriptString(binding);
             if (definesEmptyList(scriptStr)) {
                 const ListLayout::Role &role = model->getOrCreateListRole(elementName);
@@ -2981,9 +2975,8 @@ bool QQmlListModelParser::applyProperty(
                     QJSValuePrivate::setValue(&v, result->asReturnedValue());
                 value.setValue(v);
             } else {
-                QByteArray script = scriptStr.toUtf8();
                 bool ok;
-                value = evaluateEnum(script, &ok);
+                value = evaluateEnum(scriptStr, &ok);
             }
         } else {
             Q_UNREACHABLE();
@@ -3030,7 +3023,7 @@ void QQmlListModelParser::applyBindings(QObject *obj, const QQmlRefPointer<QV4::
     bool setRoles = false;
 
     for (const QV4::CompiledData::Binding *binding : bindings) {
-        if (binding->type != QV4::CompiledData::Binding::Type_Object)
+        if (binding->type() != QV4::CompiledData::Binding::Type_Object)
             continue;
         setRoles |= applyProperty(compilationUnit, binding, rv->m_listModel, /*outter element index*/-1);
     }
@@ -3042,7 +3035,7 @@ void QQmlListModelParser::applyBindings(QObject *obj, const QQmlRefPointer<QV4::
 bool QQmlListModelParser::definesEmptyList(const QString &s)
 {
     if (s.startsWith(QLatin1Char('[')) && s.endsWith(QLatin1Char(']'))) {
-        for (int i=1; i<s.length()-1; i++) {
+        for (int i=1; i<s.size()-1; i++) {
             if (!s[i].isSpace())
                 return false;
         }
@@ -3099,5 +3092,7 @@ bool QQmlListModelParser::definesEmptyList(const QString &s)
 */
 
 QT_END_NAMESPACE
+
+#include "moc_qqmllistmodel_p_p.cpp"
 
 #include "moc_qqmllistmodel_p.cpp"

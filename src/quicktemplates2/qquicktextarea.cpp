@@ -1,38 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2017 The Qt Company Ltd.
-** Contact: http://www.qt.io/licensing/
-**
-** This file is part of the Qt Quick Templates 2 module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL3$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see http://www.qt.io/terms-conditions. For further
-** information use the contact form at http://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPLv3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or later as published by the Free
-** Software Foundation and appearing in the file LICENSE.GPL included in
-** the packaging of this file. Please review the following information to
-** ensure the GNU General Public License version 2.0 requirements will be
-** met: http://www.gnu.org/licenses/gpl-2.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2017 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qquicktextarea_p.h"
 #include "qquicktextarea_p_p.h"
@@ -51,6 +18,8 @@
 #endif
 
 QT_BEGIN_NAMESPACE
+
+using namespace Qt::StringLiterals;
 
 /*!
     \qmltype TextArea
@@ -380,7 +349,7 @@ void QQuickTextAreaPrivate::ensureCursorVisible()
         flickable->setContentY(cr.top() - tp);
     } else {
         const qreal bp = q->bottomPadding();
-        if (cr.bottom() >= cy + tp + h - bp)
+        if (cr.bottom() >= cy + tp + h - bp && cr.bottom() <= flickable->contentHeight())
             flickable->setContentY(cr.bottom() - h + bp);
     }
 }
@@ -457,9 +426,6 @@ void QQuickTextAreaPrivate::readOnlyChanged(bool isReadOnly)
 #if QT_CONFIG(accessibility)
     if (QQuickAccessibleAttached *accessibleAttached = QQuickControlPrivate::accessibleAttached(q_func()))
         accessibleAttached->set_readOnly(isReadOnly);
-#endif
-#if QT_CONFIG(cursor)
-    q_func()->setCursor(isReadOnly && !selectByMouse ? Qt::ArrowCursor : Qt::IBeamCursor);
 #endif
 }
 
@@ -542,11 +508,13 @@ QQuickTextArea::QQuickTextArea(QQuickItem *parent)
     setAcceptedMouseButtons(Qt::AllButtons);
     d->setImplicitResizeEnabled(false);
     d->pressHandler.control = this;
-#if QT_CONFIG(cursor)
-    setCursor(Qt::IBeamCursor);
-#endif
+
     QObjectPrivate::connect(this, &QQuickTextEdit::readOnlyChanged,
                             d, &QQuickTextAreaPrivate::readOnlyChanged);
+#if QT_VERSION < QT_VERSION_CHECK(7, 0, 0)
+    if (qEnvironmentVariable("QT_QUICK_CONTROLS_TEXT_SELECTION_BEHAVIOR") == u"old"_s)
+        QQuickTextEdit::setOldSelectionDefault();
+#endif
 }
 
 QQuickTextArea::~QQuickTextArea()
@@ -564,7 +532,11 @@ QQuickTextAreaAttached *QQuickTextArea::qmlAttachedProperties(QObject *object)
 
 QFont QQuickTextArea::font() const
 {
-    return QQuickTextEdit::font();
+    Q_D(const QQuickTextArea);
+    QFont font = QQuickTextEdit::font();
+    // The resolve mask should inherit from the requestedFont
+    font.setResolveMask(d->extra.value().requestedFont.resolveMask());
+    return font;
 }
 
 void QQuickTextArea::setFont(const QFont &font)
@@ -1016,7 +988,11 @@ QSGNode *QQuickTextArea::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *
     if (d->flickable)
         clipper = d->flickable;
 
-    const QRectF cr = clipper->clipRect().adjusted(leftPadding(), topPadding(), -rightPadding(), -bottomPadding());
+    const QRectF cr = clipper->clipRect().adjusted(
+            leftPadding(), topPadding(),
+            (!d->cursorItem && effectiveHAlign() == HAlignment::AlignRight ? 1 : 0) - rightPadding(),
+            -bottomPadding());
+
     clipNode->setRect(!d->flickable ? cr : cr.translated(d->flickable->contentX(), d->flickable->contentY()));
     clipNode->update();
 
@@ -1051,15 +1027,14 @@ void QQuickTextArea::hoverEnterEvent(QHoverEvent *event)
     Q_D(QQuickTextArea);
     QQuickTextEdit::hoverEnterEvent(event);
     setHovered(d->hoverEnabled);
-    event->setAccepted(d->hoverEnabled);
+    event->ignore();
 }
 
 void QQuickTextArea::hoverLeaveEvent(QHoverEvent *event)
 {
-    Q_D(QQuickTextArea);
     QQuickTextEdit::hoverLeaveEvent(event);
     setHovered(false);
-    event->setAccepted(d->hoverEnabled);
+    event->ignore();
 }
 #endif
 
@@ -1174,3 +1149,5 @@ void QQuickTextAreaAttached::setFlickable(QQuickTextArea *control)
 }
 
 QT_END_NAMESPACE
+
+#include "moc_qquicktextarea_p.cpp"

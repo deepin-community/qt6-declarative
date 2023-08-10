@@ -1,38 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2017 The Qt Company Ltd.
-** Contact: http://www.qt.io/licensing/
-**
-** This file is part of the Qt Quick Templates 2 module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL3$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see http://www.qt.io/terms-conditions. For further
-** information use the contact form at http://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPLv3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or later as published by the Free
-** Software Foundation and appearing in the file LICENSE.GPL included in
-** the packaging of this file. Please review the following information to
-** ensure the GNU General Public License version 2.0 requirements will be
-** met: http://www.gnu.org/licenses/gpl-2.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2017 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qquickabstractbutton_p.h"
 #include "qquickabstractbutton_p_p.h"
@@ -48,6 +15,7 @@
 #  include <QtGui/private/qshortcutmap_p.h>
 #endif
 #include <QtGui/private/qguiapplication_p.h>
+#include <QtGui/qpa/qplatformtheme.h>
 #include <QtQuick/private/qquickevents_p_p.h>
 #include <QtQml/qqmllist.h>
 
@@ -134,10 +102,10 @@ void QQuickAbstractButtonPrivate::setMovePoint(const QPointF &point)
         emit q->pressYChanged();
 }
 
-void QQuickAbstractButtonPrivate::handlePress(const QPointF &point)
+bool QQuickAbstractButtonPrivate::handlePress(const QPointF &point, ulong timestamp)
 {
     Q_Q(QQuickAbstractButton);
-    QQuickControlPrivate::handlePress(point);
+    QQuickControlPrivate::handlePress(point, timestamp);
     setPressPoint(point);
     q->setPressed(true);
 
@@ -149,12 +117,13 @@ void QQuickAbstractButtonPrivate::handlePress(const QPointF &point)
         startPressAndHold();
     else
         stopPressAndHold();
+    return true;
 }
 
-void QQuickAbstractButtonPrivate::handleMove(const QPointF &point)
+bool QQuickAbstractButtonPrivate::handleMove(const QPointF &point, ulong timestamp)
 {
     Q_Q(QQuickAbstractButton);
-    QQuickControlPrivate::handleMove(point);
+    QQuickControlPrivate::handleMove(point, timestamp);
     setMovePoint(point);
     q->setPressed(keepPressed || q->contains(point));
 
@@ -162,16 +131,24 @@ void QQuickAbstractButtonPrivate::handleMove(const QPointF &point)
         stopPressRepeat();
     else if (holdTimer > 0 && (!pressed || QLineF(pressPoint, point).length() > QGuiApplication::styleHints()->startDragDistance()))
         stopPressAndHold();
+    return true;
 }
 
-void QQuickAbstractButtonPrivate::handleRelease(const QPointF &point)
+bool QQuickAbstractButtonPrivate::handleRelease(const QPointF &point, ulong timestamp)
 {
     Q_Q(QQuickAbstractButton);
-    QQuickControlPrivate::handleRelease(point);
+    // Store this here since the base class' handleRelease clears it.
+    const int pressTouchId = touchId;
+
+    QQuickControlPrivate::handleRelease(point, timestamp);
     bool wasPressed = pressed;
     setPressPoint(point);
     q->setPressed(false);
     pressButtons = Qt::NoButton;
+
+    const bool touchDoubleClick = pressTouchId != -1 && lastTouchReleaseTimestamp != 0
+        && timestamp - lastTouchReleaseTimestamp < qApp->styleHints()->mouseDoubleClickInterval()
+        && isDoubleClickConnected();
 
     if (!wasHeld && (keepPressed || q->contains(point)))
         q->nextCheckState();
@@ -179,7 +156,7 @@ void QQuickAbstractButtonPrivate::handleRelease(const QPointF &point)
     if (wasPressed) {
         emit q->released();
         if (!wasHeld && !wasDoubleClick)
-            trigger();
+            trigger(touchDoubleClick);
     } else {
         emit q->canceled();
     }
@@ -189,7 +166,23 @@ void QQuickAbstractButtonPrivate::handleRelease(const QPointF &point)
     else
         stopPressAndHold();
 
+    if (!touchDoubleClick) {
+        // This is not a double click yet, but it is potentially the
+        // first release before a double click.
+        if (pressTouchId != -1) {
+            // The corresponding press for this release was a touch press.
+            // Keep track of the timestamp of the release so that we can
+            // emit doubleClicked() if another one comes afterwards.
+            lastTouchReleaseTimestamp = timestamp;
+        }
+    } else {
+        // We just did a double click, so clear the release timestamp
+        // to prepare for any possible future double clicks.
+        lastTouchReleaseTimestamp = 0;
+    }
+
     wasDoubleClick = false;
+    return true;
 }
 
 void QQuickAbstractButtonPrivate::handleUngrab()
@@ -204,12 +197,14 @@ void QQuickAbstractButtonPrivate::handleUngrab()
     stopPressRepeat();
     stopPressAndHold();
     wasDoubleClick = false;
+    lastTouchReleaseTimestamp = 0;
     emit q->canceled();
 }
 
 bool QQuickAbstractButtonPrivate::acceptKeyClick(Qt::Key key) const
 {
-    return key == Qt::Key_Space;
+    const auto buttonPressKeys = QGuiApplicationPrivate::platformTheme()->themeHint(QPlatformTheme::ButtonPressKeys).value<QList<Qt::Key>>();
+    return buttonPressKeys.contains(key);
 }
 
 bool QQuickAbstractButtonPrivate::isPressAndHoldConnected()
@@ -344,14 +339,18 @@ void QQuickAbstractButtonPrivate::click()
         emit q->clicked();
 }
 
-void QQuickAbstractButtonPrivate::trigger()
+void QQuickAbstractButtonPrivate::trigger(bool doubleClick)
 {
     Q_Q(QQuickAbstractButton);
     const bool wasEnabled = effectiveEnable;
     if (action && action->isEnabled())
         QQuickActionPrivate::get(action)->trigger(q, false);
-    if (wasEnabled && (!action || !action->isEnabled()))
-        emit q->clicked();
+    if (wasEnabled && (!action || !action->isEnabled())) {
+        if (!doubleClick)
+            emit q->clicked();
+        else
+            emit q->doubleClicked();
+    }
 }
 
 void QQuickAbstractButtonPrivate::toggle(bool value)
@@ -465,7 +464,9 @@ QQuickAbstractButton::QQuickAbstractButton(QQuickItem *parent)
     setFocusPolicy(Qt::StrongFocus);
 #endif
     setAcceptedMouseButtons(Qt::LeftButton);
+#if QT_CONFIG(quicktemplates2_multitouch)
     setAcceptTouchEvents(true);
+#endif
 #if QT_CONFIG(cursor)
     setCursor(Qt::ArrowCursor);
 #endif
@@ -481,7 +482,9 @@ QQuickAbstractButton::QQuickAbstractButton(QQuickAbstractButtonPrivate &dd, QQui
     setFocusPolicy(Qt::StrongFocus);
 #endif
     setAcceptedMouseButtons(Qt::LeftButton);
+#if QT_CONFIG(quicktemplates2_multitouch)
     setAcceptTouchEvents(true);
+#endif
 #if QT_CONFIG(cursor)
     setCursor(Qt::ArrowCursor);
 #endif

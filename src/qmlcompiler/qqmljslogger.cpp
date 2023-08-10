@@ -1,32 +1,25 @@
-/****************************************************************************
-**
-** Copyright (C) 2021 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the tools applications of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:GPL-EXCEPT$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 3 as published by the Free Software
-** Foundation with exceptions as appearing in the file LICENSE.GPL3-EXCEPT
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2022 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only WITH Qt-GPL-exception-1.0
+
+#include <qglobal.h>
+
+// GCC 11 thinks diagMsg.fixSuggestion.fixes.d.ptr is somehow uninitialized in
+// QList::emplaceBack(), probably called from QQmlJsLogger::log()
+// Ditto for GCC 12, but it emits a different warning
+QT_WARNING_PUSH
+QT_WARNING_DISABLE_GCC("-Wuninitialized")
+QT_WARNING_DISABLE_GCC("-Wmaybe-uninitialized")
+#include <qlist.h>
+QT_WARNING_POP
 
 #include "qqmljslogger_p.h"
+
+#include <QtCore/qfile.h>
+#include <QtCore/qfileinfo.h>
+
+QT_BEGIN_NAMESPACE
+
+using namespace Qt::StringLiterals;
 
 const QMap<QString, QQmlJSLogger::Option> &QQmlJSLogger::options() {
     static QMap<QString, QQmlJSLogger::Option> optionsMap = {
@@ -63,6 +56,12 @@ const QMap<QString, QQmlJSLogger::Option> &QQmlJSLogger::options() {
         { QStringLiteral("property"),
           QQmlJSLogger::Option(Log_Property, QStringLiteral("UnknownProperty"),
                                QStringLiteral("Warn about unknown properties"), QtWarningMsg) },
+        { QStringLiteral("deferred-property-id"),
+          QQmlJSLogger::Option(
+                  Log_DeferredPropertyId, QStringLiteral("DeferredPropertyId"),
+                  QStringLiteral(
+                          "Warn about making deferred properties immediate by giving them an id."),
+                  QtWarningMsg) },
         { QStringLiteral("unqualified"),
           QQmlJSLogger::Option(
                   Log_UnqualifiedAccess, QStringLiteral("UnqualifiedAccess"),
@@ -73,45 +72,78 @@ const QMap<QString, QQmlJSLogger::Option> &QQmlJSLogger::options() {
                                QStringLiteral("Warn about unused imports"), QtInfoMsg) },
         { QStringLiteral("multiline-strings"),
           QQmlJSLogger::Option(Log_MultilineString, QStringLiteral("MultilineStrings"),
-                               QStringLiteral("Warn about multiline strings"), QtInfoMsg) }
+                               QStringLiteral("Warn about multiline strings"), QtInfoMsg) },
+        { QStringLiteral("compiler"),
+          QQmlJSLogger::Option(Log_Compiler, QStringLiteral("CompilerWarnings"),
+                               QStringLiteral("Warn about compiler issues"), QtCriticalMsg, true) },
+        { QStringLiteral("controls-sanity"),
+          QQmlJSLogger::Option(
+                  Log_ControlsSanity, QStringLiteral("ControlsSanity"),
+                  QStringLiteral("Performance checks used for QuickControl's implementation"),
+                  QtCriticalMsg, true) },
+        { QStringLiteral("multiple-attached-objects"),
+          QQmlJSLogger::Option(
+                  Log_AttachedPropertyReuse, QStringLiteral("AttachedPropertyReuse"),
+                  QStringLiteral("Warn if attached types from parent components aren't reused"),
+                  QtCriticalMsg, true) },
+        { QStringLiteral("plugin"),
+          QQmlJSLogger::Option(Log_Plugin, QStringLiteral("LintPluginWarnings"),
+                               QStringLiteral("Warn if a qmllint plugin finds an issue"),
+                               QtWarningMsg) }
     };
 
     return optionsMap;
 }
 
-QQmlJSLogger::QQmlJSLogger(const QString &fileName, const QString &code, bool silent) : m_fileName(fileName), m_code(code), m_output(silent)
+QQmlJSLogger::QQmlJSLogger()
 {
     const auto &opt = options();
     for (auto it = opt.cbegin(); it != opt.cend(); ++it) {
         m_categoryLevels[it.value().m_category] = it.value().m_level;
-        m_categoryDisabled[it.value().m_category] = it.value().m_disabled;
+        m_categoryIgnored[it.value().m_category] = it.value().m_ignored;
     }
 
     // These have to be set up manually since we don't expose it as an option
     m_categoryLevels[Log_RecursionDepthError] = QtCriticalMsg;
-    m_categoryLevels[Log_Syntax] = QtCriticalMsg;
+    m_categoryLevels[Log_Syntax] = QtWarningMsg; // TODO: because we usually report it as a warning!
+    m_categoryLevels[Log_SyntaxIdQuotation] = QtWarningMsg;
+    m_categoryLevels[Log_SyntaxDuplicateIds] = QtCriticalMsg;
 
     // setup color output
     m_output.insertMapping(QtCriticalMsg, QColorOutput::RedForeground);
-    m_output.insertMapping(QtWarningMsg, QColorOutput::PurpleForeground);
+    m_output.insertMapping(QtWarningMsg, QColorOutput::PurpleForeground); // Yellow?
     m_output.insertMapping(QtInfoMsg, QColorOutput::BlueForeground);
-    m_output.insertMapping(QtDebugMsg, QColorOutput::GreenForeground);
+    m_output.insertMapping(QtDebugMsg, QColorOutput::GreenForeground); // None?
 }
 
-void QQmlJSLogger::log(const QString &message, QQmlJSLoggerCategory category, const QQmlJS::SourceLocation &srcLocation, bool showContext, bool showFileName)
+static bool isMsgTypeLess(QtMsgType a, QtMsgType b)
 {
-    if (isCategoryDisabled(category))
+    static QHash<QtMsgType, int> level = { { QtDebugMsg, 0 },
+                                           { QtInfoMsg, 1 },
+                                           { QtWarningMsg, 2 },
+                                           { QtCriticalMsg, 3 },
+                                           { QtFatalMsg, 4 } };
+    return level[a] < level[b];
+}
+
+void QQmlJSLogger::log(const QString &message, QQmlJSLoggerCategory category,
+                       const QQmlJS::SourceLocation &srcLocation, QtMsgType type, bool showContext,
+                       bool showFileName, const std::optional<FixSuggestion> &suggestion,
+                       const QString overrideFileName)
+{
+    if (isCategoryIgnored(category))
         return;
+
+    // Note: assume \a type is the type we should prefer for logging
 
     if (srcLocation.isValid() && m_ignoredWarnings[srcLocation.startLine].contains(category))
         return;
 
-    const QtMsgType msgType = m_categoryLevels[category];
-
     QString prefix;
 
-    if (!m_fileName.isEmpty() && showFileName)
-        prefix = m_fileName + QStringLiteral(":");
+    if ((!overrideFileName.isEmpty() || !m_fileName.isEmpty()) && showFileName)
+        prefix =
+                (!overrideFileName.isEmpty() ? overrideFileName : m_fileName) + QStringLiteral(":");
 
     if (srcLocation.isValid())
         prefix += QStringLiteral("%1:%2:").arg(srcLocation.startLine).arg(srcLocation.startColumn);
@@ -119,14 +151,21 @@ void QQmlJSLogger::log(const QString &message, QQmlJSLoggerCategory category, co
     if (!prefix.isEmpty())
         prefix.append(QLatin1Char(' '));
 
-    m_output.writePrefixedMessage(prefix + message, msgType);
+    // Note: we do the clamping to [Info, Critical] range since our logger only
+    // supports 3 categories
+    type = std::clamp(type, QtInfoMsg, QtCriticalMsg, isMsgTypeLess);
 
-    QQmlJS::DiagnosticMessage diagMsg;
+    // Note: since we clamped our \a type, the output message is not printed
+    // exactly like it was requested, bear with us
+    m_output.writePrefixedMessage(prefix + message, type);
+
+    Message diagMsg;
     diagMsg.message = message;
     diagMsg.loc = srcLocation;
-    diagMsg.type = msgType;
+    diagMsg.type = type;
+    diagMsg.fixSuggestion = suggestion;
 
-    switch (msgType) {
+    switch (type) {
     case QtWarningMsg: m_warnings.push_back(diagMsg); break;
     case QtCriticalMsg: m_errors.push_back(diagMsg); break;
     case QtInfoMsg: m_infos.push_back(diagMsg); break;
@@ -134,41 +173,115 @@ void QQmlJSLogger::log(const QString &message, QQmlJSLoggerCategory category, co
     }
 
     if (srcLocation.isValid() && !m_code.isEmpty() && showContext)
-        printContext(srcLocation);
+        printContext(overrideFileName, srcLocation);
+
+    if (suggestion.has_value())
+        printFix(suggestion.value());
 }
 
-void QQmlJSLogger::processMessages(const QList<QQmlJS::DiagnosticMessage> &messages, QQmlJSLoggerCategory category)
+void QQmlJSLogger::processMessages(const QList<QQmlJS::DiagnosticMessage> &messages,
+                                   QQmlJSLoggerCategory category)
 {
-    if (isCategoryDisabled(category) || messages.isEmpty())
+    if (messages.isEmpty() || isCategoryIgnored(category))
         return;
 
     m_output.write(QStringLiteral("---\n"));
 
+    // TODO: we should instead respect message's category here (potentially, it
+    // should hold a category instead of type)
     for (const QQmlJS::DiagnosticMessage &message : messages)
         log(message.message, category, QQmlJS::SourceLocation(), false, false);
 
     m_output.write(QStringLiteral("---\n\n"));
 }
 
-void QQmlJSLogger::printContext(const QQmlJS::SourceLocation &location)
+void QQmlJSLogger::printContext(const QString &overrideFileName,
+                                const QQmlJS::SourceLocation &location)
 {
-    IssueLocationWithContext issueLocationWithContext { m_code, location };
+    QString code = m_code;
+
+    if (!overrideFileName.isEmpty() && overrideFileName != QFileInfo(m_fileName).absolutePath()) {
+        QFile file(overrideFileName);
+        const bool success = file.open(QFile::ReadOnly);
+        Q_ASSERT(success);
+        code = QString::fromUtf8(file.readAll());
+    }
+
+    IssueLocationWithContext issueLocationWithContext { code, location };
     if (const QStringView beforeText = issueLocationWithContext.beforeText(); !beforeText.isEmpty())
         m_output.write(beforeText);
 
     bool locationMultiline = issueLocationWithContext.issueText().contains(QLatin1Char('\n'));
 
-    m_output.write(issueLocationWithContext.issueText().toString(), QtCriticalMsg);
-    m_output.write(issueLocationWithContext.afterText() + QLatin1Char('\n'));
+    if (!issueLocationWithContext.issueText().isEmpty())
+        m_output.write(issueLocationWithContext.issueText().toString(), QtCriticalMsg);
+    m_output.write(issueLocationWithContext.afterText().toString() + QLatin1Char('\n'));
 
     // Do not draw location indicator for multiline locations
     if (locationMultiline)
         return;
 
     int tabCount = issueLocationWithContext.beforeText().count(QLatin1Char('\t'));
-    m_output.write(QString::fromLatin1(" ").repeated(
-                       issueLocationWithContext.beforeText().length() - tabCount)
-                           + QString::fromLatin1("\t").repeated(tabCount)
-                           + QString::fromLatin1("^").repeated(location.length)
-                           + QLatin1Char('\n'));
+    int locationLength = location.length == 0 ? 1 : location.length;
+    m_output.write(QString::fromLatin1(" ").repeated(issueLocationWithContext.beforeText().size()
+                                                     - tabCount)
+                   + QString::fromLatin1("\t").repeated(tabCount)
+                   + QString::fromLatin1("^").repeated(locationLength) + QLatin1Char('\n'));
 }
+
+void QQmlJSLogger::printFix(const FixSuggestion &fix)
+{
+    const QString currentFileAbsPath = QFileInfo(m_fileName).absolutePath();
+    QString code = m_code;
+    QString currentFile;
+    for (const auto &fixItem : fix.fixes) {
+        m_output.writePrefixedMessage(fixItem.message, QtInfoMsg);
+
+        if (!fixItem.cutLocation.isValid())
+            continue;
+
+        if (fixItem.fileName == currentFile) {
+            // Nothing to do in this case, we've already read the code
+        } else if (fixItem.fileName.isEmpty() || fixItem.fileName == currentFileAbsPath) {
+            code = m_code;
+        } else {
+            QFile file(fixItem.fileName);
+            const bool success = file.open(QFile::ReadOnly);
+            Q_ASSERT(success);
+            code = QString::fromUtf8(file.readAll());
+            currentFile = fixItem.fileName;
+        }
+
+        IssueLocationWithContext issueLocationWithContext { code, fixItem.cutLocation };
+
+        if (const QStringView beforeText = issueLocationWithContext.beforeText();
+            !beforeText.isEmpty()) {
+            m_output.write(beforeText);
+        }
+
+        // The replacement string can be empty if we're only pointing something out to the user
+        QStringView replacementString = fixItem.replacementString.isEmpty()
+                ? issueLocationWithContext.issueText()
+                : fixItem.replacementString;
+
+        // But if there's nothing to change it has to be a hint
+        if (fixItem.replacementString.isEmpty())
+            Q_ASSERT(fixItem.isHint);
+
+        m_output.write(replacementString, QtDebugMsg);
+        m_output.write(issueLocationWithContext.afterText().toString() + u'\n');
+
+        int tabCount = issueLocationWithContext.beforeText().count(u'\t');
+
+        // Do not draw location indicator for multiline replacement strings
+        if (replacementString.contains(u'\n'))
+            continue;
+
+        m_output.write(u" "_s.repeated(
+                               issueLocationWithContext.beforeText().size() - tabCount)
+                       + u"\t"_s.repeated(tabCount)
+                       + u"^"_s.repeated(fixItem.replacementString.size()) + u'\n');
+    }
+}
+
+QT_END_NAMESPACE

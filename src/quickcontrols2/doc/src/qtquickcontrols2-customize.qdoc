@@ -1,29 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2017 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the documentation of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:FDL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Free Documentation License Usage
-** Alternatively, this file may be used under the terms of the GNU Free
-** Documentation License version 1.3 as published by the Free Software
-** Foundation and appearing in the file included in the packaging of
-** this file. Please review the following information to ensure
-** the GNU Free Documentation License version 1.3 requirements
-** will be met: https://www.gnu.org/licenses/fdl-1.3.html.
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2017 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GFDL-1.3-no-invariants-only
 
 /*!
     \page qtquickcontrols2-customize.html
@@ -49,6 +25,11 @@
     property of Rectangle:
 
     \include customize-button-background.qdocinc file
+
+    \note as the different items that make up a control in any given style are
+    designed to work together, it may be necessary to override other items to
+    get the look you're after. In addition, not all styles can be customized.
+    See the note in \l {Customization Reference} for more information.
 
     The second way to create the button is good if you plan to use your rounded
     button in several places. It involves moving the code into its own QML file
@@ -104,6 +85,12 @@
     An added benefit of these three methods is that it's not necessary to
     implement the template from scratch.
 
+    \note the three approaches mentioned here do not work for customizing the
+    attached \l ToolTip, as that is a shared item created internally. To do
+    a one-off customization of a \c ToolTip, see \l {Custom Tool Tips}. To
+    customize the attached \c ToolTip, it must be provided as part of
+    \l {Creating a Custom Style}{your own style}.
+
     \section1 Creating a Custom Style
 
     There are several ways to go about creating your own styles. Below, we'll
@@ -152,7 +139,7 @@
         ├─── Button.qml
         └─── qmldir
         \endcode
-    \li The files must be in a directory that is findable via the \l {QML Import Path}.
+    \li The files must be in a directory that is findable via the \l[QtQml]{QML Import Path}.
 
         For example, if the path to \e MyStyle directory mentioned above was
         \c /home/user/MyApp/MyStyle, then \c /home/user/MyApp must be added to
@@ -537,7 +524,7 @@
         \l {ApplicationWindow::background}{background}.
 
         \code
-        import
+        import QtQuick
         import QtQuick.Controls
 
         ApplicationWindow {
@@ -602,6 +589,47 @@
 
         \snippet qtquickcontrols2-combobox-custom.qml file
 
+        As explained in \l {ComboBox Model Roles}, ComboBox supports multiple
+        types of models. If you know that your ComboBox instances will only
+        ever use one particular type of model, then it is possible to simplify
+        the code above.
+
+        For example, if your models will only ever be derived from
+        \l QAbstractItemModel and have more than one role, the following
+        binding is sufficient:
+
+        \code
+        text: model[control.textRole]
+        \endcode
+
+        However, if you want to support all standard models, the more complex
+        binding is necessary, and is explained in detail below.
+
+        \quotefromfile qtquickcontrols2-combobox-custom.qml
+        \skipto control.textRole
+        \printto Array.isArray
+
+        The first line checks if the \l {ComboBox::}{textRole} property has
+        been set. It is only necessary to set this property if the model
+        has more than one role.
+
+        \printline Array.isArray
+
+        If \c textRole has been set, the next step is to check if the model
+        is an array.
+
+        If it is an array, the \c modelData context property will be available,
+        and so it must be used. Square bracket notation is used to access
+        the property of modelData since the property name is not known ahead
+        of time.
+
+        If it is not an array, the \c model context property must be used
+        instead.
+
+        \printline modelData
+
+        Finally, if \c textRole has not been set, then the model only has one
+        role, and so it is sufficient to use the value of \c modelData.
 
     \section2 Customizing DelayButton
 
@@ -981,6 +1009,7 @@
         \printuntil }
         \printuntil }
 
+        \include qquicktooltip.qdocinc customize-note
 
     \section2 Customizing Tumbler
 

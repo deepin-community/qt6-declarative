@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQuick module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qquickpropertychanges_p.h"
 
@@ -53,6 +17,7 @@
 #include <private/qqmlboundsignal_p.h>
 #include <private/qv4qmlcontext_p.h>
 #include <private/qqmlpropertybinding_p.h>
+#include <private/qqmlirbuilder_p.h>
 
 #include <QtCore/qdebug.h>
 
@@ -70,9 +35,9 @@ QT_BEGIN_NAMESPACE
     \l State. This enables an item's property values to be changed when it
     \l {Qt Quick States}{changes between states}.
 
-    To create a PropertyChanges object, specify the \l target item whose
-    properties are to be modified, and define the new property values or
-    bindings. For example:
+    To create a PropertyChanges object, bind to properties of the target
+    item like you would bind to local properties. This way you can define
+    the new property values or bindings. For example:
 
     \snippet qml/propertychanges.qml import
     \codeline
@@ -93,8 +58,7 @@ QT_BEGIN_NAMESPACE
 
     \qml
     PropertyChanges {
-        target: myMouseArea
-        onClicked: doSomethingDifferent()
+        myMouseArea.onClicked: doSomethingDifferent()
     }
     \endqml
 
@@ -130,12 +94,22 @@ QT_BEGIN_NAMESPACE
     changed implicitly through their parent's state, they should be set explicitly in all PropertyChanges.
     An item will still not be enabled/visible if one of its parents is not enabled or visible.
 
+    \note For backwards compatibility with Qt 5, you can also specify PropertyChanges using
+    the \l target property and plain property names without IDs. For example:
+    \c {PropertyChanges { target: myItem; x: 15 }}. The form with ID instead of \l target
+    is recommended. You may also need to use the form with \l target if the file is to be
+    edited with \l{Qt Design Studio}. Mind that \l{Qt Design Studio} also imposes a number
+    of further restrictions on the files it can work with.
+
     \sa {Qt Quick Examples - Animation#States}{States example}, {Qt Quick States}, {Qt QML}
 */
 
 /*!
-    \qmlproperty Object QtQuick::PropertyChanges::target
+    \qmlproperty QtObject QtQuick::PropertyChanges::target
     This property holds the object which contains the properties to be changed.
+
+    \note You generally don't have to use this property. It only exists for
+    compatibility with Qt 5 and for compatibility with \l{Qt Design Studio}.
 */
 
 class QQuickReplaceSignalHandler : public QQuickStateActionEvent
@@ -240,18 +214,22 @@ public:
 
 void QQuickPropertyChangesParser::verifyList(const QQmlRefPointer<QV4::ExecutableCompilationUnit> &compilationUnit, const QV4::CompiledData::Binding *binding)
 {
-    if (binding->type == QV4::CompiledData::Binding::Type_Object) {
-        error(compilationUnit->objectAt(binding->value.objectIndex), QQuickPropertyChanges::tr("PropertyChanges does not support creating state-specific objects."));
-        return;
-    }
-
-    if (binding->type == QV4::CompiledData::Binding::Type_GroupProperty
-        || binding->type == QV4::CompiledData::Binding::Type_AttachedProperty) {
+    switch (binding->type()) {
+    case QV4::CompiledData::Binding::Type_Object:
+        error(compilationUnit->objectAt(binding->value.objectIndex),
+              QQuickPropertyChanges::tr(
+                      "PropertyChanges does not support creating state-specific objects."));
+        break;
+    case QV4::CompiledData::Binding::Type_GroupProperty:
+    case QV4::CompiledData::Binding::Type_AttachedProperty: {
         const QV4::CompiledData::Object *subObj = compilationUnit->objectAt(binding->value.objectIndex);
         const QV4::CompiledData::Binding *subBinding = subObj->bindingTable();
-        for (quint32 i = 0; i < subObj->nBindings; ++i, ++subBinding) {
+        for (quint32 i = 0; i < subObj->nBindings; ++i, ++subBinding)
             verifyList(compilationUnit, subBinding);
-        }
+        break;
+    }
+    default:
+        break;
     }
 }
 
@@ -260,7 +238,7 @@ void QQuickPropertyChangesPrivate::decode()
     if (decoded)
         return;
 
-    for (const QV4::CompiledData::Binding *binding : qAsConst(bindings))
+    for (const QV4::CompiledData::Binding *binding : std::as_const(bindings))
         decodeBinding(QString(), compilationUnit, binding);
 
     bindings.clear();
@@ -274,8 +252,9 @@ void QQuickPropertyChangesPrivate::decodeBinding(const QString &propertyPrefix, 
 
     QString propertyName = propertyPrefix + compilationUnit->stringAt(binding->propertyNameIndex);
 
-    if (binding->type == QV4::CompiledData::Binding::Type_GroupProperty
-        || binding->type == QV4::CompiledData::Binding::Type_AttachedProperty) {
+    switch (binding->type()) {
+    case QV4::CompiledData::Binding::Type_GroupProperty:
+    case QV4::CompiledData::Binding::Type_AttachedProperty: {
         QString pre = propertyName + QLatin1Char('.');
         const QV4::CompiledData::Object *subObj = compilationUnit->objectAt(binding->value.objectIndex);
         const QV4::CompiledData::Binding *subBinding = subObj->bindingTable();
@@ -284,26 +263,27 @@ void QQuickPropertyChangesPrivate::decodeBinding(const QString &propertyPrefix, 
         }
         return;
     }
+    default:
+        break;
+    }
 
-    if (propertyName.count() >= 3 &&
-        propertyName.at(0) == QLatin1Char('o') &&
-        propertyName.at(1) == QLatin1Char('n') &&
-        propertyName.at(2).isUpper()) {
+    if (binding->isSignalHandler() || QmlIR::IRBuilder::isSignalPropertyName(propertyName)) {
         QQmlProperty prop = property(propertyName);
         if (prop.isSignalProperty()) {
             QQuickReplaceSignalHandler *handler = new QQuickReplaceSignalHandler;
             handler->property = prop;
             handler->expression.adopt(
                         new QQmlBoundSignalExpression(
-                            object, QQmlPropertyPrivate::get(prop)->signalIndex(),
-                            QQmlContextData::get(qmlContext(q)), object,
+                            prop.object(), QQmlPropertyPrivate::get(prop)->signalIndex(),
+                            QQmlContextData::get(qmlContext(q)), prop.object(),
                             compilationUnit->runtimeFunctions.at(binding->value.compiledScriptIndex)));
             signalReplacements << handler;
             return;
         }
     }
 
-    if (binding->type == QV4::CompiledData::Binding::Type_Script || binding->isTranslationBinding()) {
+    if (binding->type() == QV4::CompiledData::Binding::Type_Script
+            || binding->isTranslationBinding()) {
         QUrl url = QUrl();
         int line = -1;
         int column = -1;
@@ -327,7 +307,7 @@ void QQuickPropertyChangesPrivate::decodeBinding(const QString &propertyPrefix, 
     }
 
     QVariant var;
-    switch (binding->type) {
+    switch (binding->type()) {
     case QV4::CompiledData::Binding::Type_Script:
     case QV4::CompiledData::Binding::Type_Translation:
     case QV4::CompiledData::Binding::Type_TranslationById:
@@ -353,7 +333,7 @@ void QQuickPropertyChangesPrivate::decodeBinding(const QString &propertyPrefix, 
 
 void QQuickPropertyChangesParser::verifyBindings(const QQmlRefPointer<QV4::ExecutableCompilationUnit> &compilationUnit, const QList<const QV4::CompiledData::Binding *> &props)
 {
-    for (int ii = 0; ii < props.count(); ++ii)
+    for (int ii = 0; ii < props.size(); ++ii)
         verifyList(compilationUnit, props.at(ii));
 }
 
@@ -364,6 +344,10 @@ void QQuickPropertyChangesParser::applyBindings(QObject *obj, const QQmlRefPoint
     p->bindings = bindings;
     p->compilationUnit = compilationUnit;
     p->decoded = false;
+
+    QQmlData *data = QQmlData::get(obj);
+    Q_ASSERT(data && !data->wasDeleted(obj));
+    data->releaseDeferredData();
 }
 
 QQuickPropertyChanges::QQuickPropertyChanges()
@@ -374,7 +358,7 @@ QQuickPropertyChanges::QQuickPropertyChanges()
 QQuickPropertyChanges::~QQuickPropertyChanges()
 {
     Q_D(QQuickPropertyChanges);
-    for(int ii = 0; ii < d->signalReplacements.count(); ++ii)
+    for(int ii = 0; ii < d->signalReplacements.size(); ++ii)
         delete d->signalReplacements.at(ii);
 }
 
@@ -387,7 +371,10 @@ QObject *QQuickPropertyChanges::object() const
 void QQuickPropertyChanges::setObject(QObject *o)
 {
     Q_D(QQuickPropertyChanges);
-    d->object = o;
+    if (o != d->object) {
+        d->object = o;
+        emit objectChanged();
+    }
 }
 
 /*!
@@ -408,7 +395,10 @@ bool QQuickPropertyChanges::restoreEntryValues() const
 void QQuickPropertyChanges::setRestoreEntryValues(bool v)
 {
     Q_D(QQuickPropertyChanges);
-    d->restore = v;
+    if (v != d->restore) {
+        d->restore = v;
+        emit restoreEntryValuesChanged();
+    }
 }
 
 QQmlProperty
@@ -417,7 +407,8 @@ QQuickPropertyChangesPrivate::property(const QString &property)
     Q_Q(QQuickPropertyChanges);
     QQmlData *ddata = QQmlData::get(q);
     QQmlProperty prop = QQmlPropertyPrivate::create(
-                object, property, ddata ? ddata->outerContext : QQmlRefPointer<QQmlContextData>());
+                object, property, ddata ? ddata->outerContext : QQmlRefPointer<QQmlContextData>(),
+                QQmlPropertyPrivate::InitFlag::AllowId | QQmlPropertyPrivate::InitFlag::AllowSignal);
     if (!prop.isValid()) {
         qmlWarning(q) << QQuickPropertyChanges::tr("Cannot assign to non-existent property \"%1\"").arg(property);
         return QQmlProperty();
@@ -436,7 +427,7 @@ QQuickPropertyChanges::ActionList QQuickPropertyChanges::actions()
 
     ActionList list;
 
-    for (int ii = 0; ii < d->properties.count(); ++ii) {
+    for (int ii = 0; ii < d->properties.size(); ++ii) {
         QQmlProperty prop = d->property(d->properties.at(ii).first);
 
         QQuickStateAction a(d->object, prop, d->properties.at(ii).first,
@@ -448,7 +439,7 @@ QQuickPropertyChanges::ActionList QQuickPropertyChanges::actions()
         }
     }
 
-    for (int ii = 0; ii < d->signalReplacements.count(); ++ii) {
+    for (int ii = 0; ii < d->signalReplacements.size(); ++ii) {
         QQuickReplaceSignalHandler *handler = d->signalReplacements.at(ii);
 
         if (handler->property.isValid()) {
@@ -458,7 +449,7 @@ QQuickPropertyChanges::ActionList QQuickPropertyChanges::actions()
         }
     }
 
-    for (int ii = 0; ii < d->expressions.count(); ++ii) {
+    for (int ii = 0; ii < d->expressions.size(); ++ii) {
 
         QQuickPropertyChangesPrivate::ExpressionChange e = d->expressions.at(ii);
         const QString &property = e.name;
@@ -541,7 +532,10 @@ bool QQuickPropertyChanges::isExplicit() const
 void QQuickPropertyChanges::setIsExplicit(bool e)
 {
     Q_D(QQuickPropertyChanges);
-    d->isExplicit = e;
+    if (e != d->isExplicit) {
+        d->isExplicit = e;
+        emit isExplicitChanged();
+    }
 }
 
 bool QQuickPropertyChanges::containsValue(const QString &name) const

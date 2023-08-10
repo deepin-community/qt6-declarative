@@ -1,0 +1,9 @@
+Document: qt6-qtqml-manual
+Title: Qt 6 qtqml
+Author: The Qt Company Ltd
+Abstract: This is the HTML documentation for Qt 6 Qt QML
+Section: Programming/C++
+
+Format: HTML
+Index: /usr/share/doc/qt6-declarative-doc-html/html/qtqml/qtqtqml.index
+Files: /usr/share/doc/qt6-declarative-doc-html/html/qtqml/*.html

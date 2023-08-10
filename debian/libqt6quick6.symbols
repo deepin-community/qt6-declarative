@@ -1,6 +1,6 @@
-# SymbolsHelper-Confirmed: 6.2.4 amd64 arm64 armel armhf hurd-i386 i386 ia64 mips64el mipsel ppc64el riscv64 sh4 sparc64
+# SymbolsHelper-Confirmed: 6.4.2 amd64
 libQt6Quick.so.6 libqt6quick6 #MINVER#
-| libqt6quick6 #MINVER#, qt6-declarative-abi (= 6.2.4)
+| libqt6quick6 #MINVER#, qt6-declarative-abi (= 6.4.2)
 * Build-Depends-Packages: qt6-declarative-dev, qt6-declarative-private-dev
  _Z20qt_color_from_stringRKN3QV45ValueE@Base 6.2.0
  _Z23QQuick_initializeModulev@Base 6.2.0
@@ -10,17 +10,37 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _Z26qml_register_types_QtQuickv@Base 6.2.0
  _Z33qt_quick_shortcut_context_matcherv@Base 6.2.0
  _Z37qt_quick_set_shortcut_context_matcherPFbP7QObjectN2Qt15ShortcutContextEE@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64 i386)_ZGVZN9QMetaType21registerConverterImplI5QListI21QPersistentModelIndexE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.2.4
+ _ZGVZN9QMetaType21registerConverterImplI5QListI10QMatrix4x4E9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.4.0
+ _ZGVZN9QMetaType21registerConverterImplI5QListI11QColorSpaceE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.4.0
+ _ZGVZN9QMetaType21registerConverterImplI5QListI11QQuaternionE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.4.0
+ _ZGVZN9QMetaType21registerConverterImplI5QListI16QQuickAnchorLineE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.4.0
+ _ZGVZN9QMetaType21registerConverterImplI5QListI18QQuickHandlerPointE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.4.1
+ _ZGVZN9QMetaType21registerConverterImplI5QListI23QPointingDeviceUniqueIdE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.4.0
  _ZGVZN9QMetaType21registerConverterImplI5QListI4QUrlE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.2.0
+ _ZGVZN9QMetaType21registerConverterImplI5QListI5QFontE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.4.0
+ _ZGVZN9QMetaType21registerConverterImplI5QListI6QColorE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.4.0
  _ZGVZN9QMetaType21registerConverterImplI5QListI7QPointFE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.2.0
  _ZGVZN9QMetaType21registerConverterImplI5QListI9QPolygonFE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.2.0
+ _ZGVZN9QMetaType21registerConverterImplI5QListI9QVector2DE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.4.0
+ _ZGVZN9QMetaType21registerConverterImplI5QListI9QVector3DE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.4.0
+ _ZGVZN9QMetaType21registerConverterImplI5QListI9QVector4DE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.4.0
  _ZGVZN9QMetaType21registerConverterImplI5QListIP7QObjectE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.2.0
  _ZGVZN9QMetaType21registerConverterImplI5QListIS1_I7QPointFEE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.2.0
  _ZGVZN9QMetaType21registerConverterImplI5QListIiE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64 i386)_ZGVZN9QMetaType23registerMutableViewImplI5QListI21QPersistentModelIndexE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS8_EES_S_E10unregister@Base 6.2.4
+ _ZGVZN9QMetaType23registerMutableViewImplI5QListI10QMatrix4x4E9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS8_EES_S_E10unregister@Base 6.4.0
+ _ZGVZN9QMetaType23registerMutableViewImplI5QListI11QColorSpaceE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS8_EES_S_E10unregister@Base 6.4.0
+ _ZGVZN9QMetaType23registerMutableViewImplI5QListI11QQuaternionE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS8_EES_S_E10unregister@Base 6.4.0
+ _ZGVZN9QMetaType23registerMutableViewImplI5QListI16QQuickAnchorLineE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS8_EES_S_E10unregister@Base 6.4.0
+ _ZGVZN9QMetaType23registerMutableViewImplI5QListI18QQuickHandlerPointE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS8_EES_S_E10unregister@Base 6.4.1
+ _ZGVZN9QMetaType23registerMutableViewImplI5QListI23QPointingDeviceUniqueIdE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS8_EES_S_E10unregister@Base 6.4.0
  _ZGVZN9QMetaType23registerMutableViewImplI5QListI4QUrlE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS8_EES_S_E10unregister@Base 6.2.0
+ _ZGVZN9QMetaType23registerMutableViewImplI5QListI5QFontE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS8_EES_S_E10unregister@Base 6.4.0
+ _ZGVZN9QMetaType23registerMutableViewImplI5QListI6QColorE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS8_EES_S_E10unregister@Base 6.4.0
  _ZGVZN9QMetaType23registerMutableViewImplI5QListI7QPointFE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS8_EES_S_E10unregister@Base 6.2.0
  _ZGVZN9QMetaType23registerMutableViewImplI5QListI9QPolygonFE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS8_EES_S_E10unregister@Base 6.2.0
+ _ZGVZN9QMetaType23registerMutableViewImplI5QListI9QVector2DE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS8_EES_S_E10unregister@Base 6.4.0
+ _ZGVZN9QMetaType23registerMutableViewImplI5QListI9QVector3DE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS8_EES_S_E10unregister@Base 6.4.0
+ _ZGVZN9QMetaType23registerMutableViewImplI5QListI9QVector4DE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS8_EES_S_E10unregister@Base 6.4.0
  _ZGVZN9QMetaType23registerMutableViewImplI5QListIP7QObjectE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS9_EES_S_E10unregister@Base 6.2.0
  _ZGVZN9QMetaType23registerMutableViewImplI5QListIS1_I7QPointFEE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS9_EES_S_E10unregister@Base 6.2.0
  _ZGVZN9QMetaType23registerMutableViewImplI5QListIiE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS7_EES_S_E10unregister@Base 6.2.0
@@ -132,6 +152,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN10QQuickItem14dragEnterEventEP15QDragEnterEvent@Base 6.2.0
  _ZN10QQuickItem14dragLeaveEventEP15QDragLeaveEvent@Base 6.2.0
  _ZN10QQuickItem14enabledChangedEv@Base 6.2.0
+ _ZN10QQuickItem14ensurePolishedEv@Base 6.3.0
  _ZN10QQuickItem14geometryChangeERK6QRectFS2_@Base 6.2.0
  _ZN10QQuickItem14hoverMoveEventEP11QHoverEvent@Base 6.2.0
  _ZN10QQuickItem14mouseMoveEventEP11QMouseEvent@Base 6.2.0
@@ -259,6 +280,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN10QQuickPathD0Ev@Base 6.2.0
  _ZN10QQuickPathD1Ev@Base 6.2.0
  _ZN10QQuickPathD2Ev@Base 6.2.0
+ _ZN10QQuickText10invalidateEv@Base 6.4.0
  _ZN10QQuickText10itemChangeEN10QQuickItem10ItemChangeERKNS0_14ItemChangeDataE@Base 6.2.0
  _ZN10QQuickText10setBaseUrlERK4QUrl@Base 6.2.0
  _ZN10QQuickText10setPaddingEd@Base 6.2.0
@@ -392,6 +414,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN10QSGContext24renderContextInvalidatedEP16QSGRenderContext@Base 6.2.0
  _ZN10QSGContext27createInternalRectangleNodeERK6QRectFRK6QColor@Base 6.2.0
  _ZN10QSGContext29createTextureFactoryFromImageERK6QImage@Base 6.2.0
+ _ZN10QSGContext31vsyncIntervalForAnimationDriverEP16QAnimationDriver@Base 6.4.0
  _ZN10QSGContext34createGuiThreadShaderEffectManagerEv@Base 6.2.0
  _ZN10QSGContext7backendEv@Base 6.2.0
  _ZN10QSGContextC1EP7QObject@Base 6.2.0
@@ -415,16 +438,6 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN10QSGTextureD0Ev@Base 6.2.0
  _ZN10QSGTextureD1Ev@Base 6.2.0
  _ZN10QSGTextureD2Ev@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZN11QDataStreamlsEy@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZN11QDataStreamrsERy@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZN11QQuaternion4setXEf@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZN11QQuaternion4setYEf@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZN11QQuaternion4setZEf@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZN11QQuaternion9setScalarEf@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZN11QQuaternionC1Effff@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZN11QQuaternionC1Ev@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZN11QQuaternionC2Effff@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZN11QQuaternionC2Ev@Base 6.2.4
  _ZN11QQuickCurve11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
  _ZN11QQuickCurve11qt_metacastEPKc@Base 6.2.0
  _ZN11QQuickCurve12hasRelativeXEv@Base 6.2.0
@@ -496,9 +509,6 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN11QQuickScale9setZScaleEd@Base 6.2.0
  _ZN11QQuickScaleC1EP7QObject@Base 6.2.0
  _ZN11QQuickScaleC2EP7QObject@Base 6.2.0
- _ZN11QQuickScaleD0Ev@Base 6.2.0
- _ZN11QQuickScaleD1Ev@Base 6.2.0
- _ZN11QQuickScaleD2Ev@Base 6.2.0
  _ZN11QQuickState10setExtendsERK7QString@Base 6.2.0
  _ZN11QQuickState11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
  _ZN11QQuickState11qt_metacastEPKc@Base 6.2.0
@@ -589,7 +599,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN11QSGRhiLayer7setLiveEb@Base 6.2.0
  _ZN11QSGRhiLayer7setRectERK6QRectF@Base 6.2.0
  _ZN11QSGRhiLayer7setSizeERK5QSize@Base 6.2.0
- _ZN11QSGRhiLayer9setFormatEj@Base 6.2.0
+ _ZN11QSGRhiLayer9setFormatEN8QSGLayer6FormatE@Base 6.4.0
  _ZN11QSGRhiLayerC1EP16QSGRenderContext@Base 6.2.0
  _ZN11QSGRhiLayerC2EP16QSGRenderContext@Base 6.2.0
  _ZN11QSGRhiLayerD0Ev@Base 6.2.0
@@ -640,6 +650,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN12QQuickPixmap15connectFinishedEP7QObjectPKc@Base 6.2.0
  _ZN12QQuickPixmap15connectFinishedEP7QObjecti@Base 6.2.0
  _ZN12QQuickPixmap17itemGrabberSchemeE@Base 6.2.0
+ _ZN12QQuickPixmap19loadImageFromDeviceEP10QQmlEngineP9QIODeviceRK4QUrlRK5QRectRK5QSizeRK26QQuickImageProviderOptionsii@Base 6.4.0
  _ZN12QQuickPixmap23connectDownloadProgressEP7QObjectPKc@Base 6.2.0
  _ZN12QQuickPixmap23connectDownloadProgressEP7QObjecti@Base 6.2.0
  _ZN12QQuickPixmap4loadEP10QQmlEngineRK4QUrl6QFlagsINS_6OptionEE@Base 6.2.0
@@ -744,6 +755,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN12QQuickWindow24afterRenderPassRecordingEv@Base 6.2.0
  _ZN12QQuickWindow24setGraphicsConfigurationERK27QQuickGraphicsConfiguration@Base 6.2.0
  _ZN12QQuickWindow25beforeRenderPassRecordingEv@Base 6.2.0
+ _ZN12QQuickWindow25handleFontDatabaseChangedEv@Base 6.4.0
  _ZN12QQuickWindow25setTransientParent_helperEPS_@Base 6.2.0
  _ZN12QQuickWindow29handleApplicationStateChangedEN2Qt16ApplicationStateE@Base 6.2.0
  _ZN12QQuickWindow5eventEP6QEvent@Base 6.2.0
@@ -763,11 +775,24 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN12QQuickWindowD0Ev@Base 6.2.0
  _ZN12QQuickWindowD1Ev@Base 6.2.0
  _ZN12QQuickWindowD2Ev@Base 6.2.0
+ _ZN12QSGGlyphNodeD0Ev@Base 6.4.0
+ _ZN12QSGGlyphNodeD1Ev@Base 6.4.0
+ _ZN12QSGGlyphNodeD2Ev@Base 6.4.0
  _ZN12QSGImageNode15rebuildGeometryEP11QSGGeometryP10QSGTextureRK6QRectFS4_6QFlagsINS_31TextureCoordinatesTransformFlagEE@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64 i386)_ZN13QMetaSequence12MetaSequenceI5QListI21QPersistentModelIndexEE5valueE@Base 6.2.4
+ _ZN13QMetaSequence12MetaSequenceI5QListI10QMatrix4x4EE5valueE@Base 6.4.0
+ _ZN13QMetaSequence12MetaSequenceI5QListI11QColorSpaceEE5valueE@Base 6.4.0
+ _ZN13QMetaSequence12MetaSequenceI5QListI11QQuaternionEE5valueE@Base 6.4.0
+ _ZN13QMetaSequence12MetaSequenceI5QListI16QQuickAnchorLineEE5valueE@Base 6.4.0
+ _ZN13QMetaSequence12MetaSequenceI5QListI18QQuickHandlerPointEE5valueE@Base 6.4.1
+ _ZN13QMetaSequence12MetaSequenceI5QListI23QPointingDeviceUniqueIdEE5valueE@Base 6.4.0
  _ZN13QMetaSequence12MetaSequenceI5QListI4QUrlEE5valueE@Base 6.2.0
+ _ZN13QMetaSequence12MetaSequenceI5QListI5QFontEE5valueE@Base 6.4.0
+ _ZN13QMetaSequence12MetaSequenceI5QListI6QColorEE5valueE@Base 6.4.0
  _ZN13QMetaSequence12MetaSequenceI5QListI7QPointFEE5valueE@Base 6.2.0
  _ZN13QMetaSequence12MetaSequenceI5QListI9QPolygonFEE5valueE@Base 6.2.0
+ _ZN13QMetaSequence12MetaSequenceI5QListI9QVector2DEE5valueE@Base 6.4.0
+ _ZN13QMetaSequence12MetaSequenceI5QListI9QVector3DEE5valueE@Base 6.4.0
+ _ZN13QMetaSequence12MetaSequenceI5QListI9QVector4DEE5valueE@Base 6.4.0
  _ZN13QMetaSequence12MetaSequenceI5QListIP7QObjectEE5valueE@Base 6.2.0
  _ZN13QMetaSequence12MetaSequenceI5QListIS1_I7QPointFEEE5valueE@Base 6.2.0
  _ZN13QMetaSequence12MetaSequenceI5QListIiEE5valueE@Base 6.2.0
@@ -900,19 +925,25 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN13QSGRhiSupport13applySettingsEv@Base 6.2.0
  _ZN13QSGRhiSupport13grabOffscreenEP12QQuickWindow@Base 6.2.0
  _ZN13QSGRhiSupport15checkEnvQSgInfoEv@Base 6.2.0
+ _ZN13QSGRhiSupport17chooseSampleCountEiP4QRhi@Base 6.4.0
  _ZN13QSGRhiSupport17instance_internalEv@Base 6.2.0
  _ZN13QSGRhiSupport19prepareWindowForRhiEP12QQuickWindow@Base 6.2.0
- _ZN13QSGRhiSupport21defaultVulkanInstanceEv@Base 6.2.0
+ _ZN13QSGRhiSupport20applySwapChainFormatEP13QRhiSwapChain@Base 6.4.0
+ _ZN13QSGRhiSupport20preparePipelineCacheEP4QRhi@Base 6.3.0
  _ZN13QSGRhiSupport22adjustToPlatformQuirksEv@Base 6.2.0
+ _ZN13QSGRhiSupport24toRhiTextureFormatFromGLEj@Base 6.4.0
  _ZN13QSGRhiSupport26grabAndBlockInCurrentFrameEP4QRhiP17QRhiCommandBufferP11QRhiTexture@Base 6.2.0
  _ZN13QSGRhiSupport27maybeCreateOffscreenSurfaceEP7QWindow@Base 6.2.0
- _ZN13QSGRhiSupport28cleanupDefaultVulkanInstanceEv@Base 6.2.0
+ (arch=linux-any)_ZN13QSGRhiSupport28toRhiTextureFormatFromVulkanEjP6QFlagsIN11QRhiTexture4FlagEE@Base 6.4.0
  _ZN13QSGRhiSupport33chooseSampleCountForWindowWithRhiEP7QWindowP4QRhi@Base 6.2.0
  _ZN13QSGRhiSupport8instanceEv@Base 6.2.0
  _ZN13QSGRhiSupport9configureEN20QSGRendererInterface11GraphicsApiE@Base 6.2.0
- _ZN13QSGRhiSupport9createRhiEP12QQuickWindowP17QOffscreenSurface@Base 6.2.0
+ _ZN13QSGRhiSupport9createRhiEP12QQuickWindowP8QSurface@Base 6.4.0
  _ZN13QSGRhiSupportC1Ev@Base 6.2.0
  _ZN13QSGRhiSupportC2Ev@Base 6.2.0
+ _ZN13QSGSpriteNodeD0Ev@Base 6.4.0
+ _ZN13QSGSpriteNodeD1Ev@Base 6.4.0
+ _ZN13QSGSpriteNodeD2Ev@Base 6.4.0
  _ZN14QQuickAnimator10transitionER5QListI17QQuickStateActionERS0_I12QQmlPropertyEN23QQuickAbstractAnimation19TransitionDirectionEP7QObject@Base 6.2.0
  _ZN14QQuickAnimator11fromChangedEd@Base 6.2.0
  _ZN14QQuickAnimator11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
@@ -1044,9 +1075,6 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN14QQuickGridView8initItemEiP7QObject@Base 6.2.0
  _ZN14QQuickGridViewC1EP10QQuickItem@Base 6.2.0
  _ZN14QQuickGridViewC2EP10QQuickItem@Base 6.2.0
- _ZN14QQuickGridViewD0Ev@Base 6.2.0
- _ZN14QQuickGridViewD1Ev@Base 6.2.0
- _ZN14QQuickGridViewD2Ev@Base 6.2.0
  _ZN14QQuickItemView11animStoppedEv@Base 6.2.0
  _ZN14QQuickItemView11createdItemEiP7QObject@Base 6.2.0
  _ZN14QQuickItemView11forceLayoutEv@Base 6.2.0
@@ -1135,6 +1163,9 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN14QQuickItemViewD0Ev@Base 6.2.0
  _ZN14QQuickItemViewD1Ev@Base 6.2.0
  _ZN14QQuickItemViewD2Ev@Base 6.2.0
+ _ZN14QQuickKeyEvent11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.3.0
+ _ZN14QQuickKeyEvent11qt_metacastEPKc@Base 6.3.0
+ _ZN14QQuickKeyEvent16staticMetaObjectE@Base 6.3.0
  _ZN14QQuickListView10setSpacingEd@Base 6.2.0
  _ZN14QQuickListView11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
  _ZN14QQuickListView11qt_metacastEPKc@Base 6.2.0
@@ -1285,8 +1316,6 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN14QQuickProfiler15featuresEnabledE@Base 6.2.0
  _ZN14QQuickProfiler16staticMetaObjectE@Base 6.2.0
  _ZN14QQuickProfiler17stopProfilingImplEv@Base 6.2.0
- (optional=templinst|arch=i386)_ZN14QQuickProfiler18pixmapStateChangedILN23QQmlProfilerDefinitions15PixmapEventTypeE3EEEvRK4QUrl@Base 6.2.4
- (optional=templinst|arch=i386)_ZN14QQuickProfiler18pixmapStateChangedILN23QQmlProfilerDefinitions15PixmapEventTypeE5EEEvRK4QUrl@Base 6.2.4
  _ZN14QQuickProfiler18startProfilingImplEy@Base 6.2.0
  _ZN14QQuickProfiler25registerAnimationCallbackEv@Base 6.2.0
  _ZN14QQuickProfiler8setTimerERK13QElapsedTimer@Base 6.2.0
@@ -1335,9 +1364,34 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN14QQuickRotation9setOriginERK9QVector3D@Base 6.2.0
  _ZN14QQuickRotationC1EP7QObject@Base 6.2.0
  _ZN14QQuickRotationC2EP7QObject@Base 6.2.0
- _ZN14QQuickRotationD0Ev@Base 6.2.0
- _ZN14QQuickRotationD1Ev@Base 6.2.0
- _ZN14QQuickRotationD2Ev@Base 6.2.0
+ _ZN14QQuickShortcut10classBeginEv@Base 6.4.0
+ _ZN14QQuickShortcut10setContextEN2Qt15ShortcutContextE@Base 6.4.0
+ _ZN14QQuickShortcut10setEnabledERNS_8ShortcutEb@Base 6.4.0
+ _ZN14QQuickShortcut10setEnabledEb@Base 6.4.0
+ _ZN14QQuickShortcut11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.4.0
+ _ZN14QQuickShortcut11qt_metacastEPKc@Base 6.4.0
+ _ZN14QQuickShortcut11setSequenceERK8QVariant@Base 6.4.0
+ _ZN14QQuickShortcut12grabShortcutERNS_8ShortcutEN2Qt15ShortcutContextE@Base 6.4.0
+ _ZN14QQuickShortcut12setSequencesERK5QListI8QVariantE@Base 6.4.0
+ _ZN14QQuickShortcut13setAutoRepeatERNS_8ShortcutEb@Base 6.4.0
+ _ZN14QQuickShortcut13setAutoRepeatEb@Base 6.4.0
+ _ZN14QQuickShortcut14contextChangedEv@Base 6.4.0
+ _ZN14QQuickShortcut14enabledChangedEv@Base 6.4.0
+ _ZN14QQuickShortcut14ungrabShortcutERNS_8ShortcutE@Base 6.4.0
+ _ZN14QQuickShortcut15sequenceChangedEv@Base 6.4.0
+ _ZN14QQuickShortcut16sequencesChangedEv@Base 6.4.0
+ _ZN14QQuickShortcut16staticMetaObjectE@Base 6.4.0
+ _ZN14QQuickShortcut17autoRepeatChangedEv@Base 6.4.0
+ _ZN14QQuickShortcut17componentCompleteEv@Base 6.4.0
+ _ZN14QQuickShortcut20activatedAmbiguouslyEv@Base 6.4.0
+ _ZN14QQuickShortcut5eventEP6QEvent@Base 6.4.0
+ _ZN14QQuickShortcut9activatedEv@Base 6.4.0
+ _ZN14QQuickShortcutC1EP7QObject@Base 6.4.0
+ _ZN14QQuickShortcutC2EP7QObject@Base 6.4.0
+ _ZN14QQuickShortcutD0Ev@Base 6.4.0
+ _ZN14QQuickShortcutD1Ev@Base 6.4.0
+ _ZN14QQuickShortcutD2Ev@Base 6.4.0
+ _ZN14QQuickTextEdit10invalidateEv@Base 6.4.0
  _ZN14QQuickTextEdit10selectWordEv@Base 6.2.0
  _ZN14QQuickTextEdit10setBaseUrlERK4QUrl@Base 6.2.0
  _ZN14QQuickTextEdit10setPaddingEd@Base 6.2.0
@@ -1353,6 +1407,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN14QQuickTextEdit12colorChangedERK6QColor@Base 6.2.0
  _ZN14QQuickTextEdit12createCursorEv@Base 6.2.0
  _ZN14QQuickTextEdit12focusInEventEP11QFocusEvent@Base 6.2.0
+ _ZN14QQuickTextEdit12q_invalidateEv@Base 6.4.0
  _ZN14QQuickTextEdit12resetBaseUrlEv@Base 6.2.0
  _ZN14QQuickTextEdit12resetPaddingEv@Base 6.2.0
  _ZN14QQuickTextEdit12textDocumentEv@Base 6.2.0
@@ -1442,6 +1497,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN14QQuickTextEdit21setMouseSelectionModeENS_13SelectionModeE@Base 6.2.0
  _ZN14QQuickTextEdit22cursorRectangleChangedEv@Base 6.2.0
  _ZN14QQuickTextEdit22markDirtyNodesForRangeEiii@Base 6.2.0
+ _ZN14QQuickTextEdit22setOldSelectionDefaultEv@Base 6.4.0
  _ZN14QQuickTextEdit22setPersistentSelectionEb@Base 6.2.0
  _ZN14QQuickTextEdit22tabStopDistanceChangedEd@Base 6.2.0
  _ZN14QQuickTextEdit23inputMethodHintsChangedEv@Base 6.2.0
@@ -1518,6 +1574,23 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN14QQuickTimeLineD0Ev@Base 6.2.0
  _ZN14QQuickTimeLineD1Ev@Base 6.2.0
  _ZN14QQuickTimeLineD2Ev@Base 6.2.0
+ _ZN14QQuickTreeView11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.3.0
+ _ZN14QQuickTreeView11qt_metacastEPKc@Base 6.3.0
+ _ZN14QQuickTreeView13expandToIndexERK11QModelIndex@Base 6.4.0
+ _ZN14QQuickTreeView13keyPressEventEP9QKeyEvent@Base 6.4.0
+ _ZN14QQuickTreeView14toggleExpandedEi@Base 6.3.0
+ _ZN14QQuickTreeView16staticMetaObjectE@Base 6.3.0
+ _ZN14QQuickTreeView17expandRecursivelyEii@Base 6.4.0
+ _ZN14QQuickTreeView19collapseRecursivelyEi@Base 6.4.0
+ _ZN14QQuickTreeView6expandEi@Base 6.3.0
+ _ZN14QQuickTreeView8collapseEi@Base 6.3.0
+ _ZN14QQuickTreeView8expandedEii@Base 6.4.0
+ _ZN14QQuickTreeView9collapsedEib@Base 6.4.0
+ _ZN14QQuickTreeViewC1EP10QQuickItem@Base 6.3.0
+ _ZN14QQuickTreeViewC2EP10QQuickItem@Base 6.3.0
+ _ZN14QQuickTreeViewD0Ev@Base 6.3.0
+ _ZN14QQuickTreeViewD1Ev@Base 6.3.0
+ _ZN14QQuickTreeViewD2Ev@Base 6.3.0
  _ZN14QSGNodeUpdater12updateStatesEP7QSGNode@Base 6.2.0
  _ZN14QSGNodeUpdater13enterClipNodeEP11QSGClipNode@Base 6.2.0
  _ZN14QSGNodeUpdater13leaveClipNodeEP11QSGClipNode@Base 6.2.0
@@ -1548,6 +1621,9 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN14QSGOpacityNodeD0Ev@Base 6.2.0
  _ZN14QSGOpacityNodeD1Ev@Base 6.2.0
  _ZN14QSGOpacityNodeD2Ev@Base 6.2.0
+ _ZN14QSGPainterNodeD0Ev@Base 6.4.0
+ _ZN14QSGPainterNodeD1Ev@Base 6.4.0
+ _ZN14QSGPainterNodeD2Ev@Base 6.4.0
  _ZN15QQuickAnchorSet10resetRightEv@Base 6.2.0
  _ZN15QQuickAnchorSet11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
  _ZN15QQuickAnchorSet11qt_metacastEPKc@Base 6.2.0
@@ -1762,9 +1838,6 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN15QQuickMatrix4x49setMatrixERK10QMatrix4x4@Base 6.2.0
  _ZN15QQuickMatrix4x4C1EP7QObject@Base 6.2.0
  _ZN15QQuickMatrix4x4C2EP7QObject@Base 6.2.0
- _ZN15QQuickMatrix4x4D0Ev@Base 6.2.0
- _ZN15QQuickMatrix4x4D1Ev@Base 6.2.0
- _ZN15QQuickMatrix4x4D2Ev@Base 6.2.0
  _ZN15QQuickMouseArea10itemChangeEN10QQuickItem10ItemChangeERKNS0_14ItemChangeDataE@Base 6.2.0
  _ZN15QQuickMouseArea10setEnabledEb@Base 6.2.0
  _ZN15QQuickMouseArea10setHoveredEb@Base 6.2.0
@@ -1902,10 +1975,8 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN15QQuickScaleGrid9setBottomEi@Base 6.2.0
  _ZN15QQuickScaleGridC1EP7QObject@Base 6.2.0
  _ZN15QQuickScaleGridC2EP7QObject@Base 6.2.0
- _ZN15QQuickScaleGridD0Ev@Base 6.2.0
- _ZN15QQuickScaleGridD1Ev@Base 6.2.0
- _ZN15QQuickScaleGridD2Ev@Base 6.2.0
  _ZN15QQuickSvgParser7pathArcER12QPainterPathdddiidddd@Base 6.2.0
+ _ZN15QQuickTableView10setAnimateEb@Base 6.4.0
  _ZN15QQuickTableView11forceLayoutEv@Base 6.2.0
  _ZN15QQuickTableView11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
  _ZN15QQuickTableView11qt_metacastEPKc@Base 6.2.0
@@ -1913,10 +1984,12 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN15QQuickTableView11setDelegateEP13QQmlComponent@Base 6.2.0
  _ZN15QQuickTableView11setSyncViewEPS_@Base 6.2.0
  _ZN15QQuickTableView12modelChangedEv@Base 6.2.0
+ _ZN15QQuickTableView13keyPressEventEP9QKeyEvent@Base 6.4.0
  _ZN15QQuickTableView13setReuseItemsEb@Base 6.2.0
  _ZN15QQuickTableView13setRowSpacingEd@Base 6.2.0
  _ZN15QQuickTableView13topRowChangedEv@Base 6.2.0
  _ZN15QQuickTableView13viewportMovedE6QFlagsIN2Qt11OrientationEE@Base 6.2.0
+ _ZN15QQuickTableView14animateChangedEv@Base 6.4.0
  _ZN15QQuickTableView14columnsChangedEv@Base 6.2.0
  _ZN15QQuickTableView14geometryChangeERK6QRectFS2_@Base 6.2.0
  _ZN15QQuickTableView15delegateChangedEv@Base 6.2.0
@@ -1927,24 +2000,34 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN15QQuickTableView16setContentHeightEd@Base 6.2.0
  _ZN15QQuickTableView16setSyncDirectionE6QFlagsIN2Qt11OrientationEE@Base 6.2.0
  _ZN15QQuickTableView16staticMetaObjectE@Base 6.2.0
- _ZN15QQuickTableView17componentCompleteEv@Base 6.2.0
+ _ZN15QQuickTableView17currentRowChangedEv@Base 6.4.0
  _ZN15QQuickTableView17leftColumnChangedEv@Base 6.2.0
- _ZN15QQuickTableView17positionViewAtRowEi6QFlagsIN2Qt13AlignmentFlagEEd@Base 6.2.0
+ _ZN15QQuickTableView17positionViewAtRowEi6QFlagsINS_16PositionModeFlagEEdRK6QRectF@Base 6.4.0
  _ZN15QQuickTableView17reuseItemsChangedEv@Base 6.2.0
  _ZN15QQuickTableView17rowSpacingChangedEv@Base 6.2.0
  _ZN15QQuickTableView17setSelectionModelEP19QItemSelectionModel@Base 6.2.0
- _ZN15QQuickTableView18positionViewAtCellERK6QPoint6QFlagsIN2Qt13AlignmentFlagEERK7QPointF@Base 6.2.0
- _ZN15QQuickTableView18positionViewAtCellEii6QFlagsIN2Qt13AlignmentFlagEERK7QPointF@Base 6.2.0
+ _ZN15QQuickTableView18componentFinalizedEv@Base 6.3.0
+ _ZN15QQuickTableView18positionViewAtCellERK6QPoint6QFlagsINS_16PositionModeFlagEERK7QPointFRK6QRectF@Base 6.4.0
+ _ZN15QQuickTableView18positionViewAtCellEii6QFlagsINS_16PositionModeFlagEERK7QPointFRK6QRectF@Base 6.4.0
  _ZN15QQuickTableView18rightColumnChangedEv@Base 6.2.0
+ _ZN15QQuickTableView18setAlternatingRowsEb@Base 6.4.0
  _ZN15QQuickTableView20columnSpacingChangedEv@Base 6.2.0
- _ZN15QQuickTableView20positionViewAtColumnEi6QFlagsIN2Qt13AlignmentFlagEEd@Base 6.2.0
+ _ZN15QQuickTableView20currentColumnChangedEv@Base 6.4.0
+ _ZN15QQuickTableView20positionViewAtColumnEi6QFlagsINS_16PositionModeFlagEEdRK6QRectF@Base 6.4.0
  _ZN15QQuickTableView20setRowHeightProviderERK8QJSValue@Base 6.2.0
+ _ZN15QQuickTableView20setSelectionBehaviorENS_17SelectionBehaviorE@Base 6.4.0
  _ZN15QQuickTableView20syncDirectionChangedEv@Base 6.2.0
  _ZN15QQuickTableView21qmlAttachedPropertiesEP7QObject@Base 6.2.0
  _ZN15QQuickTableView21selectionModelChangedEv@Base 6.2.0
+ _ZN15QQuickTableView22alternatingRowsChangedEv@Base 6.4.0
  _ZN15QQuickTableView22setColumnWidthProviderERK8QJSValue@Base 6.2.0
+ _ZN15QQuickTableView23setKeyNavigationEnabledEb@Base 6.4.0
  _ZN15QQuickTableView24rowHeightProviderChangedEv@Base 6.2.0
+ _ZN15QQuickTableView24selectionBehaviorChangedEv@Base 6.4.0
  _ZN15QQuickTableView26columnWidthProviderChangedEv@Base 6.2.0
+ _ZN15QQuickTableView27keyNavigationEnabledChangedEv@Base 6.4.0
+ _ZN15QQuickTableView27setPointerNavigationEnabledEb@Base 6.4.0
+ _ZN15QQuickTableView31pointerNavigationEnabledChangedEv@Base 6.4.0
  _ZN15QQuickTableView8setModelERK8QVariant@Base 6.2.0
  _ZN15QQuickTableViewC1EP10QQuickItem@Base 6.2.0
  _ZN15QQuickTableViewC1ER22QQuickTableViewPrivateP10QQuickItem@Base 6.2.0
@@ -1953,6 +2036,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN15QQuickTableViewD0Ev@Base 6.2.0
  _ZN15QQuickTableViewD1Ev@Base 6.2.0
  _ZN15QQuickTableViewD2Ev@Base 6.2.0
+ _ZN15QQuickTextInput10invalidateEv@Base 6.4.0
  _ZN15QQuickTextInput10selectWordEv@Base 6.2.0
  _ZN15QQuickTextInput10setPaddingEd@Base 6.2.0
  _ZN15QQuickTextInput10textEditedEv@Base 6.2.0
@@ -2051,6 +2135,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN15QQuickTextInput22acceptableInputChangedEv@Base 6.2.0
  _ZN15QQuickTextInput22cursorRectangleChangedEv@Base 6.2.0
  _ZN15QQuickTextInput22resetPasswordMaskDelayEv@Base 6.2.0
+ _ZN15QQuickTextInput22setOldSelectionDefaultEv@Base 6.4.0
  _ZN15QQuickTextInput22setPersistentSelectionEb@Base 6.2.0
  _ZN15QQuickTextInput23inputMethodHintsChangedEv@Base 6.2.0
  _ZN15QQuickTextInput24passwordCharacterChangedEv@Base 6.2.0
@@ -2110,9 +2195,6 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN15QQuickTranslate8yChangedEv@Base 6.2.0
  _ZN15QQuickTranslateC1EP7QObject@Base 6.2.0
  _ZN15QQuickTranslateC2EP7QObject@Base 6.2.0
- _ZN15QQuickTranslateD0Ev@Base 6.2.0
- _ZN15QQuickTranslateD1Ev@Base 6.2.0
- _ZN15QQuickTranslateD2Ev@Base 6.2.0
  _ZN15QQuickXAnimator11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
  _ZN15QQuickXAnimator11qt_metacastEPKc@Base 6.2.0
  _ZN15QQuickXAnimator16staticMetaObjectE@Base 6.2.0
@@ -2139,7 +2221,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN15QSGPlainTexture11qt_metacastEPKc@Base 6.2.0
  _ZN15QSGPlainTexture16staticMetaObjectE@Base 6.2.0
  _ZN15QSGPlainTexture23commitTextureOperationsEP4QRhiP23QRhiResourceUpdateBatch@Base 6.2.0
- _ZN15QSGPlainTexture27setTextureFromNativeTextureEP4QRhiyiRK5QSize6QFlagsIN12QQuickWindow19CreateTextureOptionEES5_IN19QQuickWindowPrivate28TextureFromNativeTextureFlagEE@Base 6.2.0
+ _ZN15QSGPlainTexture27setTextureFromNativeTextureEP4QRhiyijRK5QSize6QFlagsIN12QQuickWindow19CreateTextureOptionEES5_IN19QQuickWindowPrivate28TextureFromNativeTextureFlagEE@Base 6.4.0
  _ZN15QSGPlainTexture8setImageERK6QImage@Base 6.2.0
  _ZN15QSGPlainTextureC1ER22QSGPlainTexturePrivate@Base 6.2.0
  _ZN15QSGPlainTextureC1Ev@Base 6.2.0
@@ -2158,24 +2240,6 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  (arch=linux-any)_ZN16QNativeInterface16QSGVulkanTextureD0Ev@Base 6.2.0
  (arch=linux-any)_ZN16QNativeInterface16QSGVulkanTextureD1Ev@Base 6.2.0
  (arch=linux-any)_ZN16QNativeInterface16QSGVulkanTextureD2Ev@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZN16QOpenGLFunctions10glViewportEiiii@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZN16QOpenGLFunctions11glBlendFuncEjj@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZN16QOpenGLFunctions11glColorMaskEhhhh@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZN16QOpenGLFunctions11glDepthFuncEj@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZN16QOpenGLFunctions11glDepthMaskEh@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZN16QOpenGLFunctions11glStencilOpEjjj@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZN16QOpenGLFunctions12glBindBufferEjj@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZN16QOpenGLFunctions12glClearColorEffff@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZN16QOpenGLFunctions12glUseProgramEj@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZN16QOpenGLFunctions13glBindTextureEjj@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZN16QOpenGLFunctions13glClearDepthfEf@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZN16QOpenGLFunctions13glGetIntegervEjPi@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZN16QOpenGLFunctions13glStencilFuncEjij@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZN16QOpenGLFunctions13glStencilMaskEj@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZN16QOpenGLFunctions15glActiveTextureEj@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZN16QOpenGLFunctions21glVertexAttribPointerEjijhiPKv@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZN16QOpenGLFunctions26glDisableVertexAttribArrayEj@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZN16QOpenGLFunctions9glDisableEj@Base 6.2.4
  _ZN16QQuickAnchorLine16staticMetaObjectE@Base 6.2.0
  _ZN16QQuickCloseEvent11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
  _ZN16QQuickCloseEvent11qt_metacastEPKc@Base 6.2.0
@@ -2258,9 +2322,6 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN16QQuickFocusScope16staticMetaObjectE@Base 6.2.0
  _ZN16QQuickFocusScopeC1EP10QQuickItem@Base 6.2.0
  _ZN16QQuickFocusScopeC2EP10QQuickItem@Base 6.2.0
- _ZN16QQuickFocusScopeD0Ev@Base 6.2.0
- _ZN16QQuickFocusScopeD1Ev@Base 6.2.0
- _ZN16QQuickFocusScopeD2Ev@Base 6.2.0
  _ZN16QQuickFontLoader11fontChangedEv@Base 6.2.0
  _ZN16QQuickFontLoader11nameChangedEv@Base 6.2.0
  _ZN16QQuickFontLoader11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
@@ -2272,9 +2333,6 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN16QQuickFontLoader9setSourceERK4QUrl@Base 6.2.0
  _ZN16QQuickFontLoaderC1EP7QObject@Base 6.2.0
  _ZN16QQuickFontLoaderC2EP7QObject@Base 6.2.0
- _ZN16QQuickFontLoaderD0Ev@Base 6.2.0
- _ZN16QQuickFontLoaderD1Ev@Base 6.2.0
- _ZN16QQuickFontLoaderD2Ev@Base 6.2.0
  _ZN16QQuickMouseEvent11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
  _ZN16QQuickMouseEvent11qt_metacastEPKc@Base 6.2.0
  _ZN16QQuickMouseEvent16staticMetaObjectE@Base 6.2.0
@@ -2477,6 +2535,9 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN16QSGContextPluginD2Ev@Base 6.2.0
  _ZN16QSGNinePatchNode15rebuildGeometryEP10QSGTextureP11QSGGeometryRK9QVector4DRK6QRectFd@Base 6.2.0
  _ZN16QSGNodeVisitorEx13visitChildrenEP7QSGNode@Base 6.2.0
+ _ZN16QSGNodeVisitorExD0Ev@Base 6.4.0
+ _ZN16QSGNodeVisitorExD1Ev@Base 6.4.0
+ _ZN16QSGNodeVisitorExD2Ev@Base 6.4.0
  _ZN16QSGRenderContext10initializeEPKNS_10InitParamsE@Base 6.2.0
  _ZN16QSGRenderContext10invalidateEv@Base 6.2.0
  _ZN16QSGRenderContext10preprocessEv@Base 6.2.0
@@ -2486,12 +2547,10 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN16QSGRenderContext11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
  _ZN16QSGRenderContext11qt_metacastEPKc@Base 6.2.0
  _ZN16QSGRenderContext12endNextFrameEP11QSGRenderer@Base 6.2.0
- _ZN16QSGRenderContext14beginNextFrameEP11QSGRendererPFvPvES4_S2_@Base 6.2.0
- _ZN16QSGRenderContext15endNextRhiFrameEP11QSGRenderer@Base 6.2.0
+ _ZN16QSGRenderContext14beginNextFrameEP11QSGRendererRK15QSGRenderTargetPFvPvES7_S5_@Base 6.4.0
  _ZN16QSGRenderContext16staticMetaObjectE@Base 6.2.0
- _ZN16QSGRenderContext17beginNextRhiFrameEP11QSGRendererP16QRhiRenderTargetP24QRhiRenderPassDescriptorP17QRhiCommandBufferPFvPvESA_S8_@Base 6.2.0
  _ZN16QSGRenderContext17textureForFactoryEP20QQuickTextureFactoryP12QQuickWindow@Base 6.2.0
- _ZN16QSGRenderContext18renderNextRhiFrameEP11QSGRenderer@Base 6.2.0
+ _ZN16QSGRenderContext21invalidateGlyphCachesEv@Base 6.4.0
  _ZN16QSGRenderContext23distanceFieldGlyphCacheERK8QRawFonti@Base 6.2.0
  _ZN16QSGRenderContext23textureFactoryDestroyedEP7QObject@Base 6.2.0
  _ZN16QSGRenderContext28registerFontengineForCleanupEP11QFontEngine@Base 6.2.0
@@ -2508,11 +2567,15 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN16QSGTransformNodeD0Ev@Base 6.2.0
  _ZN16QSGTransformNodeD1Ev@Base 6.2.0
  _ZN16QSGTransformNodeD2Ev@Base 6.2.0
+ _ZN16QSGVisitableNodeD0Ev@Base 6.4.0
+ _ZN16QSGVisitableNodeD1Ev@Base 6.4.0
+ _ZN16QSGVisitableNodeD2Ev@Base 6.4.0
  _ZN17QQuickAnimatorJob10boundValueEv@Base 6.2.4
  _ZN17QQuickAnimatorJob10initializeEP24QQuickAnimatorController@Base 6.2.0
  _ZN17QQuickAnimatorJob9setTargetEP10QQuickItem@Base 6.2.0
  _ZN17QQuickAnimatorJobC1Ev@Base 6.2.0
  _ZN17QQuickAnimatorJobC2Ev@Base 6.2.0
+ _ZN17QQuickApplication10styleHintsEv@Base 6.4.0
  _ZN17QQuickApplication11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
  _ZN17QQuickApplication11qt_metacastEPKc@Base 6.2.0
  _ZN17QQuickApplication12stateChangedEN2Qt16ApplicationStateE@Base 6.2.0
@@ -2575,9 +2638,28 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN17QQuickFontMetrics7setFontERK5QFont@Base 6.2.0
  _ZN17QQuickFontMetricsC1EP7QObject@Base 6.2.0
  _ZN17QQuickFontMetricsC2EP7QObject@Base 6.2.0
- _ZN17QQuickFontMetricsD0Ev@Base 6.2.0
- _ZN17QQuickFontMetricsD1Ev@Base 6.2.0
- _ZN17QQuickFontMetricsD2Ev@Base 6.2.0
+ _ZN17QQuickInputMethod10setVisibleEb@Base 6.4.0
+ _ZN17QQuickInputMethod11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.4.0
+ _ZN17QQuickInputMethod11qt_metacastEPKc@Base 6.4.0
+ _ZN17QQuickInputMethod12invokeActionEN12QInputMethod6ActionEi@Base 6.4.0
+ _ZN17QQuickInputMethod13localeChangedEv@Base 6.4.0
+ _ZN17QQuickInputMethod14visibleChangedEv@Base 6.4.0
+ _ZN17QQuickInputMethod16animatingChangedEv@Base 6.4.0
+ _ZN17QQuickInputMethod16staticMetaObjectE@Base 6.4.0
+ _ZN17QQuickInputMethod21inputDirectionChangedEN2Qt15LayoutDirectionE@Base 6.4.0
+ _ZN17QQuickInputMethod21setInputItemRectangleERK6QRectF@Base 6.4.0
+ _ZN17QQuickInputMethod21setInputItemTransformERK10QTransform@Base 6.4.0
+ _ZN17QQuickInputMethod22anchorRectangleChangedEv@Base 6.4.0
+ _ZN17QQuickInputMethod22cursorRectangleChangedEv@Base 6.4.0
+ _ZN17QQuickInputMethod24keyboardRectangleChangedEv@Base 6.4.0
+ _ZN17QQuickInputMethod29inputItemClipRectangleChangedEv@Base 6.4.0
+ _ZN17QQuickInputMethod4hideEv@Base 6.4.0
+ _ZN17QQuickInputMethod4showEv@Base 6.4.0
+ _ZN17QQuickInputMethod5resetEv@Base 6.4.0
+ _ZN17QQuickInputMethod6commitEv@Base 6.4.0
+ _ZN17QQuickInputMethod6updateE6QFlagsIN2Qt16InputMethodQueryEE@Base 6.4.0
+ _ZN17QQuickInputMethodC1EP7QObject@Base 6.4.0
+ _ZN17QQuickInputMethodC2EP7QObject@Base 6.4.0
  _ZN17QQuickItemPrivate10data_clearEP16QQmlListPropertyI7QObjectE@Base 6.2.0
  _ZN17QQuickItemPrivate10data_countEP16QQmlListPropertyI7QObjectE@Base 6.2.0
  _ZN17QQuickItemPrivate10itemChangeEN10QQuickItem10ItemChangeERKNS0_14ItemChangeDataE@Base 6.2.0
@@ -2607,7 +2689,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN17QQuickItemPrivate16nextTabChildItemEPK10QQuickItemi@Base 6.2.0
  _ZN17QQuickItemPrivate16prevTabChildItemEPK10QQuickItemi@Base 6.2.0
  _ZN17QQuickItemPrivate16resources_appendEP16QQmlListPropertyI7QObjectEPS1_@Base 6.2.0
- _ZN17QQuickItemPrivate16transformChangedEv@Base 6.2.0
+ _ZN17QQuickItemPrivate16transformChangedEP10QQuickItem@Base 6.3.0
  _ZN17QQuickItemPrivate16transform_appendEP16QQmlListPropertyI15QQuickTransformEPS1_@Base 6.2.0
  _ZN17QQuickItemPrivate17addPointerHandlerEP20QQuickPointerHandler@Base 6.2.0
  _ZN17QQuickItemPrivate17canAcceptTabFocusEP10QQuickItem@Base 6.2.0
@@ -2626,6 +2708,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN17QQuickItemPrivate19siblingOrderChangedEv@Base 6.2.0
  _ZN17QQuickItemPrivate20deliveryAgentPrivateEv@Base 6.2.0
  _ZN17QQuickItemPrivate20implicitWidthChangedEv@Base 6.2.0
+ _ZN17QQuickItemPrivate20removePointerHandlerEP20QQuickPointerHandler@Base 6.3.0
  _ZN17QQuickItemPrivate21addItemChangeListenerEP24QQuickItemChangeListener6QFlagsINS_10ChangeTypeEE@Base 6.2.0
  _ZN17QQuickItemPrivate21implicitHeightChangedEv@Base 6.2.0
  _ZN17QQuickItemPrivate21visibleChildren_countEP16QQmlListPropertyI10QQuickItemE@Base 6.2.0
@@ -2718,17 +2801,16 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN17QQuickTextMetrics11textChangedEv@Base 6.2.0
  _ZN17QQuickTextMetrics12elideChangedEv@Base 6.2.0
  _ZN17QQuickTextMetrics13setElideWidthEd@Base 6.2.0
+ _ZN17QQuickTextMetrics13setRenderTypeEN10QQuickText10RenderTypeE@Base 6.3.0
  _ZN17QQuickTextMetrics14metricsChangedEv@Base 6.2.0
  _ZN17QQuickTextMetrics16staticMetaObjectE@Base 6.2.0
  _ZN17QQuickTextMetrics17elideWidthChangedEv@Base 6.2.0
+ _ZN17QQuickTextMetrics17renderTypeChangedEv@Base 6.3.0
  _ZN17QQuickTextMetrics7setFontERK5QFont@Base 6.2.0
  _ZN17QQuickTextMetrics7setTextERK7QString@Base 6.2.0
  _ZN17QQuickTextMetrics8setElideEN2Qt13TextElideModeE@Base 6.2.0
  _ZN17QQuickTextMetricsC1EP7QObject@Base 6.2.0
  _ZN17QQuickTextMetricsC2EP7QObject@Base 6.2.0
- _ZN17QQuickTextMetricsD0Ev@Base 6.2.0
- _ZN17QQuickTextMetricsD1Ev@Base 6.2.0
- _ZN17QQuickTextMetricsD2Ev@Base 6.2.0
  _ZN17QQuickTextPrivate10updateSizeEv@Base 6.2.0
  _ZN17QQuickTextPrivate12clearFormatsEv@Base 6.2.0
  _ZN17QQuickTextPrivate12elideFormatsEiiiP5QListIN11QTextLayout11FormatRangeEE@Base 6.2.0
@@ -2742,9 +2824,11 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN17QQuickTextPrivate15setupTextLayoutEPd@Base 6.2.0
  _ZN17QQuickTextPrivate16setBottomPaddingEdb@Base 6.2.0
  _ZN17QQuickTextPrivate16signalSizeChangeERK6QSizeF@Base 6.2.0
+ _ZN17QQuickTextPrivate16transformChangedEP10QQuickItem@Base 6.3.0
  _ZN17QQuickTextPrivate17processHoverEventEP11QHoverEvent@Base 6.2.0
  _ZN17QQuickTextPrivate22isLineLaidOutConnectedEv@Base 6.2.0
  _ZN17QQuickTextPrivate22isLinkHoveredConnectedEv@Base 6.2.0
+ _ZN17QQuickTextPrivate22largeTextSizeThresholdE@Base 6.3.0
  _ZN17QQuickTextPrivate23setupCustomLineGeometryER9QTextLineRdii@Base 6.2.0
  _ZN17QQuickTextPrivate24isLinkActivatedConnectedEv@Base 6.2.0
  _ZN17QQuickTextPrivate28determineHorizontalAlignmentEv@Base 6.2.0
@@ -2821,6 +2905,9 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN17QSGDynamicTexture16staticMetaObjectE@Base 6.2.0
  _ZN17QSGDynamicTextureC1ER17QSGTexturePrivate@Base 6.2.0
  _ZN17QSGDynamicTextureC2ER17QSGTexturePrivate@Base 6.2.0
+ _ZN17QSGDynamicTextureD0Ev@Base 6.4.0
+ _ZN17QSGDynamicTextureD1Ev@Base 6.4.0
+ _ZN17QSGDynamicTextureD2Ev@Base 6.4.0
  _ZN17QSGMaterialShader11RenderState11uniformDataEv@Base 6.2.0
  _ZN17QSGMaterialShader11RenderState19resourceUpdateBatchEv@Base 6.2.0
  _ZN17QSGMaterialShader11RenderState3rhiEv@Base 6.2.0
@@ -2903,7 +2990,9 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN18QQuickHoverHandler10setHoveredEb@Base 6.2.0
  _ZN18QQuickHoverHandler11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
  _ZN18QQuickHoverHandler11qt_metacastEPKc@Base 6.2.0
+ _ZN18QQuickHoverHandler11setBlockingEb@Base 6.3.0
  _ZN18QQuickHoverHandler14hoveredChangedEv@Base 6.2.0
+ _ZN18QQuickHoverHandler15blockingChangedEv@Base 6.3.0
  _ZN18QQuickHoverHandler16handleEventPointEP13QPointerEventR11QEventPoint@Base 6.2.0
  _ZN18QQuickHoverHandler16staticMetaObjectE@Base 6.2.0
  _ZN18QQuickHoverHandler17componentCompleteEv@Base 6.2.0
@@ -2926,6 +3015,65 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN18QQuickIntValidator17localeNameChangedEv@Base 6.2.0
  _ZN18QQuickIntValidatorC1EP7QObject@Base 6.2.0
  _ZN18QQuickIntValidatorC2EP7QObject@Base 6.2.0
+ _ZN18QQuickKeysAttached10keyPressedEP9QKeyEventb@Base 6.3.0
+ _ZN18QQuickKeysAttached10tabPressedEP14QQuickKeyEvent@Base 6.3.0
+ _ZN18QQuickKeysAttached10yesPressedEP14QQuickKeyEvent@Base 6.3.0
+ _ZN18QQuickKeysAttached11backPressedEP14QQuickKeyEvent@Base 6.3.0
+ _ZN18QQuickKeysAttached11callPressedEP14QQuickKeyEvent@Base 6.3.0
+ _ZN18QQuickKeysAttached11downPressedEP14QQuickKeyEvent@Base 6.3.0
+ _ZN18QQuickKeysAttached11flipPressedEP14QQuickKeyEvent@Base 6.3.0
+ _ZN18QQuickKeysAttached11keyReleasedEP9QKeyEventb@Base 6.3.0
+ _ZN18QQuickKeysAttached11keyToSignalEi@Base 6.3.0
+ _ZN18QQuickKeysAttached11leftPressedEP14QQuickKeyEvent@Base 6.3.0
+ _ZN18QQuickKeysAttached11menuPressedEP14QQuickKeyEvent@Base 6.3.0
+ _ZN18QQuickKeysAttached11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.3.0
+ _ZN18QQuickKeysAttached11qt_metacastEPKc@Base 6.3.0
+ _ZN18QQuickKeysAttached11setPriorityENS_8PriorityE@Base 6.3.0
+ _ZN18QQuickKeysAttached12enterPressedEP14QQuickKeyEvent@Base 6.3.0
+ _ZN18QQuickKeysAttached12rightPressedEP14QQuickKeyEvent@Base 6.3.0
+ _ZN18QQuickKeysAttached12spacePressedEP14QQuickKeyEvent@Base 6.3.0
+ _ZN18QQuickKeysAttached13cancelPressedEP14QQuickKeyEvent@Base 6.3.0
+ _ZN18QQuickKeysAttached13deletePressedEP14QQuickKeyEvent@Base 6.3.0
+ _ZN18QQuickKeysAttached13digit0PressedEP14QQuickKeyEvent@Base 6.3.0
+ _ZN18QQuickKeysAttached13digit1PressedEP14QQuickKeyEvent@Base 6.3.0
+ _ZN18QQuickKeysAttached13digit2PressedEP14QQuickKeyEvent@Base 6.3.0
+ _ZN18QQuickKeysAttached13digit3PressedEP14QQuickKeyEvent@Base 6.3.0
+ _ZN18QQuickKeysAttached13digit4PressedEP14QQuickKeyEvent@Base 6.3.0
+ _ZN18QQuickKeysAttached13digit5PressedEP14QQuickKeyEvent@Base 6.3.0
+ _ZN18QQuickKeysAttached13digit6PressedEP14QQuickKeyEvent@Base 6.3.0
+ _ZN18QQuickKeysAttached13digit7PressedEP14QQuickKeyEvent@Base 6.3.0
+ _ZN18QQuickKeysAttached13digit8PressedEP14QQuickKeyEvent@Base 6.3.0
+ _ZN18QQuickKeysAttached13digit9PressedEP14QQuickKeyEvent@Base 6.3.0
+ _ZN18QQuickKeysAttached13escapePressedEP14QQuickKeyEvent@Base 6.3.0
+ _ZN18QQuickKeysAttached13hangupPressedEP14QQuickKeyEvent@Base 6.3.0
+ _ZN18QQuickKeysAttached13returnPressedEP14QQuickKeyEvent@Base 6.3.0
+ _ZN18QQuickKeysAttached13selectPressedEP14QQuickKeyEvent@Base 6.3.0
+ _ZN18QQuickKeysAttached14backtabPressedEP14QQuickKeyEvent@Base 6.3.0
+ _ZN18QQuickKeysAttached14enabledChangedEv@Base 6.3.0
+ _ZN18QQuickKeysAttached15asteriskPressedEP14QQuickKeyEvent@Base 6.3.0
+ _ZN18QQuickKeysAttached15context1PressedEP14QQuickKeyEvent@Base 6.3.0
+ _ZN18QQuickKeysAttached15context2PressedEP14QQuickKeyEvent@Base 6.3.0
+ _ZN18QQuickKeysAttached15context3PressedEP14QQuickKeyEvent@Base 6.3.0
+ _ZN18QQuickKeysAttached15context4PressedEP14QQuickKeyEvent@Base 6.3.0
+ _ZN18QQuickKeysAttached15priorityChangedEv@Base 6.3.0
+ _ZN18QQuickKeysAttached15volumeUpPressedEP14QQuickKeyEvent@Base 6.3.0
+ _ZN18QQuickKeysAttached16inputMethodEventEP17QInputMethodEventb@Base 6.3.0
+ _ZN18QQuickKeysAttached16shortcutOverrideEP14QQuickKeyEvent@Base 6.3.0
+ _ZN18QQuickKeysAttached16shortcutOverrideEP9QKeyEvent@Base 6.3.0
+ _ZN18QQuickKeysAttached16staticMetaObjectE@Base 6.3.0
+ _ZN18QQuickKeysAttached17componentCompleteEv@Base 6.3.0
+ _ZN18QQuickKeysAttached17numberSignPressedEP14QQuickKeyEvent@Base 6.3.0
+ _ZN18QQuickKeysAttached17volumeDownPressedEP14QQuickKeyEvent@Base 6.3.0
+ _ZN18QQuickKeysAttached21qmlAttachedPropertiesEP7QObject@Base 6.3.0
+ _ZN18QQuickKeysAttached7pressedEP14QQuickKeyEvent@Base 6.3.0
+ _ZN18QQuickKeysAttached8releasedEP14QQuickKeyEvent@Base 6.3.0
+ _ZN18QQuickKeysAttached9noPressedEP14QQuickKeyEvent@Base 6.3.0
+ _ZN18QQuickKeysAttached9upPressedEP14QQuickKeyEvent@Base 6.3.0
+ _ZN18QQuickKeysAttachedC1EP7QObject@Base 6.3.0
+ _ZN18QQuickKeysAttachedC2EP7QObject@Base 6.3.0
+ _ZN18QQuickKeysAttachedD0Ev@Base 6.3.0
+ _ZN18QQuickKeysAttachedD1Ev@Base 6.3.0
+ _ZN18QQuickKeysAttachedD2Ev@Base 6.3.0
  _ZN18QQuickParentChange11mayOverrideEP22QQuickStateActionEvent@Base 6.2.0
  _ZN18QQuickParentChange11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
  _ZN18QQuickParentChange11qt_metacastEPKc@Base 6.2.0
@@ -2947,9 +3095,6 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN18QQuickParentChange9setParentEP10QQuickItem@Base 6.2.0
  _ZN18QQuickParentChangeC1EP7QObject@Base 6.2.0
  _ZN18QQuickParentChangeC2EP7QObject@Base 6.2.0
- _ZN18QQuickParentChangeD0Ev@Base 6.2.0
- _ZN18QQuickParentChangeD1Ev@Base 6.2.0
- _ZN18QQuickParentChangeD2Ev@Base 6.2.0
  _ZN18QQuickPathAngleArc10setCenterXEd@Base 6.2.0
  _ZN18QQuickPathAngleArc10setCenterYEd@Base 6.2.0
  _ZN18QQuickPathAngleArc10setRadiusXEd@Base 6.2.0
@@ -3003,10 +3148,16 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN18QQuickPointHandler18translationChangedEv@Base 6.2.0
  _ZN18QQuickPointHandlerC1EP10QQuickItem@Base 6.2.0
  _ZN18QQuickPointHandlerC2EP10QQuickItem@Base 6.2.0
+ _ZN18QQuickRenderTarget15fromPaintDeviceEP12QPaintDevice@Base 6.4.0
+ (arch-bits=64|arch=linux-any)_ZN18QQuickRenderTarget15fromVulkanImageEP9VkImage_T13VkImageLayout8VkFormatRK5QSizei@Base 6.4.0
  (arch-bits=64|arch=linux-any)_ZN18QQuickRenderTarget15fromVulkanImageEP9VkImage_T13VkImageLayoutRK5QSizei@Base 6.2.0
+ (arch-bits=32|arch=linux-any)_ZN18QQuickRenderTarget15fromVulkanImageEy13VkImageLayout8VkFormatRK5QSizei@Base 6.4.0
  (arch-bits=32|arch=linux-any)_ZN18QQuickRenderTarget15fromVulkanImageEy13VkImageLayoutRK5QSizei@Base 6.2.0
  _ZN18QQuickRenderTarget17fromOpenGLTextureEjRK5QSizei@Base 6.2.0
+ _ZN18QQuickRenderTarget17fromOpenGLTextureEjjRK5QSizei@Base 6.4.0
  _ZN18QQuickRenderTarget19fromRhiRenderTargetEP16QRhiRenderTarget@Base 6.2.0
+ _ZN18QQuickRenderTarget19setDevicePixelRatioEd@Base 6.3.0
+ _ZN18QQuickRenderTarget19setMirrorVerticallyEb@Base 6.4.0
  _ZN18QQuickRenderTarget22fromOpenGLRenderBufferEjRK5QSizei@Base 6.2.0
  _ZN18QQuickRenderTarget6detachEv@Base 6.2.0
  _ZN18QQuickRenderTargetC1ERKS_@Base 6.2.0
@@ -3078,10 +3229,12 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN18QQuickWheelHandler10timerEventEP11QTimerEvent@Base 6.2.0
  _ZN18QQuickWheelHandler11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
  _ZN18QQuickWheelHandler11qt_metacastEPKc@Base 6.2.0
+ _ZN18QQuickWheelHandler11setBlockingEb@Base 6.3.0
  _ZN18QQuickWheelHandler11setPropertyERK7QString@Base 6.2.0
  _ZN18QQuickWheelHandler11setRotationEd@Base 6.2.0
  _ZN18QQuickWheelHandler13setInvertibleEb@Base 6.2.0
  _ZN18QQuickWheelHandler14setOrientationEN2Qt11OrientationE@Base 6.2.0
+ _ZN18QQuickWheelHandler15blockingChangedEv@Base 6.3.0
  _ZN18QQuickWheelHandler15onActiveChangedEv@Base 6.2.0
  _ZN18QQuickWheelHandler15onTargetChangedEP10QQuickItem@Base 6.2.0
  _ZN18QQuickWheelHandler15propertyChangedEv@Base 6.2.0
@@ -3128,9 +3281,6 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN19QQuickAnchorChanges9setObjectEP10QQuickItem@Base 6.2.0
  _ZN19QQuickAnchorChangesC1EP7QObject@Base 6.2.0
  _ZN19QQuickAnchorChangesC2EP7QObject@Base 6.2.0
- _ZN19QQuickAnchorChangesD0Ev@Base 6.2.0
- _ZN19QQuickAnchorChangesD1Ev@Base 6.2.0
- _ZN19QQuickAnchorChangesD2Ev@Base 6.2.0
  _ZN19QQuickAnimatedImage10setPlayingEb@Base 6.2.0
  _ZN19QQuickAnimatedImage10sourceSizeEv@Base 6.2.0
  _ZN19QQuickAnimatedImage11movieUpdateEv@Base 6.2.0
@@ -3287,9 +3437,6 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN19QQuickSystemPalette16staticMetaObjectE@Base 6.2.0
  _ZN19QQuickSystemPaletteC1EP7QObject@Base 6.2.0
  _ZN19QQuickSystemPaletteC2EP7QObject@Base 6.2.0
- _ZN19QQuickSystemPaletteD0Ev@Base 6.2.0
- _ZN19QQuickSystemPaletteD1Ev@Base 6.2.0
- _ZN19QQuickSystemPaletteD2Ev@Base 6.2.0
  _ZN19QQuickWindowPrivate10data_clearEP16QQmlListPropertyI7QObjectE@Base 6.2.0
  _ZN19QQuickWindowPrivate10data_countEP16QQmlListPropertyI7QObjectE@Base 6.2.0
  _ZN19QQuickWindowPrivate11data_appendEP16QQmlListPropertyI7QObjectEPS1_@Base 6.2.0
@@ -3304,9 +3451,11 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN19QQuickWindowPrivate15data_removeLastEP16QQmlListPropertyI7QObjectE@Base 6.2.0
  _ZN19QQuickWindowPrivate15runAndClearJobsEP5QListIP9QRunnableE@Base 6.2.0
  _ZN19QQuickWindowPrivate15updateDirtyNodeEP10QQuickItem@Base 6.2.0
+ _ZN19QQuickWindowPrivate16clearFocusObjectEv@Base 6.4.0
  _ZN19QQuickWindowPrivate16renderSceneGraphERK5QSizeS2_@Base 6.2.0
  _ZN19QQuickWindowPrivate16updateDirtyNodesEv@Base 6.2.0
  _ZN19QQuickWindowPrivate18defaultAlphaBufferE@Base 6.2.0
+ _ZN19QQuickWindowPrivate18invalidateFontDataEP10QQuickItem@Base 6.4.0
  _ZN19QQuickWindowPrivate22cleanupNodesOnShutdownEP10QQuickItem@Base 6.2.0
  _ZN19QQuickWindowPrivate22cleanupNodesOnShutdownEv@Base 6.2.0
  _ZN19QQuickWindowPrivate22setCustomCommandBufferEP17QRhiCommandBuffer@Base 6.2.0
@@ -3382,6 +3531,9 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN19QSGShaderEffectNode11qt_metacastEPKc@Base 6.2.0
  _ZN19QSGShaderEffectNode14textureChangedEv@Base 6.2.0
  _ZN19QSGShaderEffectNode16staticMetaObjectE@Base 6.2.0
+ _ZN19QSGShaderEffectNodeD0Ev@Base 6.4.0
+ _ZN19QSGShaderEffectNodeD1Ev@Base 6.4.0
+ _ZN19QSGShaderEffectNodeD2Ev@Base 6.4.0
  _ZN19QSGSoftwareRenderer11renderSceneEv@Base 6.2.0
  _ZN19QSGSoftwareRenderer15setBackingStoreEP13QBackingStore@Base 6.2.0
  _ZN19QSGSoftwareRenderer21setCurrentPaintDeviceEP12QPaintDevice@Base 6.2.0
@@ -3543,10 +3695,35 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN20QQuickColorValueType6createERK8QJSValue@Base 6.2.0
  _ZN20QQuickColorValueType9setHslHueEd@Base 6.2.0
  _ZN20QQuickColorValueType9setHsvHueEd@Base 6.2.0
+ _ZN20QQuickFrameAnimation10classBeginEv@Base 6.4.0
+ _ZN20QQuickFrameAnimation10setRunningEb@Base 6.4.0
+ _ZN20QQuickFrameAnimation11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.4.0
+ _ZN20QQuickFrameAnimation11qt_metacastEPKc@Base 6.4.0
+ _ZN20QQuickFrameAnimation13pausedChangedEv@Base 6.4.0
+ _ZN20QQuickFrameAnimation14runningChangedEv@Base 6.4.0
+ _ZN20QQuickFrameAnimation14setElapsedTimeEd@Base 6.4.0
+ _ZN20QQuickFrameAnimation15setCurrentFrameEi@Base 6.4.0
+ _ZN20QQuickFrameAnimation16frameTimeChangedEv@Base 6.4.0
+ _ZN20QQuickFrameAnimation16staticMetaObjectE@Base 6.4.0
+ _ZN20QQuickFrameAnimation17componentCompleteEv@Base 6.4.0
+ _ZN20QQuickFrameAnimation18elapsedTimeChangedEv@Base 6.4.0
+ _ZN20QQuickFrameAnimation19currentFrameChangedEv@Base 6.4.0
+ _ZN20QQuickFrameAnimation22smoothFrameTimeChangedEv@Base 6.4.0
+ _ZN20QQuickFrameAnimation4stopEv@Base 6.4.0
+ _ZN20QQuickFrameAnimation5pauseEv@Base 6.4.0
+ _ZN20QQuickFrameAnimation5resetEv@Base 6.4.0
+ _ZN20QQuickFrameAnimation5startEv@Base 6.4.0
+ _ZN20QQuickFrameAnimation6resumeEv@Base 6.4.0
+ _ZN20QQuickFrameAnimation7restartEv@Base 6.4.0
+ _ZN20QQuickFrameAnimation9setPausedEb@Base 6.4.0
+ _ZN20QQuickFrameAnimation9triggeredEv@Base 6.4.0
+ _ZN20QQuickFrameAnimationC1EP7QObject@Base 6.4.0
+ _ZN20QQuickFrameAnimationC2EP7QObject@Base 6.4.0
  (arch=linux-any)_ZN20QQuickGraphicsDevice17fromDeviceObjectsEP18VkPhysicalDevice_TP10VkDevice_Tii@Base 6.2.0
  _ZN20QQuickGraphicsDevice17fromOpenGLContextEP14QOpenGLContext@Base 6.2.0
  (arch=linux-any)_ZN20QQuickGraphicsDevice18fromPhysicalDeviceEP18VkPhysicalDevice_T@Base 6.2.0
  _ZN20QQuickGraphicsDevice6detachEv@Base 6.2.0
+ _ZN20QQuickGraphicsDevice7fromRhiEP4QRhi@Base 6.3.0
  _ZN20QQuickGraphicsDeviceC1ERKS_@Base 6.2.0
  _ZN20QQuickGraphicsDeviceC1Ev@Base 6.2.0
  _ZN20QQuickGraphicsDeviceC2ERKS_@Base 6.2.0
@@ -3595,6 +3772,8 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN20QQuickPointerHandler13activeChangedEv@Base 6.2.0
  _ZN20QQuickPointerHandler13marginChangedEv@Base 6.2.0
  _ZN20QQuickPointerHandler13onGrabChangedEPS_N15QPointingDevice14GrabTransitionEP13QPointerEventR11QEventPoint@Base 6.2.0
+ _ZN20QQuickPointerHandler13parentChangedEv@Base 6.3.0
+ _ZN20QQuickPointerHandler13setParentItemEP10QQuickItem@Base 6.3.0
  _ZN20QQuickPointerHandler13targetChangedEv@Base 6.2.0
  _ZN20QQuickPointerHandler14cancelAllGrabsEP13QPointerEventR11QEventPoint@Base 6.2.0
  _ZN20QQuickPointerHandler14enabledChangedEv@Base 6.2.0
@@ -3725,6 +3904,9 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN20QSGFlatColorMaterial8setColorERK6QColor@Base 6.2.0
  _ZN20QSGFlatColorMaterialC1Ev@Base 6.2.0
  _ZN20QSGFlatColorMaterialC2Ev@Base 6.2.0
+ _ZN20QSGInternalImageNodeD0Ev@Base 6.4.0
+ _ZN20QSGInternalImageNodeD1Ev@Base 6.4.0
+ _ZN20QSGInternalImageNodeD2Ev@Base 6.4.0
  _ZN20QSGRenderNodePrivateC1Ev@Base 6.2.0
  _ZN20QSGRenderNodePrivateC2Ev@Base 6.2.0
  _ZN20QSGRendererInterface13isApiRhiBasedENS_11GraphicsApiE@Base 6.2.0
@@ -3753,9 +3935,6 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN21QQuickAnchorAnimation9setEasingERK12QEasingCurve@Base 6.2.0
  _ZN21QQuickAnchorAnimationC1EP7QObject@Base 6.2.0
  _ZN21QQuickAnchorAnimationC2EP7QObject@Base 6.2.0
- _ZN21QQuickAnchorAnimationD0Ev@Base 6.2.0
- _ZN21QQuickAnchorAnimationD1Ev@Base 6.2.0
- _ZN21QQuickAnchorAnimationD2Ev@Base 6.2.0
  _ZN21QQuickColorSpaceEnums16staticMetaObjectE@Base 6.2.0
  _ZN21QQuickDefaultClipNode14updateGeometryEv@Base 6.2.0
  _ZN21QQuickDefaultClipNode6updateEv@Base 6.2.0
@@ -3833,19 +4012,19 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN21QQuickParentAnimation6setViaEP10QQuickItem@Base 6.2.0
  _ZN21QQuickParentAnimationC1EP7QObject@Base 6.2.0
  _ZN21QQuickParentAnimationC2EP7QObject@Base 6.2.0
- _ZN21QQuickParentAnimationD0Ev@Base 6.2.0
- _ZN21QQuickParentAnimationD1Ev@Base 6.2.0
- _ZN21QQuickParentAnimationD2Ev@Base 6.2.0
  _ZN21QQuickPropertyChanges11changeValueERK7QStringRK8QVariant@Base 6.2.0
  _ZN21QQuickPropertyChanges11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
  _ZN21QQuickPropertyChanges11qt_metacastEPKc@Base 6.2.0
  _ZN21QQuickPropertyChanges13attachToStateEv@Base 6.2.0
+ _ZN21QQuickPropertyChanges13objectChangedEv@Base 6.4.0
  _ZN21QQuickPropertyChanges13setIsExplicitEb@Base 6.2.0
  _ZN21QQuickPropertyChanges14removePropertyERK7QString@Base 6.2.0
  _ZN21QQuickPropertyChanges15detachFromStateEv@Base 6.2.0
  _ZN21QQuickPropertyChanges16changeExpressionERK7QStringS2_@Base 6.2.0
  _ZN21QQuickPropertyChanges16staticMetaObjectE@Base 6.2.0
+ _ZN21QQuickPropertyChanges17isExplicitChangedEv@Base 6.4.0
  _ZN21QQuickPropertyChanges21setRestoreEntryValuesEb@Base 6.2.0
+ _ZN21QQuickPropertyChanges25restoreEntryValuesChangedEv@Base 6.4.0
  _ZN21QQuickPropertyChanges7actionsEv@Base 6.2.0
  _ZN21QQuickPropertyChanges9setObjectEP7QObject@Base 6.2.0
  _ZN21QQuickPropertyChangesC1Ev@Base 6.2.0
@@ -3888,7 +4067,10 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN21QQuickTextEditPrivate16handleFocusEventEP11QFocusEvent@Base 6.2.0
  _ZN21QQuickTextEditPrivate16resetInputMethodEv@Base 6.2.0
  _ZN21QQuickTextEditPrivate16setBottomPaddingEdb@Base 6.2.0
+ _ZN21QQuickTextEditPrivate16transformChangedEP10QQuickItem@Base 6.3.0
  _ZN21QQuickTextEditPrivate22isLinkHoveredConnectedEv@Base 6.2.0
+ _ZN21QQuickTextEditPrivate22largeTextSizeThresholdE@Base 6.3.0
+ _ZN21QQuickTextEditPrivate22updateMouseCursorShapeEv@Base 6.4.0
  _ZN21QQuickTextEditPrivate23updateDefaultTextOptionEv@Base 6.2.0
  _ZN21QQuickTextEditPrivate24addCurrentTextNodeToRootEP20QQuickTextNodeEngineP16QSGTransformNodeP14QQuickTextNodeRN5QListINS_4NodeEE8iteratorEi@Base 6.2.0
  _ZN21QQuickTextEditPrivate24setImplicitResizeEnabledEb@Base 6.2.0
@@ -3897,6 +4079,17 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN21QQuickTextEditPrivate9ExtraDataC1Ev@Base 6.2.0
  _ZN21QQuickTextEditPrivate9ExtraDataC2Ev@Base 6.2.0
  _ZN21QQuickTextEditPrivate9setHAlignEN14QQuickTextEdit10HAlignmentEb@Base 6.2.0
+ _ZN21QQuickTreeViewPrivate12setModelImplERK8QVariant@Base 6.3.0
+ _ZN21QQuickTreeViewPrivate15updateSelectionERK5QRectS2_@Base 6.4.0
+ _ZN21QQuickTreeViewPrivate16initItemCallbackEiP7QObject@Base 6.3.0
+ _ZN21QQuickTreeViewPrivate18itemReusedCallbackEiP7QObject@Base 6.3.0
+ _ZN21QQuickTreeViewPrivate19dataChangedCallbackERK11QModelIndexS2_RK5QListIiE@Base 6.3.0
+ _ZN21QQuickTreeViewPrivate24updateRequiredPropertiesEiP7QObjectb@Base 6.3.0
+ _ZN21QQuickTreeViewPrivateC1Ev@Base 6.3.0
+ _ZN21QQuickTreeViewPrivateC2Ev@Base 6.3.0
+ _ZN21QQuickTreeViewPrivateD0Ev@Base 6.3.0
+ _ZN21QQuickTreeViewPrivateD1Ev@Base 6.3.0
+ _ZN21QQuickTreeViewPrivateD2Ev@Base 6.3.0
  _ZN21QQuickUniformAnimator10setUniformERK7QString@Base 6.2.0
  _ZN21QQuickUniformAnimator11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
  _ZN21QQuickUniformAnimator11qt_metacastEPKc@Base 6.2.0
@@ -3970,6 +4163,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN22QQuickFlickablePrivate18updateBeginningEndEv@Base 6.2.0
  _ZN22QQuickFlickablePrivate19captureDelayedPressEP10QQuickItemP13QPointerEvent@Base 6.2.0
  _ZN22QQuickFlickablePrivate19itemGeometryChangedEP10QQuickItem20QQuickGeometryChangeRK6QRectF@Base 6.2.0
+ _ZN22QQuickFlickablePrivate23firstPointLocalVelocityEP13QPointerEvent@Base 6.3.1
  _ZN22QQuickFlickablePrivate4dragExN6QEvent4TypeERK7QPointFRK9QVector2DbbbS7_@Base 6.2.0
  _ZN22QQuickFlickablePrivate4initEv@Base 6.2.0
  _ZN22QQuickFlickablePrivate5fixupERNS_8AxisDataEdd@Base 6.2.0
@@ -4063,24 +4257,23 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN22QQuickTableViewPrivate10unloadItemERK6QPoint@Base 6.2.0
  _ZN22QQuickTableViewPrivate11forceLayoutEv@Base 6.2.0
  _ZN22QQuickTableViewPrivate11releaseItemEP11FxTableItemN17QQmlInstanceModel12ReusableFlagE@Base 6.2.0
+ _ZN22QQuickTableViewPrivate11scrollToRowEi6QFlagsIN2Qt13AlignmentFlagEEd6QRectF@Base 6.4.0
  _ZN22QQuickTableViewPrivate11updateTableEv@Base 6.2.0
- _ZN22QQuickTableViewPrivate12getRowHeightEi@Base 6.2.0
  _ZN22QQuickTableViewPrivate12modelUpdatedERK13QQmlChangeSetb@Base 6.2.0
  _ZN22QQuickTableViewPrivate12setModelImplERK8QVariant@Base 6.2.0
  _ZN22QQuickTableViewPrivate12syncDelegateEv@Base 6.2.0
  _ZN22QQuickTableViewPrivate12syncSyncViewEv@Base 6.2.0
  _ZN22QQuickTableViewPrivate12updatePolishEv@Base 6.2.0
- _ZN22QQuickTableViewPrivate13allRowsLoadedEv@Base 6.2.0
  _ZN22QQuickTableViewPrivate13fetchMoreDataEv@Base 6.2.0
  _ZN22QQuickTableViewPrivate13updateExtentsEv@Base 6.2.0
  _ZN22QQuickTableViewPrivate14clearSelectionEv@Base 6.2.0
  _ZN22QQuickTableViewPrivate14connectToModelEv@Base 6.2.0
- _ZN22QQuickTableViewPrivate14getColumnWidthEi@Base 6.2.0
  _ZN22QQuickTableViewPrivate14nextEdgeToLoadE6QRectF@Base 6.2.0
+ _ZN22QQuickTableViewPrivate14scrollToColumnEi6QFlagsIN2Qt13AlignmentFlagEEd6QRectF@Base 6.4.0
  _ZN22QQuickTableViewPrivate15loadFxTableItemERK6QPointN13QQmlIncubator14IncubationModeE@Base 6.2.0
+ _ZN22QQuickTableViewPrivate15setCurrentIndexERK6QPoint@Base 6.4.0
  _ZN22QQuickTableViewPrivate15updateSelectionERK5QRectS2_@Base 6.2.0
  _ZN22QQuickTableViewPrivate15updateTableSizeEv@Base 6.2.0
- _ZN22QQuickTableViewPrivate16allColumnsLoadedEv@Base 6.2.0
  _ZN22QQuickTableViewPrivate16calculateTopLeftER6QPointR7QPointF@Base 6.2.0
  _ZN22QQuickTableViewPrivate16initItemCallbackEiP7QObject@Base 6.2.0
  _ZN22QQuickTableViewPrivate16loadInitialTableEv@Base 6.2.0
@@ -4089,6 +4282,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN22QQuickTableViewPrivate16syncViewportRectEv@Base 6.2.0
  _ZN22QQuickTableViewPrivate17createFxTableItemERK6QPointN13QQmlIncubator14IncubationModeE@Base 6.2.0
  _ZN22QQuickTableViewPrivate17layoutTopLeftItemEv@Base 6.2.0
+ _ZN22QQuickTableViewPrivate17positionViewAtRowEi6QFlagsIN2Qt13AlignmentFlagEEd6QRectF@Base 6.4.0
  _ZN22QQuickTableViewPrivate17rowsMovedCallbackERK11QModelIndexiiS2_i@Base 6.2.0
  _ZN22QQuickTableViewPrivate17setLocalViewportXEd@Base 6.2.0
  _ZN22QQuickTableViewPrivate17setLocalViewportYEd@Base 6.2.0
@@ -4110,46 +4304,49 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN22QQuickTableViewPrivate19itemCreatedCallbackEiP7QObject@Base 6.2.0
  _ZN22QQuickTableViewPrivate19processRebuildTableEv@Base 6.2.0
  _ZN22QQuickTableViewPrivate19rowsRemovedCallbackERK11QModelIndexii@Base 6.2.0
+ _ZN22QQuickTableViewPrivate19setRequiredPropertyEPKcRK8QVariantiP7QObjectb@Base 6.4.0
  _ZN22QQuickTableViewPrivate19updateContentHeightEv@Base 6.2.0
  _ZN22QQuickTableViewPrivate20columnsMovedCallbackERK11QModelIndexiiS2_i@Base 6.2.0
+ _ZN22QQuickTableViewPrivate20getAlignmentContentXEi6QFlagsIN2Qt13AlignmentFlagEEdRK6QRectF@Base 6.4.0
+ _ZN22QQuickTableViewPrivate20getAlignmentContentYEi6QFlagsIN2Qt13AlignmentFlagEEdRK6QRectF@Base 6.4.0
  _ZN22QQuickTableViewPrivate20getColumnLayoutWidthEi@Base 6.2.0
  _ZN22QQuickTableViewPrivate20layoutHorizontalEdgeEN2Qt4EdgeE@Base 6.2.0
- _ZN22QQuickTableViewPrivate20nextVisibleEdgeIndexEN2Qt4EdgeEi@Base 6.2.0
+ _ZN22QQuickTableViewPrivate20positionViewAtColumnEi6QFlagsIN2Qt13AlignmentFlagEEd6QRectF@Base 6.4.0
  _ZN22QQuickTableViewPrivate20resolveImportVersionEv@Base 6.2.0
  _ZN22QQuickTableViewPrivate20rowsInsertedCallbackERK11QModelIndexii@Base 6.2.0
  _ZN22QQuickTableViewPrivate20scheduleRebuildTableE6QFlagsINS_13RebuildOptionEE@Base 6.2.0
  _ZN22QQuickTableViewPrivate20setSelectionStartPosERK7QPointF@Base 6.2.0
  _ZN22QQuickTableViewPrivate20shiftLoadedTableRectE7QPointF@Base 6.2.0
  _ZN22QQuickTableViewPrivate20updateTableRecursiveEv@Base 6.2.0
- _ZN22QQuickTableViewPrivate21_q_componentFinalizedEv@Base 6.2.0
  _ZN22QQuickTableViewPrivate21layoutChangedCallbackERK5QListI21QPersistentModelIndexEN18QAbstractItemModel16LayoutChangeHintE@Base 6.2.0
- _ZN22QQuickTableViewPrivate22cancelOvershootTopLeftEv@Base 6.2.4
  _ZN22QQuickTableViewPrivate22columnsRemovedCallbackERK11QModelIndexii@Base 6.2.0
  _ZN22QQuickTableViewPrivate22moveToNextRebuildStateEv@Base 6.2.0
+ _ZN22QQuickTableViewPrivate22setCurrentIndexFromTapERK7QPointF@Base 6.4.0
  _ZN22QQuickTableViewPrivate22syncWithPendingChangesEv@Base 6.2.0
  _ZN22QQuickTableViewPrivate22updateAverageRowHeightEv@Base 6.2.0
  _ZN22QQuickTableViewPrivate23columnsInsertedCallbackERK11QModelIndexii@Base 6.2.0
+ _ZN22QQuickTableViewPrivate24setCurrentOnDelegateItemERK11QModelIndexb@Base 6.4.0
  _ZN22QQuickTableViewPrivate24syncViewportPosRecursiveEv@Base 6.2.0
  _ZN22QQuickTableViewPrivate24updateAverageColumnWidthEv@Base 6.2.0
  _ZN22QQuickTableViewPrivate25checkForVisibilityChangesEv@Base 6.2.0
- _ZN22QQuickTableViewPrivate25loadAndUnloadVisibleEdgesEv@Base 6.2.0
- _ZN22QQuickTableViewPrivate26cancelOvershootBottomRightEv@Base 6.2.4
+ _ZN22QQuickTableViewPrivate25loadAndUnloadVisibleEdgesEN13QQmlIncubator14IncubationModeE@Base 6.4.0
+ _ZN22QQuickTableViewPrivate25setSelectedOnDelegateItemERK11QModelIndexb@Base 6.4.0
+ _ZN22QQuickTableViewPrivate25updateCurrentRowAndColumnEv@Base 6.4.0
+ _ZN22QQuickTableViewPrivate26cancelOvershootAfterLayoutEv@Base 6.4.0
  _ZN22QQuickTableViewPrivate26scheduleRebuildIfFastFlickEv@Base 6.2.0
  _ZN22QQuickTableViewPrivate27scrollTowardsSelectionPointERK7QPointFRK6QSizeF@Base 6.2.0
+ _ZN22QQuickTableViewPrivate30currentChangedInSelectionModelERK11QModelIndexS2_@Base 6.4.0
  _ZN22QQuickTableViewPrivate30drainReusePoolAfterLoadRequestEv@Base 6.2.0
  _ZN22QQuickTableViewPrivate30layoutAfterLoadingInitialTableEv@Base 6.2.0
  _ZN22QQuickTableViewPrivate30layoutTableEdgeFromLoadRequestEv@Base 6.2.0
  _ZN22QQuickTableViewPrivate30syncLoadedTableFromLoadRequestEv@Base 6.2.0
+ _ZN22QQuickTableViewPrivate32selectionChangedInSelectionModelERK14QItemSelectionS2_@Base 6.4.0
+ _ZN22QQuickTableViewPrivate32updateSelectedOnAllDelegateItemsEv@Base 6.4.0
  _ZN22QQuickTableViewPrivate34syncLoadedTableRectFromLoadedTableEv@Base 6.2.0
  _ZN22QQuickTableViewPrivate35adjustViewportXAccordingToAlignmentEv@Base 6.2.0
  _ZN22QQuickTableViewPrivate35adjustViewportYAccordingToAlignmentEv@Base 6.2.0
- _ZN22QQuickTableViewPrivate37nextVisibleEdgeIndexAroundLoadedTableEN2Qt4EdgeE@Base 6.2.0
- _ZN22QQuickTableViewPrivate3kUpE@Base 6.2.0
- _ZN22QQuickTableViewPrivate40registerCallbackWhenBindingsAreEvaluatedEv@Base 6.2.0
+ _ZN22QQuickTableViewPrivate4initEv@Base 6.4.0
  _ZN22QQuickTableViewPrivate5fixupERN22QQuickFlickablePrivate8AxisDataEdd@Base 6.2.0
- _ZN22QQuickTableViewPrivate5kDownE@Base 6.2.0
- _ZN22QQuickTableViewPrivate5kLeftE@Base 6.2.0
- _ZN22QQuickTableViewPrivate6kRightE@Base 6.2.0
  _ZN22QQuickTableViewPrivate8loadEdgeEN2Qt4EdgeEN13QQmlIncubator14IncubationModeE@Base 6.2.0
  _ZN22QQuickTableViewPrivate9EdgeRange13containsIndexEN2Qt4EdgeEi@Base 6.2.0
  _ZN22QQuickTableViewPrivate9EdgeRangeC1Ev@Base 6.2.0
@@ -4232,7 +4429,6 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN23QQuickAbstractAnimation16staticMetaObjectE@Base 6.2.0
  _ZN23QQuickAbstractAnimation17componentCompleteEv@Base 6.2.0
  _ZN23QQuickAbstractAnimation17setAlwaysRunToEndEb@Base 6.2.0
- _ZN23QQuickAbstractAnimation18componentFinalizedEv@Base 6.2.0
  _ZN23QQuickAbstractAnimation20notifyRunningChangedEb@Base 6.2.0
  _ZN23QQuickAbstractAnimation20setEnableUserControlEv@Base 6.2.0
  _ZN23QQuickAbstractAnimation21alwaysRunToEndChangedEb@Base 6.2.0
@@ -4365,9 +4561,6 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN23QQuickSmoothedAnimation24maximumEasingTimeChangedEv@Base 6.2.0
  _ZN23QQuickSmoothedAnimationC1EP7QObject@Base 6.2.0
  _ZN23QQuickSmoothedAnimationC2EP7QObject@Base 6.2.0
- _ZN23QQuickSmoothedAnimationD0Ev@Base 6.2.0
- _ZN23QQuickSmoothedAnimationD1Ev@Base 6.2.0
- _ZN23QQuickSmoothedAnimationD2Ev@Base 6.2.0
  _ZN23QQuickStateChangeScript11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
  _ZN23QQuickStateChangeScript11qt_metacastEPKc@Base 6.2.0
  _ZN23QQuickStateChangeScript16staticMetaObjectE@Base 6.2.0
@@ -4377,9 +4570,6 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN23QQuickStateChangeScript9setScriptERK16QQmlScriptString@Base 6.2.0
  _ZN23QQuickStateChangeScriptC1EP7QObject@Base 6.2.0
  _ZN23QQuickStateChangeScriptC2EP7QObject@Base 6.2.0
- _ZN23QQuickStateChangeScriptD0Ev@Base 6.2.0
- _ZN23QQuickStateChangeScriptD1Ev@Base 6.2.0
- _ZN23QQuickStateChangeScriptD2Ev@Base 6.2.0
  _ZN23QQuickTableViewAttached11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
  _ZN23QQuickTableViewAttached11qt_metacastEPKc@Base 6.2.0
  _ZN23QQuickTableViewAttached11viewChangedEv@Base 6.2.0
@@ -4438,14 +4628,12 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN23QSGDefaultRenderContext11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
  _ZN23QSGDefaultRenderContext11qt_metacastEPKc@Base 6.2.0
  _ZN23QSGDefaultRenderContext12endNextFrameEP11QSGRenderer@Base 6.2.0
- _ZN23QSGDefaultRenderContext14beginNextFrameEP11QSGRendererPFvPvES4_S2_@Base 6.2.0
+ _ZN23QSGDefaultRenderContext14beginNextFrameEP11QSGRendererRK15QSGRenderTargetPFvPvES7_S5_@Base 6.4.0
  _ZN23QSGDefaultRenderContext14createRendererEN20QSGRendererInterface10RenderModeE@Base 6.2.0
- _ZN23QSGDefaultRenderContext15endNextRhiFrameEP11QSGRenderer@Base 6.2.0
  _ZN23QSGDefaultRenderContext15renderNextFrameEP11QSGRenderer@Base 6.2.0
  _ZN23QSGDefaultRenderContext16staticMetaObjectE@Base 6.2.0
- _ZN23QSGDefaultRenderContext17beginNextRhiFrameEP11QSGRendererP16QRhiRenderTargetP24QRhiRenderPassDescriptorP17QRhiCommandBufferPFvPvESA_S8_@Base 6.2.0
- _ZN23QSGDefaultRenderContext18renderNextRhiFrameEP11QSGRenderer@Base 6.2.0
  _ZN23QSGDefaultRenderContext19initializeRhiShaderEP17QSGMaterialShaderN7QShader7VariantE@Base 6.2.0
+ _ZN23QSGDefaultRenderContext21invalidateGlyphCachesEv@Base 6.4.0
  _ZN23QSGDefaultRenderContext23distanceFieldGlyphCacheERK8QRawFonti@Base 6.2.0
  _ZN23QSGDefaultRenderContext25glyphCacheResourceUpdatesEv@Base 6.2.4
  _ZN23QSGDefaultRenderContext30maybeGlyphCacheResourceUpdatesEv@Base 6.2.4
@@ -4582,6 +4770,9 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN24QQuickUniformAnimatorJob9writeBackEv@Base 6.2.0
  _ZN24QQuickUniformAnimatorJobC1Ev@Base 6.2.0
  _ZN24QQuickUniformAnimatorJobC2Ev@Base 6.2.0
+ _ZN24QSGInternalRectangleNodeD0Ev@Base 6.4.0
+ _ZN24QSGInternalRectangleNodeD1Ev@Base 6.4.0
+ _ZN24QSGInternalRectangleNodeD2Ev@Base 6.4.0
  _ZN24QSGMaterialShaderPrivate10loadShaderERK7QString@Base 6.2.0
  _ZN24QSGMaterialShaderPrivate23clearCachedRendererDataEv@Base 6.2.0
  _ZN24QSGMaterialShaderPrivate7prepareEN7QShader7VariantE@Base 6.2.0
@@ -4595,7 +4786,6 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN25ComponentCompleteDisablerC2Ev@Base 6.2.0
  _ZN25ComponentCompleteDisablerD1Ev@Base 6.2.0
  _ZN25ComponentCompleteDisablerD2Ev@Base 6.2.0
- _ZN25QQuickAnimationController10classBeginEv@Base 6.2.0
  _ZN25QQuickAnimationController11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
  _ZN25QQuickAnimationController11qt_metacastEPKc@Base 6.2.0
  _ZN25QQuickAnimationController11setProgressEd@Base 6.2.0
@@ -4634,7 +4824,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN25QQuickMultiPointTouchArea15mousePressEventEP11QMouseEvent@Base 6.2.0
  _ZN25QQuickMultiPointTouchArea15setMouseEnabledEb@Base 6.2.0
  _ZN25QQuickMultiPointTouchArea15updatePaintNodeEP7QSGNodePN10QQuickItem19UpdatePaintNodeDataE@Base 6.2.0
- _ZN25QQuickMultiPointTouchArea15updateTouchDataEP6QEvent@Base 6.2.0
+ _ZN25QQuickMultiPointTouchArea15updateTouchDataEP6QEventNS_16RemapEventPointsE@Base 6.3.1
  _ZN25QQuickMultiPointTouchArea16mouseUngrabEventEv@Base 6.2.0
  _ZN25QQuickMultiPointTouchArea16staticMetaObjectE@Base 6.2.0
  _ZN25QQuickMultiPointTouchArea16touchUngrabEventEv@Base 6.2.0
@@ -4718,6 +4908,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN26QQuickDeliveryAgentPrivate11deviceExtraEPK12QInputDevice@Base 6.2.0
  _ZN26QQuickDeliveryAgentPrivate12isHoverEventEPK13QPointerEvent@Base 6.2.0
  _ZN26QQuickDeliveryAgentPrivate12isMouseEventEPK13QPointerEvent@Base 6.2.0
+ _ZN26QQuickDeliveryAgentPrivate12isSynthMouseEPK13QPointerEvent@Base 6.4.2
  _ZN26QQuickDeliveryAgentPrivate12isTouchEventEPK13QPointerEvent@Base 6.2.0
  _ZN26QQuickDeliveryAgentPrivate13isTabletEventEPK13QPointerEvent@Base 6.2.0
  _ZN26QQuickDeliveryAgentPrivate13onGrabChangedEP7QObjectN15QPointingDevice14GrabTransitionEPK13QPointerEventRK11QEventPoint@Base 6.2.0
@@ -4727,6 +4918,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN26QQuickDeliveryAgentPrivate15anyPointGrabbedEPK13QPointerEvent@Base 6.2.0
  _ZN26QQuickDeliveryAgentPrivate15deliverKeyEventEP9QKeyEvent@Base 6.2.0
  _ZN26QQuickDeliveryAgentPrivate15setFocusInScopeEP10QQuickItemS1_N2Qt11FocusReasonE6QFlagsINS_11FocusOptionEE@Base 6.2.0
+ _ZN26QQuickDeliveryAgentPrivate16allPointsGrabbedEPK13QPointerEvent@Base 6.4.0
  _ZN26QQuickDeliveryAgentPrivate16clearFocusObjectEv@Base 6.2.0
  (subst)_ZN26QQuickDeliveryAgentPrivate16deliverDragEventEP17QQuickDragGrabberP10QQuickItemP14QDragMoveEventP15QVarLengthArrayIS3_L{qptrdiff}64EEP7QObject@Base 6.2.4
  _ZN26QQuickDeliveryAgentPrivate16deliverDragEventEP17QQuickDragGrabberP6QEvent@Base 6.2.0
@@ -4764,6 +4956,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN26QQuickDeliveryAgentPrivate26currentOrItemDeliveryAgentEPK10QQuickItem@Base 6.2.0
  _ZN26QQuickDeliveryAgentPrivate26deliverHoverEventRecursiveEP10QQuickItemRK7QPointFS4_6QFlagsIN2Qt16KeyboardModifierEEm@Base 6.2.0
  _ZN26QQuickDeliveryAgentPrivate26deliverPressOrReleaseEventEP13QPointerEventb@Base 6.2.0
+ _ZN26QQuickDeliveryAgentPrivate26isEventFromMouseOrTouchpadEPK13QPointerEvent@Base 6.4.0
  _ZN26QQuickDeliveryAgentPrivate27deliverMatchingPointsToItemEP10QQuickItembP13QPointerEventb@Base 6.2.0
  _ZN26QQuickDeliveryAgentPrivate27flushFrameSynchronousEventsEP12QQuickWindow@Base 6.2.0
  _ZN26QQuickDeliveryAgentPrivate28sendFilteredPointerEventImplEP13QPointerEventP10QQuickItemS3_@Base 6.2.0
@@ -4823,7 +5016,10 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN26QQuickPaletteColorProvider12fromQPaletteE8QPalette@Base 6.2.0
  _ZN26QQuickPaletteColorProvider14copyColorGroupEN8QPalette10ColorGroupERKS_@Base 6.2.0
  _ZN26QQuickPaletteColorProvider14inheritPaletteERK8QPalette@Base 6.2.0
+ _ZN26QQuickPaletteColorProvider16doInheritPaletteERK8QPalette@Base 6.4.0
  _ZN26QQuickPaletteColorProvider18setPaletteProviderEPK29QQuickAbstractPaletteProvider@Base 6.2.0
+ _ZN26QQuickPaletteColorProvider22ensureRequestedPaletteEv@Base 6.4.0
+ _ZN26QQuickPaletteColorProvider22updateInheritedPaletteEv@Base 6.4.0
  _ZN26QQuickPaletteColorProvider5resetEv@Base 6.2.0
  _ZN26QQuickPaletteColorProvider8setColorEN8QPalette10ColorGroupENS0_9ColorRoleE6QColor@Base 6.2.0
  _ZN26QQuickPaletteColorProviderC1Ev@Base 6.2.0
@@ -4982,6 +5178,9 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN29QSGBasicInternalRectangleNode9setRadiusEd@Base 6.2.0
  _ZN29QSGBasicInternalRectangleNodeC1Ev@Base 6.2.0
  _ZN29QSGBasicInternalRectangleNodeC2Ev@Base 6.2.0
+ _ZN29QSGDistanceFieldGlyphConsumerD0Ev@Base 6.4.0
+ _ZN29QSGDistanceFieldGlyphConsumerD1Ev@Base 6.4.0
+ _ZN29QSGDistanceFieldGlyphConsumerD2Ev@Base 6.4.0
  _ZN29QSGRhiDistanceFieldGlyphCache11storeGlyphsERK5QListI14QDistanceFieldE@Base 6.2.0
  _ZN29QSGRhiDistanceFieldGlyphCache13createTextureEPNS_11TextureInfoEii@Base 6.2.0
  _ZN29QSGRhiDistanceFieldGlyphCache13createTextureEPNS_11TextureInfoEiiPKv@Base 6.2.0
@@ -5013,11 +5212,12 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN30QQuickImageProviderWithOptionsC2EN21QQmlImageProviderBase9ImageTypeE6QFlagsINS0_4FlagEE@Base 6.2.0
  _ZN30QQuickMultiPointHandlerPrivateC1Eii@Base 6.2.0
  _ZN30QQuickMultiPointHandlerPrivateC2Eii@Base 6.2.0
+ _ZN30QQuickPropertyAnimationPrivate14convertVariantER8QVariant9QMetaType@Base 6.4.0
+ _ZN30QQuickPropertyAnimationPrivate27animationCurrentLoopChangedEP21QAbstractAnimationJob@Base 6.4.0
  _ZN30QQuickTableSectionSizeProvider11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
  _ZN30QQuickTableSectionSizeProvider11qt_metacastEPKc@Base 6.2.0
  _ZN30QQuickTableSectionSizeProvider11sizeChangedEv@Base 6.2.0
  _ZN30QQuickTableSectionSizeProvider16staticMetaObjectE@Base 6.2.0
- _ZN30QQuickTableSectionSizeProvider4sizeEi@Base 6.2.0
  _ZN30QQuickTableSectionSizeProvider7setSizeEid@Base 6.2.0
  _ZN30QQuickTableSectionSizeProvider8resetAllEv@Base 6.2.0
  _ZN30QQuickTableSectionSizeProvider9resetSizeEi@Base 6.2.0
@@ -5026,7 +5226,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN31QQuickDesignerSupportProperties13getResetValueEP7QObjectRK10QByteArray@Base 6.2.0
  _ZN31QQuickDesignerSupportProperties15doResetPropertyEP7QObjectP11QQmlContextRK10QByteArray@Base 6.2.0
  _ZN31QQuickDesignerSupportProperties16allPropertyNamesEP7QObjectRK10QByteArrayP5QListIS1_Ei@Base 6.2.0
- _ZN31QQuickDesignerSupportProperties16getPropertyCacheEP7QObjectP10QQmlEngine@Base 6.2.0
+ _ZN31QQuickDesignerSupportProperties16getPropertyCacheEP7QObject@Base 6.4.0
  _ZN31QQuickDesignerSupportProperties17isPropertyQObjectERK13QMetaProperty@Base 6.2.0
  _ZN31QQuickDesignerSupportProperties18registerCustomDataEP7QObject@Base 6.2.0
  _ZN31QQuickDesignerSupportProperties18setPropertyBindingEP7QObjectP11QQmlContextRK10QByteArrayRK7QString@Base 6.2.0
@@ -5051,6 +5251,9 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN31QSGGuiThreadShaderEffectManager16staticMetaObjectE@Base 6.2.0
  _ZN31QSGGuiThreadShaderEffectManager18shaderCodePreparedEbNS_10ShaderInfo4TypeERK4QUrlPS0_@Base 6.2.0
  _ZN31QSGGuiThreadShaderEffectManager19logAndStatusChangedEv@Base 6.2.0
+ _ZN31QSGGuiThreadShaderEffectManagerD0Ev@Base 6.4.0
+ _ZN31QSGGuiThreadShaderEffectManagerD1Ev@Base 6.4.0
+ _ZN31QSGGuiThreadShaderEffectManagerD2Ev@Base 6.4.0
  _ZN32QQuickItemViewTransitionableItem14stopTransitionEv@Base 6.2.0
  _ZN32QQuickItemViewTransitionableItem15startTransitionEP26QQuickItemViewTransitioneri@Base 6.2.0
  _ZN32QQuickItemViewTransitionableItem17prepareTransitionEP26QQuickItemViewTransitioneriRK6QRectF@Base 6.2.0
@@ -5093,9 +5296,6 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN36QQuickDesignerSupportPropertyChanges15detachFromStateEP7QObject@Base 6.2.0
  _ZN36QQuickDesignerSupportPropertyChanges16changeExpressionEP7QObjectRK10QByteArrayRK7QString@Base 6.2.0
  _ZN36QQuickDesignerSupportPropertyChanges16isNormalPropertyERK10QByteArray@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZN3QV414QObjectWrapper4wrapEPNS_15ExecutionEngineEP7QObject@Base 6.2.4
- (optional=templinst|arch=i386)_ZN3QV45Value2asINS_6ObjectEEEPT_v@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZN3QV46Object23setArrayLengthUncheckedEj@Base 6.2.4
  _ZN40QSGDistanceFieldShiftedStyleTextMaterialC1Ev@Base 6.2.0
  _ZN40QSGDistanceFieldShiftedStyleTextMaterialC2Ev@Base 6.2.0
  _ZN40QSGDistanceFieldShiftedStyleTextMaterialD0Ev@Base 6.2.0
@@ -5122,8 +5322,6 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN7QSGNodeD0Ev@Base 6.2.0
  _ZN7QSGNodeD1Ev@Base 6.2.0
  _ZN7QSGNodeD2Ev@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZN7QString5clearEv@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZN7QStringixEx@Base 6.2.4
  _ZN8QSGLayer11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
  _ZN8QSGLayer11qt_metacastEPKc@Base 6.2.0
  _ZN8QSGLayer15updateRequestedEv@Base 6.2.0
@@ -5131,10 +5329,9 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN8QSGLayer24scheduledUpdateCompletedEv@Base 6.2.0
  _ZN8QSGLayerC1ER17QSGTexturePrivate@Base 6.2.0
  _ZN8QSGLayerC2ER17QSGTexturePrivate@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZN9QBitArray6setBitEx@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZN9QBitArray6setBitExb@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZN9QBitArray8clearBitEx@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZN9QBitArrayixEx@Base 6.2.4
+ _ZN8QSGLayerD0Ev@Base 6.4.0
+ _ZN8QSGLayerD1Ev@Base 6.4.0
+ _ZN8QSGLayerD2Ev@Base 6.4.0
  _ZN9QQuickPen11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
  _ZN9QQuickPen11qt_metacastEPKc@Base 6.2.0
  _ZN9QQuickPen12colorChangedEv@Base 6.2.0
@@ -5190,10 +5387,12 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZNK10QQuickItem11mapToGlobalERK7QPointF@Base 6.2.0
  _ZNK10QQuickItem12antialiasingEv@Base 6.2.0
  _ZNK10QQuickItem12boundingRectEv@Base 6.2.0
+ _ZNK10QQuickItem12dumpItemTreeEv@Base 6.3.0
  _ZNK10QQuickItem12isAncestorOfEPKS_@Base 6.2.0
  _ZNK10QQuickItem12isFocusScopeEv@Base 6.2.0
  _ZNK10QQuickItem12isUnderMouseEv@Base 6.2.0
  _ZNK10QQuickItem12mapFromSceneERK7QPointF@Base 6.2.0
+ _ZNK10QQuickItem12viewportItemEv@Base 6.3.0
  _ZNK10QQuickItem13implicitWidthEv@Base 6.2.0
  _ZNK10QQuickItem13itemTransformEPS_Pb@Base 6.2.0
  _ZNK10QQuickItem13keepMouseGrabEv@Base 6.2.0
@@ -5319,22 +5518,6 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZNK10QSGTexture18horizontalWrapModeEv@Base 6.2.0
  _ZNK10QSGTexture24normalizedTextureSubRectEv@Base 6.2.0
  _ZNK10QSGTexture9filteringEv@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZNK10QTransform10isRotatingEv@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZNK10QTransform12isInvertibleEv@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZNK10QTransform3m11Ev@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZNK10QTransform3m12Ev@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZNK10QTransform3m13Ev@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZNK10QTransform3m21Ev@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZNK10QTransform3m22Ev@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZNK10QTransform3m23Ev@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZNK10QTransform3m31Ev@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZNK10QTransform3m32Ev@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZNK10QTransform3m33Ev@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZNK11QMetaObject10superClassEv@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZNK11QQuaternion1xEv@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZNK11QQuaternion1yEv@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZNK11QQuaternion1zEv@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZNK11QQuaternion6scalarEv@Base 6.2.4
  _ZNK11QQuickCurve10metaObjectEv@Base 6.2.0
  _ZNK11QQuickCurve1xEv@Base 6.2.0
  _ZNK11QQuickCurve1yEv@Base 6.2.0
@@ -5381,7 +5564,6 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZNK11QSGRhiLayer15hasAlphaChannelEv@Base 6.2.0
  _ZNK11QSGRhiLayer24normalizedTextureSubRectEv@Base 6.2.0
  _ZNK11QSGRhiLayer7toImageEv@Base 6.2.0
- _ZNK12QPaintDevice7devTypeEv@Base 6.2.4
  _ZNK12QQuickColumn10metaObjectEv@Base 6.2.0
  _ZNK12QQuickLoader10metaObjectEv@Base 6.2.0
  _ZNK12QQuickLoader12asynchronousEv@Base 6.2.0
@@ -5484,6 +5666,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZNK13QSGRhiSupport11graphicsApiEv@Base 6.2.0
  _ZNK13QSGRhiSupport14rhiBackendNameEv@Base 6.2.0
  _ZNK13QSGRhiSupport17windowSurfaceTypeEv@Base 6.2.0
+ _ZNK13QSGRhiSupport18toRhiTextureFormatEjP6QFlagsIN11QRhiTexture4FlagEE@Base 6.4.0
  _ZNK14QQuickAnimator10metaObjectEv@Base 6.2.0
  _ZNK14QQuickAnimator10targetItemEv@Base 6.2.0
  _ZNK14QQuickAnimator2toEv@Base 6.2.0
@@ -5553,6 +5736,8 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZNK14QQuickItemView7originYEv@Base 6.2.0
  _ZNK14QQuickItemView8delegateEv@Base 6.2.0
  _ZNK14QQuickItemView9highlightEv@Base 6.2.0
+ _ZNK14QQuickKeyEvent10metaObjectEv@Base 6.3.0
+ _ZNK14QQuickKeyEvent7matchesEN12QKeySequence11StandardKeyE@Base 6.3.0
  _ZNK14QQuickListView10maxXExtentEv@Base 6.2.0
  _ZNK14QQuickListView10maxYExtentEv@Base 6.2.0
  _ZNK14QQuickListView10metaObjectEv@Base 6.2.0
@@ -5614,6 +5799,15 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZNK14QQuickRotation5angleEv@Base 6.2.0
  _ZNK14QQuickRotation6originEv@Base 6.2.0
  _ZNK14QQuickRotation7applyToEP10QMatrix4x4@Base 6.2.0
+ _ZNK14QQuickShortcut10autoRepeatEv@Base 6.4.0
+ _ZNK14QQuickShortcut10metaObjectEv@Base 6.4.0
+ _ZNK14QQuickShortcut10nativeTextEv@Base 6.4.0
+ _ZNK14QQuickShortcut12portableTextEv@Base 6.4.0
+ _ZNK14QQuickShortcut7contextEv@Base 6.4.0
+ _ZNK14QQuickShortcut8Shortcut7matchesEP14QShortcutEvent@Base 6.4.0
+ _ZNK14QQuickShortcut8sequenceEv@Base 6.4.0
+ _ZNK14QQuickShortcut9isEnabledEv@Base 6.4.0
+ _ZNK14QQuickShortcut9sequencesEv@Base 6.4.0
  _ZNK14QQuickTextEdit10isReadOnlyEv@Base 6.2.0
  _ZNK14QQuickTextEdit10metaObjectEv@Base 6.2.0
  _ZNK14QQuickTextEdit10positionAtEdd@Base 6.2.0
@@ -5675,6 +5869,12 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZNK14QQuickTimeLine8isActiveEv@Base 6.2.0
  _ZNK14QQuickTimeLine8syncModeEv@Base 6.2.0
  _ZNK14QQuickTimeLine9syncPointEv@Base 6.2.0
+ _ZNK14QQuickTreeView10isExpandedEi@Base 6.3.0
+ _ZNK14QQuickTreeView10metaObjectEv@Base 6.3.0
+ _ZNK14QQuickTreeView10modelIndexERK6QPoint@Base 6.3.0
+ _ZNK14QQuickTreeView10modelIndexEii@Base 6.3.0
+ _ZNK14QQuickTreeView11cellAtIndexERK11QModelIndex@Base 6.3.0
+ _ZNK14QQuickTreeView5depthEi@Base 6.3.0
  _ZNK14QSGNodeUpdater13isNodeBlockedEP7QSGNodeS1_@Base 6.2.0
  _ZNK14QSGOpacityNode16isSubtreeBlockedEv@Base 6.2.0
  _ZNK15QQuickAnchorSet10metaObjectEv@Base 6.2.0
@@ -5783,6 +5983,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZNK15QQuickRectangle8gradientEv@Base 6.2.0
  _ZNK15QQuickScaleGrid10metaObjectEv@Base 6.2.0
  _ZNK15QQuickScaleGrid6isNullEv@Base 6.2.0
+ _ZNK15QQuickTableView10currentRowEv@Base 6.4.0
  _ZNK15QQuickTableView10itemAtCellERK6QPoint@Base 6.2.0
  _ZNK15QQuickTableView10itemAtCellEii@Base 6.2.0
  _ZNK15QQuickTableView10leftColumnEv@Base 6.2.0
@@ -5791,22 +5992,35 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZNK15QQuickTableView10metaObjectEv@Base 6.2.0
  _ZNK15QQuickTableView10minXExtentEv@Base 6.2.0
  _ZNK15QQuickTableView10minYExtentEv@Base 6.2.0
+ _ZNK15QQuickTableView10modelIndexERK6QPoint@Base 6.4.0
+ _ZNK15QQuickTableView10modelIndexEii@Base 6.4.0
  _ZNK15QQuickTableView10reuseItemsEv@Base 6.2.0
+ _ZNK15QQuickTableView10rowAtIndexERK11QModelIndex@Base 6.4.0
  _ZNK15QQuickTableView10rowSpacingEv@Base 6.2.0
+ _ZNK15QQuickTableView11cellAtIndexERK11QModelIndex@Base 6.4.0
  _ZNK15QQuickTableView11columnWidthEi@Base 6.2.0
  _ZNK15QQuickTableView11isRowLoadedEi@Base 6.2.0
  _ZNK15QQuickTableView11rightColumnEv@Base 6.2.0
+ _ZNK15QQuickTableView13columnAtIndexERK11QModelIndex@Base 6.4.0
  _ZNK15QQuickTableView13columnSpacingEv@Base 6.2.0
+ _ZNK15QQuickTableView13currentColumnEv@Base 6.4.0
  _ZNK15QQuickTableView13syncDirectionEv@Base 6.2.0
+ _ZNK15QQuickTableView14cellAtPositionERK7QPointFb@Base 6.4.0
+ _ZNK15QQuickTableView14cellAtPositionEddb@Base 6.4.0
  _ZNK15QQuickTableView14isColumnLoadedEi@Base 6.2.0
  _ZNK15QQuickTableView14selectionModelEv@Base 6.2.0
+ _ZNK15QQuickTableView15alternatingRowsEv@Base 6.4.0
  _ZNK15QQuickTableView17implicitRowHeightEi@Base 6.2.0
  _ZNK15QQuickTableView17rowHeightProviderEv@Base 6.2.0
+ _ZNK15QQuickTableView17selectionBehaviorEv@Base 6.4.0
  _ZNK15QQuickTableView19columnWidthProviderEv@Base 6.2.0
  _ZNK15QQuickTableView19implicitColumnWidthEi@Base 6.2.0
+ _ZNK15QQuickTableView20keyNavigationEnabledEv@Base 6.4.0
+ _ZNK15QQuickTableView24pointerNavigationEnabledEv@Base 6.4.0
  _ZNK15QQuickTableView4rowsEv@Base 6.2.0
  _ZNK15QQuickTableView5modelEv@Base 6.2.0
  _ZNK15QQuickTableView6topRowEv@Base 6.2.0
+ _ZNK15QQuickTableView7animateEv@Base 6.4.0
  _ZNK15QQuickTableView7columnsEv@Base 6.2.0
  _ZNK15QQuickTableView8delegateEv@Base 6.2.0
  _ZNK15QQuickTableView8syncViewEv@Base 6.2.0
@@ -5951,7 +6165,6 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZNK16QSGRenderContext10metaObjectEv@Base 6.2.0
  _ZNK16QSGRenderContext27compressedTextureForFactoryEPK27QSGCompressedTextureFactory@Base 6.2.0
  _ZNK16QSGRenderContext3rhiEv@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZNK17QQmlPropertyCache18firstCppMetaObjectEv@Base 6.2.4
  _ZNK17QQuickAnimatorJob14debugAnimationE6QDebug@Base 6.2.0
  _ZNK17QQuickAnimatorJob5valueEv@Base 6.2.0
  _ZNK17QQuickAnimatorJob8progressEi@Base 6.2.0
@@ -5987,12 +6200,23 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZNK17QQuickFontMetrics7leadingEv@Base 6.2.0
  _ZNK17QQuickFontMetrics7xHeightEv@Base 6.2.0
  _ZNK17QQuickFontMetrics9lineWidthEv@Base 6.2.0
+ _ZNK17QQuickInputMethod10metaObjectEv@Base 6.4.0
+ _ZNK17QQuickInputMethod11isAnimatingEv@Base 6.4.0
+ _ZNK17QQuickInputMethod14inputDirectionEv@Base 6.4.0
+ _ZNK17QQuickInputMethod15anchorRectangleEv@Base 6.4.0
+ _ZNK17QQuickInputMethod15cursorRectangleEv@Base 6.4.0
+ _ZNK17QQuickInputMethod17keyboardRectangleEv@Base 6.4.0
+ _ZNK17QQuickInputMethod18inputItemRectangleEv@Base 6.4.0
+ _ZNK17QQuickInputMethod18inputItemTransformEv@Base 6.4.0
+ _ZNK17QQuickInputMethod22inputItemClipRectangleEv@Base 6.4.0
+ _ZNK17QQuickInputMethod6localeEv@Base 6.4.0
+ _ZNK17QQuickInputMethod9isVisibleEv@Base 6.4.0
+ _ZNK17QQuickItemPrivate12dumpItemTreeEi@Base 6.3.0
  _ZNK17QQuickItemPrivate13dirtyToStringEv@Base 6.2.0
  _ZNK17QQuickItemPrivate14accessibleRoleEv@Base 6.2.0
  _ZNK17QQuickItemPrivate14verticalCenterEv@Base 6.2.0
  _ZNK17QQuickItemPrivate15effectiveCursorEPK20QQuickPointerHandler@Base 6.2.0
  _ZNK17QQuickItemPrivate16getImplicitWidthEv@Base 6.2.0
- _ZNK17QQuickItemPrivate16hasHoverHandlersEv@Base 6.2.0
  _ZNK17QQuickItemPrivate16horizontalCenterEv@Base 6.2.0
  _ZNK17QQuickItemPrivate17getImplicitHeightEv@Base 6.2.0
  _ZNK17QQuickItemPrivate18hasPointerHandlersEv@Base 6.2.0
@@ -6006,6 +6230,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZNK17QQuickItemPrivate22computeTransformOriginEv@Base 6.2.0
  _ZNK17QQuickItemPrivate22effectiveCursorHandlerEv@Base 6.2.0
  _ZNK17QQuickItemPrivate23globalToWindowTransformEv@Base 6.2.0
+ _ZNK17QQuickItemPrivate23hasEnabledHoverHandlersEv@Base 6.4.1
  _ZNK17QQuickItemPrivate23windowToGlobalTransformEv@Base 6.2.0
  _ZNK17QQuickItemPrivate26isTransparentForPositionerEv@Base 6.2.0
  _ZNK17QQuickItemPrivate3topEv@Base 6.2.0
@@ -6035,6 +6260,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZNK17QQuickTextMetrics10elideWidthEv@Base 6.2.0
  _ZNK17QQuickTextMetrics10elidedTextEv@Base 6.2.0
  _ZNK17QQuickTextMetrics10metaObjectEv@Base 6.2.0
+ _ZNK17QQuickTextMetrics10renderTypeEv@Base 6.3.0
  _ZNK17QQuickTextMetrics12advanceWidthEv@Base 6.2.0
  _ZNK17QQuickTextMetrics12boundingRectEv@Base 6.2.0
  _ZNK17QQuickTextMetrics17tightBoundingRectEv@Base 6.2.0
@@ -6069,6 +6295,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZNK17QSGMaterialShader11RenderState16devicePixelRatioEv@Base 6.2.0
  _ZNK17QSGMaterialShader11RenderState16projectionMatrixEv@Base 6.2.0
  _ZNK17QSGMaterialShader11RenderState7opacityEv@Base 6.2.0
+ _ZNK17QSGMaterialShader25combinedImageSamplerCountEi@Base 6.4.0
  _ZNK17QSGMaterialShader5flagsEv@Base 6.2.0
  _ZNK17QSGSimpleRectNode4rectEv@Base 6.2.0
  _ZNK17QSGSimpleRectNode5colorEv@Base 6.2.0
@@ -6090,6 +6317,10 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZNK18QQuickHoverHandler10metaObjectEv@Base 6.2.0
  _ZNK18QQuickIntValidator10localeNameEv@Base 6.2.0
  _ZNK18QQuickIntValidator10metaObjectEv@Base 6.2.0
+ _ZNK18QQuickKeysAttached10metaObjectEv@Base 6.3.0
+ _ZNK18QQuickKeysAttached11isConnectedEPKc@Base 6.3.0
+ _ZNK18QQuickKeysAttached16inputMethodQueryEN2Qt16InputMethodQueryE@Base 6.3.0
+ _ZNK18QQuickKeysAttached8priorityEv@Base 6.3.0
  _ZNK18QQuickParentChange10metaObjectEv@Base 6.2.0
  _ZNK18QQuickParentChange10scaleIsSetEv@Base 6.2.0
  _ZNK18QQuickParentChange10widthIsSetEv@Base 6.2.0
@@ -6121,6 +6352,8 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZNK18QQuickPinchHandler10metaObjectEv@Base 6.2.0
  _ZNK18QQuickPointHandler10metaObjectEv@Base 6.2.0
  _ZNK18QQuickPointHandler11translationEv@Base 6.2.0
+ _ZNK18QQuickRenderTarget16devicePixelRatioEv@Base 6.3.0
+ _ZNK18QQuickRenderTarget16mirrorVerticallyEv@Base 6.4.0
  _ZNK18QQuickRenderTarget6isNullEv@Base 6.2.0
  _ZNK18QQuickRenderTarget7isEqualERKS_@Base 6.2.0
  _ZNK18QQuickScriptAction10metaObjectEv@Base 6.2.0
@@ -6152,6 +6385,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZNK18QQuickSpriteEngine9maxFramesEv@Base 6.2.0
  _ZNK18QQuickTextDocument10metaObjectEv@Base 6.2.0
  _ZNK18QQuickTextDocument12textDocumentEv@Base 6.2.0
+ _ZNK18QQuickWheelHandler10isBlockingEv@Base 6.3.0
  _ZNK18QQuickWheelHandler10metaObjectEv@Base 6.2.0
  _ZNK18QQuickWheelHandler11orientationEv@Base 6.2.0
  _ZNK18QQuickWheelHandler12isInvertibleEv@Base 6.2.0
@@ -6240,7 +6474,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZNK19QQuickSystemPalette9highlightEv@Base 6.2.0
  _ZNK19QQuickWindowPrivate12isRenderableEv@Base 6.2.0
  _ZNK19QQuickWindowPrivate24findCursorItemAndHandlerEP10QQuickItemRK7QPointF@Base 6.2.0
- _ZNK19QQuickWindowPrivate30createTextureFromNativeTextureEyiRK5QSize6QFlagsIN12QQuickWindow19CreateTextureOptionEES3_INS_28TextureFromNativeTextureFlagEE@Base 6.2.0
+ _ZNK19QQuickWindowPrivate30createTextureFromNativeTextureEyijRK5QSize6QFlagsIN12QQuickWindow19CreateTextureOptionEES3_INS_28TextureFromNativeTextureFlagEE@Base 6.4.0
  _ZNK19QQuickWindowQmlImpl10metaObjectEv@Base 6.2.0
  _ZNK19QQuickWindowQmlImpl6screenEv@Base 6.2.0
  _ZNK19QSGAbstractRenderer10clearColorEv@Base 6.2.0
@@ -6341,6 +6575,13 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZNK20QQuickColorValueType7lighterEd@Base 6.2.0
  _ZNK20QQuickColorValueType8hsvValueEv@Base 6.2.0
  _ZNK20QQuickColorValueType8toStringEv@Base 6.2.0
+ _ZNK20QQuickFrameAnimation10metaObjectEv@Base 6.4.0
+ _ZNK20QQuickFrameAnimation11elapsedTimeEv@Base 6.4.0
+ _ZNK20QQuickFrameAnimation12currentFrameEv@Base 6.4.0
+ _ZNK20QQuickFrameAnimation15smoothFrameTimeEv@Base 6.4.0
+ _ZNK20QQuickFrameAnimation8isPausedEv@Base 6.4.0
+ _ZNK20QQuickFrameAnimation9frameTimeEv@Base 6.4.0
+ _ZNK20QQuickFrameAnimation9isRunningEv@Base 6.4.0
  _ZNK20QQuickGraphicsDevice6isNullEv@Base 6.2.0
  _ZNK20QQuickItemGrabResult10metaObjectEv@Base 6.2.0
  _ZNK20QQuickItemGrabResult10saveToFileERK4QUrl@Base 6.2.0
@@ -6446,6 +6687,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZNK21QQuickTextEditPrivate16getImplicitWidthEv@Base 6.2.0
  _ZNK21QQuickTextEditPrivate23isImplicitResizeEnabledEv@Base 6.2.0
  _ZNK21QQuickTextEditPrivate25effectiveInputMethodHintsEv@Base 6.2.0
+ _ZNK21QQuickTreeViewPrivate9modelImplEv@Base 6.3.0
  _ZNK21QQuickUniformAnimator10metaObjectEv@Base 6.2.0
  _ZNK21QQuickUniformAnimator12propertyNameEv@Base 6.2.0
  _ZNK21QQuickUniformAnimator7uniformEv@Base 6.2.0
@@ -6484,26 +6726,30 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZNK22QQuickShaderEffectMesh10metaObjectEv@Base 6.2.0
  _ZNK22QQuickStochasticEngine10metaObjectEv@Base 6.2.0
  _ZNK22QQuickTableViewPrivate10cellHeightERK6QPoint@Base 6.2.0
+ _ZNK22QQuickTableViewPrivate12getRowHeightEi@Base 6.4.0
  _ZNK22QQuickTableViewPrivate12rootSyncViewEv@Base 6.2.0
+ _ZNK22QQuickTableViewPrivate14getColumnWidthEi@Base 6.4.0
  _ZNK22QQuickTableViewPrivate14sizeHintForRowEi@Base 6.2.0
  _ZNK22QQuickTableViewPrivate15loadedTableItemERK6QPoint@Base 6.2.0
  _ZNK22QQuickTableViewPrivate16canLoadTableEdgeEN2Qt4EdgeE6QRectF@Base 6.2.0
  _ZNK22QQuickTableViewPrivate16cellAtModelIndexEi@Base 6.2.0
  _ZNK22QQuickTableViewPrivate16clampedCellAtPosERK7QPointF@Base 6.2.0
+ _ZNK22QQuickTableViewPrivate16getEffectiveRowYEi@Base 6.4.0
  _ZNK22QQuickTableViewPrivate16modelIndexAtCellERK6QPoint@Base 6.2.0
  _ZNK22QQuickTableViewPrivate17getAttachedObjectEPK7QObject@Base 6.2.0
  _ZNK22QQuickTableViewPrivate17sizeHintForColumnEi@Base 6.2.0
  _ZNK22QQuickTableViewPrivate18canUnloadTableEdgeEN2Qt4EdgeE6QRectF@Base 6.2.0
  _ZNK22QQuickTableViewPrivate18selectionRectangleEv@Base 6.2.0
+ _ZNK22QQuickTableViewPrivate19getEffectiveColumnXEi@Base 6.4.0
+ _ZNK22QQuickTableViewPrivate20nextVisibleEdgeIndexEN2Qt4EdgeEi@Base 6.4.0
  _ZNK22QQuickTableViewPrivate21getEffectiveRowHeightEi@Base 6.2.0
  _ZNK22QQuickTableViewPrivate21modelIndexToCellIndexERK11QModelIndex@Base 6.2.0
+ _ZNK22QQuickTableViewPrivate23currentInSelectionModelERK6QPoint@Base 6.4.0
  _ZNK22QQuickTableViewPrivate23getEffectiveColumnWidthEi@Base 6.2.0
  _ZNK22QQuickTableViewPrivate24selectedInSelectionModelERK6QPoint@Base 6.2.0
- _ZNK22QQuickTableViewPrivate25setSelectedOnDelegateItemEP10QQuickItemb@Base 6.2.0
- _ZNK22QQuickTableViewPrivate25setSelectedOnDelegateItemERK11QModelIndexb@Base 6.2.0
  _ZNK22QQuickTableViewPrivate29selectionPointerHandlerTargetEv@Base 6.2.0
- _ZNK22QQuickTableViewPrivate32selectionChangedInSelectionModelERK14QItemSelectionS2_@Base 6.2.0
- _ZNK22QQuickTableViewPrivate32updateSelectedOnAllDelegateItemsEv@Base 6.2.0
+ _ZNK22QQuickTableViewPrivate37nextVisibleEdgeIndexAroundLoadedTableEN2Qt4EdgeE@Base 6.4.0
+ _ZNK22QQuickTableViewPrivate4qaimE8QVariant@Base 6.4.0
  _ZNK22QQuickTableViewPrivate9cellWidthERK6QPoint@Base 6.2.0
  _ZNK22QQuickTableViewPrivate9dumpTableEv@Base 6.2.0
  _ZNK22QQuickTableViewPrivate9modelImplEv@Base 6.2.0
@@ -6680,10 +6926,24 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZNK25QQuickMultiPointTouchArea18maximumTouchPointsEv@Base 6.2.0
  _ZNK25QQuickMultiPointTouchArea18minimumTouchPointsEv@Base 6.2.0
  _ZNK25QQuickPathCatmullRomCurve10metaObjectEv@Base 6.2.0
+ _ZNK25QQuickQuaternionValueType10conjugatedEv@Base 6.3.0
+ _ZNK25QQuickQuaternionValueType10dotProductERK11QQuaternion@Base 6.3.0
+ _ZNK25QQuickQuaternionValueType10normalizedEv@Base 6.3.0
+ _ZNK25QQuickQuaternionValueType10toVector4dEv@Base 6.3.0
+ _ZNK25QQuickQuaternionValueType11fuzzyEqualsERK11QQuaternion@Base 6.3.0
+ _ZNK25QQuickQuaternionValueType11fuzzyEqualsERK11QQuaterniond@Base 6.3.0
+ _ZNK25QQuickQuaternionValueType13toEulerAnglesEv@Base 6.3.0
  _ZNK25QQuickQuaternionValueType1xEv@Base 6.2.0
  _ZNK25QQuickQuaternionValueType1yEv@Base 6.2.0
  _ZNK25QQuickQuaternionValueType1zEv@Base 6.2.0
+ _ZNK25QQuickQuaternionValueType4plusERK11QQuaternion@Base 6.3.0
+ _ZNK25QQuickQuaternionValueType5minusERK11QQuaternion@Base 6.3.0
+ _ZNK25QQuickQuaternionValueType5timesERK11QQuaternion@Base 6.3.0
+ _ZNK25QQuickQuaternionValueType5timesERK9QVector3D@Base 6.3.0
+ _ZNK25QQuickQuaternionValueType5timesEd@Base 6.3.0
+ _ZNK25QQuickQuaternionValueType6lengthEv@Base 6.3.0
  _ZNK25QQuickQuaternionValueType6scalarEv@Base 6.2.0
+ _ZNK25QQuickQuaternionValueType8invertedEv@Base 6.3.0
  _ZNK25QQuickQuaternionValueType8toStringEv@Base 6.2.0
  _ZNK25QQuickSequentialAnimation10metaObjectEv@Base 6.2.0
  _ZNK25QQuickSequentialAnimation14threadingModelEv@Base 6.2.0
@@ -6719,6 +6979,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZNK26QQuickPointerDeviceHandler17acceptedModifiersEv@Base 6.2.0
  _ZNK26QQuickPointerDeviceHandler20acceptedPointerTypesEv@Base 6.2.0
  _ZNK26QSGDistanceFieldGlyphCache12baseFontSizeEv@Base 6.2.0
+ _ZNK26QSGDistanceFieldGlyphCache8isActiveEv@Base 6.4.0
  _ZNK27QQuickGraphicsConfiguration16deviceExtensionsEv@Base 6.2.0
  _ZNK27QQuickGraphicsConfiguration25isDepthBufferEnabledFor2DEv@Base 6.2.0
  _ZNK27QQuickKeyNavigationAttached10metaObjectEv@Base 6.2.0
@@ -6731,7 +6992,6 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZNK27QQuickKeyNavigationAttached8priorityEv@Base 6.2.0
  _ZNK27QQuickPointerHandlerPrivate17dragOverThresholdE9QVector2D@Base 6.2.0
  _ZNK27QQuickPointerHandlerPrivate17dragOverThresholdERK11QEventPoint@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64 i386)_ZNK27QQuickPointerHandlerPrivate17dragOverThresholdI11QEventPointEEbdN2Qt4AxisERKT_@Base 6.2.4
  _ZNK27QSGAbstractSoftwareRenderer14renderableNodeEP7QSGNode@Base 6.2.0
  _ZNK27QSGAbstractSoftwareRenderer15renderableNodesEv@Base 6.2.0
  _ZNK27QSGCompressedTextureFactory11textureSizeEv@Base 6.2.0
@@ -6747,9 +7007,11 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZNK29QSGRhiDistanceFieldGlyphCache26useTextureResizeWorkaroundEv@Base 6.2.0
  _ZNK29QSGRhiDistanceFieldGlyphCache29eightBitFormatIsAlphaSwizzledEv@Base 6.2.0
  _ZNK29QSGRhiDistanceFieldGlyphCache31screenSpaceDerivativesSupportedEv@Base 6.2.0
+ _ZNK29QSGRhiDistanceFieldGlyphCache8isActiveEv@Base 6.4.0
  _ZNK30QQuickMultiPointHandlerPrivate13xMetaPropertyEv@Base 6.2.0
  _ZNK30QQuickMultiPointHandlerPrivate13yMetaPropertyEv@Base 6.2.0
  _ZNK30QQuickTableSectionSizeProvider10metaObjectEv@Base 6.2.0
+ _ZNK30QQuickTableSectionSizeProvider4sizeEi@Base 6.4.0
  _ZNK31QSGGuiThreadShaderEffectManager10metaObjectEv@Base 6.2.0
  _ZNK32QQuickItemViewTransitionableItem16isPendingRemovalEv@Base 6.2.0
  _ZNK32QQuickItemViewTransitionableItem17transitionRunningEv@Base 6.2.0
@@ -6764,21 +7026,13 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZNK39QSGHiQSubPixelDistanceFieldTextMaterial4typeEv@Base 6.2.0
  _ZNK39QSGLoQSubPixelDistanceFieldTextMaterial12createShaderEN20QSGRendererInterface10RenderModeE@Base 6.2.0
  _ZNK39QSGLoQSubPixelDistanceFieldTextMaterial4typeEv@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZNK3QV414StringOrSymbol13toPropertyKeyEv@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNK3QV45Value2asINS_14FunctionObjectEEEPKT_v@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNK3QV45Value2asINS_6StringEEEPKT_v@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNK3QV45Value2asINS_7ManagedEEEPKT_v@Base 6.2.4
  _ZNK40QSGDistanceFieldShiftedStyleTextMaterial12createShaderEN20QSGRendererInterface10RenderModeE@Base 6.2.0
  _ZNK40QSGDistanceFieldShiftedStyleTextMaterial4typeEv@Base 6.2.0
  _ZNK40QSGDistanceFieldShiftedStyleTextMaterial7compareEPK11QSGMaterial@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZNK6QColor7isValidEv@Base 6.2.4
  _ZNK7QSGNode10childCountEv@Base 6.2.0
  _ZNK7QSGNode12childAtIndexEi@Base 6.2.0
  _ZNK7QSGNode16isSubtreeBlockedEv@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZNK7QString3argEiii5QChar@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZNK7QStringixEx@Base 6.2.4
  _ZNK8QSGLayer10metaObjectEv@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZNK9QBitArray7testBitEx@Base 6.2.4
  _ZNK9QQuickPen10metaObjectEv@Base 6.2.0
  _ZNK9QQuickPen12pixelAlignedEv@Base 6.2.0
  _ZNK9QQuickPen5colorEv@Base 6.2.0
@@ -6787,110 +7041,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZNK9QQuickRow10metaObjectEv@Base 6.2.0
  _ZNK9QQuickRow15layoutDirectionEv@Base 6.2.0
  _ZNK9QQuickRow24effectiveLayoutDirectionEv@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNKSt8_Rb_treeI7QStringSt4pairIKS0_8QVariantESt10_Select1stIS4_ESt4lessIS0_ESaIS4_EE14_M_lower_boundEPKSt13_Rb_tree_nodeIS4_EPKSt18_Rb_tree_node_baseRS2_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNKSt8_Rb_treeI7QStringSt4pairIKS0_8QVariantESt10_Select1stIS4_ESt4lessIS0_ESaIS4_EE4findERS2_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNKSt8_Rb_treeIiSt4pairIKiP12QQuickPixmapESt10_Select1stIS4_ESt4lessIiESaIS4_EE14_M_lower_boundEPKSt13_Rb_tree_nodeIS4_EPKSt18_Rb_tree_node_baseRS1_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNKSt8_Rb_treeIiSt4pairIKiP12QQuickPixmapESt10_Select1stIS4_ESt4lessIiESaIS4_EE4findERS1_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNKSt8_Rb_treeIiSt4pairIKiP16QQuickTouchPointESt10_Select1stIS4_ESt4lessIiESaIS4_EE14_M_lower_boundEPKSt13_Rb_tree_nodeIS4_EPKSt18_Rb_tree_node_baseRS1_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNKSt8_Rb_treeIiSt4pairIKiP16QQuickTouchPointESt10_Select1stIS4_ESt4lessIiESaIS4_EE4findERS1_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNKSt8_Rb_treeIiSt4pairIKiP7QObjectESt10_Select1stIS4_ESt4lessIiESaIS4_EE14_M_lower_boundEPKSt13_Rb_tree_nodeIS4_EPKSt18_Rb_tree_node_baseRS1_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNKSt8_Rb_treeIiSt4pairIKiP7QObjectESt10_Select1stIS4_ESt4lessIiESaIS4_EE4findERS1_@Base 6.2.4
- (optional=templinst|arch=i386)_ZNSt14_Function_base13_Base_managerIPFP7QObjectP10QQmlEngineP9QJSEngineEE10_M_managerERSt9_Any_dataRKSA_St18_Manager_operation@Base 6.2.4
- (optional=templinst|arch=i386)_ZNSt14_Function_base13_Base_managerIZN9QMetaType17registerConverterI5QListI21QPersistentModelIndexE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS5_EEEEbT1_EUlPKvPvE_E10_M_managerERSt9_Any_dataRKSI_St18_Manager_operation@Base 6.2.4
- (optional=templinst|arch=i386)_ZNSt14_Function_base13_Base_managerIZN9QMetaType17registerConverterI5QListI4QUrlE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS5_EEEEbT1_EUlPKvPvE_E10_M_managerERSt9_Any_dataRKSI_St18_Manager_operation@Base 6.2.4
- (optional=templinst|arch=i386)_ZNSt14_Function_base13_Base_managerIZN9QMetaType17registerConverterI5QListI7QPointFE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS5_EEEEbT1_EUlPKvPvE_E10_M_managerERSt9_Any_dataRKSI_St18_Manager_operation@Base 6.2.4
- (optional=templinst|arch=i386)_ZNSt14_Function_base13_Base_managerIZN9QMetaType17registerConverterI5QListI9QPolygonFE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS5_EEEEbT1_EUlPKvPvE_E10_M_managerERSt9_Any_dataRKSI_St18_Manager_operation@Base 6.2.4
- (optional=templinst|arch=i386)_ZNSt14_Function_base13_Base_managerIZN9QMetaType17registerConverterI5QListIP7QObjectE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS6_EEEEbT1_EUlPKvPvE_E10_M_managerERSt9_Any_dataRKSJ_St18_Manager_operation@Base 6.2.4
- (optional=templinst|arch=i386)_ZNSt14_Function_base13_Base_managerIZN9QMetaType17registerConverterI5QListIS3_I7QPointFEE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS6_EEEEbT1_EUlPKvPvE_E10_M_managerERSt9_Any_dataRKSJ_St18_Manager_operation@Base 6.2.4
- (optional=templinst|arch=i386)_ZNSt14_Function_base13_Base_managerIZN9QMetaType17registerConverterI5QListIiE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS4_EEEEbT1_EUlPKvPvE_E10_M_managerERSt9_Any_dataRKSH_St18_Manager_operation@Base 6.2.4
- (optional=templinst|arch=i386)_ZNSt14_Function_base13_Base_managerIZN9QMetaType19registerMutableViewI5QListI21QPersistentModelIndexE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS5_EEEEbT1_EUlPvSD_E_E10_M_managerERSt9_Any_dataRKSG_St18_Manager_operation@Base 6.2.4
- (optional=templinst|arch=i386)_ZNSt14_Function_base13_Base_managerIZN9QMetaType19registerMutableViewI5QListI4QUrlE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS5_EEEEbT1_EUlPvSD_E_E10_M_managerERSt9_Any_dataRKSG_St18_Manager_operation@Base 6.2.4
- (optional=templinst|arch=i386)_ZNSt14_Function_base13_Base_managerIZN9QMetaType19registerMutableViewI5QListI7QPointFE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS5_EEEEbT1_EUlPvSD_E_E10_M_managerERSt9_Any_dataRKSG_St18_Manager_operation@Base 6.2.4
- (optional=templinst|arch=i386)_ZNSt14_Function_base13_Base_managerIZN9QMetaType19registerMutableViewI5QListI9QPolygonFE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS5_EEEEbT1_EUlPvSD_E_E10_M_managerERSt9_Any_dataRKSG_St18_Manager_operation@Base 6.2.4
- (optional=templinst|arch=i386)_ZNSt14_Function_base13_Base_managerIZN9QMetaType19registerMutableViewI5QListIP7QObjectE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS6_EEEEbT1_EUlPvSE_E_E10_M_managerERSt9_Any_dataRKSH_St18_Manager_operation@Base 6.2.4
- (optional=templinst|arch=i386)_ZNSt14_Function_base13_Base_managerIZN9QMetaType19registerMutableViewI5QListIS3_I7QPointFEE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS6_EEEEbT1_EUlPvSE_E_E10_M_managerERSt9_Any_dataRKSH_St18_Manager_operation@Base 6.2.4
- (optional=templinst|arch=i386)_ZNSt14_Function_base13_Base_managerIZN9QMetaType19registerMutableViewI5QListIiE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS4_EEEEbT1_EUlPvSC_E_E10_M_managerERSt9_Any_dataRKSF_St18_Manager_operation@Base 6.2.4
- (optional=templinst|arch=i386)_ZNSt17_Function_handlerIFP7QObjectP10QQmlEngineP9QJSEngineEPS6_E9_M_invokeERKSt9_Any_dataOS3_OS5_@Base 6.2.4
- (optional=templinst|arch=i386)_ZNSt17_Function_handlerIFbPKvPvEZN9QMetaType17registerConverterI5QListI21QPersistentModelIndexE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS8_EEEEbT1_EUlS1_S2_E_E9_M_invokeERKSt9_Any_dataOS1_OS2_@Base 6.2.4
- (optional=templinst|arch=i386)_ZNSt17_Function_handlerIFbPKvPvEZN9QMetaType17registerConverterI5QListI4QUrlE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS8_EEEEbT1_EUlS1_S2_E_E9_M_invokeERKSt9_Any_dataOS1_OS2_@Base 6.2.4
- (optional=templinst|arch=i386)_ZNSt17_Function_handlerIFbPKvPvEZN9QMetaType17registerConverterI5QListI7QPointFE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS8_EEEEbT1_EUlS1_S2_E_E9_M_invokeERKSt9_Any_dataOS1_OS2_@Base 6.2.4
- (optional=templinst|arch=i386)_ZNSt17_Function_handlerIFbPKvPvEZN9QMetaType17registerConverterI5QListI9QPolygonFE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS8_EEEEbT1_EUlS1_S2_E_E9_M_invokeERKSt9_Any_dataOS1_OS2_@Base 6.2.4
- (optional=templinst|arch=i386)_ZNSt17_Function_handlerIFbPKvPvEZN9QMetaType17registerConverterI5QListIP7QObjectE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS9_EEEEbT1_EUlS1_S2_E_E9_M_invokeERKSt9_Any_dataOS1_OS2_@Base 6.2.4
- (optional=templinst|arch=i386)_ZNSt17_Function_handlerIFbPKvPvEZN9QMetaType17registerConverterI5QListIS6_I7QPointFEE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS9_EEEEbT1_EUlS1_S2_E_E9_M_invokeERKSt9_Any_dataOS1_OS2_@Base 6.2.4
- (optional=templinst|arch=i386)_ZNSt17_Function_handlerIFbPKvPvEZN9QMetaType17registerConverterI5QListIiE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS7_EEEEbT1_EUlS1_S2_E_E9_M_invokeERKSt9_Any_dataOS1_OS2_@Base 6.2.4
- (optional=templinst|arch=i386)_ZNSt17_Function_handlerIFbPvS0_EZN9QMetaType19registerMutableViewI5QListI21QPersistentModelIndexE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS6_EEEEbT1_EUlS0_S0_E_E9_M_invokeERKSt9_Any_dataOS0_SJ_@Base 6.2.4
- (optional=templinst|arch=i386)_ZNSt17_Function_handlerIFbPvS0_EZN9QMetaType19registerMutableViewI5QListI4QUrlE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS6_EEEEbT1_EUlS0_S0_E_E9_M_invokeERKSt9_Any_dataOS0_SJ_@Base 6.2.4
- (optional=templinst|arch=i386)_ZNSt17_Function_handlerIFbPvS0_EZN9QMetaType19registerMutableViewI5QListI7QPointFE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS6_EEEEbT1_EUlS0_S0_E_E9_M_invokeERKSt9_Any_dataOS0_SJ_@Base 6.2.4
- (optional=templinst|arch=i386)_ZNSt17_Function_handlerIFbPvS0_EZN9QMetaType19registerMutableViewI5QListI9QPolygonFE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS6_EEEEbT1_EUlS0_S0_E_E9_M_invokeERKSt9_Any_dataOS0_SJ_@Base 6.2.4
- (optional=templinst|arch=i386)_ZNSt17_Function_handlerIFbPvS0_EZN9QMetaType19registerMutableViewI5QListIP7QObjectE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS7_EEEEbT1_EUlS0_S0_E_E9_M_invokeERKSt9_Any_dataOS0_SK_@Base 6.2.4
- (optional=templinst|arch=i386)_ZNSt17_Function_handlerIFbPvS0_EZN9QMetaType19registerMutableViewI5QListIS4_I7QPointFEE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS7_EEEEbT1_EUlS0_S0_E_E9_M_invokeERKSt9_Any_dataOS0_SK_@Base 6.2.4
- (optional=templinst|arch=i386)_ZNSt17_Function_handlerIFbPvS0_EZN9QMetaType19registerMutableViewI5QListIiE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS5_EEEEbT1_EUlS0_S0_E_E9_M_invokeERKSt9_Any_dataOS0_SI_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZNSt19_Sp_make_shared_tag5_S_tiEv@Base 6.2.4
- (optional=templinst|arch=i386)_ZNSt23_Sp_counted_ptr_inplaceI26QQuickPaletteColorProviderSaIS0_ELN9__gnu_cxx12_Lock_policyE2EE10_M_destroyEv@Base 6.2.4
- (optional=templinst|arch=i386)_ZNSt23_Sp_counted_ptr_inplaceI26QQuickPaletteColorProviderSaIS0_ELN9__gnu_cxx12_Lock_policyE2EE10_M_disposeEv@Base 6.2.4
- (optional=templinst|arch=i386)_ZNSt23_Sp_counted_ptr_inplaceI26QQuickPaletteColorProviderSaIS0_ELN9__gnu_cxx12_Lock_policyE2EE14_M_get_deleterERKSt9type_info@Base 6.2.4
- (optional=templinst|arch=i386)_ZNSt23_Sp_counted_ptr_inplaceI26QQuickPaletteColorProviderSaIS0_ELN9__gnu_cxx12_Lock_policyE2EED0Ev@Base 6.2.4
- (optional=templinst|arch=i386)_ZNSt23_Sp_counted_ptr_inplaceI26QQuickPaletteColorProviderSaIS0_ELN9__gnu_cxx12_Lock_policyE2EED1Ev@Base 6.2.4
- (optional=templinst|arch=i386)_ZNSt23_Sp_counted_ptr_inplaceI26QQuickPaletteColorProviderSaIS0_ELN9__gnu_cxx12_Lock_policyE2EED2Ev@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64 i386)_ZNSt3_V28__rotateIPP10QQuickItemEET_S4_S4_S4_St26random_access_iterator_tag@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNSt8_Rb_treeI7QStringSt4pairIKS0_8QVariantESt10_Select1stIS4_ESt4lessIS0_ESaIS4_EE14_M_insert_nodeEPSt18_Rb_tree_node_baseSC_PSt13_Rb_tree_nodeIS4_E@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNSt8_Rb_treeI7QStringSt4pairIKS0_8QVariantESt10_Select1stIS4_ESt4lessIS0_ESaIS4_EE14_M_lower_boundEPSt13_Rb_tree_nodeIS4_EPSt18_Rb_tree_node_baseRS2_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNSt8_Rb_treeI7QStringSt4pairIKS0_8QVariantESt10_Select1stIS4_ESt4lessIS0_ESaIS4_EE22_M_emplace_hint_uniqueIJRKSt21piecewise_construct_tSt5tupleIJRS2_EESF_IJRKS3_EEEEESt17_Rb_tree_iteratorIS4_ESt23_Rb_tree_const_iteratorIS4_EDpOT_@Base 6.2.4
- (optional=templinst)_ZNSt8_Rb_treeI7QStringSt4pairIKS0_8QVariantESt10_Select1stIS4_ESt4lessIS0_ESaIS4_EE24_M_get_insert_unique_posERS2_@Base 6.2.0
- (optional=templinst|arch=amd64 arm64 ia64 mips64el ppc64el riscv64 sh4 sparc64)_ZNSt8_Rb_treeI7QStringSt4pairIKS0_8QVariantESt10_Select1stIS4_ESt4lessIS0_ESaIS4_EE29_M_get_insert_hint_unique_posESt23_Rb_tree_const_iteratorIS4_ERS2_@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNSt8_Rb_treeI7QStringSt4pairIKS0_8QVariantESt10_Select1stIS4_ESt4lessIS0_ESaIS4_EE7_M_copyILb0ENSA_11_Alloc_nodeEEEPSt13_Rb_tree_nodeIS4_ESF_PSt18_Rb_tree_node_baseRT0_@Base 6.2.4
- (optional=templinst|arch=i386)_ZNSt8_Rb_treeI7QStringSt4pairIKS0_8QVariantESt10_Select1stIS4_ESt4lessIS0_ESaIS4_EE7_M_copyINSA_11_Alloc_nodeEEEPSt13_Rb_tree_nodeIS4_EPKSE_PSt18_Rb_tree_node_baseRT_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64 i386)_ZNSt8_Rb_treeI7QStringSt4pairIKS0_8QVariantESt10_Select1stIS4_ESt4lessIS0_ESaIS4_EE8_M_eraseEPSt13_Rb_tree_nodeIS4_E@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNSt8_Rb_treeIiSt4pairIKiN3QV415PersistentValueEESt10_Select1stIS4_ESt4lessIiESaIS4_EE10_M_insert_IRKS4_NSA_11_Alloc_nodeEEESt17_Rb_tree_iteratorIS4_EPSt18_Rb_tree_node_baseSI_OT_RT0_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNSt8_Rb_treeIiSt4pairIKiN3QV415PersistentValueEESt10_Select1stIS4_ESt4lessIiESaIS4_EE11equal_rangeERS1_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNSt8_Rb_treeIiSt4pairIKiN3QV415PersistentValueEESt10_Select1stIS4_ESt4lessIiESaIS4_EE12_M_erase_auxESt23_Rb_tree_const_iteratorIS4_E@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNSt8_Rb_treeIiSt4pairIKiN3QV415PersistentValueEESt10_Select1stIS4_ESt4lessIiESaIS4_EE12_M_erase_auxESt23_Rb_tree_const_iteratorIS4_ESC_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNSt8_Rb_treeIiSt4pairIKiN3QV415PersistentValueEESt10_Select1stIS4_ESt4lessIiESaIS4_EE14_M_insert_nodeEPSt18_Rb_tree_node_baseSC_PSt13_Rb_tree_nodeIS4_E@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNSt8_Rb_treeIiSt4pairIKiN3QV415PersistentValueEESt10_Select1stIS4_ESt4lessIiESaIS4_EE14_M_lower_boundEPSt13_Rb_tree_nodeIS4_EPSt18_Rb_tree_node_baseRS1_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNSt8_Rb_treeIiSt4pairIKiN3QV415PersistentValueEESt10_Select1stIS4_ESt4lessIiESaIS4_EE14_M_upper_boundEPSt13_Rb_tree_nodeIS4_EPSt18_Rb_tree_node_baseRS1_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNSt8_Rb_treeIiSt4pairIKiN3QV415PersistentValueEESt10_Select1stIS4_ESt4lessIiESaIS4_EE17_M_insert_unique_IRKS4_NSA_11_Alloc_nodeEEESt17_Rb_tree_iteratorIS4_ESt23_Rb_tree_const_iteratorIS4_EOT_RT0_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNSt8_Rb_treeIiSt4pairIKiN3QV415PersistentValueEESt10_Select1stIS4_ESt4lessIiESaIS4_EE22_M_emplace_hint_uniqueIJRKSt21piecewise_construct_tSt5tupleIJRS1_EESF_IJRKS3_EEEEESt17_Rb_tree_iteratorIS4_ESt23_Rb_tree_const_iteratorIS4_EDpOT_@Base 6.2.4
- (optional=templinst)_ZNSt8_Rb_treeIiSt4pairIKiN3QV415PersistentValueEESt10_Select1stIS4_ESt4lessIiESaIS4_EE24_M_get_insert_unique_posERS1_@Base 6.2.0
- (optional=templinst)_ZNSt8_Rb_treeIiSt4pairIKiN3QV415PersistentValueEESt10_Select1stIS4_ESt4lessIiESaIS4_EE29_M_get_insert_hint_unique_posESt23_Rb_tree_const_iteratorIS4_ERS1_@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64 i386)_ZNSt8_Rb_treeIiSt4pairIKiN3QV415PersistentValueEESt10_Select1stIS4_ESt4lessIiESaIS4_EE5eraseERS1_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNSt8_Rb_treeIiSt4pairIKiN3QV415PersistentValueEESt10_Select1stIS4_ESt4lessIiESaIS4_EE7_M_copyILb0ENSA_11_Alloc_nodeEEEPSt13_Rb_tree_nodeIS4_ESF_PSt18_Rb_tree_node_baseRT0_@Base 6.2.4
- (optional=templinst|arch=i386)_ZNSt8_Rb_treeIiSt4pairIKiN3QV415PersistentValueEESt10_Select1stIS4_ESt4lessIiESaIS4_EE7_M_copyINSA_11_Alloc_nodeEEEPSt13_Rb_tree_nodeIS4_EPKSE_PSt18_Rb_tree_node_baseRT_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64 i386)_ZNSt8_Rb_treeIiSt4pairIKiN3QV415PersistentValueEESt10_Select1stIS4_ESt4lessIiESaIS4_EE8_M_eraseEPSt13_Rb_tree_nodeIS4_E@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNSt8_Rb_treeIiSt4pairIKiP12QQuickPixmapESt10_Select1stIS4_ESt4lessIiESaIS4_EE14_M_insert_nodeEPSt18_Rb_tree_node_baseSC_PSt13_Rb_tree_nodeIS4_E@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNSt8_Rb_treeIiSt4pairIKiP12QQuickPixmapESt10_Select1stIS4_ESt4lessIiESaIS4_EE14_M_lower_boundEPSt13_Rb_tree_nodeIS4_EPSt18_Rb_tree_node_baseRS1_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNSt8_Rb_treeIiSt4pairIKiP12QQuickPixmapESt10_Select1stIS4_ESt4lessIiESaIS4_EE22_M_emplace_hint_uniqueIJRKSt21piecewise_construct_tSt5tupleIJRS1_EESF_IJRKS3_EEEEESt17_Rb_tree_iteratorIS4_ESt23_Rb_tree_const_iteratorIS4_EDpOT_@Base 6.2.4
- (optional=templinst)_ZNSt8_Rb_treeIiSt4pairIKiP12QQuickPixmapESt10_Select1stIS4_ESt4lessIiESaIS4_EE24_M_get_insert_unique_posERS1_@Base 6.2.0
- (optional=templinst|arch=amd64 arm64 ia64 mips64el ppc64el riscv64 sh4 sparc64)_ZNSt8_Rb_treeIiSt4pairIKiP12QQuickPixmapESt10_Select1stIS4_ESt4lessIiESaIS4_EE29_M_get_insert_hint_unique_posESt23_Rb_tree_const_iteratorIS4_ERS1_@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNSt8_Rb_treeIiSt4pairIKiP12QQuickPixmapESt10_Select1stIS4_ESt4lessIiESaIS4_EE7_M_copyILb0ENSA_11_Alloc_nodeEEEPSt13_Rb_tree_nodeIS4_ESF_PSt18_Rb_tree_node_baseRT0_@Base 6.2.4
- (optional=templinst|arch=i386)_ZNSt8_Rb_treeIiSt4pairIKiP12QQuickPixmapESt10_Select1stIS4_ESt4lessIiESaIS4_EE7_M_copyINSA_11_Alloc_nodeEEEPSt13_Rb_tree_nodeIS4_EPKSE_PSt18_Rb_tree_node_baseRT_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64 i386)_ZNSt8_Rb_treeIiSt4pairIKiP12QQuickPixmapESt10_Select1stIS4_ESt4lessIiESaIS4_EE8_M_eraseEPSt13_Rb_tree_nodeIS4_E@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNSt8_Rb_treeIiSt4pairIKiP16QQuickTouchPointESt10_Select1stIS4_ESt4lessIiESaIS4_EE14_M_insert_nodeEPSt18_Rb_tree_node_baseSC_PSt13_Rb_tree_nodeIS4_E@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNSt8_Rb_treeIiSt4pairIKiP16QQuickTouchPointESt10_Select1stIS4_ESt4lessIiESaIS4_EE14_M_lower_boundEPSt13_Rb_tree_nodeIS4_EPSt18_Rb_tree_node_baseRS1_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNSt8_Rb_treeIiSt4pairIKiP16QQuickTouchPointESt10_Select1stIS4_ESt4lessIiESaIS4_EE22_M_emplace_hint_uniqueIJRKSt21piecewise_construct_tSt5tupleIJRS1_EESF_IJRKS3_EEEEESt17_Rb_tree_iteratorIS4_ESt23_Rb_tree_const_iteratorIS4_EDpOT_@Base 6.2.4
- (optional=templinst)_ZNSt8_Rb_treeIiSt4pairIKiP16QQuickTouchPointESt10_Select1stIS4_ESt4lessIiESaIS4_EE24_M_get_insert_unique_posERS1_@Base 6.2.0
- (optional=templinst|arch=amd64 arm64 ia64 mips64el ppc64el riscv64 sh4 sparc64)_ZNSt8_Rb_treeIiSt4pairIKiP16QQuickTouchPointESt10_Select1stIS4_ESt4lessIiESaIS4_EE29_M_get_insert_hint_unique_posESt23_Rb_tree_const_iteratorIS4_ERS1_@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNSt8_Rb_treeIiSt4pairIKiP16QQuickTouchPointESt10_Select1stIS4_ESt4lessIiESaIS4_EE7_M_copyILb0ENSA_11_Alloc_nodeEEEPSt13_Rb_tree_nodeIS4_ESF_PSt18_Rb_tree_node_baseRT0_@Base 6.2.4
- (optional=templinst|arch=i386)_ZNSt8_Rb_treeIiSt4pairIKiP16QQuickTouchPointESt10_Select1stIS4_ESt4lessIiESaIS4_EE7_M_copyINSA_11_Alloc_nodeEEEPSt13_Rb_tree_nodeIS4_EPKSE_PSt18_Rb_tree_node_baseRT_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64 i386)_ZNSt8_Rb_treeIiSt4pairIKiP16QQuickTouchPointESt10_Select1stIS4_ESt4lessIiESaIS4_EE8_M_eraseEPSt13_Rb_tree_nodeIS4_E@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNSt8_Rb_treeIiSt4pairIKiP7QObjectESt10_Select1stIS4_ESt4lessIiESaIS4_EE10_M_insert_IRKS4_NSA_11_Alloc_nodeEEESt17_Rb_tree_iteratorIS4_EPSt18_Rb_tree_node_baseSI_OT_RT0_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNSt8_Rb_treeIiSt4pairIKiP7QObjectESt10_Select1stIS4_ESt4lessIiESaIS4_EE11equal_rangeERS1_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNSt8_Rb_treeIiSt4pairIKiP7QObjectESt10_Select1stIS4_ESt4lessIiESaIS4_EE12_M_erase_auxESt23_Rb_tree_const_iteratorIS4_E@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNSt8_Rb_treeIiSt4pairIKiP7QObjectESt10_Select1stIS4_ESt4lessIiESaIS4_EE12_M_erase_auxESt23_Rb_tree_const_iteratorIS4_ESC_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNSt8_Rb_treeIiSt4pairIKiP7QObjectESt10_Select1stIS4_ESt4lessIiESaIS4_EE14_M_insert_nodeEPSt18_Rb_tree_node_baseSC_PSt13_Rb_tree_nodeIS4_E@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNSt8_Rb_treeIiSt4pairIKiP7QObjectESt10_Select1stIS4_ESt4lessIiESaIS4_EE14_M_lower_boundEPSt13_Rb_tree_nodeIS4_EPSt18_Rb_tree_node_baseRS1_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNSt8_Rb_treeIiSt4pairIKiP7QObjectESt10_Select1stIS4_ESt4lessIiESaIS4_EE14_M_upper_boundEPSt13_Rb_tree_nodeIS4_EPSt18_Rb_tree_node_baseRS1_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNSt8_Rb_treeIiSt4pairIKiP7QObjectESt10_Select1stIS4_ESt4lessIiESaIS4_EE17_M_insert_unique_IRKS4_NSA_11_Alloc_nodeEEESt17_Rb_tree_iteratorIS4_ESt23_Rb_tree_const_iteratorIS4_EOT_RT0_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64 i386)_ZNSt8_Rb_treeIiSt4pairIKiP7QObjectESt10_Select1stIS4_ESt4lessIiESaIS4_EE22_M_emplace_hint_uniqueIJRKSt21piecewise_construct_tSt5tupleIJRS1_EESF_IJRKS3_EEEEESt17_Rb_tree_iteratorIS4_ESt23_Rb_tree_const_iteratorIS4_EDpOT_@Base 6.2.4
- (optional=templinst)_ZNSt8_Rb_treeIiSt4pairIKiP7QObjectESt10_Select1stIS4_ESt4lessIiESaIS4_EE24_M_get_insert_unique_posERS1_@Base 6.2.0
- (optional=templinst)_ZNSt8_Rb_treeIiSt4pairIKiP7QObjectESt10_Select1stIS4_ESt4lessIiESaIS4_EE29_M_get_insert_hint_unique_posESt23_Rb_tree_const_iteratorIS4_ERS1_@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64 i386)_ZNSt8_Rb_treeIiSt4pairIKiP7QObjectESt10_Select1stIS4_ESt4lessIiESaIS4_EE5eraseERS1_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNSt8_Rb_treeIiSt4pairIKiP7QObjectESt10_Select1stIS4_ESt4lessIiESaIS4_EE7_M_copyILb0ENSA_11_Alloc_nodeEEEPSt13_Rb_tree_nodeIS4_ESF_PSt18_Rb_tree_node_baseRT0_@Base 6.2.4
- (optional=templinst|arch=i386)_ZNSt8_Rb_treeIiSt4pairIKiP7QObjectESt10_Select1stIS4_ESt4lessIiESaIS4_EE7_M_copyINSA_11_Alloc_nodeEEEPSt13_Rb_tree_nodeIS4_EPKSE_PSt18_Rb_tree_node_baseRT_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64 i386)_ZNSt8_Rb_treeIiSt4pairIKiP7QObjectESt10_Select1stIS4_ESt4lessIiESaIS4_EE8_M_eraseEPSt13_Rb_tree_nodeIS4_E@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZSt11swap_rangesIPP10QQuickItemS2_ET0_T_S4_S3_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZSt18__allocate_guardedISaISt23_Sp_counted_ptr_inplaceI26QQuickPaletteColorProviderSaIS1_ELN9__gnu_cxx12_Lock_policyE2EEEESt15__allocated_ptrIT_ERS8_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64 i386)_ZSt19piecewise_construct@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZSt20get_temporary_bufferIP10QQuickItemESt4pairIPT_lEl@Base 6.2.4
+ _ZSt19piecewise_construct@Base 6.4.1
  _ZTI10QQuickDrag@Base 6.2.0
  _ZTI10QQuickFlow@Base 6.2.0
  _ZTI10QQuickGrid@Base 6.2.0
@@ -6936,6 +7087,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZTI14QQuickGridMesh@Base 6.2.0
  _ZTI14QQuickGridView@Base 6.2.0
  _ZTI14QQuickItemView@Base 6.2.0
+ _ZTI14QQuickKeyEvent@Base 6.3.0
  _ZTI14QQuickListView@Base 6.2.0
  _ZTI14QQuickPathLine@Base 6.2.0
  _ZTI14QQuickPathMove@Base 6.2.0
@@ -6946,9 +7098,11 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZTI14QQuickRepeater@Base 6.2.0
  _ZTI14QQuickRootItem@Base 6.2.0
  _ZTI14QQuickRotation@Base 6.2.0
+ _ZTI14QQuickShortcut@Base 6.4.0
  _ZTI14QQuickTextEdit@Base 6.2.0
  _ZTI14QQuickTextNode@Base 6.2.0
  _ZTI14QQuickTimeLine@Base 6.2.0
+ _ZTI14QQuickTreeView@Base 6.3.0
  _ZTI14QSGNodeUpdater@Base 6.2.0
  _ZTI14QSGNodeVisitor@Base 6.2.0
  _ZTI14QSGOpacityNode@Base 6.2.0
@@ -6997,11 +7151,11 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZTI17QQuickBorderImage@Base 6.2.0
  _ZTI17QQuickDragHandler@Base 6.2.0
  _ZTI17QQuickFontMetrics@Base 6.2.0
+ _ZTI17QQuickInputMethod@Base 6.4.0
  _ZTI17QQuickItemPrivate@Base 6.2.0
  _ZTI17QQuickPaintedItem@Base 6.2.0
  _ZTI17QQuickPathElement@Base 6.2.0
  _ZTI17QQuickPathPercent@Base 6.2.0
- _ZTI17QQuickPathPrivate@Base 6.2.0
  _ZTI17QQuickTextMetrics@Base 6.2.0
  _ZTI17QQuickTextPrivate@Base 6.2.0
  _ZTI17QQuickViewPrivate@Base 6.2.0
@@ -7018,6 +7172,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZTI18QQuickHoverHandler@Base 6.2.0
  _ZTI18QQuickImagePrivate@Base 6.2.0
  _ZTI18QQuickIntValidator@Base 6.2.0
+ _ZTI18QQuickKeysAttached@Base 6.3.0
  _ZTI18QQuickParentChange@Base 6.2.0
  _ZTI18QQuickPathAngleArc@Base 6.2.0
  _ZTI18QQuickPathPolyline@Base 6.2.0
@@ -7043,6 +7198,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZTI19QQuickRenderControl@Base 6.2.0
  _ZTI19QQuickScaleAnimator@Base 6.2.0
  _ZTI19QQuickSystemPalette@Base 6.2.0
+ _ZTI19QQuickTextInterface@Base 6.4.0
  _ZTI19QQuickWindowPrivate@Base 6.2.0
  _ZTI19QQuickWindowQmlImpl@Base 6.2.0
  _ZTI19QSGAbstractRenderer@Base 6.2.0
@@ -7054,6 +7210,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZTI20QQuickAnimationGroup@Base 6.2.0
  _ZTI20QQuickBasePositioner@Base 6.2.0
  _ZTI20QQuickColorAnimation@Base 6.2.0
+ _ZTI20QQuickFrameAnimation@Base 6.4.0
  _ZTI20QQuickItemGrabResult@Base 6.2.0
  _ZTI20QQuickItemViewFxItem@Base 6.2.0
  _ZTI20QQuickPauseAnimation@Base 6.2.0
@@ -7080,6 +7237,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZTI21QQuickSpringAnimation@Base 6.2.0
  _ZTI21QQuickStochasticState@Base 6.2.0
  _ZTI21QQuickTextEditPrivate@Base 6.2.0
+ _ZTI21QQuickTreeViewPrivate@Base 6.3.0
  _ZTI21QQuickUniformAnimator@Base 6.2.0
  _ZTI21QSGDefaultPainterNode@Base 6.2.0
  _ZTI22QAccessibleQuickWindow@Base 6.2.0
@@ -7114,7 +7272,6 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZTI24QQuickAccessibleAttached@Base 6.2.0
  _ZTI24QQuickAsyncImageProvider@Base 6.2.0
  _ZTI24QQuickOpacityAnimatorJob@Base 6.2.0
- _ZTI24QQuickPaintedItemPrivate@Base 6.2.0
  _ZTI24QQuickShaderEffectSource@Base 6.2.0
  _ZTI24QQuickSinglePointHandler@Base 6.2.0
  _ZTI24QQuickUniformAnimatorJob@Base 6.2.0
@@ -7128,16 +7285,12 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZTI25QQuickPathCatmullRomCurve@Base 6.2.0
  _ZTI25QQuickRotationAnimatorJob@Base 6.2.0
  _ZTI25QQuickSequentialAnimation@Base 6.2.0
- _ZTI25QQuickWheelHandlerPrivate@Base 6.2.0
  _ZTI25QSGBasicInternalImageNode@Base 6.2.0
  _ZTI26QQuickDeliveryAgentPrivate@Base 6.2.0
  _ZTI26QQuickFlickableVisibleArea@Base 6.2.4
  _ZTI26QQuickImageTextureProvider@Base 6.2.0
  _ZTI26QQuickItemViewTransitioner@Base 6.2.0
  _ZTI26QQuickPointerDeviceHandler@Base 6.2.0
- _ZTI26QQuickRenderControlPrivate@Base 6.2.0
- _ZTI26QQuickWindowQmlImplPrivate@Base 6.2.0
- _ZTI26QSGAbstractRendererPrivate@Base 6.2.0
  _ZTI26QSGContextFactoryInterface@Base 6.2.0
  _ZTI26QSGDistanceFieldGlyphCache@Base 6.2.0
  _ZTI27QQuickKeyNavigationAttached@Base 6.2.0
@@ -7152,7 +7305,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZTI29QSGRhiDistanceFieldGlyphCache@Base 6.2.0
  _ZTI30QQuickAbstractAnimationPrivate@Base 6.2.0
  _ZTI30QQuickImageProviderWithOptions@Base 6.2.0
- _ZTI30QQuickMultiPointHandlerPrivate@Base 6.2.0
+ _ZTI30QQuickPropertyAnimationPrivate@Base 6.4.0
  _ZTI30QQuickTableSectionSizeProvider@Base 6.2.0
  _ZTI31QQuickSinglePointHandlerPrivate@Base 6.2.0
  _ZTI31QSGDefaultInternalRectangleNode@Base 6.2.0
@@ -7176,7 +7329,6 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  (arch=linux-any)_ZTIN16QNativeInterface16QSGVulkanTextureE@Base 6.2.0
  _ZTIN16QSGBatchRenderer8RendererE@Base 6.2.0
  _ZTIN19QQuickDeliveryAgent9TransformE@Base 6.2.0
- _ZTIN22QQuickFlickablePrivate8VelocityE@Base 6.2.0
  _ZTIN23QQuickFramebufferObject8RendererE@Base 6.2.0
  _ZTIN3QV415ExecutionEngine9DeletableE@Base 6.2.0
  (arch=armel riscv64)_ZTIN9__gnu_cxx7__mutexE@Base 6.2.0
@@ -7185,20 +7337,38 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  (arch=!armel !riscv64)_ZTISt11_Mutex_baseILN9__gnu_cxx12_Lock_policyE2EE@Base 6.2.0
  (arch=armel riscv64)_ZTISt16_Sp_counted_baseILN9__gnu_cxx12_Lock_policyE1EE@Base 6.2.0
  (arch=!armel !riscv64)_ZTISt16_Sp_counted_baseILN9__gnu_cxx12_Lock_policyE2EE@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64 armel armhf)_ZTISt19_Sp_make_shared_tag@Base 6.2.4
- (arch=armel riscv64)_ZTISt23_Sp_counted_ptr_inplaceI26QQuickPaletteColorProviderSaIS0_ELN9__gnu_cxx12_Lock_policyE1EE@Base 6.2.0
- (arch=!armel !riscv64)_ZTISt23_Sp_counted_ptr_inplaceI26QQuickPaletteColorProviderSaIS0_ELN9__gnu_cxx12_Lock_policyE2EE@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64 i386)_ZTIZN9QMetaType17registerConverterI5QListI21QPersistentModelIndexE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS3_EEEEbT1_EUlPKvPvE_@Base 6.2.4
+ (arch=armel armhf)_ZTISt19_Sp_make_shared_tag@Base 6.2.0
+ _ZTIZN9QMetaType17registerConverterI5QListI10QMatrix4x4E9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS3_EEEEbT1_EUlPKvPvE_@Base 6.4.0
+ _ZTIZN9QMetaType17registerConverterI5QListI11QColorSpaceE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS3_EEEEbT1_EUlPKvPvE_@Base 6.4.0
+ _ZTIZN9QMetaType17registerConverterI5QListI11QQuaternionE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS3_EEEEbT1_EUlPKvPvE_@Base 6.4.0
+ _ZTIZN9QMetaType17registerConverterI5QListI16QQuickAnchorLineE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS3_EEEEbT1_EUlPKvPvE_@Base 6.4.0
+ _ZTIZN9QMetaType17registerConverterI5QListI18QQuickHandlerPointE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS3_EEEEbT1_EUlPKvPvE_@Base 6.4.1
+ _ZTIZN9QMetaType17registerConverterI5QListI23QPointingDeviceUniqueIdE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS3_EEEEbT1_EUlPKvPvE_@Base 6.4.0
  _ZTIZN9QMetaType17registerConverterI5QListI4QUrlE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS3_EEEEbT1_EUlPKvPvE_@Base 6.2.0
+ _ZTIZN9QMetaType17registerConverterI5QListI5QFontE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS3_EEEEbT1_EUlPKvPvE_@Base 6.4.0
+ _ZTIZN9QMetaType17registerConverterI5QListI6QColorE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS3_EEEEbT1_EUlPKvPvE_@Base 6.4.0
  _ZTIZN9QMetaType17registerConverterI5QListI7QPointFE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS3_EEEEbT1_EUlPKvPvE_@Base 6.2.0
  _ZTIZN9QMetaType17registerConverterI5QListI9QPolygonFE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS3_EEEEbT1_EUlPKvPvE_@Base 6.2.0
+ _ZTIZN9QMetaType17registerConverterI5QListI9QVector2DE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS3_EEEEbT1_EUlPKvPvE_@Base 6.4.0
+ _ZTIZN9QMetaType17registerConverterI5QListI9QVector3DE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS3_EEEEbT1_EUlPKvPvE_@Base 6.4.0
+ _ZTIZN9QMetaType17registerConverterI5QListI9QVector4DE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS3_EEEEbT1_EUlPKvPvE_@Base 6.4.0
  _ZTIZN9QMetaType17registerConverterI5QListIP7QObjectE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS4_EEEEbT1_EUlPKvPvE_@Base 6.2.0
  _ZTIZN9QMetaType17registerConverterI5QListIS1_I7QPointFEE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS4_EEEEbT1_EUlPKvPvE_@Base 6.2.0
  _ZTIZN9QMetaType17registerConverterI5QListIiE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS2_EEEEbT1_EUlPKvPvE_@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64 i386)_ZTIZN9QMetaType19registerMutableViewI5QListI21QPersistentModelIndexE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS3_EEEEbT1_EUlPvSB_E_@Base 6.2.4
+ _ZTIZN9QMetaType19registerMutableViewI5QListI10QMatrix4x4E9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS3_EEEEbT1_EUlPvSB_E_@Base 6.4.0
+ _ZTIZN9QMetaType19registerMutableViewI5QListI11QColorSpaceE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS3_EEEEbT1_EUlPvSB_E_@Base 6.4.0
+ _ZTIZN9QMetaType19registerMutableViewI5QListI11QQuaternionE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS3_EEEEbT1_EUlPvSB_E_@Base 6.4.0
+ _ZTIZN9QMetaType19registerMutableViewI5QListI16QQuickAnchorLineE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS3_EEEEbT1_EUlPvSB_E_@Base 6.4.0
+ _ZTIZN9QMetaType19registerMutableViewI5QListI18QQuickHandlerPointE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS3_EEEEbT1_EUlPvSB_E_@Base 6.4.1
+ _ZTIZN9QMetaType19registerMutableViewI5QListI23QPointingDeviceUniqueIdE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS3_EEEEbT1_EUlPvSB_E_@Base 6.4.0
  _ZTIZN9QMetaType19registerMutableViewI5QListI4QUrlE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS3_EEEEbT1_EUlPvSB_E_@Base 6.2.0
+ _ZTIZN9QMetaType19registerMutableViewI5QListI5QFontE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS3_EEEEbT1_EUlPvSB_E_@Base 6.4.0
+ _ZTIZN9QMetaType19registerMutableViewI5QListI6QColorE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS3_EEEEbT1_EUlPvSB_E_@Base 6.4.0
  _ZTIZN9QMetaType19registerMutableViewI5QListI7QPointFE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS3_EEEEbT1_EUlPvSB_E_@Base 6.2.0
  _ZTIZN9QMetaType19registerMutableViewI5QListI9QPolygonFE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS3_EEEEbT1_EUlPvSB_E_@Base 6.2.0
+ _ZTIZN9QMetaType19registerMutableViewI5QListI9QVector2DE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS3_EEEEbT1_EUlPvSB_E_@Base 6.4.0
+ _ZTIZN9QMetaType19registerMutableViewI5QListI9QVector3DE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS3_EEEEbT1_EUlPvSB_E_@Base 6.4.0
+ _ZTIZN9QMetaType19registerMutableViewI5QListI9QVector4DE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS3_EEEEbT1_EUlPvSB_E_@Base 6.4.0
  _ZTIZN9QMetaType19registerMutableViewI5QListIP7QObjectE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS4_EEEEbT1_EUlPvSC_E_@Base 6.2.0
  _ZTIZN9QMetaType19registerMutableViewI5QListIS1_I7QPointFEE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS4_EEEEbT1_EUlPvSC_E_@Base 6.2.0
  _ZTIZN9QMetaType19registerMutableViewI5QListIiE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS2_EEEEbT1_EUlPvSA_E_@Base 6.2.0
@@ -7247,6 +7417,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZTS14QQuickGridMesh@Base 6.2.0
  _ZTS14QQuickGridView@Base 6.2.0
  _ZTS14QQuickItemView@Base 6.2.0
+ _ZTS14QQuickKeyEvent@Base 6.3.0
  _ZTS14QQuickListView@Base 6.2.0
  _ZTS14QQuickPathLine@Base 6.2.0
  _ZTS14QQuickPathMove@Base 6.2.0
@@ -7257,9 +7428,11 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZTS14QQuickRepeater@Base 6.2.0
  _ZTS14QQuickRootItem@Base 6.2.0
  _ZTS14QQuickRotation@Base 6.2.0
+ _ZTS14QQuickShortcut@Base 6.4.0
  _ZTS14QQuickTextEdit@Base 6.2.0
  _ZTS14QQuickTextNode@Base 6.2.0
  _ZTS14QQuickTimeLine@Base 6.2.0
+ _ZTS14QQuickTreeView@Base 6.3.0
  _ZTS14QSGNodeUpdater@Base 6.2.0
  _ZTS14QSGNodeVisitor@Base 6.2.0
  _ZTS14QSGOpacityNode@Base 6.2.0
@@ -7308,6 +7481,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZTS17QQuickBorderImage@Base 6.2.0
  _ZTS17QQuickDragHandler@Base 6.2.0
  _ZTS17QQuickFontMetrics@Base 6.2.0
+ _ZTS17QQuickInputMethod@Base 6.4.0
  _ZTS17QQuickItemPrivate@Base 6.2.0
  _ZTS17QQuickPaintedItem@Base 6.2.0
  _ZTS17QQuickPathElement@Base 6.2.0
@@ -7329,6 +7503,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZTS18QQuickHoverHandler@Base 6.2.0
  _ZTS18QQuickImagePrivate@Base 6.2.0
  _ZTS18QQuickIntValidator@Base 6.2.0
+ _ZTS18QQuickKeysAttached@Base 6.3.0
  _ZTS18QQuickParentChange@Base 6.2.0
  _ZTS18QQuickPathAngleArc@Base 6.2.0
  _ZTS18QQuickPathPolyline@Base 6.2.0
@@ -7354,6 +7529,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZTS19QQuickRenderControl@Base 6.2.0
  _ZTS19QQuickScaleAnimator@Base 6.2.0
  _ZTS19QQuickSystemPalette@Base 6.2.0
+ _ZTS19QQuickTextInterface@Base 6.4.0
  _ZTS19QQuickWindowPrivate@Base 6.2.0
  _ZTS19QQuickWindowQmlImpl@Base 6.2.0
  _ZTS19QSGAbstractRenderer@Base 6.2.0
@@ -7365,6 +7541,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZTS20QQuickAnimationGroup@Base 6.2.0
  _ZTS20QQuickBasePositioner@Base 6.2.0
  _ZTS20QQuickColorAnimation@Base 6.2.0
+ _ZTS20QQuickFrameAnimation@Base 6.4.0
  _ZTS20QQuickItemGrabResult@Base 6.2.0
  _ZTS20QQuickItemViewFxItem@Base 6.2.0
  _ZTS20QQuickPauseAnimation@Base 6.2.0
@@ -7391,6 +7568,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZTS21QQuickSpringAnimation@Base 6.2.0
  _ZTS21QQuickStochasticState@Base 6.2.0
  _ZTS21QQuickTextEditPrivate@Base 6.2.0
+ _ZTS21QQuickTreeViewPrivate@Base 6.3.0
  _ZTS21QQuickUniformAnimator@Base 6.2.0
  _ZTS21QSGDefaultPainterNode@Base 6.2.0
  _ZTS22QAccessibleQuickWindow@Base 6.2.0
@@ -7464,6 +7642,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZTS30QQuickAbstractAnimationPrivate@Base 6.2.0
  _ZTS30QQuickImageProviderWithOptions@Base 6.2.0
  _ZTS30QQuickMultiPointHandlerPrivate@Base 6.2.0
+ _ZTS30QQuickPropertyAnimationPrivate@Base 6.4.0
  _ZTS30QQuickTableSectionSizeProvider@Base 6.2.0
  _ZTS31QQuickSinglePointHandlerPrivate@Base 6.2.0
  _ZTS31QSGDefaultInternalRectangleNode@Base 6.2.0
@@ -7497,19 +7676,39 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  (arch=armel riscv64)_ZTSSt16_Sp_counted_baseILN9__gnu_cxx12_Lock_policyE1EE@Base 6.2.0
  (arch=!armel !riscv64)_ZTSSt16_Sp_counted_baseILN9__gnu_cxx12_Lock_policyE2EE@Base 6.2.0
  _ZTSSt19_Sp_make_shared_tag@Base 6.2.0
- (arch=armel riscv64)_ZTSSt23_Sp_counted_ptr_inplaceI26QQuickPaletteColorProviderSaIS0_ELN9__gnu_cxx12_Lock_policyE1EE@Base 6.2.0
- (arch=!armel !riscv64)_ZTSSt23_Sp_counted_ptr_inplaceI26QQuickPaletteColorProviderSaIS0_ELN9__gnu_cxx12_Lock_policyE2EE@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64 i386)_ZTSZN9QMetaType17registerConverterI5QListI21QPersistentModelIndexE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS3_EEEEbT1_EUlPKvPvE_@Base 6.2.4
+ (arch=armel riscv64)_ZTSSt23_Sp_counted_ptr_inplaceI26QQuickPaletteColorProviderSaIvELN9__gnu_cxx12_Lock_policyE1EE@Base 6.3.1
+ (arch=!armel !riscv64)_ZTSSt23_Sp_counted_ptr_inplaceI26QQuickPaletteColorProviderSaIS0_ELN9__gnu_cxx12_Lock_policyE2EE@Base 6.4.2
+ _ZTSZN9QMetaType17registerConverterI5QListI10QMatrix4x4E9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS3_EEEEbT1_EUlPKvPvE_@Base 6.4.0
+ _ZTSZN9QMetaType17registerConverterI5QListI11QColorSpaceE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS3_EEEEbT1_EUlPKvPvE_@Base 6.4.0
+ _ZTSZN9QMetaType17registerConverterI5QListI11QQuaternionE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS3_EEEEbT1_EUlPKvPvE_@Base 6.4.0
+ _ZTSZN9QMetaType17registerConverterI5QListI16QQuickAnchorLineE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS3_EEEEbT1_EUlPKvPvE_@Base 6.4.0
+ _ZTSZN9QMetaType17registerConverterI5QListI18QQuickHandlerPointE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS3_EEEEbT1_EUlPKvPvE_@Base 6.4.1
+ _ZTSZN9QMetaType17registerConverterI5QListI23QPointingDeviceUniqueIdE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS3_EEEEbT1_EUlPKvPvE_@Base 6.4.0
  _ZTSZN9QMetaType17registerConverterI5QListI4QUrlE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS3_EEEEbT1_EUlPKvPvE_@Base 6.2.0
+ _ZTSZN9QMetaType17registerConverterI5QListI5QFontE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS3_EEEEbT1_EUlPKvPvE_@Base 6.4.0
+ _ZTSZN9QMetaType17registerConverterI5QListI6QColorE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS3_EEEEbT1_EUlPKvPvE_@Base 6.4.0
  _ZTSZN9QMetaType17registerConverterI5QListI7QPointFE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS3_EEEEbT1_EUlPKvPvE_@Base 6.2.0
  _ZTSZN9QMetaType17registerConverterI5QListI9QPolygonFE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS3_EEEEbT1_EUlPKvPvE_@Base 6.2.0
+ _ZTSZN9QMetaType17registerConverterI5QListI9QVector2DE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS3_EEEEbT1_EUlPKvPvE_@Base 6.4.0
+ _ZTSZN9QMetaType17registerConverterI5QListI9QVector3DE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS3_EEEEbT1_EUlPKvPvE_@Base 6.4.0
+ _ZTSZN9QMetaType17registerConverterI5QListI9QVector4DE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS3_EEEEbT1_EUlPKvPvE_@Base 6.4.0
  _ZTSZN9QMetaType17registerConverterI5QListIP7QObjectE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS4_EEEEbT1_EUlPKvPvE_@Base 6.2.0
  _ZTSZN9QMetaType17registerConverterI5QListIS1_I7QPointFEE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS4_EEEEbT1_EUlPKvPvE_@Base 6.2.0
  _ZTSZN9QMetaType17registerConverterI5QListIiE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS2_EEEEbT1_EUlPKvPvE_@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64 i386)_ZTSZN9QMetaType19registerMutableViewI5QListI21QPersistentModelIndexE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS3_EEEEbT1_EUlPvSB_E_@Base 6.2.4
+ _ZTSZN9QMetaType19registerMutableViewI5QListI10QMatrix4x4E9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS3_EEEEbT1_EUlPvSB_E_@Base 6.4.0
+ _ZTSZN9QMetaType19registerMutableViewI5QListI11QColorSpaceE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS3_EEEEbT1_EUlPvSB_E_@Base 6.4.0
+ _ZTSZN9QMetaType19registerMutableViewI5QListI11QQuaternionE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS3_EEEEbT1_EUlPvSB_E_@Base 6.4.0
+ _ZTSZN9QMetaType19registerMutableViewI5QListI16QQuickAnchorLineE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS3_EEEEbT1_EUlPvSB_E_@Base 6.4.0
+ _ZTSZN9QMetaType19registerMutableViewI5QListI18QQuickHandlerPointE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS3_EEEEbT1_EUlPvSB_E_@Base 6.4.1
+ _ZTSZN9QMetaType19registerMutableViewI5QListI23QPointingDeviceUniqueIdE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS3_EEEEbT1_EUlPvSB_E_@Base 6.4.0
  _ZTSZN9QMetaType19registerMutableViewI5QListI4QUrlE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS3_EEEEbT1_EUlPvSB_E_@Base 6.2.0
+ _ZTSZN9QMetaType19registerMutableViewI5QListI5QFontE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS3_EEEEbT1_EUlPvSB_E_@Base 6.4.0
+ _ZTSZN9QMetaType19registerMutableViewI5QListI6QColorE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS3_EEEEbT1_EUlPvSB_E_@Base 6.4.0
  _ZTSZN9QMetaType19registerMutableViewI5QListI7QPointFE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS3_EEEEbT1_EUlPvSB_E_@Base 6.2.0
  _ZTSZN9QMetaType19registerMutableViewI5QListI9QPolygonFE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS3_EEEEbT1_EUlPvSB_E_@Base 6.2.0
+ _ZTSZN9QMetaType19registerMutableViewI5QListI9QVector2DE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS3_EEEEbT1_EUlPvSB_E_@Base 6.4.0
+ _ZTSZN9QMetaType19registerMutableViewI5QListI9QVector3DE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS3_EEEEbT1_EUlPvSB_E_@Base 6.4.0
+ _ZTSZN9QMetaType19registerMutableViewI5QListI9QVector4DE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS3_EEEEbT1_EUlPvSB_E_@Base 6.4.0
  _ZTSZN9QMetaType19registerMutableViewI5QListIP7QObjectE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS4_EEEEbT1_EUlPvSC_E_@Base 6.2.0
  _ZTSZN9QMetaType19registerMutableViewI5QListIS1_I7QPointFEE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS4_EEEEbT1_EUlPvSC_E_@Base 6.2.0
  _ZTSZN9QMetaType19registerMutableViewI5QListIiE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS2_EEEEbT1_EUlPvSA_E_@Base 6.2.0
@@ -7533,14 +7732,12 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZTV11QSGRenderer@Base 6.2.0
  _ZTV11QSGRhiLayer@Base 6.2.0
  _ZTV11QSGRootNode@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZTV12QQmlRefCount@Base 6.2.4
  _ZTV12QQuickColumn@Base 6.2.0
  _ZTV12QQuickLoader@Base 6.2.0
  _ZTV12QQuickScreen@Base 6.2.0
  _ZTV12QQuickSprite@Base 6.2.0
  _ZTV12QQuickWindow@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZTV12QSGGlyphNode@Base 6.2.4
- _ZTV12QSGImageNode@Base 6.2.0
+ _ZTV12QSGGlyphNode@Base 6.4.0
  _ZTV13QQuickAnchors@Base 6.2.0
  _ZTV13QQuickPalette@Base 6.2.0
  _ZTV13QQuickPathArc@Base 6.2.0
@@ -7548,7 +7745,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZTV13QSGNodeDumper@Base 6.2.0
  _ZTV13QSGRenderLoop@Base 6.2.0
  _ZTV13QSGRenderNode@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZTV13QSGSpriteNode@Base 6.2.4
+ _ZTV13QSGSpriteNode@Base 6.4.0
  _ZTV14QQuickAnimator@Base 6.2.0
  _ZTV14QQuickBehavior@Base 6.2.0
  _ZTV14QQuickDragAxis@Base 6.2.0
@@ -7558,6 +7755,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZTV14QQuickGridMesh@Base 6.2.0
  _ZTV14QQuickGridView@Base 6.2.0
  _ZTV14QQuickItemView@Base 6.2.0
+ _ZTV14QQuickKeyEvent@Base 6.3.0
  _ZTV14QQuickListView@Base 6.2.0
  _ZTV14QQuickPathLine@Base 6.2.0
  _ZTV14QQuickPathMove@Base 6.2.0
@@ -7568,13 +7766,15 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZTV14QQuickRepeater@Base 6.2.0
  _ZTV14QQuickRootItem@Base 6.2.0
  _ZTV14QQuickRotation@Base 6.2.0
+ _ZTV14QQuickShortcut@Base 6.4.0
  _ZTV14QQuickTextEdit@Base 6.2.0
  _ZTV14QQuickTextNode@Base 6.2.0
  _ZTV14QQuickTimeLine@Base 6.2.0
+ _ZTV14QQuickTreeView@Base 6.3.0
  _ZTV14QSGNodeUpdater@Base 6.2.0
  _ZTV14QSGNodeVisitor@Base 6.2.0
  _ZTV14QSGOpacityNode@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZTV14QSGPainterNode@Base 6.2.4
+ _ZTV14QSGPainterNode@Base 6.4.0
  _ZTV15QQuickAnchorSet@Base 6.2.0
  _ZTV15QQuickFlickable@Base 6.2.0
  _ZTV15QQuickImageBase@Base 6.2.0
@@ -7593,7 +7793,6 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZTV15QQuickYAnimator@Base 6.2.0
  _ZTV15QSGGeometryNode@Base 6.2.0
  _ZTV15QSGPlainTexture@Base 6.2.0
- _ZTV16QQmlCustomParser@Base 6.2.0
  _ZTV16QQuickCloseEvent@Base 6.2.0
  _ZTV16QQuickColorGroup@Base 6.2.0
  _ZTV16QQuickFocusScope@Base 6.2.0
@@ -7601,15 +7800,12 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZTV16QQuickMouseEvent@Base 6.2.0
  _ZTV16QQuickPinchEvent@Base 6.2.0
  _ZTV16QQuickScreenInfo@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZTV16QQuickSelectable@Base 6.2.4
  _ZTV16QQuickStateGroup@Base 6.2.0
  _ZTV16QQuickTapHandler@Base 6.2.0
  _ZTV16QQuickTouchPoint@Base 6.2.0
  _ZTV16QQuickTransition@Base 6.2.0
  _ZTV16QSGContextPlugin@Base 6.2.0
- _ZTV16QSGNinePatchNode@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZTV16QSGNodeVisitorEx@Base 6.2.4
- _ZTV16QSGRectangleNode@Base 6.2.0
+ _ZTV16QSGNodeVisitorEx@Base 6.4.0
  _ZTV16QSGRenderContext@Base 6.2.0
  _ZTV16QSGTransformNode@Base 6.2.0
  _ZTV16QSGVisitableNode@Base 6.2.0
@@ -7618,11 +7814,11 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZTV17QQuickBorderImage@Base 6.2.0
  _ZTV17QQuickDragHandler@Base 6.2.0
  _ZTV17QQuickFontMetrics@Base 6.2.0
+ _ZTV17QQuickInputMethod@Base 6.4.0
  _ZTV17QQuickItemPrivate@Base 6.2.0
  _ZTV17QQuickPaintedItem@Base 6.2.0
  _ZTV17QQuickPathElement@Base 6.2.0
  _ZTV17QQuickPathPercent@Base 6.2.0
- _ZTV17QQuickPathPrivate@Base 6.2.0
  _ZTV17QQuickTextMetrics@Base 6.2.0
  _ZTV17QQuickTextPrivate@Base 6.2.0
  _ZTV17QQuickViewPrivate@Base 6.2.0
@@ -7632,13 +7828,11 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZTV17QSGDynamicTexture@Base 6.2.0
  _ZTV17QSGMaterialShader@Base 6.2.0
  _ZTV17QSGPainterTexture@Base 6.2.0
- _ZTV17QSGSimpleRectNode@Base 6.2.0
- _ZTV17QSGTexturePrivate@Base 6.2.0
  _ZTV18QQuickDragAttached@Base 6.2.0
  _ZTV18QQuickGradientStop@Base 6.2.0
  _ZTV18QQuickHoverHandler@Base 6.2.0
- _ZTV18QQuickImagePrivate@Base 6.2.0
  _ZTV18QQuickIntValidator@Base 6.2.0
+ _ZTV18QQuickKeysAttached@Base 6.3.0
  _ZTV18QQuickParentChange@Base 6.2.0
  _ZTV18QQuickPathAngleArc@Base 6.2.0
  _ZTV18QQuickPathPolyline@Base 6.2.0
@@ -7675,6 +7869,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZTV20QQuickAnimationGroup@Base 6.2.0
  _ZTV20QQuickBasePositioner@Base 6.2.0
  _ZTV20QQuickColorAnimation@Base 6.2.0
+ _ZTV20QQuickFrameAnimation@Base 6.4.0
  _ZTV20QQuickItemGrabResult@Base 6.2.0
  _ZTV20QQuickItemViewFxItem@Base 6.2.0
  _ZTV20QQuickPauseAnimation@Base 6.2.0
@@ -7688,7 +7883,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZTV20QSGBasicGeometryNode@Base 6.2.0
  _ZTV20QSGCompressedTexture@Base 6.2.0
  _ZTV20QSGFlatColorMaterial@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZTV20QSGInternalImageNode@Base 6.2.4
+ _ZTV20QSGInternalImageNode@Base 6.4.0
  _ZTV20QSGRendererInterface@Base 6.2.0
  _ZTV20QSGSimpleTextureNode@Base 6.2.0
  _ZTV21QQuickAnchorAnimation@Base 6.2.0
@@ -7701,6 +7896,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZTV21QQuickSpringAnimation@Base 6.2.0
  _ZTV21QQuickStochasticState@Base 6.2.0
  _ZTV21QQuickTextEditPrivate@Base 6.2.0
+ _ZTV21QQuickTreeViewPrivate@Base 6.3.0
  _ZTV21QQuickUniformAnimator@Base 6.2.0
  _ZTV21QSGDefaultPainterNode@Base 6.2.0
  _ZTV22QAccessibleQuickWindow@Base 6.2.0
@@ -7735,11 +7931,10 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZTV24QQuickAccessibleAttached@Base 6.2.0
  _ZTV24QQuickAsyncImageProvider@Base 6.2.0
  _ZTV24QQuickOpacityAnimatorJob@Base 6.2.0
- _ZTV24QQuickPaintedItemPrivate@Base 6.2.0
  _ZTV24QQuickShaderEffectSource@Base 6.2.0
  _ZTV24QQuickSinglePointHandler@Base 6.2.0
  _ZTV24QQuickUniformAnimatorJob@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZTV24QSGInternalRectangleNode@Base 6.2.4
+ _ZTV24QSGInternalRectangleNode@Base 6.4.0
  _ZTV24QSGOpaqueTextureMaterial@Base 6.2.0
  _ZTV24QSGSmoothTextureMaterial@Base 6.2.0
  _ZTV24QSGTexturePlatformOpenGL@Base 6.2.0
@@ -7749,41 +7944,31 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZTV25QQuickPathCatmullRomCurve@Base 6.2.0
  _ZTV25QQuickRotationAnimatorJob@Base 6.2.0
  _ZTV25QQuickSequentialAnimation@Base 6.2.0
- _ZTV25QQuickWheelHandlerPrivate@Base 6.2.0
  _ZTV25QSGBasicInternalImageNode@Base 6.2.0
  _ZTV26QQuickDeliveryAgentPrivate@Base 6.2.0
  _ZTV26QQuickFlickableVisibleArea@Base 6.2.4
  _ZTV26QQuickImageTextureProvider@Base 6.2.0
  _ZTV26QQuickItemViewTransitioner@Base 6.2.0
  _ZTV26QQuickPointerDeviceHandler@Base 6.2.0
- _ZTV26QQuickRenderControlPrivate@Base 6.2.0
- _ZTV26QQuickWindowQmlImplPrivate@Base 6.2.0
- _ZTV26QSGAbstractRendererPrivate@Base 6.2.0
- _ZTV26QSGContextFactoryInterface@Base 6.2.0
  _ZTV26QSGDistanceFieldGlyphCache@Base 6.2.0
  _ZTV27QQuickKeyNavigationAttached@Base 6.2.0
- _ZTV27QQuickPointerHandlerPrivate@Base 6.2.0
  _ZTV27QSGAbstractSoftwareRenderer@Base 6.2.0
  _ZTV27QSGCompressedTextureFactory@Base 6.2.0
  _ZTV27QSGDefaultInternalImageNode@Base 6.2.0
  _ZTV28QSGDistanceFieldTextMaterial@Base 6.2.0
- _ZTV29QQuickImplicitSizeItemPrivate@Base 6.2.0
  _ZTV29QSGBasicInternalRectangleNode@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64 i386)_ZTV29QSGDistanceFieldGlyphConsumer@Base 6.2.4
+ _ZTV29QSGDistanceFieldGlyphConsumer@Base 6.4.0
  _ZTV29QSGRhiDistanceFieldGlyphCache@Base 6.2.0
  _ZTV30QQuickAbstractAnimationPrivate@Base 6.2.0
  _ZTV30QQuickImageProviderWithOptions@Base 6.2.0
- _ZTV30QQuickMultiPointHandlerPrivate@Base 6.2.0
+ _ZTV30QQuickPropertyAnimationPrivate@Base 6.4.0
  _ZTV30QQuickTableSectionSizeProvider@Base 6.2.0
- _ZTV31QQuickSinglePointHandlerPrivate@Base 6.2.0
  _ZTV31QSGDefaultInternalRectangleNode@Base 6.2.0
  _ZTV31QSGGuiThreadShaderEffectManager@Base 6.2.0
  _ZTV32QQuickItemViewTransitionableItem@Base 6.2.0
- _ZTV33QQuickPointerDeviceHandlerPrivate@Base 6.2.0
  _ZTV33QSGOpaqueTextureMaterialRhiShader@Base 6.2.0
  _ZTV34QSGDistanceFieldStyledTextMaterial@Base 6.2.0
  _ZTV35QSGDistanceFieldOutlineTextMaterial@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZTV38QQuickItemViewTransitionChangeListener@Base 6.2.4
  _ZTV39QSGHiQSubPixelDistanceFieldTextMaterial@Base 6.2.0
  _ZTV39QSGLoQSubPixelDistanceFieldTextMaterial@Base 6.2.0
  _ZTV40QSGDistanceFieldShiftedStyleTextMaterial@Base 6.2.0
@@ -7796,107 +7981,41 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  (arch=linux-any)_ZTVN16QNativeInterface16QSGVulkanTextureE@Base 6.2.0
  _ZTVN16QSGBatchRenderer8RendererE@Base 6.2.0
  _ZTVN19QQuickDeliveryAgent9TransformE@Base 6.2.0
- _ZTVN22QQuickFlickablePrivate8VelocityE@Base 6.2.0
  _ZTVN23QQuickFramebufferObject8RendererE@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZTVN3QV415ExecutionEngine9DeletableE@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZTVSt16_Sp_counted_baseILN9__gnu_cxx12_Lock_policyE2EE@Base 6.2.4
- (arch=armel riscv64)_ZTVSt23_Sp_counted_ptr_inplaceI26QQuickPaletteColorProviderSaIS0_ELN9__gnu_cxx12_Lock_policyE1EE@Base 6.2.0
- (arch=!armel !riscv64)_ZTVSt23_Sp_counted_ptr_inplaceI26QQuickPaletteColorProviderSaIS0_ELN9__gnu_cxx12_Lock_policyE2EE@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64 i386)_ZZN9QMetaType21registerConverterImplI5QListI21QPersistentModelIndexE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.2.4
+ (optional=templinst)_ZZN9QMetaType21registerConverterImplI5QListI10QMatrix4x4E9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.4.0
+ (optional=templinst)_ZZN9QMetaType21registerConverterImplI5QListI11QColorSpaceE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.4.0
+ (optional=templinst)_ZZN9QMetaType21registerConverterImplI5QListI11QQuaternionE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.4.0
+ (optional=templinst)_ZZN9QMetaType21registerConverterImplI5QListI16QQuickAnchorLineE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.4.0
+ (optional=templinst)_ZZN9QMetaType21registerConverterImplI5QListI18QQuickHandlerPointE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.4.1
+ (optional=templinst)_ZZN9QMetaType21registerConverterImplI5QListI23QPointingDeviceUniqueIdE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.4.0
  (optional=templinst)_ZZN9QMetaType21registerConverterImplI5QListI4QUrlE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.2.0
+ (optional=templinst)_ZZN9QMetaType21registerConverterImplI5QListI5QFontE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.4.0
+ (optional=templinst)_ZZN9QMetaType21registerConverterImplI5QListI6QColorE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.4.0
  (optional=templinst)_ZZN9QMetaType21registerConverterImplI5QListI7QPointFE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.2.0
  (optional=templinst)_ZZN9QMetaType21registerConverterImplI5QListI9QPolygonFE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.2.0
+ (optional=templinst)_ZZN9QMetaType21registerConverterImplI5QListI9QVector2DE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.4.0
+ (optional=templinst)_ZZN9QMetaType21registerConverterImplI5QListI9QVector3DE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.4.0
+ (optional=templinst)_ZZN9QMetaType21registerConverterImplI5QListI9QVector4DE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.4.0
  (optional=templinst)_ZZN9QMetaType21registerConverterImplI5QListIP7QObjectE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.2.0
  (optional=templinst)_ZZN9QMetaType21registerConverterImplI5QListIS1_I7QPointFEE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.2.0
  (optional=templinst)_ZZN9QMetaType21registerConverterImplI5QListIiE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64 i386)_ZZN9QMetaType23registerMutableViewImplI5QListI21QPersistentModelIndexE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS8_EES_S_E10unregister@Base 6.2.4
+ (optional=templinst)_ZZN9QMetaType23registerMutableViewImplI5QListI10QMatrix4x4E9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS8_EES_S_E10unregister@Base 6.4.0
+ (optional=templinst)_ZZN9QMetaType23registerMutableViewImplI5QListI11QColorSpaceE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS8_EES_S_E10unregister@Base 6.4.0
+ (optional=templinst)_ZZN9QMetaType23registerMutableViewImplI5QListI11QQuaternionE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS8_EES_S_E10unregister@Base 6.4.0
+ (optional=templinst)_ZZN9QMetaType23registerMutableViewImplI5QListI16QQuickAnchorLineE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS8_EES_S_E10unregister@Base 6.4.0
+ (optional=templinst)_ZZN9QMetaType23registerMutableViewImplI5QListI18QQuickHandlerPointE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS8_EES_S_E10unregister@Base 6.4.1
+ (optional=templinst)_ZZN9QMetaType23registerMutableViewImplI5QListI23QPointingDeviceUniqueIdE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS8_EES_S_E10unregister@Base 6.4.0
  (optional=templinst)_ZZN9QMetaType23registerMutableViewImplI5QListI4QUrlE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS8_EES_S_E10unregister@Base 6.2.0
+ (optional=templinst)_ZZN9QMetaType23registerMutableViewImplI5QListI5QFontE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS8_EES_S_E10unregister@Base 6.4.0
+ (optional=templinst)_ZZN9QMetaType23registerMutableViewImplI5QListI6QColorE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS8_EES_S_E10unregister@Base 6.4.0
  (optional=templinst)_ZZN9QMetaType23registerMutableViewImplI5QListI7QPointFE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS8_EES_S_E10unregister@Base 6.2.0
  (optional=templinst)_ZZN9QMetaType23registerMutableViewImplI5QListI9QPolygonFE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS8_EES_S_E10unregister@Base 6.2.0
+ (optional=templinst)_ZZN9QMetaType23registerMutableViewImplI5QListI9QVector2DE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS8_EES_S_E10unregister@Base 6.4.0
+ (optional=templinst)_ZZN9QMetaType23registerMutableViewImplI5QListI9QVector3DE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS8_EES_S_E10unregister@Base 6.4.0
+ (optional=templinst)_ZZN9QMetaType23registerMutableViewImplI5QListI9QVector4DE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS8_EES_S_E10unregister@Base 6.4.0
  (optional=templinst)_ZZN9QMetaType23registerMutableViewImplI5QListIP7QObjectE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS9_EES_S_E10unregister@Base 6.2.0
  (optional=templinst)_ZZN9QMetaType23registerMutableViewImplI5QListIS1_I7QPointFEE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS9_EES_S_E10unregister@Base 6.2.0
  (optional=templinst)_ZZN9QMetaType23registerMutableViewImplI5QListIiE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS7_EES_S_E10unregister@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI10QByteArrayE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI10QByteArrayE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI10QByteArrayE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI10QByteArrayE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI12QEasingCurveE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI12QEasingCurveE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI12QEasingCurveE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI12QEasingCurveE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64 i386)_ZZN9QtPrivate16QMetaTypeForTypeI21QPersistentModelIndexE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64 i386)_ZZN9QtPrivate16QMetaTypeForTypeI21QPersistentModelIndexE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64 i386)_ZZN9QtPrivate16QMetaTypeForTypeI21QPersistentModelIndexE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64 i386)_ZZN9QtPrivate16QMetaTypeForTypeI21QPersistentModelIndexE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.4
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI4QMapI7QString8QVariantEE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES8_S9_SB_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI4QMapI7QString8QVariantEE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS9_E_4_FUNES8_S9_S9_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI4QMapI7QString8QVariantEE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES8_S9_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI4QMapI7QString8QVariantEE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES8_S9_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI4QUrlE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI4QUrlE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI4QUrlE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI4QUrlE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI5QListI7QStringEE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES7_S8_SA_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI5QListI7QStringEE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS8_E_4_FUNES7_S8_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI5QListI7QStringEE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES7_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI5QListI7QStringEE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES7_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI5QListI8QVariantEE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES7_S8_SA_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI5QListI8QVariantEE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS8_E_4_FUNES7_S8_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI5QListI8QVariantEE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES7_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI5QListI8QVariantEE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES7_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI5QRectE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI5QRectE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI5QRectE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI5QSizeE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI5QSizeE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI5QSizeE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI6QPointE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI6QPointE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI6QPointE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI6QRectFE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI6QRectFE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI6QRectFE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI6QSizeFE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI6QSizeFE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI6QSizeFE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QPointFE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QPointFE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QPointFE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QStringE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QStringE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QStringE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QStringE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI8QVariantE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI8QVariantE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI8QVariantE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI8QVariantE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIDnE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES4_S5_S7_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIDnE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS5_E_4_FUNES4_S5_S5_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIDnE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES4_S5_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIP7QObjectE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES6_S7_S9_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIP7QObjectE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS7_E_4_FUNES6_S7_S7_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIP7QObjectE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES6_S7_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIbE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES4_S5_S7_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIbE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS5_E_4_FUNES4_S5_S5_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIbE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES4_S5_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIdE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES4_S5_S7_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIdE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS5_E_4_FUNES4_S5_S5_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIdE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES4_S5_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIfE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES4_S5_S7_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIfE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS5_E_4_FUNES4_S5_S5_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIfE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES4_S5_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIiE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES4_S5_S7_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIiE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS5_E_4_FUNES4_S5_S5_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIiE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES4_S5_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIjE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES4_S5_S7_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIjE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS5_E_4_FUNES4_S5_S5_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIjE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES4_S5_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIxE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES4_S5_S7_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIxE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS5_E_4_FUNES4_S5_S5_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIxE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES4_S5_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIyE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES4_S5_S7_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIyE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS5_E_4_FUNES4_S5_S5_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIyE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES4_S5_@Base 6.2.0
  _ZZNSt19_Sp_make_shared_tag5_S_tiEvE5__tag@Base 6.2.0
  _Zls6QDebugP10QQuickItem@Base 6.2.0
  _Zls6QDebugPK11QSGRootNode@Base 6.2.0
@@ -7907,6 +8026,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _Zls6QDebugPK19QQuickDeliveryAgent@Base 6.2.0
  _Zls6QDebugPK7QSGNode@Base 6.2.0
  _Zls6QDebugRKN19QSGShaderEffectNode12VariableDataE@Base 6.2.0
+ _Zls6QDebugRKN21QQuickTextEditPrivate4NodeE@Base 6.4.0
  _Zls6QDebugRKN31QSGGuiThreadShaderEffectManager10ShaderInfo8VariableE@Base 6.2.0
  (c++)"non-virtual thunk to QAccessibleQuickItem::actionNames() const@Base" 6.2.0
  (c++)"non-virtual thunk to QAccessibleQuickItem::addSelection(int, int)@Base" 6.2.0
@@ -7933,7 +8053,6 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  (c++)"non-virtual thunk to QQuickAbstractAnimation::setTarget(QQmlProperty const&)@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickAbstractAnimation::~QQuickAbstractAnimation()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickAbstractAnimationPrivate::animationFinished(QAbstractAnimationJob*)@Base" 6.2.0
- (c++)"non-virtual thunk to QQuickAnchorAnimation::~QQuickAnchorAnimation()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickAnchorChanges::changesBindings()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickAnchorChanges::clearBindings()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickAnchorChanges::copyOriginals(QQuickStateActionEvent*)@Base" 6.2.0
@@ -7946,11 +8065,10 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  (c++)"non-virtual thunk to QQuickAnchorChanges::saveOriginals()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickAnchorChanges::saveTargetValues()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickAnchorChanges::type() const@Base" 6.2.0
- (c++)"non-virtual thunk to QQuickAnchorChanges::~QQuickAnchorChanges()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickAnimatedImage::componentComplete()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickAnimatedImage::~QQuickAnimatedImage()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickAnimatedSprite::componentComplete()@Base" 6.2.0
- (c++)"non-virtual thunk to QQuickAnimationController::classBegin()@Base" 6.2.0
+ (c++)"non-virtual thunk to QQuickAnimationController::componentFinalized()@Base" 6.3.0
  (c++)"non-virtual thunk to QQuickAnimationController::~QQuickAnimationController()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickAnimationGroup::~QQuickAnimationGroup()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickAnimatorProxyJob::debugAnimation(QDebug) const@Base" 6.2.0
@@ -7961,6 +8079,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  (c++)"non-virtual thunk to QQuickBasePositioner::componentComplete()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickBasePositioner::~QQuickBasePositioner()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickBehavior::bindable(QUntypedBindable*, QUntypedBindable)@Base" 6.2.0
+ (c++)"non-virtual thunk to QQuickBehavior::componentFinalized()@Base" 6.3.0
  (c++)"non-virtual thunk to QQuickBehavior::setTarget(QQmlProperty const&)@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickBehavior::write(QVariant const&)@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickBehavior::~QQuickBehavior()@Base" 6.2.0
@@ -7971,8 +8090,8 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  (c++)"non-virtual thunk to QQuickFlickable::~QQuickFlickable()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickFlickablePrivate::itemGeometryChanged(QQuickItem*, QQuickGeometryChange, QRectF const&)@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickFlipable::~QQuickFlipable()@Base" 6.2.0
- (c++)"non-virtual thunk to QQuickFocusScope::~QQuickFocusScope()@Base" 6.2.0
- (c++)"non-virtual thunk to QQuickGridView::~QQuickGridView()@Base" 6.2.0
+ (c++)"non-virtual thunk to QQuickFrameAnimation::classBegin()@Base" 6.4.0
+ (c++)"non-virtual thunk to QQuickFrameAnimation::componentComplete()@Base" 6.4.0
  (c++)"non-virtual thunk to QQuickHoverHandler::componentComplete()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickHoverHandler::~QQuickHoverHandler()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickImage::~QQuickImage()@Base" 6.2.0
@@ -7992,6 +8111,13 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  (c++)"non-virtual thunk to QQuickItemView::~QQuickItemView()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickKeyNavigationAttached::keyPressed(QKeyEvent*, bool)@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickKeyNavigationAttached::keyReleased(QKeyEvent*, bool)@Base" 6.2.0
+ (c++)"non-virtual thunk to QQuickKeysAttached::componentComplete()@Base" 6.3.0
+ (c++)"non-virtual thunk to QQuickKeysAttached::inputMethodEvent(QInputMethodEvent*, bool)@Base" 6.3.0
+ (c++)"non-virtual thunk to QQuickKeysAttached::inputMethodQuery(Qt::InputMethodQuery) const@Base" 6.3.0
+ (c++)"non-virtual thunk to QQuickKeysAttached::keyPressed(QKeyEvent*, bool)@Base" 6.3.0
+ (c++)"non-virtual thunk to QQuickKeysAttached::keyReleased(QKeyEvent*, bool)@Base" 6.3.0
+ (c++)"non-virtual thunk to QQuickKeysAttached::shortcutOverride(QKeyEvent*)@Base" 6.3.0
+ (c++)"non-virtual thunk to QQuickKeysAttached::~QQuickKeysAttached()@Base" 6.3.0
  (c++)"non-virtual thunk to QQuickListView::~QQuickListView()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickLoader::componentComplete()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickLoader::~QQuickLoader()@Base" 6.2.0
@@ -8000,7 +8126,6 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  (c++)"non-virtual thunk to QQuickNumberAnimation::~QQuickNumberAnimation()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickPaintedItem::~QQuickPaintedItem()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickParallelAnimation::~QQuickParallelAnimation()@Base" 6.2.0
- (c++)"non-virtual thunk to QQuickParentAnimation::~QQuickParentAnimation()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickParentChange::execute()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickParentChange::isReversable()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickParentChange::mayOverride(QQuickStateActionEvent*)@Base" 6.2.0
@@ -8009,7 +8134,6 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  (c++)"non-virtual thunk to QQuickParentChange::saveCurrentValues()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickParentChange::saveOriginals()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickParentChange::type() const@Base" 6.2.0
- (c++)"non-virtual thunk to QQuickParentChange::~QQuickParentChange()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickPath::classBegin()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickPath::componentComplete()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickPath::~QQuickPath()@Base" 6.2.0
@@ -8023,6 +8147,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  (c++)"non-virtual thunk to QQuickPointerHandler::~QQuickPointerHandler()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickPropertyAction::~QQuickPropertyAction()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickPropertyAnimation::~QQuickPropertyAnimation()@Base" 6.2.0
+ (c++)"non-virtual thunk to QQuickPropertyAnimationPrivate::animationCurrentLoopChanged(QAbstractAnimationJob*)@Base" 6.4.0
  (c++)"non-virtual thunk to QQuickRepeater::componentComplete()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickRepeater::~QQuickRepeater()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickRotationAnimation::~QQuickRotationAnimation()@Base" 6.2.0
@@ -8032,15 +8157,16 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  (c++)"non-virtual thunk to QQuickShaderEffect::~QQuickShaderEffect()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickShaderEffectSource::itemGeometryChanged(QQuickItem*, QQuickGeometryChange, QRectF const&)@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickShaderEffectSource::~QQuickShaderEffectSource()@Base" 6.2.0
- (c++)"non-virtual thunk to QQuickSmoothedAnimation::~QQuickSmoothedAnimation()@Base" 6.2.0
+ (c++)"non-virtual thunk to QQuickShortcut::classBegin()@Base" 6.4.0
+ (c++)"non-virtual thunk to QQuickShortcut::componentComplete()@Base" 6.4.0
+ (c++)"non-virtual thunk to QQuickShortcut::~QQuickShortcut()@Base" 6.4.0
  (c++)"non-virtual thunk to QQuickSpringAnimation::~QQuickSpringAnimation()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickStateChangeScript::execute()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickStateChangeScript::type() const@Base" 6.2.0
- (c++)"non-virtual thunk to QQuickStateChangeScript::~QQuickStateChangeScript()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickStateGroup::classBegin()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickStateGroup::componentComplete()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickStateGroup::~QQuickStateGroup()@Base" 6.2.0
- (c++)"non-virtual thunk to QQuickTableView::componentComplete()@Base" 6.2.0
+ (c++)"non-virtual thunk to QQuickTableView::componentFinalized()@Base" 6.3.0
  (c++)"non-virtual thunk to QQuickTableView::~QQuickTableView()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickTableViewPrivate::clearSelection()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickTableViewPrivate::normalizeSelection()@Base" 6.2.0
@@ -8051,15 +8177,20 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  (c++)"non-virtual thunk to QQuickTableViewPrivate::setSelectionStartPos(QPointF const&)@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickTableViewPrivate::~QQuickTableViewPrivate()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickText::componentComplete()@Base" 6.2.0
+ (c++)"non-virtual thunk to QQuickText::invalidate()@Base" 6.4.0
  (c++)"non-virtual thunk to QQuickText::~QQuickText()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickTextEdit::componentComplete()@Base" 6.2.0
+ (c++)"non-virtual thunk to QQuickTextEdit::invalidate()@Base" 6.4.0
  (c++)"non-virtual thunk to QQuickTextInput::componentComplete()@Base" 6.2.0
+ (c++)"non-virtual thunk to QQuickTextInput::invalidate()@Base" 6.4.0
  (c++)"non-virtual thunk to QQuickTextInput::~QQuickTextInput()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickTextPrivate::~QQuickTextPrivate()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickTimeLine::debugAnimation(QDebug) const@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickTimeLine::duration() const@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickTimeLine::updateCurrentTime(int)@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickTimeLine::~QQuickTimeLine()@Base" 6.2.0
+ (c++)"non-virtual thunk to QQuickTreeView::~QQuickTreeView()@Base" 6.3.0
+ (c++)"non-virtual thunk to QQuickTreeViewPrivate::~QQuickTreeViewPrivate()@Base" 6.3.0
  (c++)"non-virtual thunk to QQuickVector3dAnimation::~QQuickVector3dAnimation()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickView::~QQuickView()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickViewPrivate::itemGeometryChanged(QQuickItem*, QQuickGeometryChange, QRectF const&)@Base" 6.2.0
@@ -8076,3 +8207,4 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  (c++)"non-virtual thunk to QSGDefaultContext::shaderSourceType() const@Base" 6.2.0
  (c++)"non-virtual thunk to QSGDefaultContext::shaderType() const@Base" 6.2.0
  (c++)"non-virtual thunk to QSGDefaultContext::~QSGDefaultContext()@Base" 6.2.0
+ (c++)"non-virtual thunk to QSGShaderEffectNode::~QSGShaderEffectNode()@Base" 6.4.0

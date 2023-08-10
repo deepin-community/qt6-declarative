@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQml module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 #ifndef QV4INTERNALCLASS_H
 #define QV4INTERNALCLASS_H
 
@@ -173,7 +137,7 @@ struct SharedInternalClassDataPrivate<PropertyAttributes> {
     uint size() const { return m_size; }
     void setSize(uint s) { m_size = s; }
 
-    PropertyAttributes at(uint i) { Q_ASSERT(data && i < m_alloc); return data[i]; }
+    PropertyAttributes at(uint i) const { Q_ASSERT(data && i < m_alloc); return data[i]; }
     void set(uint i, PropertyAttributes t) { Q_ASSERT(data && i < m_alloc); data[i] = t; }
 
     void mark(MarkStack *) {}
@@ -198,7 +162,7 @@ struct SharedInternalClassDataPrivate<PropertyKey> {
     uint size() const;
     void setSize(uint s);
 
-    PropertyKey at(uint i);
+    PropertyKey at(uint i) const;
     void set(uint i, PropertyKey t);
 
     void mark(MarkStack *s);
@@ -289,24 +253,33 @@ struct InternalClassTransition
     int flags;
     enum {
         // range 0-0xff is reserved for attribute changes
-        NotExtensible = 0x100,
-        VTableChange = 0x200,
-        PrototypeChange = 0x201,
-        ProtoClass = 0x202,
-        Sealed = 0x203,
-        Frozen = 0x204
+        StructureChange = 0x100,
+        NotExtensible   = StructureChange | (1 << 0),
+        VTableChange    = StructureChange | (1 << 1),
+        PrototypeChange = StructureChange | (1 << 2),
+        ProtoClass      = StructureChange | (1 << 3),
+        Sealed          = StructureChange | (1 << 4),
+        Frozen          = StructureChange | (1 << 5),
     };
 
     bool operator==(const InternalClassTransition &other) const
     { return id == other.id && flags == other.flags; }
 
     bool operator<(const InternalClassTransition &other) const
-    { return id < other.id || (id == other.id && flags < other.flags); }
+    { return flags < other.flags || (flags == other.flags && id < other.id); }
 };
 
 namespace Heap {
 
 struct InternalClass : Base {
+    enum Flag {
+        NotExtensible = 1 << 0,
+        Sealed        = 1 << 1,
+        Frozen        = 1 << 2,
+        UsedAsProto   = 1 << 3,
+    };
+    enum { MaxRedundantTransitions = 255 };
+
     ExecutionEngine *engine;
     const VTable *vtable;
     quintptr protoId; // unique across the engine, gets changed whenever the proto chain changes
@@ -322,10 +295,13 @@ struct InternalClass : Base {
     InternalClassTransition &lookupOrInsertTransition(const InternalClassTransition &t);
 
     uint size;
-    bool extensible;
-    bool isSealed;
-    bool isFrozen;
-    bool isUsedAsProto;
+    quint8 numRedundantTransitions;
+    quint8 flags;
+
+    bool isExtensible() const { return !(flags & NotExtensible); }
+    bool isSealed() const { return flags & Sealed; }
+    bool isFrozen() const { return flags & Frozen; }
+    bool isUsedAsProto() const { return flags & UsedAsProto; }
 
     void init(ExecutionEngine *engine);
     void init(InternalClass *other);

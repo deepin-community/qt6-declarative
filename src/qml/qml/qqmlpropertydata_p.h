@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2019 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQml module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2019 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #ifndef QQMLPROPERTYDATA_P_H
 #define QQMLPROPERTYDATA_P_H
@@ -82,7 +46,8 @@ public:
             QJSValueType         = 6, // Property type is a QScriptValue
                                       // Gap, used to be V4HandleType
             VarPropertyType      = 8, // Property type is a "var" property of VMEMO
-            QVariantType         = 9  // Property is a QVariant
+            QVariantType         = 9, // Property is a QVariant
+            ValueType            = 10 // Property type is a custom value type
         };
 
         // The _otherBits (which "pad" the Flags struct to align it nicely) are used
@@ -104,7 +69,7 @@ public:
         // Lastly, isDirect and isOverridden apply to both functions and non-functions
     private:
         unsigned isConst                       : 1; // Property: has CONST flag/Method: is const
-        unsigned isDirectOrVMEFunction         : 1; // Exists on a C++ QMetaOBject OR Function was added by QML
+        unsigned isVMEFunction                 : 1; // Function was added by QML
         unsigned isWritableORhasArguments      : 1; // Has WRITE function OR Function takes arguments
         unsigned isResettableORisSignal        : 1; // Has RESET function OR Function is a signal
         unsigned isAliasORisVMESignal          : 1; // Is a QML alias to another property OR Signal was added by QML
@@ -159,11 +124,6 @@ public:
             isConstructorORisBindable = b;
         }
 
-        void setIsDirect(bool b) {
-            Q_ASSERT(type != FunctionType);
-            isDirectOrVMEFunction = b;
-        }
-
         void setIsRequired(bool b) {
             Q_ASSERT(type != FunctionType);
             isRequiredORisCloned = b;
@@ -171,7 +131,7 @@ public:
 
         void setIsVMEFunction(bool b) {
             Q_ASSERT(type == FunctionType);
-            isDirectOrVMEFunction = b;
+            isVMEFunction = b;
         }
         void setHasArguments(bool b) {
             Q_ASSERT(type == FunctionType);
@@ -233,7 +193,6 @@ public:
     bool isAlias() const { return !isFunction() && m_flags.isAliasORisVMESignal; }
     bool isFinal() const { return !isFunction() && m_flags.isFinalORisV4Function; }
     bool isOverridden() const { return m_flags.isOverridden; }
-    bool isDirect() const { return !isFunction() && m_flags.isDirectOrVMEFunction; }
     bool isRequired() const { return !isFunction() && m_flags.isRequiredORisCloned; }
     bool hasStaticMetaCallFunction() const { return staticMetaCallFunction() != nullptr; }
     bool isFunction() const { return m_flags.type == Flags::FunctionType; }
@@ -244,7 +203,7 @@ public:
     bool isQJSValue() const { return m_flags.type == Flags::QJSValueType; }
     bool isVarProperty() const { return m_flags.type == Flags::VarPropertyType; }
     bool isQVariant() const { return m_flags.type == Flags::QVariantType; }
-    bool isVMEFunction() const { return isFunction() && m_flags.isDirectOrVMEFunction; }
+    bool isVMEFunction() const { return isFunction() && m_flags.isVMEFunction; }
     bool hasArguments() const { return isFunction() && m_flags.isWritableORhasArguments; }
     bool isSignal() const { return isFunction() && m_flags.isResettableORisSignal; }
     bool isVMESignal() const { return isFunction() && m_flags.isAliasORisVMESignal; }
@@ -281,7 +240,6 @@ public:
     {
         Q_ASSERT(idx >= std::numeric_limits<qint16>::min());
         Q_ASSERT(idx <= std::numeric_limits<qint16>::max());
-        Q_ASSERT(idx != m_coreIndex);
         m_overrideIndex = qint16(idx);
     }
 
@@ -353,14 +311,23 @@ public:
         readPropertyWithArgs(target, args);
     }
 
-    inline void readPropertyWithArgs(QObject *target, void *args[]) const
+    // This is the same as QMetaObject::metacall(), but inlined here to avoid a function call.
+    // And we ignore the return value.
+    template<QMetaObject::Call call>
+    void doMetacall(QObject *object, int idx, void **argv) const
+    {
+        if (QDynamicMetaObjectData *dynamicMetaObject = QObjectPrivate::get(object)->metaObject)
+            dynamicMetaObject->metaCall(object, call, idx, argv);
+        else
+            object->qt_metacall(call, idx, argv);
+    }
+
+    void readPropertyWithArgs(QObject *target, void *args[]) const
     {
         if (hasStaticMetaCallFunction())
             staticMetaCallFunction()(target, QMetaObject::ReadProperty, relativePropertyIndex(), args);
-        else if (isDirect())
-            target->qt_metacall(QMetaObject::ReadProperty, coreIndex(), args);
         else
-            QMetaObject::metacall(target, QMetaObject::ReadProperty, coreIndex(), args);
+            doMetacall<QMetaObject::ReadProperty>(target, coreIndex(), args);
     }
 
     bool writeProperty(QObject *target, void *value, WriteFlags flags) const
@@ -369,10 +336,8 @@ public:
         void *argv[] = { value, nullptr, &status, &flags };
         if (flags.testFlag(BypassInterceptor) && hasStaticMetaCallFunction())
             staticMetaCallFunction()(target, QMetaObject::WriteProperty, relativePropertyIndex(), argv);
-        else if (flags.testFlag(BypassInterceptor) && isDirect())
-            target->qt_metacall(QMetaObject::WriteProperty, coreIndex(), argv);
         else
-            QMetaObject::metacall(target, QMetaObject::WriteProperty, coreIndex(), argv);
+            doMetacall<QMetaObject::WriteProperty>(target, coreIndex(), argv);
         return true;
     }
 
@@ -437,7 +402,7 @@ bool QQmlPropertyData::operator==(const QQmlPropertyData &other) const
 QQmlPropertyData::Flags::Flags()
     : otherBits(0)
     , isConst(false)
-    , isDirectOrVMEFunction(false)
+    , isVMEFunction(false)
     , isWritableORhasArguments(false)
     , isResettableORisSignal(false)
     , isAliasORisVMESignal(false)
@@ -454,7 +419,7 @@ QQmlPropertyData::Flags::Flags()
 bool QQmlPropertyData::Flags::operator==(const QQmlPropertyData::Flags &other) const
 {
     return isConst == other.isConst &&
-            isDirectOrVMEFunction == other.isDirectOrVMEFunction &&
+            isVMEFunction == other.isVMEFunction &&
             isWritableORhasArguments == other.isWritableORhasArguments &&
             isResettableORisSignal == other.isResettableORisSignal &&
             isAliasORisVMESignal == other.isAliasORisVMESignal &&

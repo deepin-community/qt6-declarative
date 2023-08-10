@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQml module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #ifndef QQMLDATA_P_H
 #define QQMLDATA_P_H
@@ -57,6 +21,7 @@
 #include <private/qv4value_p.h>
 #include <private/qv4persistent_p.h>
 #include <private/qqmlrefcount_p.h>
+#include <private/qqmlpropertycache_p.h>
 #include <qqmlprivate.h>
 #include <qjsengine.h>
 #include <qvector.h>
@@ -132,13 +97,15 @@ public:
     quint32 isQueuedForDeletion:1;
     /*
      * rootObjectInCreation should be true only when creating top level CPP and QML objects,
-     * v8 GC will check this flag, only deletes the objects when rootObjectInCreation is false.
+     * v4 GC will check this flag, only deletes the objects when rootObjectInCreation is false.
      */
     quint32 rootObjectInCreation:1;
     // set when at least one of the object's properties is intercepted
     quint32 hasInterceptorMetaObject:1;
     quint32 hasVMEMetaObject:1;
-    quint32 dummy:8;
+    // If we have another wrapper for a const QObject * in the multiply wrapped QObjects.
+    quint32 hasConstWrapper: 1;
+    quint32 dummy:7;
 
     // When bindingBitsSize < sizeof(ptr), we store the binding bit flags inside
     // bindingBitsValue. When we need more than sizeof(ptr) bits, we allocated
@@ -223,12 +190,11 @@ public:
 
     QV4::WeakValue jsWrapper;
 
-    QQmlPropertyCache *propertyCache;
+    QQmlPropertyCache::ConstPtr propertyCache;
 
     QQmlGuardImpl *guards;
 
-    static QQmlData *get(const QObject *object, bool create = false) {
-        QObjectPrivate *priv = QObjectPrivate::get(const_cast<QObject *>(object));
+    static QQmlData *get(QObjectPrivate *priv, bool create) {
         // If QObjectData::isDeletingChildren is set then access to QObjectPrivate::declarativeData has
         // to be avoided because QObjectPrivate::currentChildBeingDeleted is in use.
         if (priv->isDeletingChildren || priv->wasDeleted) {
@@ -243,6 +209,25 @@ public:
         }
     }
 
+    static QQmlData *get(const QObjectPrivate *priv) {
+        // If QObjectData::isDeletingChildren is set then access to QObjectPrivate::declarativeData has
+        // to be avoided because QObjectPrivate::currentChildBeingDeleted is in use.
+        if (priv->isDeletingChildren || priv->wasDeleted)
+            return nullptr;
+        if (priv->declarativeData)
+            return static_cast<QQmlData *>(priv->declarativeData);
+        return nullptr;
+    }
+
+    static QQmlData *get(QObject *object, bool create) {
+        return QQmlData::get(QObjectPrivate::get(object), create);
+    }
+
+    static QQmlData *get(const QObject *object) {
+        return QQmlData::get(QObjectPrivate::get(object));
+
+    }
+
     static bool keepAliveDuringGarbageCollection(const QObject *object) {
         QQmlData *ddata = get(object);
         if (!ddata || ddata->indestructible || ddata->rootObjectInCreation)
@@ -254,6 +239,7 @@ public:
     QHash<QQmlAttachedPropertiesFunc, QObject *> *attachedProperties() const;
 
     static inline bool wasDeleted(const QObject *);
+    static inline bool wasDeleted(const QObjectPrivate *);
 
     static void markAsDeleted(QObject *);
     static void setQueuedForDeletion(QObject *);
@@ -261,13 +247,12 @@ public:
     static inline void flushPendingBinding(QObject *object, int coreIndex);
     void flushPendingBinding(int coreIndex);
 
-    static QQmlPropertyCache *ensurePropertyCache(QJSEngine *engine, QObject *object)
+    static QQmlPropertyCache::ConstPtr ensurePropertyCache(QObject *object)
     {
-        Q_ASSERT(engine);
         QQmlData *ddata = QQmlData::get(object, /*create*/true);
         if (Q_LIKELY(ddata->propertyCache))
             return ddata->propertyCache;
-        return createPropertyCache(engine, object);
+        return createPropertyCache(object);
     }
 
     Q_ALWAYS_INLINE static uint offsetForBit(int bit) { return static_cast<uint>(bit) / BitsPerType; }
@@ -278,7 +263,7 @@ private:
     mutable QQmlDataExtended *extendedData;
 
     Q_NEVER_INLINE static QQmlData *createQQmlData(QObjectPrivate *priv);
-    Q_NEVER_INLINE static QQmlPropertyCache *createPropertyCache(QJSEngine *engine, QObject *object);
+    Q_NEVER_INLINE static QQmlPropertyCache::ConstPtr createPropertyCache(QObject *object);
 
     Q_ALWAYS_INLINE bool hasBitSet(int bit) const
     {
@@ -313,17 +298,22 @@ private:
     Q_DISABLE_COPY(QQmlData);
 };
 
+bool QQmlData::wasDeleted(const QObjectPrivate *priv)
+{
+    if (!priv || priv->wasDeleted || priv->isDeletingChildren)
+        return true;
+
+    const QQmlData *ddata = QQmlData::get(priv);
+    return ddata && ddata->isQueuedForDeletion;
+}
+
 bool QQmlData::wasDeleted(const QObject *object)
 {
     if (!object)
         return true;
 
     const QObjectPrivate *priv = QObjectPrivate::get(object);
-    if (!priv || priv->wasDeleted || priv->isDeletingChildren)
-        return true;
-
-    const QQmlData *ddata = QQmlData::get(object);
-    return ddata && ddata->isQueuedForDeletion;
+    return QQmlData::wasDeleted(priv);
 }
 
 QQmlNotifierEndpoint *QQmlData::notify(int index)

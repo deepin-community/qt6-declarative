@@ -1,38 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2017 The Qt Company Ltd.
-** Contact: http://www.qt.io/licensing/
-**
-** This file is part of the Qt Quick Templates 2 module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL3$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see http://www.qt.io/terms-conditions. For further
-** information use the contact form at http://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPLv3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or later as published by the Free
-** Software Foundation and appearing in the file LICENSE.GPL included in
-** the packaging of this file. Please review the following information to
-** ensure the GNU General Public License version 2.0 requirements will be
-** met: http://www.gnu.org/licenses/gpl-2.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2017 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qquickdrawer_p.h"
 #include "qquickdrawer_p_p.h"
@@ -299,29 +266,36 @@ static bool isWithinDragMargin(const QQuickDrawer *drawer, const QPointF &pos)
 bool QQuickDrawerPrivate::startDrag(QEvent *event)
 {
     Q_Q(QQuickDrawer);
+    delayedEnterTransition = false;
     if (!window || !interactive || dragMargin < 0.0 || qFuzzyIsNull(dragMargin))
         return false;
 
     switch (event->type()) {
     case QEvent::MouseButtonPress:
-        if (isWithinDragMargin(q, static_cast<QMouseEvent *>(event)->scenePosition())) {
-            prepareEnterTransition();
-            reposition();
-            return handleMouseEvent(window->contentItem(), static_cast<QMouseEvent *>(event));
+        if (QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event); isWithinDragMargin(q, mouseEvent->scenePosition())) {
+            // watch future events and grab the mouse once it has moved
+            // sufficiently fast or far (in grabMouse).
+            delayedEnterTransition = true;
+            mouseEvent->addPassiveGrabber(mouseEvent->point(0), popupItem);
+            handleMouseEvent(window->contentItem(), mouseEvent);
+            return false;
         }
         break;
 
 #if QT_CONFIG(quicktemplates2_multitouch)
     case QEvent::TouchBegin:
-    case QEvent::TouchUpdate:
-        for (const QTouchEvent::TouchPoint &point : static_cast<QTouchEvent *>(event)->points()) {
+    case QEvent::TouchUpdate: {
+        auto *touchEvent = static_cast<QTouchEvent *>(event);
+        for (const QTouchEvent::TouchPoint &point : touchEvent->points()) {
             if (point.state() == QEventPoint::Pressed && isWithinDragMargin(q, point.scenePosition())) {
-                prepareEnterTransition();
-                reposition();
-                return handleTouchEvent(window->contentItem(), static_cast<QTouchEvent *>(event));
+                delayedEnterTransition = true;
+                touchEvent->addPassiveGrabber(point, popupItem);
+                handleTouchEvent(window->contentItem(), touchEvent);
+                return false;
             }
         }
         break;
+    }
 #endif
 
     default:
@@ -369,6 +343,12 @@ bool QQuickDrawerPrivate::grabMouse(QQuickItem *item, QMouseEvent *event)
     }
 
     if (overThreshold) {
+        if (delayedEnterTransition) {
+            prepareEnterTransition();
+            reposition();
+            delayedEnterTransition = false;
+        }
+
         popupItem->grabMouse();
         popupItem->setKeepMouseGrab(true);
         offset = offsetAt(movePoint);
@@ -415,7 +395,12 @@ bool QQuickDrawerPrivate::grabTouch(QQuickItem *item, QTouchEvent *event)
         }
 
         if (overThreshold) {
-            popupItem->grabTouchPoints(QList<int>() << touchId);
+            if (delayedEnterTransition) {
+                prepareEnterTransition();
+                reposition();
+                delayedEnterTransition = false;
+            }
+            event->setExclusiveGrabber(point, popupItem);
             popupItem->setKeepTouchGrab(true);
             offset = offsetAt(movePoint);
         }
@@ -427,6 +412,13 @@ bool QQuickDrawerPrivate::grabTouch(QQuickItem *item, QTouchEvent *event)
 
 static const qreal openCloseVelocityThreshold = 300;
 
+// Overrides QQuickPopupPrivate::blockInput, which is called by
+// QQuickPopupPrivate::handlePress/Move/Release, which we call in our own
+// handlePress/Move/Release overrides.
+// This implementation conflates two things: should the event going to the item get
+// modally blocked by us? Or should we accept the event and become the grabber?
+// Those are two fundamentally different questions for the drawer as a (usually)
+// interactive control.
 bool QQuickDrawerPrivate::blockInput(QQuickItem *item, const QPointF &point) const
 {
     Q_Q(const QQuickDrawer);
@@ -457,7 +449,7 @@ bool QQuickDrawerPrivate::handlePress(QQuickItem *item, const QPointF &point, ul
     velocityCalculator.startMeasuring(point, timestamp);
 
     if (!QQuickPopupPrivate::handlePress(item, point, timestamp))
-        return false;
+        return interactive && popupItem == item;
 
     return true;
 }
@@ -811,3 +803,5 @@ void QQuickDrawer::geometryChange(const QRectF &newGeometry, const QRectF &oldGe
 }
 
 QT_END_NAMESPACE
+
+#include "moc_qquickdrawer_p.cpp"

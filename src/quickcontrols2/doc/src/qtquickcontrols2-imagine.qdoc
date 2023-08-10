@@ -1,29 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2017 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the documentation of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:FDL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Free Documentation License Usage
-** Alternatively, this file may be used under the terms of the GNU Free
-** Documentation License version 1.3 as published by the Free Software
-** Foundation and appearing in the file included in the packaging of
-** this file. Please review the following information to ensure
-** the GNU Free Documentation License version 1.3 requirements
-** will be met: https://www.gnu.org/licenses/fdl-1.3.html.
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2017 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GFDL-1.3-no-invariants-only
 
 /*!
     \page qtquickcontrols2-imagine.html
@@ -495,10 +471,16 @@
 
     \section2 Asset Examples
 
-    The following table lists examples of assets (taken from the default
-    Imagine style assets) for all controls. The list is not exhaustive,
-    as not all elements need assets, but it can be used as a guide
+    The following table lists examples of assets (taken from the
+    \l {https://code.qt.io/cgit/qt/qtdeclarative.git/tree/src/quickcontrols2/imagine/images}
+    {default Imagine style assets}) for all controls. The list is not
+    exhaustive, as not all elements need assets, but it can be used as a guide
     when creating your own assets.
+
+    The template that these assets were \l {Exporting 9-Patch Images}
+    {exported from} is available as a
+    \l {https://code.qt.io/cgit/qt/qtdeclarative.git/plain/src/quickcontrols2/imagine/design/imagine.sketch}
+    {Sketch project}.
 
     \table
         \header
@@ -2360,23 +2342,28 @@
     explain the export process for each editor, and the last section explains
     how to ensure the exported images are 9-patch-conformant.
 
-    \section4 Illustrator
+    \section4 Affinity Designer
+
+    See Affinity's \l {https://affinity.help/publisher/en-US.lproj/pages/Publishing/exportSettings.html}
+    {Export Settings} documentation.
+
+    \section4 Adobe Illustrator
 
     See Adobe's
     \l {https://helpx.adobe.com/in/illustrator/using/collect-assets-export-for-screens.html#panel}
     {Asset Export panel} documentation.
+
+    \section4 Adobe Photoshop
+
+    See Adobe's
+    \l {https://helpx.adobe.com/photoshop/using/generate-assets-layers.html}
+    {Generate image assets from layers} documentation.
 
     \section4 Inkscape
 
     The \l {https://github.com/mitchcurtis/inkscape-9-patch-export}
     {Inkscape 9-Patch Export Extension} can be used to export assets with
     Inkscape.
-
-    \section4 Photoshop
-
-    See Adobe's
-    \l {https://helpx.adobe.com/photoshop/using/generate-assets-layers.html}
-    {Generate image assets from layers} documentation.
 
     \section4 Sketch
 

@@ -1,40 +1,17 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the test suite of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:GPL-EXCEPT$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 3 as published by the Free Software
-** Foundation with exceptions as appearing in the file LICENSE.GPL3-EXCEPT
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only WITH Qt-GPL-exception-1.0
 
 #include <qtest.h>
 
 #include <QtQuick/qquickitem.h>
 #include <QtQuick/qquickview.h>
 #include <QtQuick/qsgrendererinterface.h>
+#include <QtQuick/private/qquickitem_p.h>
 #include <qopenglcontext.h>
 #include <qopenglfunctions.h>
 
 #include <QtQuickTestUtils/private/qmlutils_p.h>
+#include <QtQuickTestUtils/private/viewtestutils_p.h>
 
 #include <QtGui/private/qguiapplication_p.h>
 #include <QtGui/qpa/qplatformintegration.h>
@@ -84,6 +61,8 @@ private slots:
 
     void textureMirroring_data();
     void textureMirroring();
+
+    void effectSourceResizeToItem();
 
 private:
     void mirroringCheck(int mirroring, int x, bool shouldMirror, const QImage &fb);
@@ -151,6 +130,9 @@ void tst_QQuickItemLayer::layerEnabled()
 
 void tst_QQuickItemLayer::layerMipmap()
 {
+    if (isOffscreen())
+        QSKIP(skipOffscreenMsg);
+
     QImage fb = runTest("Mipmap.qml");
     QVERIFY(fb.pixel(0, 0) != 0xff000000);
     QVERIFY(fb.pixel(0, 0) != 0xffffffff);
@@ -372,12 +354,18 @@ void tst_QQuickItemLayer::changeZOrder()
 
 void tst_QQuickItemLayer::toggleLayerAndEffect()
 {
+    if (isOffscreen())
+        QSKIP(skipOffscreenMsg);
+
     // This test passes if it doesn't crash.
     runTest("ToggleLayerAndEffect.qml");
 }
 
 void tst_QQuickItemLayer::disableLayer()
 {
+    if (isOffscreen())
+        QSKIP(skipOffscreenMsg);
+
     // This test passes if it doesn't crash.
     runTest("DisableLayer.qml");
 }
@@ -466,6 +454,25 @@ void tst_QQuickItemLayer::textureMirroring()
 
     // Mirroring should have visual effect on ShaderEffect item itself
     mirroringCheck(mirroring, 200, true, fb);
+}
+
+void tst_QQuickItemLayer::effectSourceResizeToItem() // QTBUG-104442
+{
+    QQuickView window;
+    QVERIFY(QQuickTest::showView(window, testFileUrl("itemImageLayer.qml")));
+    window.setResizeMode(QQuickView::SizeRootObjectToView);
+    QQuickItem *image = window.rootObject()->findChild<QQuickItem*>("image");
+    QVERIFY(image);
+    QCOMPARE(image->size(), window.rootObject()->size());
+    QQuickItemLayer *layer = QQuickItemPrivate::get(image)->layer();
+    QVERIFY(layer);
+    auto *effectSource = layer->effectSource();
+    QVERIFY(effectSource);
+    QCOMPARE(effectSource->size(), image->size());
+
+    window.resize(200, 200); // shrink it a bit
+    QTRY_COMPARE(image->size().toSize(), QSize(200, 200)); // wait for the window system
+    QCOMPARE(effectSource->size(), image->size());
 }
 
 void tst_QQuickItemLayer::mirroringCheck(int mirroring, int x, bool shouldMirror, const QImage &fb)

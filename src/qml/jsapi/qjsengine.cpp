@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQml module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qjsengine.h"
 #include "qjsengine_p.h"
@@ -478,7 +442,7 @@ void QJSEngine::installExtensions(QJSEngine::Extensions extensions, const QJSVal
 */
 void QJSEngine::setInterrupted(bool interrupted)
 {
-    m_v4Engine->isInterrupted = interrupted;
+    m_v4Engine->isInterrupted.storeRelaxed(interrupted);
 }
 
 /*!
@@ -489,7 +453,7 @@ void QJSEngine::setInterrupted(bool interrupted)
 */
 bool QJSEngine::isInterrupted() const
 {
-    return m_v4Engine->isInterrupted.loadAcquire();
+    return m_v4Engine->isInterrupted.loadRelaxed();
 }
 
 static QUrl urlForFileName(const QString &fileName)
@@ -554,11 +518,11 @@ QJSValue QJSEngine::evaluate(const QString& program, const QString& fileName, in
         script.strictMode = v4->globalCode->isStrict();
     script.inheritContext = true;
     script.parse();
-    if (!scope.engine->hasException)
+    if (!scope.hasException())
         result = script.run();
     if (exceptionStackTrace)
         exceptionStackTrace->clear();
-    if (scope.engine->hasException) {
+    if (scope.hasException()) {
         QV4::StackTrace trace;
         result = v4->catchException(&trace);
         if (exceptionStackTrace) {
@@ -571,7 +535,7 @@ QJSValue QJSEngine::evaluate(const QString& program, const QString& fileName, in
                                       );
         }
     }
-    if (v4->isInterrupted.loadAcquire())
+    if (v4->isInterrupted.loadRelaxed())
         result = v4->newErrorObject(QStringLiteral("Interrupted"));
 
     return QJSValuePrivate::fromReturnedValue(result->asReturnedValue());
@@ -611,7 +575,7 @@ QJSValue QJSEngine::importModule(const QString &fileName)
     if (m_v4Engine->hasException)
         return QJSValuePrivate::fromReturnedValue(m_v4Engine->catchException());
     moduleUnit->evaluate();
-    if (!m_v4Engine->isInterrupted.loadAcquire())
+    if (!m_v4Engine->isInterrupted.loadRelaxed())
         return QJSValuePrivate::fromReturnedValue(moduleNamespace->asReturnedValue());
 
     return QJSValuePrivate::fromReturnedValue(
@@ -861,71 +825,85 @@ bool QJSEngine::convertV2(const QJSValue &value, int type, void *ptr)
     return convertV2(value, QMetaType(type), ptr);
 }
 
+static bool convertString(const QString &string, QMetaType metaType, void *ptr)
+{
+    // have a string based value without engine. Do conversion manually
+    if (metaType == QMetaType::fromType<bool>()) {
+        *reinterpret_cast<bool*>(ptr) = string.size() != 0;
+        return true;
+    }
+    if (metaType == QMetaType::fromType<QString>()) {
+        *reinterpret_cast<QString*>(ptr) = string;
+        return true;
+    }
+    if (metaType == QMetaType::fromType<QUrl>()) {
+        *reinterpret_cast<QUrl *>(ptr) = QUrl(string);
+        return true;
+    }
+
+    double d = QV4::RuntimeHelpers::stringToNumber(string);
+    switch (metaType.id()) {
+    case QMetaType::Int:
+        *reinterpret_cast<int*>(ptr) = QV4::Value::toInt32(d);
+        return true;
+    case QMetaType::UInt:
+        *reinterpret_cast<uint*>(ptr) = QV4::Value::toUInt32(d);
+        return true;
+    case QMetaType::LongLong:
+        *reinterpret_cast<qlonglong*>(ptr) = QV4::Value::toInteger(d);
+        return true;
+    case QMetaType::ULongLong:
+        *reinterpret_cast<qulonglong*>(ptr) = QV4::Value::toInteger(d);
+        return true;
+    case QMetaType::Double:
+        *reinterpret_cast<double*>(ptr) = d;
+        return true;
+    case QMetaType::Float:
+        *reinterpret_cast<float*>(ptr) = d;
+        return true;
+    case QMetaType::Short:
+        *reinterpret_cast<short*>(ptr) = QV4::Value::toInt32(d);
+        return true;
+    case QMetaType::UShort:
+        *reinterpret_cast<unsigned short*>(ptr) = QV4::Value::toUInt32(d);
+        return true;
+    case QMetaType::Char:
+        *reinterpret_cast<char*>(ptr) = QV4::Value::toInt32(d);
+        return true;
+    case QMetaType::UChar:
+        *reinterpret_cast<unsigned char*>(ptr) = QV4::Value::toUInt32(d);
+        return true;
+    case QMetaType::QChar:
+        *reinterpret_cast<QChar*>(ptr) = QChar(QV4::Value::toUInt32(d));
+        return true;
+    case QMetaType::Char16:
+        *reinterpret_cast<char16_t *>(ptr) = QV4::Value::toUInt32(d);
+        return true;
+    default:
+        return false;
+    }
+}
+
 /*!
     \internal
     convert \a value to \a type, store the result in \a ptr
 */
 bool QJSEngine::convertV2(const QJSValue &value, QMetaType metaType, void *ptr)
 {
-    if (const QString *string = QJSValuePrivate::asQString(&value)) {
-        // have a string based value without engine. Do conversion manually
-        if (metaType == QMetaType::fromType<bool>()) {
-            *reinterpret_cast<bool*>(ptr) = string->length() != 0;
-            return true;
-        }
-        if (metaType == QMetaType::fromType<QString>()) {
-            *reinterpret_cast<QString*>(ptr) = *string;
-            return true;
-        }
-        if (metaType == QMetaType::fromType<QUrl>()) {
-            *reinterpret_cast<QUrl *>(ptr) = QUrl(*string);
-            return true;
-        }
-
-        double d = QV4::RuntimeHelpers::stringToNumber(*string);
-        switch (metaType.id()) {
-        case QMetaType::Int:
-            *reinterpret_cast<int*>(ptr) = QV4::Value::toInt32(d);
-            return true;
-        case QMetaType::UInt:
-            *reinterpret_cast<uint*>(ptr) = QV4::Value::toUInt32(d);
-            return true;
-        case QMetaType::LongLong:
-            *reinterpret_cast<qlonglong*>(ptr) = QV4::Value::toInteger(d);
-            return true;
-        case QMetaType::ULongLong:
-            *reinterpret_cast<qulonglong*>(ptr) = QV4::Value::toInteger(d);
-            return true;
-        case QMetaType::Double:
-            *reinterpret_cast<double*>(ptr) = d;
-            return true;
-        case QMetaType::Float:
-            *reinterpret_cast<float*>(ptr) = d;
-            return true;
-        case QMetaType::Short:
-            *reinterpret_cast<short*>(ptr) = QV4::Value::toInt32(d);
-            return true;
-        case QMetaType::UShort:
-            *reinterpret_cast<unsigned short*>(ptr) = QV4::Value::toUInt32(d);
-            return true;
-        case QMetaType::Char:
-            *reinterpret_cast<char*>(ptr) = QV4::Value::toInt32(d);
-            return true;
-        case QMetaType::UChar:
-            *reinterpret_cast<unsigned char*>(ptr) = QV4::Value::toUInt32(d);
-            return true;
-        case QMetaType::QChar:
-            *reinterpret_cast<QChar*>(ptr) = QChar(QV4::Value::toUInt32(d));
-            return true;
-        case QMetaType::Char16:
-            *reinterpret_cast<char16_t *>(ptr) = QV4::Value::toUInt32(d);
-            return true;
-        default:
-            return false;
-        }
-    }
+    if (const QString *string = QJSValuePrivate::asQString(&value))
+        return convertString(*string, metaType, ptr);
 
     return QV4::ExecutionEngine::metaTypeFromJS(QJSValuePrivate::asReturnedValue(&value), metaType, ptr);
+}
+
+bool QJSEngine::convertVariant(const QVariant &value, QMetaType metaType, void *ptr)
+{
+    if (value.metaType() == QMetaType::fromType<QString>())
+        return convertString(value.toString(), metaType, ptr);
+
+    // TODO: We could probably avoid creating a QV4::Value in many cases, but we'd have to
+    //       duplicate much of metaTypeFromJS and some methods of QV4::Value itself here.
+    return QV4::ExecutionEngine::metaTypeFromJS(handle()->fromVariant(value), metaType, ptr);
 }
 
 /*! \fn template <typename T> QJSValue QJSEngine::toScriptValue(const T &value)
@@ -942,6 +920,18 @@ bool QJSEngine::convertV2(const QJSValue &value, QMetaType metaType, void *ptr)
     This works with any type \c{T} that has a \c{QMetaType}.
 
     \sa toScriptValue()
+*/
+
+/*! \fn template <typename T> T QJSEngine::fromVariant(const QVariant &value)
+
+    Returns the given \a value converted to the template type \c{T}.
+    This works with any type \c{T} that has a \c{QMetaType}. The
+    conversion is done in JavaScript semantics. Those differ from
+    qvariant_cast's semantics. There are a number of implicit
+    conversions between JavaScript-equivalent types that are not
+    performed by qvariant_cast by default.
+
+    \sa fromScriptValue() qvariant_cast()
 */
 
 /*!
@@ -1158,7 +1148,7 @@ void QJSEnginePrivate::removeFromDebugServer(QJSEngine *q)
  */
 QJSEngine *qjsEngine(const QObject *object)
 {
-    QQmlData *data = QQmlData::get(object, false);
+    QQmlData *data = QQmlData::get(object);
     if (!data || data->jsWrapper.isNullOrUndefined())
         return nullptr;
     return data->jsWrapper.engine()->jsEngine();

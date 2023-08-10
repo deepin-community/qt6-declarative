@@ -1,40 +1,6 @@
-/****************************************************************************
-**
-** Copyright (C) 2021 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQml module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**/
+// Copyright (C) 2021 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+
 #include "qqmldomreformatter_p.h"
 #include "qqmldomcomments_p.h"
 
@@ -296,6 +262,7 @@ protected:
         int baseIndent = lw.increaseIndent(1);
         if (ast->elements)
             accept(ast->elements);
+        out(ast->commaToken);
         lw.decreaseIndent(1, baseIndent);
         out(ast->rbracketToken);
         return false;
@@ -585,16 +552,27 @@ protected:
         return false;
     }
 
+
+    void outputScope(VariableScope scope) {
+        switch (scope) {
+        case VariableScope::Const:
+            out("const ");
+            break;
+        case VariableScope::Let:
+            out("let ");
+            break;
+        case VariableScope::Var:
+            out("var ");
+            break;
+        default:
+            break;
+        }
+    }
+
     bool visit(PatternElement *ast) override
     {
         if (ast->isForDeclaration) {
-            if (ast->scope == VariableScope::Var) {
-                out("var ");
-            } else if (ast->scope == VariableScope::Let) {
-                out("let ");
-            } else if (ast->scope == VariableScope::Const) {
-                out("const ");
-            }
+            outputScope(ast->scope);
         }
         accept(ast->bindingTarget);
         switch (ast->type) {
@@ -632,8 +610,10 @@ protected:
         out(ast->ifToken);
         out(" ");
         out(ast->lparenToken);
-        accept(ast->expression);
+        preVisit(ast->expression);
+        ast->expression->accept0(this);
         out(ast->rparenToken);
+        postVisit(ast->expression);
         acceptBlockOrIndented(ast->ok, ast->ko);
         if (ast->ko) {
             out(ast->elseToken);
@@ -678,7 +658,7 @@ protected:
         if (ast->initialiser) {
             accept(ast->initialiser);
         } else if (ast->declarations) {
-            out("var ");
+            outputScope(ast->declarations->declaration->scope);
             accept(ast->declarations);
         }
         out("; "); // ast->firstSemicolonToken
@@ -737,7 +717,7 @@ protected:
                 out(" ");
             accept(ast->expression);
         }
-        if (addSemicolons())
+        if (ast->returnToken.length > 0 && addSemicolons())
             out(";");
         return false;
     }
@@ -980,7 +960,13 @@ protected:
         return true;
     }
     bool visit(TaggedTemplate *) override { return true; }
-    bool visit(Expression *) override { return true; }
+    bool visit(Expression *el) override
+    {
+        accept(el->left);
+        out(", ");
+        accept(el->right);
+        return false;
+    }
     bool visit(ExpressionStatement *el) override
     {
         if (addSemicolons())

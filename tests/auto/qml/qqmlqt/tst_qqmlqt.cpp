@@ -1,30 +1,6 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the test suite of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:GPL-EXCEPT$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 3 as published by the Free Software
-** Foundation with exceptions as appearing in the file LICENSE.GPL3-EXCEPT
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only WITH Qt-GPL-exception-1.0
+
 #include <private/qqmlengine_p.h>
 
 #include <qtest.h>
@@ -637,7 +613,10 @@ void tst_qqmlqt::openUrlExternally()
     const QUrl htmlTestFile = testFileUrl("test.html");
     QDesktopServices::setUrlHandler("test", &handler, "noteCall");
     QDesktopServices::setUrlHandler(htmlTestFile.scheme(), &handler, "noteCall");
-
+    const auto unset = qScopeGuard([&] {
+        QDesktopServices::unsetUrlHandler(htmlTestFile.scheme());
+        QDesktopServices::unsetUrlHandler("test");
+    });
     QQmlComponent component(&engine, testFileUrl("openUrlExternally.qml"));
     QScopedPointer<QObject> object(component.create());
     QVERIFY(object != nullptr);
@@ -648,9 +627,6 @@ void tst_qqmlqt::openUrlExternally()
 
     QCOMPARE(handler.called,2);
     QCOMPARE(handler.last, htmlTestFile);
-
-    QDesktopServices::unsetUrlHandler("test");
-    QDesktopServices::unsetUrlHandler(htmlTestFile.scheme());
 }
 
 void tst_qqmlqt::openUrlExternally_pragmaLibrary()
@@ -660,6 +636,10 @@ void tst_qqmlqt::openUrlExternally_pragmaLibrary()
     const QUrl htmlTestFile = testFileUrl("test.html");
     QDesktopServices::setUrlHandler("test", &handler, "noteCall");
     QDesktopServices::setUrlHandler(htmlTestFile.scheme(), &handler, "noteCall");
+    const auto unset = qScopeGuard([&] {
+        QDesktopServices::unsetUrlHandler(htmlTestFile.scheme());
+        QDesktopServices::unsetUrlHandler("test");
+    });
 
     QQmlComponent component(&engine, testFileUrl("openUrlExternally_lib.qml"));
     QScopedPointer<QObject> object(component.create());
@@ -671,9 +651,6 @@ void tst_qqmlqt::openUrlExternally_pragmaLibrary()
 
     QCOMPARE(handler.called,2);
     QCOMPARE(handler.last, htmlTestFile);
-
-    QDesktopServices::unsetUrlHandler("test");
-    QDesktopServices::unsetUrlHandler(htmlTestFile.scheme());
 }
 
 void tst_qqmlqt::md5()
@@ -756,7 +733,7 @@ void tst_qqmlqt::createQmlObject()
 
     QQuickItem *item = qobject_cast<QQuickItem *>(object.data());
     QVERIFY(item != nullptr);
-    QCOMPARE(item->childItems().count(), 1);
+    QCOMPARE(item->childItems().size(), 1);
 }
 
 
@@ -765,8 +742,10 @@ void tst_qqmlqt::dateTimeConversion()
     QDate date(2008,12,24);
     QTime time(14,15,38,200);
     QDateTime dateTime(date, time);
-    //Note that when converting Date to QDateTime they can argue over historical DST data when converting to local time.
-    //Tests should use UTC or recent dates.
+    QDateTime dateTime0(QDate(2021, 7, 1).startOfDay());
+    QDateTime dateTime0utc(QDate(2021, 7, 1).startOfDay(Qt::UTC));
+    QDateTime dateTime1(QDate(2021, 7, 31).startOfDay());
+    QDateTime dateTime1utc(QDate(2021, 7, 31).startOfDay(Qt::UTC));
     QDateTime dateTime2(QDate(2852,12,31), QTime(23,59,59,500));
     QDateTime dateTime3(QDate(2000,1,1), QTime(0,0,0,0));
     QDateTime dateTime4(QDate(2001,2,2), QTime(0,0,0,0));
@@ -780,10 +759,15 @@ void tst_qqmlqt::dateTimeConversion()
     QQmlEngine eng;
     QQmlComponent component(&eng, testFileUrl("dateTimeConversion.qml"));
     QScopedPointer<QObject> obj(component.create());
+    QVERIFY2(obj != nullptr, qPrintable(component.errorString()));
 
     QCOMPARE(obj->property("qdate").toDate(), date);
     QCOMPARE(obj->property("qtime").toTime(), time);
     QCOMPARE(obj->property("qdatetime").toDateTime(), dateTime);
+    QCOMPARE(obj->property("qdatetime0").toDateTime(), dateTime0);
+    QCOMPARE(obj->property("qdatetime0utc").toDateTime(), dateTime0utc);
+    QCOMPARE(obj->property("qdatetime1").toDateTime(), dateTime1);
+    QCOMPARE(obj->property("qdatetime1utc").toDateTime(), dateTime1utc);
     QCOMPARE(obj->property("qdatetime2").toDateTime(), dateTime2);
     QCOMPARE(obj->property("qdatetime3").toDateTime(), dateTime3);
     QCOMPARE(obj->property("qdatetime4").toDateTime(), dateTime4);
@@ -841,7 +825,7 @@ void tst_qqmlqt::dateTimeFormatting()
     QVERIFY2(component.errorString().isEmpty(), qPrintable(component.errorString()));
     QVERIFY(object != nullptr);
 
-    QVERIFY(inputProperties.count() > 0);
+    QVERIFY(inputProperties.size() > 0);
     QVariant result;
     foreach(const QString &prop, inputProperties) {
         QVERIFY(QMetaObject::invokeMethod(object.data(), method.toUtf8().constData(),
@@ -849,7 +833,7 @@ void tst_qqmlqt::dateTimeFormatting()
                 Q_ARG(QVariant, prop)));
         QStringList output = result.toStringList();
         QCOMPARE(output.size(), expectedResults.size());
-        for (int i=0; i<output.count(); i++)
+        for (int i=0; i<output.size(); i++)
             QCOMPARE(output[i], expectedResults[i]);
     }
 }
@@ -901,7 +885,7 @@ void tst_qqmlqt::dateTimeFormattingVariants()
              << component.url().toString() + ":40: TypeError: Passing incompatible arguments to C++ functions from JavaScript is not allowed."
              << component.url().toString() + ":43: TypeError: Passing incompatible arguments to C++ functions from JavaScript is not allowed.";
 
-    for (const QString &warning : qAsConst(warnings))
+    for (const QString &warning : std::as_const(warnings))
         QTest::ignoreMessage(QtWarningMsg, qPrintable(warning));
 
     warnings.clear();
@@ -915,7 +899,7 @@ void tst_qqmlqt::dateTimeFormattingVariants()
              << "Could not convert argument 1 at"
              << "expression for err_dateTime2@";
 
-    for (const QString &warning : qAsConst(warnings))
+    for (const QString &warning : std::as_const(warnings))
         QTest::ignoreMessage(QtWarningMsg, QRegularExpression(warning));
 
     warnings.clear();
@@ -931,9 +915,10 @@ void tst_qqmlqt::dateTimeFormattingVariants()
     if (variant.typeId() == QMetaType::QColor || variant.typeId() == QMetaType::Int) {
         if (method == "formatTime") {
             // formatTime has special error handling as it parses the strings itself.
-            QTest::ignoreMessage(QtWarningMsg, QRegularExpression(
-                                     "formatting.qml:18: Error: Invalid argument passed to "
-                                     "formatTime"));
+            QTest::ignoreMessage(
+                    QtWarningMsg,
+                    QRegularExpression("formatting.qml:19: Error: Invalid argument passed to "
+                                       "formatTime"));
         } else {
             QTest::ignoreMessage(QtWarningMsg,
                                  QRegularExpression("Could not convert argument 0 at"));
@@ -1151,7 +1136,7 @@ void tst_qqmlqt::quit()
     QSignalSpy spy(&engine, SIGNAL(quit()));
     QScopedPointer<QObject> object(component.create());
     QVERIFY(object != nullptr);
-    QCOMPARE(spy.count(), 1);
+    QCOMPARE(spy.size(), 1);
 }
 
 void tst_qqmlqt::exit()
@@ -1161,7 +1146,7 @@ void tst_qqmlqt::exit()
     QSignalSpy spy(&engine, &QQmlEngine::exit);
     QScopedPointer<QObject> object(component.create());
     QVERIFY(object != nullptr);
-    QCOMPARE(spy.count(), 1);
+    QCOMPARE(spy.size(), 1);
     QList<QVariant> arguments = spy.takeFirst();
     QVERIFY(arguments.at(0).toInt() == object->property("returnCode").toInt());
 }
@@ -1367,7 +1352,7 @@ class TimeZoneSwitch
 {
 public:
     TimeZoneSwitch(const char *newZone)
-        : doChangeZone(qstrcmp(newZone, "localtime") == 0)
+        : doChangeZone(qstrcmp(newZone, "localtime") != 0)
     {
         if (!doChangeZone)
             return;
@@ -1405,6 +1390,9 @@ void tst_qqmlqt::timeRoundtrip_data()
     // Local timezone:
     QTest::newRow("localtime") << QTime(0, 0, 0);
 
+#if defined(Q_OS_WIN) || defined(Q_OS_ANDROID)
+    qInfo("Omitting the tests that depend on setting local time's zone");
+#else
     // No DST:
     QTest::newRow("UTC") << QTime(0, 0, 0);
     QTest::newRow("Europe/Amsterdam") << QTime(1, 0, 0);
@@ -1416,14 +1404,11 @@ void tst_qqmlqt::timeRoundtrip_data()
     QTest::newRow("Australia/Hobart") << QTime(10, 0, 0);
     QTest::newRow("Pacific/Auckland") << QTime(12, 0, 0);
     QTest::newRow("Pacific/Samoa") << QTime(13, 0, 0);
+#endif
 }
 
 void tst_qqmlqt::timeRoundtrip()
 {
-#ifdef Q_OS_WIN
-    QSKIP("On Windows, the DateObject doesn't handle DST transitions correctly when the timezone is not localtime."); // I.e.: for this test.
-#endif
-
     TimeZoneSwitch tzs(QTest::currentDataTag());
     QFETCH(QTime, time);
     qmlRegisterTypesAndRevisions<TimeProvider>("Test", 1);

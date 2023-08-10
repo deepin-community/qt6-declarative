@@ -1,57 +1,11 @@
-/****************************************************************************
-**
-** Copyright (C) 2017 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the test suite of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:BSD$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** BSD License Usage
-** Alternatively, you may use this file under the terms of the BSD license
-** as follows:
-**
-** "Redistribution and use in source and binary forms, with or without
-** modification, are permitted provided that the following conditions are
-** met:
-**   * Redistributions of source code must retain the above copyright
-**     notice, this list of conditions and the following disclaimer.
-**   * Redistributions in binary form must reproduce the above copyright
-**     notice, this list of conditions and the following disclaimer in
-**     the documentation and/or other materials provided with the
-**     distribution.
-**   * Neither the name of The Qt Company Ltd nor the names of its
-**     contributors may be used to endorse or promote products derived
-**     from this software without specific prior written permission.
-**
-**
-** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-** "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-** LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-** A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-** OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-** SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-** LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-** DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-** THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-** (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-** OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2017 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
 
 import QtQuick
 import QtQuick.Window
 import QtTest
 import QtQuick.Controls
+import QtQuick.NativeStyle as NativeStyle
 
 TestCase {
     id: testCase
@@ -640,14 +594,15 @@ TestCase {
     }
 
     function test_keys_space_enter_escape_data() {
+        // Not testing Key_Enter + Key_Enter and Key_Return + Key_Return because
+        // QGnomeTheme uses Key_Enter and Key_Return for pressing buttons/comboboxes
+        // and the CI uses the QGnomeTheme platform theme.
         return [
             { tag: "space-space", key1: Qt.Key_Space, key2: Qt.Key_Space, showPopup: true, showPress: true, hidePopup: true, hidePress: true },
             { tag: "space-enter", key1: Qt.Key_Space, key2: Qt.Key_Enter, showPopup: true, showPress: true, hidePopup: true, hidePress: true },
             { tag: "space-return", key1: Qt.Key_Space, key2: Qt.Key_Return, showPopup: true, showPress: true, hidePopup: true, hidePress: true },
             { tag: "space-escape", key1: Qt.Key_Space, key2: Qt.Key_Escape, showPopup: true, showPress: true, hidePopup: true, hidePress: false },
             { tag: "space-0", key1: Qt.Key_Space, key2: Qt.Key_0, showPopup: true, showPress: true, hidePopup: false, hidePress: false },
-            { tag: "enter-enter", key1: Qt.Key_Enter, key2: Qt.Key_Enter, showPopup: false, showPress: false, hidePopup: true, hidePress: false },
-            { tag: "return-return", key1: Qt.Key_Return, key2: Qt.Key_Return, showPopup: false, showPress: false, hidePopup: true, hidePress: false },
             { tag: "escape-escape", key1: Qt.Key_Escape, key2: Qt.Key_Escape, showPopup: false, showPress: false, hidePopup: true, hidePress: false }
         ]
     }
@@ -939,13 +894,14 @@ TestCase {
             verify(popupYSpy.count === 1)
         }
 
+        var leftLayoutMargin = control.background.layoutMargins === undefined ? 0 : control.popup.layoutMargins.left
         // follow the control outside the horizontal window bounds
         control.x = -control.width / 2
         compare(control.x, -control.width / 2)
-        compare(control.popup.contentItem.parent.x, -control.width / 2)
+        compare(control.popup.contentItem.parent.x, -control.width / 2 + leftLayoutMargin)
         control.x = testCase.width - control.width / 2
         compare(control.x, testCase.width - control.width / 2)
-        compare(control.popup.contentItem.parent.x, testCase.width - control.width / 2)
+        compare(control.popup.contentItem.parent.x, testCase.width - control.width / 2 + leftLayoutMargin)
 
         // close the popup when hidden (QTBUG-67684)
         control.popup.open()
@@ -1255,9 +1211,14 @@ TestCase {
         verify(control.button)
         verify(control.combobox)
 
+        var macOSStyle = Qt.platform.pluginName === "cocoa"
+                       && control.combobox.background instanceof NativeStyle.StyleItem
+        var expectedComboBoxFontPixelSize = macOSStyle
+                                  ? control.combobox.background.styleFont(control.combobox).pixelSize
+                                  : 30
         compare(control.font.pixelSize, 30)
         compare(control.button.font.pixelSize, 20)
-        compare(control.combobox.font.pixelSize, 30)
+        compare(control.combobox.font.pixelSize, expectedComboBoxFontPixelSize)
 
 //        verify(control.combobox.popup)
 //        var popup = control.combobox.popup
@@ -1278,13 +1239,21 @@ TestCase {
 //        compare(listview.contentItem.children[idx2].font.pixelSize, 25)
 
         control.font.pixelSize = control.font.pixelSize + 10
-        compare(control.combobox.font.pixelSize, 40)
+        if (!macOSStyle) expectedComboBoxFontPixelSize += 10
+        compare(control.combobox.font.pixelSize, expectedComboBoxFontPixelSize)
 //        waitForRendering(listview)
 //        compare(listview.contentItem.children[idx1].font.pixelSize, 25)
 //        compare(listview.contentItem.children[idx2].font.pixelSize, 25)
 
         control.combobox.font.pixelSize = control.combobox.font.pixelSize + 5
-        compare(control.combobox.font.pixelSize, 45)
+        if (!macOSStyle) {
+            // We only support the default system font (and font size) on MacOS style.
+            // Therefore, adjusting the font is not supported on MacOS style.
+            // Current behavior is that the font property *is* changed, but it is not
+            // guaranteed that the drawing will be correct.
+            // However, this might change in the future, so we don't test it.
+            compare(control.combobox.font.pixelSize, 45)
+        }
 //        waitForRendering(listview)
 
 //        idx1 = getChild(listview.contentItem, "delegate", -1)
@@ -1854,8 +1823,8 @@ TestCase {
             width: 200
             height: 200
 
-            Keys.onPressed: { ++pressedKeys; lastPressedKey = event.key }
-            Keys.onReleased: { ++releasedKeys; lastReleasedKey = event.key }
+            Keys.onPressed: (event) => { ++pressedKeys; lastPressedKey = event.key }
+            Keys.onReleased: (event) => { ++releasedKeys; lastReleasedKey = event.key }
 
             ComboBox {
                 id: comboBox
@@ -1902,11 +1871,6 @@ TestCase {
         compare(container.pressedKeys, pressedKeys)
 
         keyRelease(data.key)
-        // Popup receives the key release event if it has an exit transition, but
-        // not if it has been immediately closed on press, without a transition.
-        // ### TODO: Should Popup somehow always block the key release event?
-        if (!control.popup.exit)
-            ++releasedKeys
         compare(container.releasedKeys, releasedKeys)
 
         tryCompare(control.popup, "visible", false)
@@ -2283,5 +2247,61 @@ TestCase {
         compare(acceptableInputSpy.count, 2)
         compare(control.displayText, "2")
         compare(control.acceptableInput, true)
+    }
+
+    function test_selectionCleared() {
+        const model = [
+            { text: "Apple" },
+            { text: "Banana" },
+            { text: "Coconut" }
+        ]
+        let control = createTemporaryObject(comboBox, testCase, { model: model, editable: true })
+        verify(control)
+
+        compare(control.displayText, "Apple")
+        compare(control.editText, "Apple")
+        compare(control.currentIndex, 0)
+
+        // Give the TextField focus and select the text.
+        let textField = control.contentItem
+        textField.forceActiveFocus()
+        textField.selectAll()
+        compare(textField.selectedText, "Apple")
+
+        // Type "B" so that Banana is selected.
+        keyPress(Qt.Key_Shift)
+        keyClick(Qt.Key_B)
+        keyRelease(Qt.Key_Shift)
+        compare(control.displayText, "Apple")
+        expectFail("", "QTBUG-102950")
+        compare(control.editText, "Banana")
+        compare(textField.selectedText, "anana")
+        compare(control.currentIndex, 0)
+
+        // Select Banana by pressing enter.
+        keyClick(Qt.Key_Return)
+        compare(control.displayText, "Banana")
+        compare(control.editText, "Banana")
+        compare(textField.selectedText, "")
+        compare(control.currentIndex, 1)
+    }
+
+    Component {
+        id: listOfGadgets
+        QtObject {
+            property list<rect> rects: [Qt.rect(1, 2, 3, 4), Qt.rect(5, 6, 7, 8)]
+        }
+    }
+
+    function test_listOfGadgetsWithRole() {
+        let model = listOfGadgets.createObject(testCase);
+        let control = createTemporaryObject(
+                comboBox, testCase, {model: model.rects, textRole: "width"});
+        verify(control);
+        compare(control.currentIndex, 0);
+        compare(control.displayText, "3");
+
+        control.currentIndex = 1;
+        compare(control.displayText, "7");
     }
 }

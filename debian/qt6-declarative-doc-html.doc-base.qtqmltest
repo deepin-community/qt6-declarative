@@ -1,0 +1,9 @@
+Document: qt6-qtqmltest-manual
+Title: Qt 6 qtqmltest
+Author: The Qt Company Ltd
+Abstract: This is the HTML documentation for Qt 6 Qt QML Test
+Section: Programming/C++
+
+Format: HTML
+Index: /usr/share/doc/qt6-declarative-doc-html/html/qtqmltest/qtqtqmltest.index
+Files: /usr/share/doc/qt6-declarative-doc-html/html/qtqmltest/*.html

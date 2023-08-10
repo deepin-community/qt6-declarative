@@ -1,38 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2020 The Qt Company Ltd.
-** Contact: http://www.qt.io/licensing/
-**
-** This file is part of the Qt Labs Platform module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL3$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see http://www.qt.io/terms-conditions. For further
-** information use the contact form at http://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPLv3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or later as published by the Free
-** Software Foundation and appearing in the file LICENSE.GPL included in
-** the packaging of this file. Please review the following information to
-** ensure the GNU General Public License version 2.0 requirements will be
-** met: http://www.gnu.org/licenses/gpl-2.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2020 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qquicklabsplatformmenubar_p.h"
 #include "qquicklabsplatformmenu_p.h"
@@ -96,6 +63,7 @@ QT_BEGIN_NAMESPACE
     \li macOS
     \li Android
     \li Linux (only available on desktop environments that provide a global D-Bus menu bar)
+    \li Windows
     \endlist
 
     \labs
@@ -117,7 +85,7 @@ QQuickLabsPlatformMenuBar::QQuickLabsPlatformMenuBar(QObject *parent)
 
 QQuickLabsPlatformMenuBar::~QQuickLabsPlatformMenuBar()
 {
-    for (QQuickLabsPlatformMenu *menu : qAsConst(m_menus))
+    for (QQuickLabsPlatformMenu *menu : std::as_const(m_menus))
         menu->setMenuBar(nullptr);
     delete m_handle;
     m_handle = nullptr;
@@ -186,7 +154,7 @@ void QQuickLabsPlatformMenuBar::setWindow(QWindow *window)
 */
 void QQuickLabsPlatformMenuBar::addMenu(QQuickLabsPlatformMenu *menu)
 {
-    insertMenu(m_menus.count(), menu);
+    insertMenu(m_menus.size(), menu);
 }
 
 /*!
@@ -236,7 +204,7 @@ void QQuickLabsPlatformMenuBar::clear()
     if (m_menus.isEmpty())
         return;
 
-    for (QQuickLabsPlatformMenu *menu : qAsConst(m_menus)) {
+    for (QQuickLabsPlatformMenu *menu : std::as_const(m_menus)) {
         m_data.removeOne(menu);
         if (m_handle)
             m_handle->removeMenu(menu->handle());
@@ -255,7 +223,7 @@ void QQuickLabsPlatformMenuBar::classBegin()
 void QQuickLabsPlatformMenuBar::componentComplete()
 {
     m_complete = true;
-    for (QQuickLabsPlatformMenu *menu : qAsConst(m_menus))
+    for (QQuickLabsPlatformMenu *menu : std::as_const(m_menus))
         menu->sync();
     if (!m_window)
         setWindow(findWindow());
@@ -289,7 +257,7 @@ void QQuickLabsPlatformMenuBar::data_append(QQmlListProperty<QObject> *property,
 qsizetype QQuickLabsPlatformMenuBar::data_count(QQmlListProperty<QObject> *property)
 {
     QQuickLabsPlatformMenuBar *menuBar = static_cast<QQuickLabsPlatformMenuBar *>(property->object);
-    return menuBar->m_data.count();
+    return menuBar->m_data.size();
 }
 
 QObject *QQuickLabsPlatformMenuBar::data_at(QQmlListProperty<QObject> *property, qsizetype index)
@@ -313,7 +281,7 @@ void QQuickLabsPlatformMenuBar::menus_append(QQmlListProperty<QQuickLabsPlatform
 qsizetype QQuickLabsPlatformMenuBar::menus_count(QQmlListProperty<QQuickLabsPlatformMenu> *property)
 {
     QQuickLabsPlatformMenuBar *menuBar = static_cast<QQuickLabsPlatformMenuBar *>(property->object);
-    return menuBar->m_menus.count();
+    return menuBar->m_menus.size();
 }
 
 QQuickLabsPlatformMenu *QQuickLabsPlatformMenuBar::menus_at(QQmlListProperty<QQuickLabsPlatformMenu> *property, qsizetype index)

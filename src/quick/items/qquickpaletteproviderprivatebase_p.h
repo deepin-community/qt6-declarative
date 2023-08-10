@@ -1,38 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2020 The Qt Company Ltd.
-** Contact: http://www.qt.io/licensing/
-**
-** This file is part of the QtQuick module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL3$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see http://www.qt.io/terms-conditions. For further
-** information use the contact form at http://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPLv3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or later as published by the Free
-** Software Foundation and appearing in the file LICENSE.GPL included in
-** the packaging of this file. Please review the following information to
-** ensure the GNU General Public License version 2.0 requirements will be
-** met: http://www.gnu.org/licenses/gpl-2.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2020 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 #ifndef QQUICKPALETTEPROVIDERPRIVATEBASE_H
 #define QQUICKPALETTEPROVIDERPRIVATEBASE_H
 
@@ -120,16 +87,16 @@ public:
     /*!
         \internal
 
-        A default palette for this component.
+        The default palette for this component.
     */
     QPalette defaultPalette() const override;
 
     /*!
         \internal
 
-        A parent palette for this component. Can be null.
+        The parent palette for this component. Can be null.
     */
-    QPalette parentPalette() const override;
+    QPalette parentPalette(const QPalette &fallbackPalette) const override;
 
     /*!
         \internal
@@ -247,7 +214,7 @@ void QQuickPaletteProviderPrivateBase<I, Impl>::registerPalette(PalettePtr palet
 
     m_palette = std::move(palette);
     m_palette->setPaletteProvider(this);
-    m_palette->inheritPalette(parentPalette());
+    m_palette->inheritPalette(parentPalette(defaultPalette()));
 
     setCurrentColorGroup();
 
@@ -287,7 +254,7 @@ QQuickPalette *QQuickPaletteProviderPrivateBase<I, Impl>::windowPalette() const
 }
 
 template<class I, class Impl>
-QPalette QQuickPaletteProviderPrivateBase<I, Impl>::parentPalette() const
+QPalette QQuickPaletteProviderPrivateBase<I, Impl>::parentPalette(const QPalette &fallbackPalette) const
 {
     if constexpr (!isRootWindow<I>()) {
         for (auto parentItem = itemWithPalette()->parentItem(); parentItem;
@@ -304,7 +271,7 @@ QPalette QQuickPaletteProviderPrivateBase<I, Impl>::parentPalette() const
         }
     }
 
-    return defaultPalette();
+    return fallbackPalette;
 }
 
 template<class I>
@@ -376,8 +343,8 @@ void QQuickPaletteProviderPrivateBase<I, Impl>::connectItem()
 
     if constexpr (!isRootWindow<I>()) {
         // Item with palette has the same lifetime as its implementation that inherits this class
-        I::connect(itemWithPalette(), &I::parentChanged , [this]() { inheritPalette(parentPalette()); });
-        I::connect(itemWithPalette(), &I::windowChanged , [this]() { inheritPalette(parentPalette()); });
+        I::connect(itemWithPalette(), &I::parentChanged , [this]() { inheritPalette(parentPalette(defaultPalette())); });
+        I::connect(itemWithPalette(), &I::windowChanged , [this]() { inheritPalette(parentPalette(defaultPalette())); });
         I::connect(itemWithPalette(), &I::enabledChanged, [this]() { setCurrentColorGroup(); });
     }
 }

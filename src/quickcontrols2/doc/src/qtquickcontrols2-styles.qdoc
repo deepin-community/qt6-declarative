@@ -1,29 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2017 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the documentation of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:FDL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Free Documentation License Usage
-** Alternatively, this file may be used under the terms of the GNU Free
-** Documentation License version 1.3 as published by the Free Software
-** Foundation and appearing in the file included in the packaging of
-** this file. Please review the following information to ensure
-** the GNU Free Documentation License version 1.3 requirements
-** will be met: https://www.gnu.org/licenses/fdl-1.3.html.
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2017 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GFDL-1.3-no-invariants-only
 
 /*!
     \page qtquickcontrols2-styles.html
@@ -58,6 +34,12 @@
     The \l {macOS Style} is a native-looking style for macOS.
     \note this style is only available for applications running on macOS.
 
+
+    \section2 iOS Style
+
+    The \l {iOS Style} is a native-looking style for iOS based on image assets.
+    \note this style is only available for applications running on iOS.
+
     \section2 Material Style
 
     \image qtquickcontrols2-material-thumbnail.png
@@ -81,13 +63,24 @@
 
     \section1 Using Styles in Qt Quick Controls
 
-    There are two ways of using styles in Qt Quick Controls:
-    run-time style selection and compile-time style selection.
+    \section2 Default Styles
+
+    If no style is explicitly set, a default style will be used. The style that
+    is used depends on the operating system:
+
+    \list
+    \li Android: \l {Material Style}
+    \li Linux: \l {Fusion Style}
+    \li macOS: \l {macOS Style}
+    \li Windows: \l {Windows Style}
+    \endlist
+
+    For all other operating systems, the \l {Basic Style} is used.
 
     \section2 Compile-Time Style Selection
 
-    Compile-time style selection involves using QML imports to specify the
-    style. For example, to import the Material style:
+    Compile-time style selection is a way of specifying a style to use by
+    importing it in QML. For example, to import the Material style:
 
     \qml
     import QtQuick.Controls.Material
@@ -115,7 +108,8 @@
 
     \section2 Run-Time Style Selection
 
-    Run-time style selection involves importing \c QtQuick.Controls:
+    Run-time style selection is a way of specifying a style to use by importing
+    \c QtQuick.Controls:
 
     \qml
     import QtQuick.Controls

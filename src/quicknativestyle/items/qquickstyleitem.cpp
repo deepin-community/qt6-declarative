@@ -1,38 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2020 The Qt Company Ltd.
-** Contact: http://www.qt.io/licensing/
-**
-** This file is part of the Qt Quick Controls 2 module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL3$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see http://www.qt.io/terms-conditions. For further
-** information use the contact form at http://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPLv3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or later as published by the Free
-** Software Foundation and appearing in the file LICENSE.GPL included in
-** the packaging of this file. Please review the following information to
-** ensure the GNU General Public License version 2.0 requirements will be
-** met: http://www.gnu.org/licenses/gpl-2.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2020 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qquickstyleitem.h"
 
@@ -285,6 +252,14 @@ void QQuickStyleItem::itemChange(QQuickItem::ItemChange change, const QQuickItem
     }
 }
 
+bool QQuickStyleItem::event(QEvent *event)
+{
+    if (event->type() == QEvent::ApplicationPaletteChange)
+        markImageDirty();
+
+    return QQuickItem::event(event);
+}
+
 void QQuickStyleItem::updateGeometry()
 {
     qqc2InfoHeading("GEOMETRY");
@@ -298,7 +273,7 @@ void QQuickStyleItem::updateGeometry()
 
 #ifdef QT_DEBUG
     if (m_styleItemGeometry.minimumSize.isEmpty())
-        qmlWarning(this) << "minimumSize is empty!";
+        qmlWarning(this) << "(StyleItem) minimumSize is empty!";
 #endif
 
     if (m_styleItemGeometry.implicitSize.isEmpty()) {
@@ -307,6 +282,13 @@ void QQuickStyleItem::updateGeometry()
         m_styleItemGeometry.implicitSize = m_styleItemGeometry.minimumSize;
         qqc2Info() << "implicitSize is empty, using minimumSize instead";
     }
+
+#ifdef QT_DEBUG
+    if (m_styleItemGeometry.implicitSize.width() < m_styleItemGeometry.minimumSize.width())
+        qmlWarning(this) << "(StyleItem) implicit width is smaller than minimum width!";
+    if (m_styleItemGeometry.implicitSize.height() < m_styleItemGeometry.minimumSize.height())
+        qmlWarning(this) << "(StyleItem) implicit height is smaller than minimum height!";
+#endif
 
     if (contentPadding() != oldContentPadding)
         emit contentPaddingChanged();
@@ -426,7 +408,7 @@ void QQuickStyleItem::updatePolish()
 void QQuickStyleItem::addDebugInfo()
 {
     // Example debug strings:
-    // "QQC2_NATIVESTYLE_DEBUG="myButton output contentRect"
+    // "QQC2_NATIVESTYLE_DEBUG="myButton info contentRect"
     // "QQC2_NATIVESTYLE_DEBUG="ComboBox ninepatchmargins"
     // "QQC2_NATIVESTYLE_DEBUG="All layoutrect"
 
@@ -574,3 +556,5 @@ QFont QQuickStyleItem::styleFont(QQuickItem *control) const
 }
 
 QT_END_NAMESPACE
+
+#include "moc_qquickstyleitem.cpp"

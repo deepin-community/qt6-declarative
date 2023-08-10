@@ -1,0 +1,9 @@
+Document: qt6-qtquickdialogs-manual
+Title: Qt 6 qtquickdialogs
+Author: The Qt Company Ltd
+Abstract: This is the HTML documentation for Qt 6 Qt Quick Dialogs
+Section: Programming/C++
+
+Format: HTML
+Index: /usr/share/doc/qt6-declarative-doc-html/html/qtquickdialogs/qtqtquickdialogs.index
+Files: /usr/share/doc/qt6-declarative-doc-html/html/qtquickdialogs/*.html

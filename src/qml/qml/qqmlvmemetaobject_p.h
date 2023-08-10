@@ -1,42 +1,6 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Copyright (C) 2016 BasysKom GmbH.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQml module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// Copyright (C) 2016 BasysKom GmbH.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #ifndef QQMLVMEMETAOBJECT_P_H
 #define QQMLVMEMETAOBJECT_P_H
@@ -66,7 +30,7 @@
 #include "qqmlguard_p.h"
 
 #include <private/qqmlguardedcontextdata_p.h>
-#include <private/qflagpointer_p.h>
+#include <private/qbipointer_p.h>
 
 #include <private/qv4object_p.h>
 #include <private/qv4value_p.h>
@@ -79,30 +43,31 @@ class QQmlVMEVariantQObjectPtr : public QQmlGuard<QObject>
 {
 public:
     inline QQmlVMEVariantQObjectPtr();
-    inline ~QQmlVMEVariantQObjectPtr() override;
 
-    inline void objectDestroyed(QObject *) override;
     inline void setGuardedValue(QObject *obj, QQmlVMEMetaObject *target, int index);
 
     QQmlVMEMetaObject *m_target;
     int m_index;
+
+private:
+    static void objectDestroyedImpl(QQmlGuardImpl *guard);
 };
 
 
-class Q_QML_PRIVATE_EXPORT QQmlInterceptorMetaObject : public QAbstractDynamicMetaObject
+class Q_QML_PRIVATE_EXPORT QQmlInterceptorMetaObject : public QDynamicMetaObjectData
 {
 public:
-    QQmlInterceptorMetaObject(QObject *obj, const QQmlRefPointer<QQmlPropertyCache> &cache);
+    QQmlInterceptorMetaObject(QObject *obj, const QQmlPropertyCache::ConstPtr &cache);
     ~QQmlInterceptorMetaObject() override;
 
     void registerInterceptor(QQmlPropertyIndex index, QQmlPropertyValueInterceptor *interceptor);
 
     static QQmlInterceptorMetaObject *get(QObject *obj);
 
-    QAbstractDynamicMetaObject *toDynamicMetaObject(QObject *o) override;
+    QMetaObject *toDynamicMetaObject(QObject *o) override;
 
     // Used by auto-tests for inspection
-    QQmlPropertyCache *propertyCache() const { return cache.data(); }
+    QQmlPropertyCache::ConstPtr propertyCache() const { return cache; }
 
     bool intercepts(QQmlPropertyIndex propertyIndex) const
     {
@@ -115,17 +80,36 @@ public:
         return false;
     }
 
+    QObject *object = nullptr;
+    QQmlPropertyCache::ConstPtr cache;
+
 protected:
     int metaCall(QObject *o, QMetaObject::Call c, int id, void **a) override;
-    bool intercept(QMetaObject::Call c, int id, void **a);
+    bool intercept(QMetaObject::Call c, int id, void **a)
+    {
+        if (!interceptors)
+            return false;
 
-public:
-    QObject *object;
-    QQmlRefPointer<QQmlPropertyCache> cache;
+        switch (c) {
+        case QMetaObject::WriteProperty:
+            if (*reinterpret_cast<int*>(a[3]) & QQmlPropertyData::BypassInterceptor)
+                return false;
+            break;
+        case QMetaObject::BindableProperty:
+            break;
+        default:
+            return false;
+        }
+
+        return doIntercept(c, id, a);
+    }
+
     QBiPointer<QDynamicMetaObjectData, const QMetaObject> parent;
+    const QMetaObject *metaObject = nullptr;
 
-    QQmlPropertyValueInterceptor *interceptors;
-    bool hasAssignedMetaObjectData;
+private:
+    bool doIntercept(QMetaObject::Call c, int id, void **a);
+    QQmlPropertyValueInterceptor *interceptors = nullptr;
 };
 
 inline QQmlInterceptorMetaObject *QQmlInterceptorMetaObject::get(QObject *obj)
@@ -145,7 +129,7 @@ class Q_QML_PRIVATE_EXPORT QQmlVMEMetaObject : public QQmlInterceptorMetaObject
 {
 public:
     QQmlVMEMetaObject(QV4::ExecutionEngine *engine, QObject *obj,
-                      const QQmlRefPointer<QQmlPropertyCache> &cache,
+                      const QQmlPropertyCache::ConstPtr &cache,
                       const QQmlRefPointer<QV4::ExecutableCompilationUnit> &qmlCompilationUnit,
                       int qmlObjectId);
     ~QQmlVMEMetaObject() override;
@@ -188,7 +172,8 @@ public:
     QPointF readPropertyAsPointF(int id) const;
     QUrl readPropertyAsUrl(int id) const;
     QDate readPropertyAsDate(int id) const;
-    QDateTime readPropertyAsDateTime(int id);
+    QTime readPropertyAsTime(int id) const;
+    QDateTime readPropertyAsDateTime(int id) const;
     QRectF readPropertyAsRectF(int id) const;
     QObject *readPropertyAsQObject(int id) const;
     QVector<QQmlGuard<QObject> > *readPropertyAsList(int id) const;

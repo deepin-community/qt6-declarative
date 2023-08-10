@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQml module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qml/qqmlprivate.h"
 #include "qv4function_p.h"
@@ -57,8 +21,8 @@ QT_BEGIN_NAMESPACE
 
 using namespace QV4;
 
-bool Function::call(const Value *thisObject, void **a, const QMetaType *types, int argc,
-                    const ExecutionContext *context)
+bool Function::call(QObject *thisObject, void **a, const QMetaType *types, int argc,
+                    ExecutionContext *context)
 {
     if (!aotFunction) {
         return QV4::convertAndCall(
@@ -70,21 +34,19 @@ bool Function::call(const Value *thisObject, void **a, const QMetaType *types, i
 
     ExecutionEngine *engine = context->engine();
     MetaTypesStackFrame frame;
-    frame.init(this, a, types, argc);
-    frame.setupJSFrame(engine->jsStackTop, Value::undefinedValue(), context->d(),
-                       thisObject ? *thisObject : Value::undefinedValue());
+    frame.init(this, thisObject, context, a, types, argc);
     frame.push(engine);
-    engine->jsStackTop += frame.requiredJSStackFrameSize();
     Moth::VME::exec(&frame, engine);
     frame.pop(engine);
     return !frame.isReturnValueUndefined();
 }
 
-ReturnedValue Function::call(const Value *thisObject, const Value *argv, int argc, const ExecutionContext *context) {
+ReturnedValue Function::call(
+        const Value *thisObject, const Value *argv, int argc, ExecutionContext *context) {
     if (aotFunction) {
         return QV4::convertAndCall(
                     context->engine(), aotFunction, thisObject, argv, argc,
-                    [this, context](const Value *thisObject,
+                    [this, context](QObject *thisObject,
                                     void **a, const QMetaType *types, int argc) {
             call(thisObject, a, types, argc, context);
         });
@@ -140,6 +102,18 @@ Function::Function(ExecutionEngine *engine, ExecutableCompilationUnit *unit,
     nFormals = compiledFunction->nFormals;
 }
 
+Function::Function(ExecutionEngine *engine, const QQmlPrivate::AOTCompiledFunction *aotFunction)
+    : FunctionData(nullptr)
+    , compiledFunction(nullptr)
+    , codeData(nullptr)
+    , jittedCode(nullptr)
+    , codeRef(nullptr)
+    , aotFunction(aotFunction)
+{
+    internalClass = engine->internalClasses(EngineBase::Class_CallContext);
+    nFormals = aotFunction->argumentTypes.size();
+}
+
 Function::~Function()
 {
     if (codeRef) {
@@ -153,7 +127,7 @@ void Function::updateInternalClass(ExecutionEngine *engine, const QList<QByteArr
     QStringList parameterNames;
 
     // Resolve duplicate parameter names:
-    for (int i = 0, ei = parameters.count(); i != ei; ++i) {
+    for (int i = 0, ei = parameters.size(); i != ei; ++i) {
         const QByteArray &param = parameters.at(i);
         int duplicate = -1;
 
@@ -168,7 +142,7 @@ void Function::updateInternalClass(ExecutionEngine *engine, const QList<QByteArr
         if (duplicate == -1) {
             parameterNames.append(QString::fromUtf8(param));
         } else {
-            const QString &dup = parameterNames[duplicate];
+            const QString dup = parameterNames[duplicate];
             parameterNames.append(dup);
             parameterNames[duplicate] =
                     QString(QChar(0xfffe)) + QString::number(duplicate) + dup;
@@ -208,7 +182,8 @@ QString Function::prettyName(const Function *function, const void *code)
 
 QQmlSourceLocation Function::sourceLocation() const
 {
-    return QQmlSourceLocation(sourceFile(), compiledFunction->location.line, compiledFunction->location.column);
+    return QQmlSourceLocation(
+            sourceFile(), compiledFunction->location.line(), compiledFunction->location.column());
 }
 
 QT_END_NAMESPACE

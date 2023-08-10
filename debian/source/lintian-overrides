@@ -1,22 +1,13 @@
 # This was generated from SVG (tiger.svg can be found in qt6-svg package),
 # but it is trivial to convert back to SVG so both forms can be considered source forms.
-qt6-declarative source: source-contains-prebuilt-javascript-object examples/quick/canvas/tiger/tiger.js
-qt6-declarative source: source-is-missing examples/quick/canvas/tiger/tiger.js
-# The files in testsuite are not prebuilt or minified, they just have quite long source lines.
-qt6-declarative source: source-contains-prebuilt-javascript-object tests/auto/qml/ecmascripttests/test262/*.js
-qt6-declarative source: source-is-missing tests/auto/qml/ecmascripttests/test262/*.js
-qt6-declarative source: source-contains-prebuilt-javascript-object tests/auto/qml/parserstress/tests/ecma/ObjectObjects/15.2.1.1.js
-qt6-declarative source: source-is-missing tests/auto/qml/parserstress/tests/ecma/ObjectObjects/15.2.1.1.js
-qt6-declarative source: source-contains-prebuilt-javascript-object tests/auto/qml/parserstress/tests/ecma/String/15.5.2.js
-qt6-declarative source: source-is-missing tests/auto/qml/parserstress/tests/ecma/String/15.5.2.js
-qt6-declarative source: source-contains-prebuilt-javascript-object tests/auto/qml/parserstress/tests/ecma/String/15.5.4.4-4.js
-qt6-declarative source: source-is-missing tests/auto/qml/parserstress/tests/ecma/String/15.5.4.4-4.js
-qt6-declarative source: source-contains-prebuilt-javascript-object tests/auto/qml/parserstress/tests/ecma_3/RegExp/regress-209067.js
-qt6-declarative source: source-is-missing tests/auto/qml/parserstress/tests/ecma_3/RegExp/regress-209067.js
-qt6-declarative source: source-contains-prebuilt-javascript-object tests/auto/qml/parserstress/tests/ecma_3/RegExp/regress-307456.js
-qt6-declarative source: source-is-missing tests/auto/qml/parserstress/tests/ecma_3/RegExp/regress-307456.js
-qt6-declarative source: source-contains-prebuilt-javascript-object tests/manual/v4/v8-bench.js
-qt6-declarative source: source-is-missing tests/manual/v4/v8-bench.js
-# this file is not minified, "min" in its name means a different thing
-qt6-declarative source: source-contains-prebuilt-javascript-object tests/auto/qml/ecmascripttests/test262/test/built-ins/Date/prototype/setHours/this-value-valid-date-min.js
-qt6-declarative source: source-is-missing tests/auto/qml/ecmascripttests/test262/test/built-ins/Date/prototype/setHours/this-value-valid-date-min.js
+qt6-declarative source: source-contains-prebuilt-javascript-object [examples/quick/canvas/tiger/tiger.js]
+qt6-declarative source: source-is-missing [examples/quick/canvas/tiger/tiger.js]
+# The files in testsuite are not prebuilt or minified, they just have quite long source lines or "min" in the filename
+qt6-declarative source: source-contains-prebuilt-javascript-object [tests/auto/qml/ecmascripttests/test262/*.js]
+qt6-declarative source: source-is-missing [tests/auto/qml/ecmascripttests/test262/*.js]
+qt6-declarative source: source-contains-prebuilt-javascript-object [tests/auto/qml/parserstress/tests/ecma_3/RegExp/*.js]
+qt6-declarative source: source-is-missing [tests/auto/qml/parserstress/tests/ecma_3/RegExp/*.js]
+qt6-declarative source: source-contains-prebuilt-javascript-object [tests/manual/v4/v8-bench.js]
+qt6-declarative source: source-is-missing [tests/manual/v4/v8-bench.js]
+# Files do exist in the source
+qt6-declarative source: source-is-missing [tests/auto/qml/ecmascripttests/test262/tools/packaging/templates/runner.*.html]

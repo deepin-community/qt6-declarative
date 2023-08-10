@@ -1,38 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2017 The Qt Company Ltd.
-** Contact: http://www.qt.io/licensing/
-**
-** This file is part of the test suite of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL3$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see http://www.qt.io/terms-conditions. For further
-** information use the contact form at http://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPLv3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or later as published by the Free
-** Software Foundation and appearing in the file LICENSE.GPL included in
-** the packaging of this file. Please review the following information to
-** ensure the GNU General Public License version 2.0 requirements will be
-** met: http://www.gnu.org/licenses/gpl-2.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2017 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only WITH Qt-GPL-exception-1.0
 
 #include <QtTest/qtest.h>
 
@@ -60,12 +27,13 @@ public:
     tst_cursor();
 
 private slots:
-    void init();
+    void init() override;
     void controls_data();
     void controls();
     void editable();
     void pageIndicator();
     void scrollBar();
+    void textArea();
 };
 
 tst_cursor::tst_cursor()
@@ -76,6 +44,8 @@ tst_cursor::tst_cursor()
 
 void tst_cursor::init()
 {
+    QQmlDataTest::init();
+
 #if QT_CONFIG(cursor)
     // Ensure mouse cursor was not left by previous tests where widgets
     // will appear, as it could cause events and interfere with the tests.
@@ -117,7 +87,10 @@ void tst_cursor::controls()
         QCOMPARE(view.cursor().shape(), Qt::ForbiddenCursor);
 
         QTest::mouseMove(&view, control->mapToScene(QPointF(0, 0)).toPoint());
+#ifndef Q_OS_WEBOS
+        //webOS cursor handling uses BitmapCursor for ArrowCursor
         QCOMPARE(view.cursor().shape(), Qt::ArrowCursor);
+#endif
 
         QTest::mouseMove(&view, control->mapToScene(QPointF(control->width() + 1, control->height() + 1)).toPoint());
         QCOMPARE(view.cursor().shape(), Qt::ForbiddenCursor);
@@ -153,7 +126,10 @@ void tst_cursor::editable()
         control->setProperty("editable", false);
         QCOMPARE(control->cursor().shape(), Qt::ArrowCursor);
         QCOMPARE(control->contentItem()->cursor().shape(), Qt::ArrowCursor);
+#ifndef Q_OS_WEBOS
+        //webOS cursor handling uses BitmapCursor for ArrowCursor
         QCOMPARE(view.cursor().shape(), Qt::ArrowCursor);
+#endif
 
         QTest::mouseMove(&view, control->mapToScene(QPointF(control->width() + 1, control->height() + 1)).toPoint());
         QCOMPARE(view.cursor().shape(), Qt::ForbiddenCursor);
@@ -180,7 +156,10 @@ void tst_cursor::pageIndicator()
     QCOMPARE(view.cursor().shape(), Qt::ForbiddenCursor);
 
     indicator->setInteractive(true);
+#ifndef Q_OS_WEBOS
+    //webOS cursor handling uses BitmapCursor for ArrowCursor
     QCOMPARE(view.cursor().shape(), Qt::ArrowCursor);
+#endif
 
     QTest::mouseMove(&view, indicator->mapToScene(QPointF(indicator->width() + 1, indicator->height() + 1)).toPoint());
     QCOMPARE(view.cursor().shape(), Qt::ForbiddenCursor);
@@ -214,11 +193,28 @@ void tst_cursor::scrollBar()
     QTest::mouseMove(window, scrollBarPos);
 
     QVERIFY(scrollBar->isActive());
+#ifndef Q_OS_WEBOS
+    //webOS cursor handling uses BitmapCursor for ArrowCursor
     QCOMPARE(window->cursor().shape(), scrollBar->cursor().shape());
+#endif
     QCOMPARE(scrollBar->cursor().shape(), Qt::CursorShape::ArrowCursor);
 
     scrollBar->setInteractive(false);
     QCOMPARE(window->cursor().shape(), textArea->cursor().shape());
+}
+
+// QTBUG-104089
+void tst_cursor::textArea()
+{
+    QQuickTextArea textArea;
+    QCOMPARE(textArea.cursor().shape(), Qt::IBeamCursor);
+
+    textArea.setReadOnly(true);
+    QVERIFY(textArea.selectByMouse());
+    QCOMPARE(textArea.cursor().shape(), Qt::IBeamCursor);
+
+    textArea.setSelectByMouse(false);
+    QCOMPARE(textArea.cursor().shape(), Qt::ArrowCursor);
 }
 
 QTEST_MAIN(tst_cursor)

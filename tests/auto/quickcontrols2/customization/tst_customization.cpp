@@ -1,38 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2017 The Qt Company Ltd.
-** Contact: http://www.qt.io/licensing/
-**
-** This file is part of the test suite of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL3$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see http://www.qt.io/terms-conditions. For further
-** information use the contact form at http://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPLv3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or later as published by the Free
-** Software Foundation and appearing in the file LICENSE.GPL included in
-** the packaging of this file. Please review the following information to
-** ensure the GNU General Public License version 2.0 requirements will be
-** met: http://www.gnu.org/licenses/gpl-2.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2017 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only WITH Qt-GPL-exception-1.0
 
 #include <QtTest/qtest.h>
 #include <QtCore/private/qhooks_p.h>
@@ -120,7 +87,7 @@ private slots:
     void initTestCase() override;
     void cleanupTestCase();
 
-    void init();
+    void init() override;
     void cleanup();
 
     void creation_data();
@@ -216,8 +183,11 @@ extern "C" Q_DECL_EXPORT void qt_removeQObject(QObject *object)
     }
 }
 
+// We don't want to fail on warnings until QTBUG-98964 is fixed,
+// as we deliberately prevent deferred execution in some of the tests here,
+// which causes warnings.
 tst_customization::tst_customization()
-    : QQmlDataTest(QT_QMLTEST_DATADIR)
+    : QQmlDataTest(QT_QMLTEST_DATADIR, FailOnWarningsPolicy::DoNotFailOnWarnings)
 {
 }
 
@@ -236,6 +206,8 @@ void tst_customization::cleanupTestCase()
 
 void tst_customization::init()
 {
+    QQmlDataTest::init();
+
     engine = new QQmlEngine(this);
     engine->addImportPath(testFile("styles"));
 
@@ -321,7 +293,7 @@ void tst_customization::creation()
     QCOMPARE(control->objectName(), controlName);
     QVERIFY2(qt_createdQObjects()->removeOne(controlName), qPrintable(controlName + " was not created as expected"));
 
-    for (QString delegate : qAsConst(delegates)) {
+    for (QString delegate : std::as_const(delegates)) {
         QStringList properties = delegate.split(".", Qt::SkipEmptyParts);
 
         // <control>-<delegate>-<style>(-<override>)
@@ -418,7 +390,7 @@ void tst_customization::override()
     QCOMPARE(control->objectName(), controlName);
     QVERIFY2(qt_createdQObjects()->removeOne(controlName), qPrintable(controlName + " was not created as expected"));
 
-    for (QString delegate : qAsConst(delegates)) {
+    for (QString delegate : std::as_const(delegates)) {
         QStringList properties = delegate.split(".", Qt::SkipEmptyParts);
 
         // <control>-<delegate>-<style>(-override)
@@ -448,7 +420,7 @@ void tst_customization::override()
 
     if (!nonDeferred.isEmpty()) {
         // There were items for which deferred execution was not possible.
-        for (QString delegateName : qAsConst(delegates)) {
+        for (QString delegateName : std::as_const(delegates)) {
             if (!delegateName.contains("-"))
                 delegateName.append("-" + nonDeferred);
             delegateName.prepend(type.toLower() + "-");
