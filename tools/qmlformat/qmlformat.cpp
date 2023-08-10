@@ -1,30 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2019 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the tools applications of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:GPL-EXCEPT$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 3 as published by the Free Software
-** Foundation with exceptions as appearing in the file LICENSE.GPL3-EXCEPT
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2019 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only WITH Qt-GPL-exception-1.0
 
 #include <QCoreApplication>
 #include <QFile>
@@ -44,6 +19,8 @@
 #    include <QCommandLineParser>
 #endif
 
+#include "../shared/qqmltoolingsettings.h"
+
 using namespace QQmlJS::Dom;
 
 struct Options
@@ -54,6 +31,8 @@ struct Options
     bool tabs = false;
     bool valid = false;
     bool normalize = false;
+    bool ignoreSettings = false;
+    bool writeDefaultSettings = false;
 
     int indentWidth = 4;
     bool indentWidthSet = false;
@@ -168,6 +147,17 @@ Options buildCommandLineOptions(const QCoreApplication &app)
             QCommandLineOption({ "V", "verbose" },
                                QStringLiteral("Verbose mode. Outputs more detailed information.")));
 
+    QCommandLineOption writeDefaultsOption(
+            QStringList() << "write-defaults",
+            QLatin1String("Writes defaults settings to .qmlformat.ini and exits (Warning: This "
+                          "will overwrite any existing settings and comments!)"));
+    parser.addOption(writeDefaultsOption);
+
+    QCommandLineOption ignoreSettings(QStringList() << "ignore-settings",
+                                      QLatin1String("Ignores all settings files and only takes "
+                                                    "command line options into consideration"));
+    parser.addOption(ignoreSettings);
+
     parser.addOption(QCommandLineOption(
             { "i", "inplace" },
             QStringLiteral("Edit file in-place instead of outputting to stdout.")));
@@ -197,6 +187,13 @@ Options buildCommandLineOptions(const QCoreApplication &app)
     parser.addPositionalArgument("filenames", "files to be processed by qmlformat");
 
     parser.process(app);
+
+    if (parser.isSet(writeDefaultsOption)) {
+        Options options;
+        options.writeDefaultSettings = true;
+        options.valid = true;
+        return options;
+    }
 
     bool indentWidthOkay = false;
     const int indentWidth = parser.value("indent-width").toInt(&indentWidthOkay);
@@ -229,6 +226,7 @@ Options buildCommandLineOptions(const QCoreApplication &app)
     options.force = parser.isSet("force");
     options.tabs = parser.isSet("tabs");
     options.normalize = parser.isSet("normalize");
+    options.ignoreSettings = parser.isSet("ignore-settings");
     options.valid = true;
 
     options.indentWidth = indentWidth;
@@ -248,6 +246,20 @@ int main(int argc, char *argv[])
     QCoreApplication::setApplicationName("qmlformat");
     QCoreApplication::setApplicationVersion(QT_VERSION_STR);
 
+    QQmlToolingSettings settings(QLatin1String("qmlformat"));
+
+    const QString &useTabsSetting = QStringLiteral("UseTabs");
+    settings.addOption(useTabsSetting);
+
+    const QString &indentWidthSetting = QStringLiteral("IndentWidth");
+    settings.addOption(indentWidthSetting, 4);
+
+    const QString &normalizeSetting = QStringLiteral("NormalizeOrder");
+    settings.addOption(normalizeSetting);
+
+    const QString &newlineSetting = QStringLiteral("NewlineType");
+    settings.addOption(newlineSetting, QStringLiteral("native"));
+
     const auto options = buildCommandLineOptions(app);
     if (!options.valid) {
         for (const auto &error : options.errors) {
@@ -257,6 +269,32 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    if (options.writeDefaultSettings)
+        return settings.writeDefaults() ? 0 : -1;
+
+    auto getSettings = [&](const QString &file, Options options) {
+        if (options.ignoreSettings || !settings.search(file))
+            return options;
+
+        Options perFileOptions = options;
+
+        // Allow for tab settings to be overwritten by the command line
+        if (!options.indentWidthSet) {
+            if (settings.isSet(indentWidthSetting))
+                perFileOptions.indentWidth = settings.value(indentWidthSetting).toInt();
+            if (settings.isSet(useTabsSetting))
+                perFileOptions.tabs = settings.value(useTabsSetting).toBool();
+        }
+
+        if (settings.isSet(normalizeSetting))
+            perFileOptions.normalize = settings.value(normalizeSetting).toBool();
+
+        if (settings.isSet(newlineSetting))
+            perFileOptions.newline = settings.value(newlineSetting).toString();
+
+        return perFileOptions;
+    };
+
     bool success = true;
     if (!options.files.isEmpty()) {
         if (!options.arguments.isEmpty())
@@ -265,12 +303,12 @@ int main(int argc, char *argv[])
         for (const QString &file : options.files) {
             Q_ASSERT(!file.isEmpty());
 
-            if (!parseFile(file, options))
+            if (!parseFile(file, getSettings(file, options)))
                 success = false;
         }
     } else {
         for (const QString &file : options.arguments) {
-            if (!parseFile(file, options))
+            if (!parseFile(file, getSettings(file, options)))
                 success = false;
         }
     }

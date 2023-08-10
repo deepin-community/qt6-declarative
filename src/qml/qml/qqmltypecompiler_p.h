@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the tools applications of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 #ifndef QQMLTYPECOMPILER_P_H
 #define QQMLTYPECOMPILER_P_H
 
@@ -88,12 +52,22 @@ public:
 
     // --- interface used by QQmlPropertyCacheCreator
     typedef QmlIR::Object CompiledObject;
+    using ListPropertyAssignBehavior = QmlIR::Pragma::ListPropertyAssignBehaviorValue;
+
     const QmlIR::Object *objectAt(int index) const { return document->objects.at(index); }
-    int objectCount() const { return document->objects.count(); }
+    int objectCount() const { return document->objects.size(); }
     QString stringAt(int idx) const;
     QmlIR::PoolList<QmlIR::Function>::Iterator objectFunctionsBegin(const QmlIR::Object *object) const { return object->functionsBegin(); }
     QmlIR::PoolList<QmlIR::Function>::Iterator objectFunctionsEnd(const QmlIR::Object *object) const { return object->functionsEnd(); }
     QV4::ResolvedTypeReferenceMap *resolvedTypes = nullptr;
+    ListPropertyAssignBehavior listPropertyAssignBehavior() const
+    {
+        for (const QmlIR::Pragma *pragma: document->pragmas) {
+            if (pragma->type == QmlIR::Pragma::ListPropertyAssignBehavior)
+                return pragma->listPropertyAssignBehavior;
+        }
+        return ListPropertyAssignBehavior::Append;
+    }
     // ---
 
     QQmlRefPointer<QV4::ExecutableCompilationUnit> compile();
@@ -185,7 +159,7 @@ public:
 
 private:
     bool resolveSignalHandlerExpressions(const QmlIR::Object *obj, const QString &typeName,
-                                         QQmlPropertyCache *propertyCache);
+                                         const QQmlPropertyCache::ConstPtr &propertyCache);
 
     QQmlEnginePrivate *enginePrivate;
     const QVector<QmlIR::Object*> &qmlObjects;
@@ -212,9 +186,9 @@ private:
     {
         return assignEnumToBinding(binding, QStringView(enumName), enumValue, isQtObject);
     }
-    bool tryQualifiedEnumAssignment(const QmlIR::Object *obj, const QQmlPropertyCache *propertyCache,
-                                    const QQmlPropertyData *prop,
-                                    QmlIR::Binding *binding);
+    bool tryQualifiedEnumAssignment(
+            const QmlIR::Object *obj, const QQmlPropertyCache::ConstPtr &propertyCache,
+            const QQmlPropertyData *prop, QmlIR::Binding *binding);
     int evaluateEnum(const QString &scope, QStringView enumName, QStringView enumValue, bool *ok) const;
 
 
@@ -270,7 +244,8 @@ public:
     bool resolve(int root = 0);
 
 protected:
-    void findAndRegisterImplicitComponents(const QmlIR::Object *obj, QQmlPropertyCache *propertyCache);
+    void findAndRegisterImplicitComponents(
+            const QmlIR::Object *obj, const QQmlPropertyCache::ConstPtr &propertyCache);
     bool collectIdsAndAliases(int objectIndex);
     bool resolveAliases(int componentIndex);
     void propertyDataForAlias(QmlIR::Alias *alias, int *type, quint32 *propertyFlags);
@@ -300,13 +275,15 @@ protected:
 
 class QQmlDeferredAndCustomParserBindingScanner : public QQmlCompilePass
 {
+    Q_DECLARE_TR_FUNCTIONS(QQmlDeferredAndCustomParserBindingScanner)
 public:
     QQmlDeferredAndCustomParserBindingScanner(QQmlTypeCompiler *typeCompiler);
 
     bool scanObject();
 
 private:
-    bool scanObject(int objectIndex);
+    enum class ScopeDeferred { False, True };
+    bool scanObject(int objectIndex, ScopeDeferred scopeDeferred);
 
     QVector<QmlIR::Object*> *qmlObjects;
     const QQmlPropertyCacheVector * const propertyCaches;

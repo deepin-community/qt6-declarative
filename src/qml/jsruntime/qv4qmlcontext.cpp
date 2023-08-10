@@ -1,61 +1,25 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQml module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qv4qmlcontext_p.h"
 
-#include <private/qqmlengine_p.h>
-#include <private/qqmlcontext_p.h>
-
-#include <private/qv4engine_p.h>
-#include <private/qv4value_p.h>
-#include <private/qv4objectproto_p.h>
-#include <private/qv4mm_p.h>
-#include <private/qv4function_p.h>
-#include <private/qv4compileddata_p.h>
-#include <private/qqmltypewrapper_p.h>
-#include <private/qqmllistwrapper_p.h>
-#include <private/qqmljavascriptexpression_p.h>
 #include <private/qjsvalue_p.h>
-#include <private/qv4qobjectwrapper_p.h>
-#include <private/qv4module_p.h>
-#include <private/qv4lookup_p.h>
+#include <private/qqmlcontext_p.h>
+#include <private/qqmlengine_p.h>
+#include <private/qqmlglobal_p.h>
+#include <private/qqmljavascriptexpression_p.h>
+#include <private/qqmllistwrapper_p.h>
+#include <private/qqmltypewrapper_p.h>
+#include <private/qv4compileddata_p.h>
+#include <private/qv4engine_p.h>
+#include <private/qv4function_p.h>
 #include <private/qv4identifiertable_p.h>
+#include <private/qv4lookup_p.h>
+#include <private/qv4mm_p.h>
+#include <private/qv4module_p.h>
+#include <private/qv4objectproto_p.h>
+#include <private/qv4qobjectwrapper_p.h>
+#include <private/qv4value_p.h>
 
 #include <QtCore/qloggingcategory.h>
 
@@ -127,6 +91,18 @@ static OptionalReturnedValue searchContextProperties(
     return OptionalReturnedValue(v4->fromVariant(cp->propertyValue(propertyIdx)));
 }
 
+template<typename Lookup>
+bool performLookup(ScopedValue *result, bool *hasProperty, const Lookup &lookup) {
+    bool hasProp = false;
+    *result = lookup(&hasProp);
+    if (hasProp) {
+        if (hasProperty)
+            *hasProperty = hasProp;
+        return true;
+    }
+    return false;
+}
+
 ReturnedValue QQmlContextWrapper::getPropertyAndBase(const QQmlContextWrapper *resource, PropertyKey id, const Value *receiver, bool *hasProperty, Value *base, Lookup *lookup)
 {
     if (!id.isString())
@@ -150,13 +126,7 @@ ReturnedValue QQmlContextWrapper::getPropertyAndBase(const QQmlContextWrapper *r
         return Object::virtualGet(resource, id, receiver, hasProperty);
     }
 
-    bool hasProp = false;
-    ScopedValue result(scope, Object::virtualGet(resource, id, receiver, &hasProp));
-    if (hasProp) {
-        if (hasProperty)
-            *hasProperty = hasProp;
-        return result->asReturnedValue();
-    }
+    ScopedValue result(scope);
 
     // It's possible we could delay the calculation of the "actual" context (in the case
     // of sub contexts) until it is definitely needed.
@@ -181,16 +151,19 @@ ReturnedValue QQmlContextWrapper::getPropertyAndBase(const QQmlContextWrapper *r
 
     ScopedString name(scope, id.asStringOrSymbol());
 
-    const auto performGobalLookUp = [&result, v4, &name, hasProperty]() {
-        bool hasProp = false;
-        result = v4->globalObject->get(name, &hasProp);
-        if (hasProp) {
-            if (hasProperty)
-                *hasProperty = hasProp;
-            return true;
-        }
-        return false;
+    const auto globalLookup = [v4, &name](bool *hasProp) {
+        return v4->globalObject->get(name, hasProp);
     };
+
+    const auto jsLookup = [resource, &id, receiver](bool *hasProp) {
+        return Object::virtualGet(resource, id, receiver, hasProp);
+    };
+
+    const bool isJSContext = context->isJSContext();
+
+    // Do the generic JS lookup early in case of a JavaScript context.
+    if (isJSContext && performLookup(&result, hasProperty, jsLookup))
+        return result->asReturnedValue();
 
     // If the scope object is a QAbstractDynamicMetaObject, then QMetaObject::indexOfProperty
     // will call createProperty() on the QADMO and implicitly create the property. While that
@@ -206,10 +179,13 @@ ReturnedValue QQmlContextWrapper::getPropertyAndBase(const QQmlContextWrapper *r
     //
     // Note: The scope object is only a QADMO for example when somebody registers a QQmlPropertyMap
     // sub-class as QML type and then instantiates it in .qml.
-    if (scopeObject && QQmlPropertyCache::isDynamicMetaObject(scopeObject->metaObject())) {
+    const QMetaObjectPrivate *metaObjectPrivate = scopeObject
+            ? reinterpret_cast<const QMetaObjectPrivate *>(scopeObject->metaObject()->d.data)
+            : nullptr;
+    if (metaObjectPrivate && metaObjectPrivate->flags & DynamicMetaObject) {
         // all bets are off, so don't try to optimize any lookups
         lookup = nullptr;
-        if (performGobalLookUp())
+        if (performLookup(&result, hasProperty, globalLookup))
             return result->asReturnedValue();
     }
 
@@ -265,7 +241,7 @@ ReturnedValue QQmlContextWrapper::getPropertyAndBase(const QQmlContextWrapper *r
                 result = QQmlTypeWrapper::create(v4, scopeObject, context->imports(), r.importNamespace);
             }
             if (lookup) {
-                lookup->qmlTypeLookup.qmlTypeWrapper = static_cast<Heap::Object*>(result->heapObject());
+                lookup->qmlTypeLookup.qmlTypeWrapper = result->heapObject();
                 lookup->qmlContextPropertyGetter = QQmlContextWrapper::lookupType;
             }
             return result->asReturnedValue();
@@ -293,7 +269,7 @@ ReturnedValue QQmlContextWrapper::getPropertyAndBase(const QQmlContextWrapper *r
         if (scopeObject) {
             bool hasProp = false;
 
-            QQmlPropertyData *propertyData = nullptr;
+            const QQmlPropertyData *propertyData = nullptr;
             QV4::ScopedValue result(scope, QV4::QObjectWrapper::getQmlProperty(v4, context, scopeObject,
                                                                                name, QV4::QObjectWrapper::CheckRevision, &hasProp, &propertyData));
             if (hasProp) {
@@ -320,7 +296,7 @@ ReturnedValue QQmlContextWrapper::getPropertyAndBase(const QQmlContextWrapper *r
         // Search context object
         if (QObject *contextObject = context->contextObject()) {
             bool hasProp = false;
-            QQmlPropertyData *propertyData = nullptr;
+            const QQmlPropertyData *propertyData = nullptr;
             result = QV4::QObjectWrapper::getQmlProperty(v4, context, contextObject,
                                                          name, QV4::QObjectWrapper::CheckRevision,
                                                          &hasProp, &propertyData);
@@ -357,6 +333,11 @@ ReturnedValue QQmlContextWrapper::getPropertyAndBase(const QQmlContextWrapper *r
         lookup = nullptr;
     }
 
+    // Do the generic JS lookup late in case of a non-JavaScript context.
+    // The scope, context, types etc should be able to override it.
+    if (!isJSContext && performLookup(&result, hasProperty, jsLookup))
+        return result->asReturnedValue();
+
     // Do a lookup in the global object here to avoid expressionContext->unresolvedNames becoming
     // true if we access properties of the global object.
     if (originalLookup) {
@@ -374,7 +355,7 @@ ReturnedValue QQmlContextWrapper::getPropertyAndBase(const QQmlContextWrapper *r
         }
         lookup->qmlContextPropertyGetter = QQmlContextWrapper::resolveQmlContextPropertyLookupGetter;
     } else {
-        if (performGobalLookUp())
+        if (performLookup(&result, hasProperty, globalLookup))
             return result->asReturnedValue();
     }
 
@@ -637,6 +618,11 @@ ReturnedValue QQmlContextWrapper::lookupContextObjectProperty(Lookup *l, Executi
     return QObjectWrapper::lookupGetterImpl(l, engine, obj, /*useOriginalProperty*/ true, revertLookup);
 }
 
+ReturnedValue QQmlContextWrapper::lookupScopeFallbackProperty(Lookup *l, ExecutionEngine *engine, Value *base)
+{
+    return resolveQmlContextPropertyLookupGetter(l, engine, base);
+}
+
 ReturnedValue QQmlContextWrapper::lookupInGlobalObject(Lookup *l, ExecutionEngine *engine, Value *base)
 {
     Q_UNUSED(base);
@@ -710,7 +696,7 @@ ReturnedValue QQmlContextWrapper::lookupType(Lookup *l, ExecutionEngine *engine,
     if (scopeObject && QQmlData::wasDeleted(scopeObject))
         return QV4::Encode::undefined();
 
-    Heap::Object *heapObject = l->qmlTypeLookup.qmlTypeWrapper;
+    Heap::Base *heapObject = l->qmlTypeLookup.qmlTypeWrapper;
     if (static_cast<Heap::QQmlTypeWrapper *>(heapObject)->object != scopeObject) {
         l->qmlTypeLookup.qmlTypeWrapper = nullptr;
         l->qmlContextPropertyGetter = QQmlContextWrapper::resolveQmlContextPropertyLookupGetter;

@@ -1,41 +1,11 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 Klaralvdalens Datakonsult AB, a KDAB Group company, info@kdab.com, author Sergio Martins <sergio.martins@kdab.com>
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the plugins of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:GPL-EXCEPT$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 3 as published by the Free Software
-** Foundation with exceptions as appearing in the file LICENSE.GPL3-EXCEPT
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 Klaralvdalens Datakonsult AB, a KDAB Group company, info@kdab.com, author Sergio Martins <sergio.martins@kdab.com>
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only WITH Qt-GPL-exception-1.0
 
-#include "findwarnings.h"
 #include "../shared/qqmltoolingsettings.h"
 
 #include <QtQmlCompiler/private/qqmljsresourcefilemapper_p.h>
-
-#include <QtQml/private/qqmljslexer_p.h>
-#include <QtQml/private/qqmljsparser_p.h>
-#include <QtQml/private/qqmljsengine_p.h>
-#include <QtQml/private/qqmljsastvisitor_p.h>
-#include <QtQml/private/qqmljsast_p.h>
+#include <QtQmlCompiler/private/qqmljscompiler_p.h>
+#include <QtQmlCompiler/private/qqmljslinter_p.h>
 
 #include <QtCore/qdebug.h>
 #include <QtCore/qfile.h>
@@ -45,164 +15,19 @@
 #include <QtCore/qjsonobject.h>
 #include <QtCore/qjsonarray.h>
 #include <QtCore/qjsondocument.h>
-#include <QtCore/qloggingcategory.h>
 #include <QtCore/qscopeguard.h>
 
 #if QT_CONFIG(commandlineparser)
 #include <QtCore/qcommandlineparser.h>
 #endif
 
-#ifndef QT_BOOTSTRAPPED
 #include <QtCore/qlibraryinfo.h>
-#endif
 
 #include <cstdio>
 
-constexpr int JSON_LOGGING_FORMAT_REVISION = 1;
+using namespace Qt::StringLiterals;
 
-static bool lint_file(const QString &filename, const bool silent, QJsonArray *json,
-                      const QStringList &qmlImportPaths, const QStringList &qmltypesFiles,
-                      const QStringList &resourceFiles,
-                      const QMap<QString, QQmlJSLogger::Option> &options, QQmlJSImporter &importer)
-{
-    QJsonArray warnings;
-    QJsonObject result;
-
-    bool success = true;
-
-    QScopeGuard jsonOutput([&] {
-        if (!json)
-            return;
-
-        result[u"filename"_qs] = QFileInfo(filename).absoluteFilePath();
-        result[u"warnings"] = warnings;
-        result[u"success"] = success;
-
-        json->append(result);
-    });
-
-    auto addJsonWarning = [&](const QQmlJS::DiagnosticMessage &message) {
-        QJsonObject jsonMessage;
-
-        QString type;
-        switch (message.type) {
-        case QtDebugMsg:
-            type = "debug";
-            break;
-        case QtWarningMsg:
-            type = "warning";
-            break;
-        case QtCriticalMsg:
-            type = "critical";
-            break;
-        case QtFatalMsg:
-            type = "fatal";
-            break;
-        case QtInfoMsg:
-            type = "info";
-            break;
-        default:
-            type = "unknown";
-            break;
-        }
-
-        jsonMessage[u"type"_qs] = type;
-
-        if (message.loc.isValid()) {
-            jsonMessage[u"line"_qs] = static_cast<int>(message.loc.startLine);
-            jsonMessage[u"column"_qs] = static_cast<int>(message.loc.startColumn);
-            jsonMessage[u"charOffset"_qs] = static_cast<int>(message.loc.offset);
-            jsonMessage[u"length"_qs] = static_cast<int>(message.loc.length);
-        }
-
-        jsonMessage[u"message"_qs] = message.message;
-
-        warnings << jsonMessage;
-    };
-
-    QFile file(filename);
-    if (!file.open(QFile::ReadOnly)) {
-        if (json) {
-            result[u"openFailed"] = true;
-            success = false;
-        } else if (!silent) {
-            qWarning() << "Failed to open file" << filename << file.error();
-        }
-        return false;
-    }
-
-    QString code = QString::fromUtf8(file.readAll());
-    file.close();
-
-    QQmlJS::Engine engine;
-    QQmlJS::Lexer lexer(&engine);
-
-    QFileInfo info(filename);
-    const QString lowerSuffix = info.suffix().toLower();
-    const bool isESModule = lowerSuffix == QLatin1String("mjs");
-    const bool isJavaScript = isESModule || lowerSuffix == QLatin1String("js");
-
-    lexer.setCode(code, /*lineno = */ 1, /*qmlMode=*/ !isJavaScript);
-    QQmlJS::Parser parser(&engine);
-
-    success = isJavaScript ? (isESModule ? parser.parseModule() : parser.parseProgram())
-                           : parser.parse();
-
-    if (!success && !silent) {
-        const auto diagnosticMessages = parser.diagnosticMessages();
-        for (const QQmlJS::DiagnosticMessage &m : diagnosticMessages) {
-            if (json) {
-                addJsonWarning(m);
-            } else {
-                qWarning().noquote() << QString::fromLatin1("%1:%2 : %3")
-                                                .arg(filename)
-                                                .arg(m.loc.startLine)
-                                                .arg(m.message);
-            }
-        }
-    }
-
-    if (success && !isJavaScript) {
-        const auto check = [&](QQmlJSResourceFileMapper *mapper) {
-            if (importer.importPaths() != qmlImportPaths)
-                importer.setImportPaths(qmlImportPaths);
-
-            importer.setResourceFileMapper(mapper);
-
-            FindWarningVisitor v { &importer,         qmltypesFiles, code,
-                                   engine.comments(), filename,      silent || json };
-
-            for (auto it = options.cbegin(); it != options.cend(); ++it) {
-                v.logger().setCategoryDisabled(it.value().m_category, it.value().m_disabled);
-                v.logger().setCategoryLevel(it.value().m_category, it.value().m_level);
-            }
-
-            parser.rootNode()->accept(&v);
-            success = v.check();
-
-            if (v.logger().hasErrors())
-                return;
-
-            if (json) {
-                for (const auto &error : v.logger().errors())
-                    addJsonWarning(error);
-                for (const auto &warning : v.logger().warnings())
-                    addJsonWarning(warning);
-                for (const auto &info : v.logger().infos())
-                    addJsonWarning(info);
-            }
-        };
-
-        if (resourceFiles.isEmpty()) {
-            check(nullptr);
-        } else {
-            QQmlJSResourceFileMapper mapper(resourceFiles);
-            check(&mapper);
-        }
-    }
-
-    return success;
-}
+constexpr int JSON_LOGGING_FORMAT_REVISION = 3;
 
 int main(int argv, char *argc[])
 {
@@ -212,7 +37,6 @@ int main(int argv, char *argc[])
     QCoreApplication app(argv, argc);
     QCoreApplication::setApplicationName("qmllint");
     QCoreApplication::setApplicationVersion(QT_VERSION_STR);
-#if QT_CONFIG(commandlineparser)
     QCommandLineParser parser;
     QQmlToolingSettings settings(QLatin1String("qmllint"));
     parser.setApplicationDescription(QLatin1String(R"(QML syntax verifier and analyzer
@@ -222,27 +46,6 @@ All warnings can be set to three levels:
     info - Displays the warning but does not influence the return code.
     warning - Displays the warning and leads to a non-zero exit code if encountered.
 )"));
-    parser.addHelpOption();
-    parser.addVersionOption();
-
-    QCommandLineOption silentOption(QStringList() << "s" << "silent",
-                                    QLatin1String("Don't output syntax errors"));
-    parser.addOption(silentOption);
-
-    QCommandLineOption jsonOption(QStringList() << "json",
-                                  QLatin1String("Output linting errors as JSON"));
-    parser.addOption(jsonOption);
-
-    QCommandLineOption writeDefaultsOption(
-            QStringList() << "write-defaults",
-            QLatin1String("Writes defaults settings to .qmllint.ini and exits (Warning: This "
-                          "will overwrite any existing settings and comments!)"));
-    parser.addOption(writeDefaultsOption);
-
-    QCommandLineOption ignoreSettings(QStringList() << "ignore-settings",
-                                      QLatin1String("Ignores all settings files and only takes "
-                                                    "command line options into consideration"));
-    parser.addOption(ignoreSettings);
 
     for (auto it = options.cbegin(); it != options.cend(); ++it) {
         QCommandLineOption option(
@@ -255,18 +58,29 @@ All warnings can be set to three levels:
                            it.value().levelToString());
     }
 
-    // TODO: Remove after Qt 6.2
-    QCommandLineOption disableCheckUnqualified(QStringList() << "no-unqualified-id");
-    disableCheckUnqualified.setFlags(QCommandLineOption::HiddenFromHelp);
-    parser.addOption(disableCheckUnqualified);
+    parser.addHelpOption();
+    parser.addVersionOption();
 
-    QCommandLineOption disableCheckWithStatement(QStringList() << "no-with-statement");
-    disableCheckWithStatement.setFlags(QCommandLineOption::HiddenFromHelp);
-    parser.addOption(disableCheckWithStatement);
+    QCommandLineOption silentOption(QStringList() << "s" << "silent",
+                                    QLatin1String("Don't output syntax errors"));
+    parser.addOption(silentOption);
 
-    QCommandLineOption disableCheckInheritanceCycle(QStringList() << "no-inheritance-cycle");
-    disableCheckInheritanceCycle.setFlags(QCommandLineOption::HiddenFromHelp);
-    parser.addOption(disableCheckInheritanceCycle);
+    QCommandLineOption jsonOption(QStringList() << "json",
+                                  QLatin1String("Write output as JSON to file (or use the special "
+                                                "filename '-'  to write to stdout)"),
+                                  QLatin1String("file"), QString());
+    parser.addOption(jsonOption);
+
+    QCommandLineOption writeDefaultsOption(
+            QStringList() << "write-defaults",
+            QLatin1String("Writes defaults settings to .qmllint.ini and exits (Warning: This "
+                          "will overwrite any existing settings and comments!)"));
+    parser.addOption(writeDefaultsOption);
+
+    QCommandLineOption ignoreSettings(QStringList() << "ignore-settings",
+                                      QLatin1String("Ignores all settings files and only takes "
+                                                    "command line options into consideration"));
+    parser.addOption(ignoreSettings);
 
     QCommandLineOption resourceOption(
                 { QStringLiteral("resource") },
@@ -293,21 +107,58 @@ All warnings can be set to three levels:
     const QString qmlImportNoDefaultSetting = QLatin1String("DisableDefaultImports");
     settings.addOption(qmlImportNoDefaultSetting, false);
 
-    QCommandLineOption qmltypesFilesOption(
+    QCommandLineOption qmldirFilesOption(
             QStringList() << "i"
                           << "qmltypes",
-            QLatin1String("Import the specified qmltypes files. By default, all qmltypes files "
-                          "found in the current directory are used. When this option is set, you "
-                          "have to explicitly add files from the current directory if you want "
-                          "them to be used."),
-            QLatin1String("qmltypes"));
-    parser.addOption(qmltypesFilesOption);
-    const QString qmltypesFilesSetting = QLatin1String("OverwriteImportTypes");
-    settings.addOption(qmltypesFilesSetting);
+            QLatin1String("Import the specified qmldir files. By default, the qmldir file found "
+                          "in the current directory is used if present. If no qmldir file is found,"
+                          "but qmltypes files are, those are imported instead. When this option is "
+                          "set, you have to explicitly add the qmldir or any qmltypes files in the "
+                          "current directory if you want it to be used. Importing qmltypes files "
+                          "without their corresponding qmldir file is inadvisable."),
+            QLatin1String("qmldirs"));
+    parser.addOption(qmldirFilesOption);
+    const QString qmldirFilesSetting = QLatin1String("OverwriteImportTypes");
+    settings.addOption(qmldirFilesSetting);
+
+    QCommandLineOption absolutePath(
+            QStringList() << "absolute-path",
+            QLatin1String("Use absolute paths for logging instead of relative ones."));
+    absolutePath.setFlags(QCommandLineOption::HiddenFromHelp);
+    parser.addOption(absolutePath);
+
+    QCommandLineOption fixFile(QStringList() << "f"
+                                             << "fix",
+                               QLatin1String("Automatically apply fix suggestions"));
+    parser.addOption(fixFile);
+
+    QCommandLineOption dryRun(QStringList() << "dry-run",
+                              QLatin1String("Only print out the contents of the file after fix "
+                                            "suggestions without applying them"));
+    parser.addOption(dryRun);
+
+    QCommandLineOption listPluginsOption(QStringList() << "list-plugins",
+                                         QLatin1String("List all available plugins"));
+    parser.addOption(listPluginsOption);
+
+    QCommandLineOption pluginsDisable(
+            QStringList() << "D"
+                          << "disable-plugins",
+            QLatin1String("List of qmllint plugins to disable (all to disable all plugins)"),
+            QLatin1String("plugins"));
+    parser.addOption(pluginsDisable);
+    const QString pluginsDisableSetting = QLatin1String("DisablePlugins");
+    settings.addOption(pluginsDisableSetting);
+
+    QCommandLineOption pluginPathsOption(
+            QStringList() << "P"
+                          << "plugin-paths",
+            QLatin1String("Look for qmllint plugins in specified directory"),
+            QLatin1String("directory"));
+    parser.addOption(pluginPathsOption);
 
     parser.addPositionalArgument(QLatin1String("files"),
                                  QLatin1String("list of qml or js files to verify"));
-
     parser.process(app);
 
     if (parser.isSet(writeDefaultsOption)) {
@@ -323,6 +174,11 @@ All warnings can be set to three levels:
                                                         : settings.value(settingsName).toString();
                 auto &option = it.value();
 
+                // Do not try to set the levels if it's due to a default config option.
+                // This way we can tell which options have actually been overwritten by the user.
+                if (option.levelToString() == value && !parser.isSet(key))
+                    continue;
+
                 if (!option.setLevel(value)) {
                     qWarning() << "Invalid logging level" << value << "provided for" << it.key()
                                << "(allowed are: disable, info, warning)";
@@ -334,35 +190,9 @@ All warnings can be set to three levels:
 
     updateLogLevels();
 
-    const auto positionalArguments = parser.positionalArguments();
-    if (positionalArguments.isEmpty()) {
-        parser.showHelp(-1);
-    }
-
     bool silent = parser.isSet(silentOption);
+    bool useAbsolutePath = parser.isSet(absolutePath);
     bool useJson = parser.isSet(jsonOption);
-
-    // TODO: Remove after Qt 6.2
-    bool NoWarnUnqualified = parser.isSet(disableCheckUnqualified);
-    bool NoWarnWithStatement = parser.isSet(disableCheckWithStatement);
-    bool NoWarnInheritanceCycle = parser.isSet(disableCheckInheritanceCycle);
-
-    if (NoWarnUnqualified) {
-        options[QStringLiteral("unqualified")].m_disabled = true;
-        qWarning()
-                << "Warning: --no-unqualified-id is deprecated. Use --unqualified disable instead.";
-    }
-
-    if (NoWarnWithStatement) {
-        options[QStringLiteral("with")].m_disabled = true;
-        qWarning() << "Warning: --no-with-statement is deprecated. Use --with disable instead.";
-    }
-
-    if (NoWarnInheritanceCycle) {
-        options[QStringLiteral("inheritance-cycle")].m_disabled = true;
-        qWarning() << "Warning: --no-inheritance-cycle is deprecated. Use --inheritance-cycle "
-                      "disable instead.";
-    }
 
     // use host qml import path as a sane default if not explicitly disabled
     QStringList defaultImportPaths =
@@ -371,39 +201,62 @@ All warnings can be set to three levels:
     QStringList qmlImportPaths =
             parser.isSet(qmlImportNoDefault) ? QStringList {} : defaultImportPaths;
 
-    QStringList defaultQmltypesFiles;
-    if (parser.isSet(qmltypesFilesOption)) {
-        defaultQmltypesFiles = parser.values(qmltypesFilesOption);
+    QStringList defaultQmldirFiles;
+    if (parser.isSet(qmldirFilesOption)) {
+        defaultQmldirFiles = parser.values(qmldirFilesOption);
     } else {
-        // If none are given explicitly, use the qmltypes files from the current directory.
-        QDirIterator it(".", {"*.qmltypes"}, QDir::Files);
-        while (it.hasNext()) {
-            it.next();
-            defaultQmltypesFiles.append(it.fileInfo().absoluteFilePath());
+        // If nothing given explicitly, use the qmldir file from the current directory.
+        QFileInfo qmldirFile(QStringLiteral("qmldir"));
+        if (qmldirFile.isFile()) {
+            defaultQmldirFiles.append(qmldirFile.absoluteFilePath());
+        } else {
+            // If no qmldir file is found, use the qmltypes files
+            // from the current directory for backwards compatibility.
+            QDirIterator it(".", {"*.qmltypes"}, QDir::Files);
+            while (it.hasNext()) {
+                it.next();
+                defaultQmldirFiles.append(it.fileInfo().absoluteFilePath());
+            }
         }
     }
-    QStringList qmltypesFiles = defaultQmltypesFiles;
+    QStringList qmldirFiles = defaultQmldirFiles;
 
     const QStringList defaultResourceFiles =
             parser.isSet(resourceOption) ? parser.values(resourceOption) : QStringList {};
     QStringList resourceFiles = defaultResourceFiles;
 
-#else
-    bool silent = false;
-    bool useJson = false;
-    bool warnUnqualified = true;
-    bool warnWithStatement = true;
-    bool warnInheritanceCycle = true;
-    QStringList qmlImportPaths {};
-    QStringList qmltypesFiles {};
-    QStringList resourceFiles {};
-#endif
     bool success = true;
-    QQmlJSImporter importer(qmlImportPaths, nullptr);
+
+    QStringList pluginPaths = { QQmlJSLinter::defaultPluginPath() };
+
+    if (parser.isSet(pluginPathsOption))
+        pluginPaths << parser.values(pluginPathsOption);
+
+    QQmlJSLinter linter(qmlImportPaths, pluginPaths, useAbsolutePath);
+
+    if (parser.isSet(listPluginsOption)) {
+        const std::vector<QQmlJSLinter::Plugin> &plugins = linter.plugins();
+        if (!plugins.empty()) {
+            qInfo().nospace().noquote() << "Plugin\t\t\tBuilt-in?\tVersion\tAuthor\t\tDescription";
+            for (const QQmlJSLinter::Plugin &plugin : plugins) {
+                qInfo().nospace().noquote()
+                        << plugin.name() << "\t\t\t" << (plugin.isBuiltin() ? "Yes" : "No")
+                        << "\t\t" << plugin.version() << "\t" << plugin.author() << "\t\t"
+                        << plugin.description();
+            }
+        } else {
+            qInfo() << "No plugins installed.";
+        }
+        return 0;
+    }
+
+    const auto positionalArguments = parser.positionalArguments();
+    if (positionalArguments.isEmpty()) {
+        parser.showHelp(-1);
+    }
 
     QJsonArray jsonFiles;
 
-#if QT_CONFIG(commandlineparser)
     for (const QString &filename : positionalArguments) {
         if (!parser.isSet(ignoreSettings)) {
             settings.search(filename);
@@ -419,12 +272,12 @@ All warnings can be set to three levels:
 
             addAbsolutePaths(resourceFiles, settings.value(resourceSetting).toStringList());
 
-            qmltypesFiles = defaultQmltypesFiles;
-            if (settings.isSet(qmltypesFilesSetting)
-                && !settings.value(qmltypesFilesSetting).toStringList().isEmpty()) {
-                qmltypesFiles = {};
-                addAbsolutePaths(qmltypesFiles,
-                                 settings.value(qmltypesFilesSetting).toStringList());
+            qmldirFiles = defaultQmldirFiles;
+            if (settings.isSet(qmldirFilesSetting)
+                && !settings.value(qmldirFilesSetting).toStringList().isEmpty()) {
+                qmldirFiles = {};
+                addAbsolutePaths(qmldirFiles,
+                                 settings.value(qmldirFilesSetting).toStringList());
             }
 
             if (parser.isSet(qmlImportNoDefault)
@@ -439,23 +292,120 @@ All warnings can be set to three levels:
                 qmlImportPaths << parser.values(qmlImportPathsOption);
 
             addAbsolutePaths(qmlImportPaths, settings.value(qmlImportPathsSetting).toStringList());
+
+            QSet<QString> disabledPlugins;
+
+            if (parser.isSet(pluginsDisable)) {
+                for (const QString &plugin : parser.values(pluginsDisable))
+                    disabledPlugins << plugin.toLower();
+            }
+
+            if (settings.isSet(pluginsDisableSetting)) {
+                for (const QString &plugin : settings.value(pluginsDisableSetting).toStringList())
+                    disabledPlugins << plugin.toLower();
+            }
+
+            linter.setPluginsEnabled(!disabledPlugins.contains("all"));
+
+            if (!linter.pluginsEnabled())
+                continue;
+
+            auto &plugins = linter.plugins();
+
+            for (auto &plugin : plugins)
+                plugin.setEnabled(!disabledPlugins.contains(plugin.name().toLower()));
         }
-#else
-    const auto arguments = app.arguments();
-    for (const QString &filename : arguments) {
-#endif
-        success &= lint_file(filename, silent, useJson ? &jsonFiles : nullptr, qmlImportPaths,
-                             qmltypesFiles, resourceFiles, options, importer);
+
+        const bool isFixing = parser.isSet(fixFile);
+
+        QQmlJSLinter::LintResult lintResult = linter.lintFile(
+                filename, nullptr, silent || isFixing, useJson ? &jsonFiles : nullptr,
+                qmlImportPaths, qmldirFiles, resourceFiles, options);
+        success &= (lintResult == QQmlJSLinter::LintSuccess);
+
+        if (isFixing) {
+            if (lintResult != QQmlJSLinter::LintSuccess && lintResult != QQmlJSLinter::HasWarnings)
+                continue;
+
+            QString fixedCode;
+            const QQmlJSLinter::FixResult result = linter.applyFixes(&fixedCode, silent);
+
+            if (result != QQmlJSLinter::NothingToFix && result != QQmlJSLinter::FixSuccess) {
+                success = false;
+                continue;
+            }
+
+            if (parser.isSet(dryRun)) {
+                QTextStream(stdout) << fixedCode;
+            } else {
+                if (result == QQmlJSLinter::NothingToFix) {
+                    if (!silent)
+                        qWarning().nospace() << "Nothing to fix in " << filename;
+                    continue;
+                }
+
+                const QString backupFile = filename + u".bak"_s;
+                if (QFile::exists(backupFile) && !QFile::remove(backupFile)) {
+                    if (!silent) {
+                        qWarning().nospace() << "Failed to remove old backup file " << backupFile
+                                             << ", aborting";
+                    }
+                    success = false;
+                    continue;
+                }
+                if (!QFile::copy(filename, backupFile)) {
+                    if (!silent) {
+                        qWarning().nospace()
+                                << "Failed to create backup file " << backupFile << ", aborting";
+                    }
+                    success = false;
+                    continue;
+                }
+
+                QFile file(filename);
+                if (!file.open(QIODevice::WriteOnly)) {
+                    if (!silent) {
+                        qWarning().nospace() << "Failed to open " << filename
+                                             << " for writing:" << file.errorString();
+                    }
+                    success = false;
+                    continue;
+                }
+
+                const QByteArray data = fixedCode.toUtf8();
+                if (file.write(data) != data.size()) {
+                    if (!silent) {
+                        qWarning().nospace() << "Failed to write new contents to " << filename
+                                             << ": " << file.errorString();
+                    }
+                    success = false;
+                    continue;
+                }
+                if (!silent) {
+                    qDebug().nospace() << "Applied fixes to " << filename << ". Backup created at "
+                                       << backupFile;
+                }
+            }
+        }
     }
 
     if (useJson) {
         QJsonObject result;
 
-        result[u"revision"_qs] = JSON_LOGGING_FORMAT_REVISION;
-        result[u"files"_qs] = jsonFiles;
+        result[u"revision"_s] = JSON_LOGGING_FORMAT_REVISION;
+        result[u"files"_s] = jsonFiles;
 
-        QTextStream(stdout) << QString::fromUtf8(
-                QJsonDocument(result).toJson(QJsonDocument::Compact));
+        QString fileName = parser.value(jsonOption);
+
+        const QByteArray json = QJsonDocument(result).toJson(QJsonDocument::Compact);
+
+        if (fileName == u"-") {
+            QTextStream(stdout) << QString::fromUtf8(json);
+        } else {
+            QFile file(fileName);
+            file.open(QFile::WriteOnly);
+            file.write(json);
+        }
     }
 
     return success ? 0 : -1;

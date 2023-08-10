@@ -1,13 +1,13 @@
-# SymbolsHelper-Confirmed: 6.2.4 amd64 arm64
+# SymbolsHelper-Confirmed: 6.4.0 amd64
 libQt6QuickTemplates2.so.6 libqt6quicktemplates2-6 #MINVER#
-| libqt6quicktemplates2-6 #MINVER#, qt6-declarative-abi (= 6.2.4)
+| libqt6quicktemplates2-6 #MINVER#, qt6-declarative-abi (= 6.4.2)
 * Build-Depends-Packages: qt6-declarative-dev, qt6-declarative-private-dev
  _Z32QQuickTemplates_initializeModulev@Base 6.2.0
  _Z36qml_register_types_QtQuick_Templatesv@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# _ZGVZN9QMetaType21registerConverterImplI5QListI21QPersistentModelIndexE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# _ZGVZN9QMetaType21registerConverterImplI5QListIiE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# _ZGVZN9QMetaType23registerMutableViewImplI5QListI21QPersistentModelIndexE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS8_EES_S_E10unregister@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# _ZGVZN9QMetaType23registerMutableViewImplI5QListIiE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS7_EES_S_E10unregister@Base 6.2.4
+ _ZGVZN9QMetaType21registerConverterImplI5QListI10QQuickIconE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.4.0
+ _ZGVZN9QMetaType21registerConverterImplI5QListIN2Qt3KeyEE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.4.0
+ _ZGVZN9QMetaType23registerMutableViewImplI5QListI10QQuickIconE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS8_EES_S_E10unregister@Base 6.4.0
+ _ZGVZN9QMetaType23registerMutableViewImplI5QListIN2Qt3KeyEE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS9_EES_S_E10unregister@Base 6.4.0
  _ZN10QQuickDial10setPressedEb@Base 6.2.0
  _ZN10QQuickDial10touchEventEP11QTouchEvent@Base 6.2.0
  _ZN10QQuickDial10wheelEventEP11QWheelEvent@Base 6.2.0
@@ -564,8 +564,8 @@ libQt6QuickTemplates2.so.6 libqt6quicktemplates2-6 #MINVER#
  _ZN12QQuickTabBar9itemMovedEiP10QQuickItem@Base 6.2.0
  _ZN12QQuickTabBarC1EP10QQuickItem@Base 6.2.0
  _ZN12QQuickTabBarC2EP10QQuickItem@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# _ZN13QMetaSequence12MetaSequenceI5QListI21QPersistentModelIndexEE5valueE@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# _ZN13QMetaSequence12MetaSequenceI5QListIiEE5valueE@Base 6.2.4
+ _ZN13QMetaSequence12MetaSequenceI5QListI10QQuickIconEE5valueE@Base 6.4.0
+ _ZN13QMetaSequence12MetaSequenceI5QListIN2Qt3KeyEEE5valueE@Base 6.4.0
  _ZN13QQuickControl10classBeginEv@Base 6.2.0
  _ZN13QQuickControl10fontChangeERK5QFontS2_@Base 6.2.0
  _ZN13QQuickControl10itemChangeEN10QQuickItem10ItemChangeERKNS0_14ItemChangeDataE@Base 6.2.0
@@ -991,9 +991,9 @@ libQt6QuickTemplates2.so.6 libqt6quicktemplates2-6 #MINVER#
  _ZN14QQuickTextAreaD0Ev@Base 6.2.0
  _ZN14QQuickTextAreaD1Ev@Base 6.2.0
  _ZN14QQuickTextAreaD2Ev@Base 6.2.0
- _ZN14QtQuickPrivate13beginDeferredEP7QObjectRK7QString@Base 6.2.0
+ _ZN14QtQuickPrivate13beginDeferredEP7QObjectRK7QStringP28QQuickUntypedDeferredPointerb@Base 6.3.0
  _ZN14QtQuickPrivate14cancelDeferredEP7QObjectRK7QString@Base 6.2.0
- _ZN14QtQuickPrivate16completeDeferredEP7QObjectRK7QString@Base 6.2.0
+ _ZN14QtQuickPrivate16completeDeferredEP7QObjectRK7QStringP28QQuickUntypedDeferredPointer@Base 6.3.0
  _ZN15QQuickContainer10insertItemEiP10QQuickItem@Base 6.2.0
  _ZN15QQuickContainer10itemChangeEN10QQuickItem10ItemChangeERKNS0_14ItemChangeDataE@Base 6.2.0
  _ZN15QQuickContainer10removeItemEP10QQuickItem@Base 6.2.0
@@ -1037,7 +1037,6 @@ libQt6QuickTemplates2.so.6 libqt6quicktemplates2-6 #MINVER#
  _ZN15QQuickPopupItem11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
  _ZN15QQuickPopupItem11qt_metacastEPKc@Base 6.2.0
  _ZN15QQuickPopupItem12focusInEventEP11QFocusEvent@Base 6.2.0
- _ZN15QQuickPopupItem12grabShortcutEv@Base 6.2.0
  _ZN15QQuickPopupItem12localeChangeERK7QLocaleS2_@Base 6.2.0
  _ZN15QQuickPopupItem12mirrorChangeEv@Base 6.2.0
  _ZN15QQuickPopupItem12updatePolishEv@Base 6.2.0
@@ -1047,7 +1046,6 @@ libQt6QuickTemplates2.so.6 libqt6quicktemplates2-6 #MINVER#
  _ZN15QQuickPopupItem13paddingChangeERK9QMarginsFS2_@Base 6.2.0
  _ZN15QQuickPopupItem14geometryChangeERK6QRectFS2_@Base 6.2.0
  _ZN15QQuickPopupItem14mouseMoveEventEP11QMouseEvent@Base 6.2.0
- _ZN15QQuickPopupItem14ungrabShortcutEv@Base 6.2.0
  _ZN15QQuickPopupItem15keyReleaseEventEP9QKeyEvent@Base 6.2.0
  _ZN15QQuickPopupItem15mousePressEventEP11QMouseEvent@Base 6.2.0
  _ZN15QQuickPopupItem16mouseUngrabEventEv@Base 6.2.0
@@ -1059,7 +1057,6 @@ libQt6QuickTemplates2.so.6 libqt6quicktemplates2-6 #MINVER#
  _ZN15QQuickPopupItem21childMouseEventFilterEP10QQuickItemP6QEvent@Base 6.2.0
  _ZN15QQuickPopupItem21mouseDoubleClickEventEP11QMouseEvent@Base 6.2.0
  _ZN15QQuickPopupItem26accessibilityActiveChangedEb@Base 6.2.0
- _ZN15QQuickPopupItem5eventEP6QEvent@Base 6.2.0
  _ZN15QQuickPopupItemC1EP11QQuickPopup@Base 6.2.0
  _ZN15QQuickPopupItemC2EP11QQuickPopup@Base 6.2.0
  _ZN15QQuickScrollBar10classBeginEv@Base 6.2.0
@@ -1111,6 +1108,7 @@ libQt6QuickTemplates2.so.6 libqt6quicktemplates2-6 #MINVER#
  _ZN15QQuickSplitView14geometryChangeERK6QRectFS2_@Base 6.2.0
  _ZN15QQuickSplitView14hoverMoveEventEP11QHoverEvent@Base 6.2.0
  _ZN15QQuickSplitView14setOrientationEN2Qt11OrientationE@Base 6.2.0
+ _ZN15QQuickSplitView15hoverLeaveEventEP11QHoverEvent@Base 6.4.0
  _ZN15QQuickSplitView15resizingChangedEv@Base 6.2.0
  _ZN15QQuickSplitView16staticMetaObjectE@Base 6.2.0
  _ZN15QQuickSplitView17componentCompleteEv@Base 6.2.0
@@ -1368,6 +1366,7 @@ libQt6QuickTemplates2.so.6 libqt6quicktemplates2-6 #MINVER#
  _ZN17QQuickMenuPrivateC1Ev@Base 6.2.0
  _ZN17QQuickMenuPrivateC2Ev@Base 6.2.0
  _ZN17QQuickPanePrivate11contentDataEv@Base 6.2.0
+ _ZN17QQuickPanePrivate11handlePressERK7QPointFm@Base 6.4.0
  _ZN17QQuickPanePrivate14getContentItemEv@Base 6.2.0
  _ZN17QQuickPanePrivate15contentChildrenEv@Base 6.2.0
  _ZN17QQuickPanePrivate18updateContentWidthEv@Base 6.2.0
@@ -1634,11 +1633,11 @@ libQt6QuickTemplates2.so.6 libqt6quicktemplates2-6 #MINVER#
  _ZN20QQuickAbstractButtonD1Ev@Base 6.2.0
  _ZN20QQuickAbstractButtonD2Ev@Base 6.2.0
  _ZN20QQuickControlPrivate10calcLocaleEPK10QQuickItem@Base 6.2.0
- _ZN20QQuickControlPrivate10handleMoveERK7QPointF@Base 6.2.0
+ _ZN20QQuickControlPrivate10handleMoveERK7QPointFm@Base 6.3.0
  _ZN20QQuickControlPrivate10parentFontEPK10QQuickItem@Base 6.2.0
  _ZN20QQuickControlPrivate10updateFontERK5QFont@Base 6.2.0
  _ZN20QQuickControlPrivate11acceptTouchERK11QEventPoint@Base 6.2.0
- _ZN20QQuickControlPrivate11handlePressERK7QPointF@Base 6.2.0
+ _ZN20QQuickControlPrivate11handlePressERK7QPointFm@Base 6.3.0
  _ZN20QQuickControlPrivate11hideOldItemEP10QQuickItem@Base 6.2.0
  _ZN20QQuickControlPrivate11inheritFontERK5QFont@Base 6.2.0
  _ZN20QQuickControlPrivate11resolveFontEv@Base 6.2.0
@@ -1647,11 +1646,12 @@ libQt6QuickTemplates2.so.6 libqt6quicktemplates2-6 #MINVER#
  _ZN20QQuickControlPrivate12mirrorChangeEv@Base 6.2.0
  _ZN20QQuickControlPrivate12setLeftInsetEdb@Base 6.2.0
  _ZN20QQuickControlPrivate12updateLocaleERK7QLocaleb@Base 6.2.0
- _ZN20QQuickControlPrivate13handleReleaseERK7QPointF@Base 6.2.0
+ _ZN20QQuickControlPrivate13handleReleaseERK7QPointFm@Base 6.3.0
  _ZN20QQuickControlPrivate13itemDestroyedEP10QQuickItem@Base 6.2.0
  _ZN20QQuickControlPrivate13resizeContentEv@Base 6.2.0
  _ZN20QQuickControlPrivate13setRightInsetEdb@Base 6.2.0
  _ZN20QQuickControlPrivate13setTopPaddingEdb@Base 6.2.0
+ _ZN20QQuickControlPrivate13unhideOldItemEP13QQuickControlP10QQuickItem@Base 6.4.0
  _ZN20QQuickControlPrivate14getContentItemEv@Base 6.2.0
  _ZN20QQuickControlPrivate14setBottomInsetEdb@Base 6.2.0
  _ZN20QQuickControlPrivate14setLeftPaddingEdb@Base 6.2.0
@@ -1838,6 +1838,18 @@ libQt6QuickTemplates2.so.6 libqt6quicktemplates2-6 #MINVER#
  _ZN21QQuickOverlayAttached8setModalEP13QQmlComponent@Base 6.2.0
  _ZN21QQuickOverlayAttachedC1EP7QObject@Base 6.2.0
  _ZN21QQuickOverlayAttachedC2EP7QObject@Base 6.2.0
+ _ZN21QQuickPopupPositioner10repositionEv@Base 6.4.0
+ _ZN21QQuickPopupPositioner13setParentItemEP10QQuickItem@Base 6.4.0
+ _ZN21QQuickPopupPositioner16itemChildRemovedEP10QQuickItemS1_@Base 6.4.0
+ _ZN21QQuickPopupPositioner17itemParentChangedEP10QQuickItemS1_@Base 6.4.0
+ _ZN21QQuickPopupPositioner19itemGeometryChangedEP10QQuickItem20QQuickGeometryChangeRK6QRectF@Base 6.4.0
+ _ZN21QQuickPopupPositioner20addAncestorListenersEP10QQuickItem@Base 6.4.0
+ _ZN21QQuickPopupPositioner23removeAncestorListenersEP10QQuickItem@Base 6.4.0
+ _ZN21QQuickPopupPositionerC1EP11QQuickPopup@Base 6.4.0
+ _ZN21QQuickPopupPositionerC2EP11QQuickPopup@Base 6.4.0
+ _ZN21QQuickPopupPositionerD0Ev@Base 6.4.0
+ _ZN21QQuickPopupPositionerD1Ev@Base 6.4.0
+ _ZN21QQuickPopupPositionerD2Ev@Base 6.4.0
  _ZN21QQuickRangeSliderNode10setHoveredEb@Base 6.2.0
  _ZN21QQuickRangeSliderNode10setPressedEb@Base 6.2.0
  _ZN21QQuickRangeSliderNode11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
@@ -1935,19 +1947,20 @@ libQt6QuickTemplates2.so.6 libqt6quicktemplates2-6 #MINVER#
  _ZN22QQuickPopupItemPrivate21implicitHeightChangedEv@Base 6.2.0
  _ZN22QQuickPopupItemPrivateC1EP11QQuickPopup@Base 6.2.0
  _ZN22QQuickPopupItemPrivateC2EP11QQuickPopup@Base 6.2.0
- _ZN22QQuickSplitViewPrivate10handleMoveERK7QPointF@Base 6.2.0
- _ZN22QQuickSplitViewPrivate11handlePressERK7QPointF@Base 6.2.0
+ _ZN22QQuickSplitViewPrivate10handleMoveERK7QPointFm@Base 6.3.0
+ _ZN22QQuickSplitViewPrivate11handlePressERK7QPointFm@Base 6.3.0
  _ZN22QQuickSplitViewPrivate11setResizingEb@Base 6.2.0
  _ZN22QQuickSplitViewPrivate12resizeHandleEP10QQuickItem@Base 6.2.0
  _ZN22QQuickSplitViewPrivate12updatePolishEv@Base 6.2.0
  _ZN22QQuickSplitViewPrivate13createHandlesEv@Base 6.2.0
- _ZN22QQuickSplitViewPrivate13handleReleaseERK7QPointF@Base 6.2.0
+ _ZN22QQuickSplitViewPrivate13handleReleaseERK7QPointFm@Base 6.3.0
  _ZN22QQuickSplitViewPrivate13requestLayoutEv@Base 6.2.0
  _ZN22QQuickSplitViewPrivate13resizeHandlesEv@Base 6.2.0
  _ZN22QQuickSplitViewPrivate14destroyHandlesEv@Base 6.2.0
  _ZN22QQuickSplitViewPrivate14getContentItemEv@Base 6.2.0
  _ZN22QQuickSplitViewPrivate15updateFillIndexEv@Base 6.2.0
  _ZN22QQuickSplitViewPrivate16createHandleItemEi@Base 6.2.0
+ _ZN22QQuickSplitViewPrivate18updateCursorHandleEP10QQuickItem@Base 6.4.0
  _ZN22QQuickSplitViewPrivate19layoutPositionItemsEPK10QQuickItem@Base 6.2.0
  _ZN22QQuickSplitViewPrivate19removeExcessHandlesEv@Base 6.2.0
  _ZN22QQuickSplitViewPrivate19updateHoveredHandleEP10QQuickItem@Base 6.2.0
@@ -1966,6 +1979,35 @@ libQt6QuickTemplates2.so.6 libqt6quicktemplates2-6 #MINVER#
  _ZN22QQuickTextAreaAttached16staticMetaObjectE@Base 6.2.0
  _ZN22QQuickTextAreaAttachedC1EP7QObject@Base 6.2.0
  _ZN22QQuickTextAreaAttachedC2EP7QObject@Base 6.2.0
+ _ZN22QQuickTreeViewDelegate10setCurrentEb@Base 6.4.0
+ _ZN22QQuickTreeViewDelegate11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.3.0
+ _ZN22QQuickTreeViewDelegate11qt_metacastEPKc@Base 6.3.0
+ _ZN22QQuickTreeViewDelegate11setExpandedEb@Base 6.3.0
+ _ZN22QQuickTreeViewDelegate11setSelectedEb@Base 6.4.0
+ _ZN22QQuickTreeViewDelegate11setTreeViewEP14QQuickTreeView@Base 6.3.0
+ _ZN22QQuickTreeViewDelegate12depthChangedEv@Base 6.3.0
+ _ZN22QQuickTreeViewDelegate13setIsTreeNodeEb@Base 6.3.0
+ _ZN22QQuickTreeViewDelegate13setLeftMarginEd@Base 6.3.0
+ _ZN22QQuickTreeViewDelegate14currentChangedEv@Base 6.4.0
+ _ZN22QQuickTreeViewDelegate14geometryChangeERK6QRectFS2_@Base 6.3.0
+ _ZN22QQuickTreeViewDelegate14setHasChildrenEb@Base 6.3.0
+ _ZN22QQuickTreeViewDelegate14setIndentationEd@Base 6.3.0
+ _ZN22QQuickTreeViewDelegate14setRightMarginEd@Base 6.3.0
+ _ZN22QQuickTreeViewDelegate15expandedChangedEv@Base 6.3.0
+ _ZN22QQuickTreeViewDelegate15mousePressEventEP11QMouseEvent@Base 6.3.0
+ _ZN22QQuickTreeViewDelegate15selectedChangedEv@Base 6.4.0
+ _ZN22QQuickTreeViewDelegate15treeviewChangedEv@Base 6.3.0
+ _ZN22QQuickTreeViewDelegate16indicatorChangedEv@Base 6.3.0
+ _ZN22QQuickTreeViewDelegate16staticMetaObjectE@Base 6.3.0
+ _ZN22QQuickTreeViewDelegate17componentCompleteEv@Base 6.3.0
+ _ZN22QQuickTreeViewDelegate17isTreeNodeChangedEv@Base 6.3.0
+ _ZN22QQuickTreeViewDelegate17leftMarginChangedEv@Base 6.3.0
+ _ZN22QQuickTreeViewDelegate18hasChildrenChangedEv@Base 6.3.0
+ _ZN22QQuickTreeViewDelegate18indentationChangedEv@Base 6.3.0
+ _ZN22QQuickTreeViewDelegate18rightMarginChangedEv@Base 6.3.0
+ _ZN22QQuickTreeViewDelegate8setDepthEi@Base 6.3.0
+ _ZN22QQuickTreeViewDelegateC1EP10QQuickItem@Base 6.3.0
+ _ZN22QQuickTreeViewDelegateC2EP10QQuickItem@Base 6.3.0
  _ZN23QQuickApplicationWindow10classBeginEv@Base 6.2.0
  _ZN23QQuickApplicationWindow10setMenuBarEP10QQuickItem@Base 6.2.0
  _ZN23QQuickApplicationWindow11fontChangedEv@Base 6.2.0
@@ -2120,12 +2162,12 @@ libQt6QuickTemplates2.so.6 libqt6quicktemplates2-6 #MINVER#
  _ZN26QQuickHorizontalHeaderViewD0Ev@Base 6.2.0
  _ZN26QQuickHorizontalHeaderViewD1Ev@Base 6.2.0
  _ZN26QQuickHorizontalHeaderViewD2Ev@Base 6.2.0
- _ZN27QQuickAbstractButtonPrivate10handleMoveERK7QPointF@Base 6.2.0
- _ZN27QQuickAbstractButtonPrivate11handlePressERK7QPointF@Base 6.2.0
+ _ZN27QQuickAbstractButtonPrivate10handleMoveERK7QPointFm@Base 6.3.0
+ _ZN27QQuickAbstractButtonPrivate11handlePressERK7QPointFm@Base 6.3.0
  _ZN27QQuickAbstractButtonPrivate12grabShortcutEv@Base 6.2.0
  _ZN27QQuickAbstractButtonPrivate12handleUngrabEv@Base 6.2.0
  _ZN27QQuickAbstractButtonPrivate12setMovePointERK7QPointF@Base 6.2.0
- _ZN27QQuickAbstractButtonPrivate13handleReleaseERK7QPointF@Base 6.2.0
+ _ZN27QQuickAbstractButtonPrivate13handleReleaseERK7QPointFm@Base 6.3.0
  _ZN27QQuickAbstractButtonPrivate13itemDestroyedEP10QQuickItem@Base 6.2.4
  _ZN27QQuickAbstractButtonPrivate13setPressPointERK7QPointF@Base 6.2.0
  _ZN27QQuickAbstractButtonPrivate14ungrabShortcutEv@Base 6.2.0
@@ -2145,7 +2187,7 @@ libQt6QuickTemplates2.so.6 libqt6quicktemplates2-6 #MINVER#
  _ZN27QQuickAbstractButtonPrivate5clickEv@Base 6.2.0
  _ZN27QQuickAbstractButtonPrivate6toggleEb@Base 6.2.0
  _ZN27QQuickAbstractButtonPrivate7setTextERK7QStringb@Base 6.2.0
- _ZN27QQuickAbstractButtonPrivate7triggerEv@Base 6.2.0
+ _ZN27QQuickAbstractButtonPrivate7triggerEb@Base 6.3.0
  _ZN27QQuickSwipeDelegateAttached10setPressedEb@Base 6.2.0
  _ZN27QQuickSwipeDelegateAttached11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
  _ZN27QQuickSwipeDelegateAttached11qt_metacastEPKc@Base 6.2.0
@@ -2221,7 +2263,6 @@ libQt6QuickTemplates2.so.6 libqt6quicktemplates2-6 #MINVER#
  _ZN32QQuickSelectionRectangleAttached16staticMetaObjectE@Base 6.2.0
  _ZN32QQuickSelectionRectangleAttachedC1EP7QObject@Base 6.2.0
  _ZN32QQuickSelectionRectangleAttachedC2EP7QObject@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# _ZN3QV414QObjectWrapper4wrapEPNS_15ExecutionEngineEP7QObject@Base 6.2.4
  _ZNK10QQuickDial10metaObjectEv@Base 6.2.0
  _ZNK10QQuickDial14accessibleRoleEv@Base 6.2.0
  _ZNK10QQuickDial2toEv@Base 6.2.0
@@ -2412,7 +2453,6 @@ libQt6QuickTemplates2.so.6 libqt6quicktemplates2-6 #MINVER#
  _ZNK12QQuickTabBar14accessibleRoleEv@Base 6.2.0
  _ZNK12QQuickTabBar8positionEv@Base 6.2.0
  _ZNK12QQuickTabBar9isContentEP10QQuickItem@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# _ZNK13QCborValueRef5toMapEv@Base 6.2.4
  _ZNK13QQuickControl10backgroundEv@Base 6.2.0
  _ZNK13QQuickControl10isMirroredEv@Base 6.2.0
  _ZNK13QQuickControl10metaObjectEv@Base 6.2.0
@@ -2794,6 +2834,8 @@ libQt6QuickTemplates2.so.6 libqt6quicktemplates2-6 #MINVER#
  _ZNK21QQuickOverlayAttached5modalEv@Base 6.2.0
  _ZNK21QQuickOverlayAttached7overlayEv@Base 6.2.0
  _ZNK21QQuickOverlayAttached8modelessEv@Base 6.2.0
+ _ZNK21QQuickPopupPositioner10parentItemEv@Base 6.4.0
+ _ZNK21QQuickPopupPositioner5popupEv@Base 6.4.0
  _ZNK21QQuickRangeSliderNode10metaObjectEv@Base 6.2.0
  _ZNK21QQuickRangeSliderNode14visualPositionEv@Base 6.2.0
  _ZNK21QQuickRangeSliderNode19implicitHandleWidthEv@Base 6.2.0
@@ -2824,7 +2866,7 @@ libQt6QuickTemplates2.so.6 libqt6quicktemplates2-6 #MINVER#
  _ZNK21QQuickTumblerAttached12displacementEv@Base 6.2.0
  _ZNK21QQuickTumblerAttached7tumblerEv@Base 6.2.0
  _ZNK22QQuickContainerPrivate6itemAtEi@Base 6.2.0
- _ZNK22QQuickPopupItemPrivate13parentPaletteEv@Base 6.2.0
+ _ZNK22QQuickPopupItemPrivate13parentPaletteERK8QPalette@Base 6.4.0
  _ZNK22QQuickPopupItemPrivate14defaultPaletteEv@Base 6.2.0
  _ZNK22QQuickPopupItemPrivate15providesPaletteEv@Base 6.2.0
  _ZNK22QQuickPopupItemPrivate7paletteEv@Base 6.2.0
@@ -2834,6 +2876,18 @@ libQt6QuickTemplates2.so.6 libqt6quicktemplates2-6 #MINVER#
  _ZNK22QQuickSplitViewPrivate24handleIndexForSplitIndexEi@Base 6.2.0
  _ZNK22QQuickTextAreaAttached10metaObjectEv@Base 6.2.0
  _ZNK22QQuickTextAreaAttached9flickableEv@Base 6.2.0
+ _ZNK22QQuickTreeViewDelegate10isTreeNodeEv@Base 6.3.0
+ _ZNK22QQuickTreeViewDelegate10leftMarginEv@Base 6.3.0
+ _ZNK22QQuickTreeViewDelegate10metaObjectEv@Base 6.3.0
+ _ZNK22QQuickTreeViewDelegate11defaultFontEv@Base 6.3.0
+ _ZNK22QQuickTreeViewDelegate11hasChildrenEv@Base 6.3.0
+ _ZNK22QQuickTreeViewDelegate11indentationEv@Base 6.3.0
+ _ZNK22QQuickTreeViewDelegate11rightMarginEv@Base 6.3.0
+ _ZNK22QQuickTreeViewDelegate5depthEv@Base 6.3.0
+ _ZNK22QQuickTreeViewDelegate7currentEv@Base 6.4.0
+ _ZNK22QQuickTreeViewDelegate8expandedEv@Base 6.3.0
+ _ZNK22QQuickTreeViewDelegate8selectedEv@Base 6.4.0
+ _ZNK22QQuickTreeViewDelegate8treeViewEv@Base 6.3.0
  _ZNK23QQuickApplicationWindow10backgroundEv@Base 6.2.0
  _ZNK23QQuickApplicationWindow10metaObjectEv@Base 6.2.0
  _ZNK23QQuickApplicationWindow11contentItemEv@Base 6.2.0
@@ -2888,6 +2942,7 @@ libQt6QuickTemplates2.so.6 libqt6quicktemplates2-6 #MINVER#
  _ZNK27QQuickAbstractButtonPrivate20findExclusiveButtonsEv@Base 6.2.0
  _ZNK27QQuickSwipeDelegateAttached10metaObjectEv@Base 6.2.0
  _ZNK27QQuickSwipeDelegateAttached9isPressedEv@Base 6.2.0
+ _ZNK28QQuickDialogButtonBoxPrivate14standardButtonEP20QQuickAbstractButton@Base 6.3.0
  _ZNK28QQuickDialogButtonBoxPrivate15getContentWidthEv@Base 6.2.0
  _ZNK28QQuickDialogButtonBoxPrivate16getContentHeightEv@Base 6.2.0
  _ZNK29QQuickDialogButtonBoxAttached10buttonRoleEv@Base 6.2.0
@@ -2906,14 +2961,6 @@ libQt6QuickTemplates2.so.6 libqt6quicktemplates2-6 #MINVER#
  _ZNK32QQuickSelectionRectangleAttached10metaObjectEv@Base 6.2.0
  _ZNK32QQuickSelectionRectangleAttached7controlEv@Base 6.2.0
  _ZNK32QQuickSelectionRectangleAttached8draggingEv@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst)_ZNK3QV45Value2asINS_6StringEEEPKT_v@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst)_ZNK3QV45Value2asINS_7ManagedEEEPKT_v@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst)_ZNKSt8_Rb_treeI7QStringSt4pairIKS0_8QVariantESt10_Select1stIS4_ESt4lessIS0_ESaIS4_EE14_M_lower_boundEPKSt13_Rb_tree_nodeIS4_EPKSt18_Rb_tree_node_baseRS2_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst)_ZNKSt8_Rb_treeI7QStringSt4pairIKS0_8QVariantESt10_Select1stIS4_ESt4lessIS0_ESaIS4_EE4findERS2_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst)_ZNSt3_V28__rotateIPP10QQuickItemEET_S4_S4_S4_St26random_access_iterator_tag@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst)_ZNSt8_Rb_treeI7QStringSt4pairIKS0_8QVariantESt10_Select1stIS4_ESt4lessIS0_ESaIS4_EE8_M_eraseEPSt13_Rb_tree_nodeIS4_E@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst)_ZSt11swap_rangesIPP10QQuickItemS2_ET0_T_S4_S3_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst)_ZSt20get_temporary_bufferIP20QQuickAbstractButtonESt4pairIPT_lEl@Base 6.2.4
  _ZTI10QQuickDial@Base 6.2.0
  _ZTI10QQuickMenu@Base 6.2.0
  _ZTI10QQuickPage@Base 6.2.0
@@ -2963,7 +3010,6 @@ libQt6QuickTemplates2.so.6 libqt6quicktemplates2-6 #MINVER#
  _ZTI17QQuickRadioButton@Base 6.2.0
  _ZTI17QQuickRangeSlider@Base 6.2.0
  _ZTI17QQuickRoundButton@Base 6.2.0
- _ZTI17QQuickToolPrivate@Base 6.2.0
  _ZTI18QQuickFramePrivate@Base 6.2.0
  _ZTI18QQuickItemDelegate@Base 6.2.0
  _ZTI18QQuickPopupAnchors@Base 6.2.0
@@ -2987,6 +3033,7 @@ libQt6QuickTemplates2.so.6 libqt6quicktemplates2-6 #MINVER#
  _ZTI21QQuickDialogButtonBox@Base 6.2.0
  _ZTI21QQuickIndicatorButton@Base 6.2.0
  _ZTI21QQuickOverlayAttached@Base 6.2.0
+ _ZTI21QQuickPopupPositioner@Base 6.4.0
  _ZTI21QQuickRangeSliderNode@Base 6.2.0
  _ZTI21QQuickScrollIndicator@Base 6.2.0
  _ZTI21QQuickToolTipAttached@Base 6.2.0
@@ -2994,14 +3041,13 @@ libQt6QuickTemplates2.so.6 libqt6quicktemplates2-6 #MINVER#
  _ZTI22QQuickContainerPrivate@Base 6.2.0
  _ZTI22QQuickPopupItemPrivate@Base 6.2.0
  _ZTI22QQuickSplitViewPrivate@Base 6.2.0
- _ZTI22QQuickTabButtonPrivate@Base 6.2.0
  _ZTI22QQuickTextAreaAttached@Base 6.2.0
+ _ZTI22QQuickTreeViewDelegate@Base 6.3.0
  _ZTI23QQuickApplicationWindow@Base 6.2.0
  _ZTI23QQuickScrollBarAttached@Base 6.2.0
  _ZTI23QQuickSplitViewAttached@Base 6.2.0
  _ZTI23QQuickStackViewAttached@Base 6.2.0
  _ZTI23QQuickSwipeViewAttached@Base 6.2.0
- _ZTI24QQuickRadioButtonPrivate@Base 6.2.0
  _ZTI24QQuickSelectionRectangle@Base 6.2.0
  _ZTI24QQuickVerticalHeaderView@Base 6.2.0
  _ZTI25QQuickActionGroupAttached@Base 6.2.0
@@ -3009,24 +3055,21 @@ libQt6QuickTemplates2.so.6 libqt6quicktemplates2-6 #MINVER#
  _ZTI25QQuickItemDelegatePrivate@Base 6.2.0
  _ZTI25QQuickSplitHandleAttached@Base 6.2.0
  _ZTI26QQuickHorizontalHeaderView@Base 6.2.0
- _ZTI26QQuickMenuSeparatorPrivate@Base 6.2.0
- _ZTI26QQuickRadioDelegatePrivate@Base 6.2.0
  _ZTI26QQuickWindowQmlImplPrivate@Base 6.2.0
  _ZTI27QQuickAbstractButtonPrivate@Base 6.2.0
  _ZTI27QQuickSwipeDelegateAttached@Base 6.2.0
  _ZTI28QQuickDialogButtonBoxPrivate@Base 6.2.0
  _ZTI28QQuickPopupTransitionManager@Base 6.2.0
  _ZTI29QQuickDialogButtonBoxAttached@Base 6.2.0
- _ZTI29QQuickImplicitSizeItemPrivate@Base 6.2.0
  _ZTI29QQuickScrollIndicatorAttached@Base 6.2.0
  _ZTI30QQuickApplicationWindowPrivate@Base 6.2.0
  _ZTI31QQuickApplicationWindowAttached@Base 6.2.0
  _ZTI32QQuickSelectionRectangleAttached@Base 6.2.0
  _ZTI38QQuickItemViewTransitionChangeListener@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# _ZTIZN9QMetaType17registerConverterI5QListI21QPersistentModelIndexE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS3_EEEEbT1_EUlPKvPvE_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# _ZTIZN9QMetaType17registerConverterI5QListIiE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS2_EEEEbT1_EUlPKvPvE_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# _ZTIZN9QMetaType19registerMutableViewI5QListI21QPersistentModelIndexE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS3_EEEEbT1_EUlPvSB_E_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# _ZTIZN9QMetaType19registerMutableViewI5QListIiE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS2_EEEEbT1_EUlPvSA_E_@Base 6.2.4
+ _ZTIZN9QMetaType17registerConverterI5QListI10QQuickIconE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS3_EEEEbT1_EUlPKvPvE_@Base 6.4.0
+ _ZTIZN9QMetaType17registerConverterI5QListIN2Qt3KeyEE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS4_EEEEbT1_EUlPKvPvE_@Base 6.4.0
+ _ZTIZN9QMetaType19registerMutableViewI5QListI10QQuickIconE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS3_EEEEbT1_EUlPvSB_E_@Base 6.4.0
+ _ZTIZN9QMetaType19registerMutableViewI5QListIN2Qt3KeyEE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS4_EEEEbT1_EUlPvSC_E_@Base 6.4.0
  _ZTS10QQuickDial@Base 6.2.0
  _ZTS10QQuickMenu@Base 6.2.0
  _ZTS10QQuickPage@Base 6.2.0
@@ -3100,6 +3143,7 @@ libQt6QuickTemplates2.so.6 libqt6quicktemplates2-6 #MINVER#
  _ZTS21QQuickDialogButtonBox@Base 6.2.0
  _ZTS21QQuickIndicatorButton@Base 6.2.0
  _ZTS21QQuickOverlayAttached@Base 6.2.0
+ _ZTS21QQuickPopupPositioner@Base 6.4.0
  _ZTS21QQuickRangeSliderNode@Base 6.2.0
  _ZTS21QQuickScrollIndicator@Base 6.2.0
  _ZTS21QQuickToolTipAttached@Base 6.2.0
@@ -3109,6 +3153,7 @@ libQt6QuickTemplates2.so.6 libqt6quicktemplates2-6 #MINVER#
  _ZTS22QQuickSplitViewPrivate@Base 6.2.0
  _ZTS22QQuickTabButtonPrivate@Base 6.2.0
  _ZTS22QQuickTextAreaAttached@Base 6.2.0
+ _ZTS22QQuickTreeViewDelegate@Base 6.3.0
  _ZTS23QQuickApplicationWindow@Base 6.2.0
  _ZTS23QQuickScrollBarAttached@Base 6.2.0
  _ZTS23QQuickSplitViewAttached@Base 6.2.0
@@ -3136,10 +3181,10 @@ libQt6QuickTemplates2.so.6 libqt6quicktemplates2-6 #MINVER#
  _ZTS31QQuickApplicationWindowAttached@Base 6.2.0
  _ZTS32QQuickSelectionRectangleAttached@Base 6.2.0
  _ZTS38QQuickItemViewTransitionChangeListener@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# _ZTSZN9QMetaType17registerConverterI5QListI21QPersistentModelIndexE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS3_EEEEbT1_EUlPKvPvE_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# _ZTSZN9QMetaType17registerConverterI5QListIiE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS2_EEEEbT1_EUlPKvPvE_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# _ZTSZN9QMetaType19registerMutableViewI5QListI21QPersistentModelIndexE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS3_EEEEbT1_EUlPvSB_E_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# _ZTSZN9QMetaType19registerMutableViewI5QListIiE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS2_EEEEbT1_EUlPvSA_E_@Base 6.2.4
+ _ZTSZN9QMetaType17registerConverterI5QListI10QQuickIconE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS3_EEEEbT1_EUlPKvPvE_@Base 6.4.0
+ _ZTSZN9QMetaType17registerConverterI5QListIN2Qt3KeyEE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS4_EEEEbT1_EUlPKvPvE_@Base 6.4.0
+ _ZTSZN9QMetaType19registerMutableViewI5QListI10QQuickIconE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS3_EEEEbT1_EUlPvSB_E_@Base 6.4.0
+ _ZTSZN9QMetaType19registerMutableViewI5QListIN2Qt3KeyEE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS4_EEEEbT1_EUlPvSC_E_@Base 6.4.0
  _ZTV10QQuickDial@Base 6.2.0
  _ZTV10QQuickMenu@Base 6.2.0
  _ZTV10QQuickPage@Base 6.2.0
@@ -3188,8 +3233,6 @@ libQt6QuickTemplates2.so.6 libqt6quicktemplates2-6 #MINVER#
  _ZTV17QQuickRadioButton@Base 6.2.0
  _ZTV17QQuickRangeSlider@Base 6.2.0
  _ZTV17QQuickRoundButton@Base 6.2.0
- _ZTV17QQuickToolPrivate@Base 6.2.0
- _ZTV18QQuickFramePrivate@Base 6.2.0
  _ZTV18QQuickItemDelegate@Base 6.2.0
  _ZTV18QQuickPopupAnchors@Base 6.2.0
  _ZTV18QQuickPopupPrivate@Base 6.2.0
@@ -3212,6 +3255,7 @@ libQt6QuickTemplates2.so.6 libqt6quicktemplates2-6 #MINVER#
  _ZTV21QQuickDialogButtonBox@Base 6.2.0
  _ZTV21QQuickIndicatorButton@Base 6.2.0
  _ZTV21QQuickOverlayAttached@Base 6.2.0
+ _ZTV21QQuickPopupPositioner@Base 6.4.0
  _ZTV21QQuickRangeSliderNode@Base 6.2.0
  _ZTV21QQuickScrollIndicator@Base 6.2.0
  _ZTV21QQuickToolTipAttached@Base 6.2.0
@@ -3219,14 +3263,13 @@ libQt6QuickTemplates2.so.6 libqt6quicktemplates2-6 #MINVER#
  _ZTV22QQuickContainerPrivate@Base 6.2.0
  _ZTV22QQuickPopupItemPrivate@Base 6.2.0
  _ZTV22QQuickSplitViewPrivate@Base 6.2.0
- _ZTV22QQuickTabButtonPrivate@Base 6.2.0
  _ZTV22QQuickTextAreaAttached@Base 6.2.0
+ _ZTV22QQuickTreeViewDelegate@Base 6.3.0
  _ZTV23QQuickApplicationWindow@Base 6.2.0
  _ZTV23QQuickScrollBarAttached@Base 6.2.0
  _ZTV23QQuickSplitViewAttached@Base 6.2.0
  _ZTV23QQuickStackViewAttached@Base 6.2.0
  _ZTV23QQuickSwipeViewAttached@Base 6.2.0
- _ZTV24QQuickRadioButtonPrivate@Base 6.2.0
  _ZTV24QQuickSelectionRectangle@Base 6.2.0
  _ZTV24QQuickVerticalHeaderView@Base 6.2.0
  _ZTV25QQuickActionGroupAttached@Base 6.2.0
@@ -3234,56 +3277,19 @@ libQt6QuickTemplates2.so.6 libqt6quicktemplates2-6 #MINVER#
  _ZTV25QQuickItemDelegatePrivate@Base 6.2.0
  _ZTV25QQuickSplitHandleAttached@Base 6.2.0
  _ZTV26QQuickHorizontalHeaderView@Base 6.2.0
- _ZTV26QQuickMenuSeparatorPrivate@Base 6.2.0
- _ZTV26QQuickRadioDelegatePrivate@Base 6.2.0
- _ZTV26QQuickWindowQmlImplPrivate@Base 6.2.0
  _ZTV27QQuickAbstractButtonPrivate@Base 6.2.0
  _ZTV27QQuickSwipeDelegateAttached@Base 6.2.0
  _ZTV28QQuickDialogButtonBoxPrivate@Base 6.2.0
  _ZTV28QQuickPopupTransitionManager@Base 6.2.0
  _ZTV29QQuickDialogButtonBoxAttached@Base 6.2.0
- _ZTV29QQuickImplicitSizeItemPrivate@Base 6.2.0
  _ZTV29QQuickScrollIndicatorAttached@Base 6.2.0
  _ZTV30QQuickApplicationWindowPrivate@Base 6.2.0
  _ZTV31QQuickApplicationWindowAttached@Base 6.2.0
  _ZTV32QQuickSelectionRectangleAttached@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# _ZTV38QQuickItemViewTransitionChangeListener@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst)_ZZN9QMetaType21registerConverterImplI5QListI21QPersistentModelIndexE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst)_ZZN9QMetaType21registerConverterImplI5QListIiE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst)_ZZN9QMetaType23registerMutableViewImplI5QListI21QPersistentModelIndexE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS8_EES_S_E10unregister@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst)_ZZN9QMetaType23registerMutableViewImplI5QListIiE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS7_EES_S_E10unregister@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI21QPersistentModelIndexE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI21QPersistentModelIndexE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI21QPersistentModelIndexE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI21QPersistentModelIndexE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.4
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI4QUrlE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI4QUrlE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI4QUrlE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI4QUrlE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QLocaleE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QLocaleE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QLocaleE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QLocaleE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QStringE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QStringE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QStringE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QStringE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI8QVariantE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI8QVariantE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI8QVariantE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI8QVariantE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIP7QObjectE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES6_S7_S9_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIP7QObjectE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS7_E_4_FUNES6_S7_S7_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIP7QObjectE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES6_S7_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIbE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES4_S5_S7_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIbE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS5_E_4_FUNES4_S5_S5_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIbE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES4_S5_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIdE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES4_S5_S7_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIdE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS5_E_4_FUNES4_S5_S5_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIdE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES4_S5_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIiE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES4_S5_S7_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIiE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS5_E_4_FUNES4_S5_S5_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIiE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES4_S5_@Base 6.2.0
+ (optional=templinst)_ZZN9QMetaType21registerConverterImplI5QListI10QQuickIconE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.4.0
+ (optional=templinst)_ZZN9QMetaType21registerConverterImplI5QListIN2Qt3KeyEE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.4.0
+ (optional=templinst)_ZZN9QMetaType23registerMutableViewImplI5QListI10QQuickIconE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS8_EES_S_E10unregister@Base 6.4.0
+ (optional=templinst)_ZZN9QMetaType23registerMutableViewImplI5QListIN2Qt3KeyEE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS9_EES_S_E10unregister@Base 6.4.0
  (c++)"non-virtual thunk to QQuickAbstractButton::componentComplete()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickAbstractButton::~QQuickAbstractButton()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickAbstractButtonPrivate::itemDestroyed(QQuickItem*)@Base" 6.2.4
@@ -3358,7 +3364,7 @@ libQt6QuickTemplates2.so.6 libqt6quicktemplates2-6 #MINVER#
  (c++)"non-virtual thunk to QQuickPopupAnchors::~QQuickPopupAnchors()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickPopupItemPrivate::defaultPalette() const@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickPopupItemPrivate::palette() const@Base" 6.2.0
- (c++)"non-virtual thunk to QQuickPopupItemPrivate::parentPalette() const@Base" 6.2.0
+ (c++)"non-virtual thunk to QQuickPopupItemPrivate::parentPalette(QPalette const&) const@Base" 6.4.0
  (c++)"non-virtual thunk to QQuickPopupItemPrivate::providesPalette() const@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickPopupItemPrivate::resetPalette()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickPopupItemPrivate::setPalette(QQuickPalette*)@Base" 6.2.0
@@ -3391,6 +3397,7 @@ libQt6QuickTemplates2.so.6 libqt6quicktemplates2-6 #MINVER#
  (c++)"non-virtual thunk to QQuickTextField::classBegin()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickTextField::componentComplete()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickTextField::~QQuickTextField()@Base" 6.2.0
+ (c++)"non-virtual thunk to QQuickTreeViewDelegate::componentComplete()@Base" 6.3.0
  (c++)"non-virtual thunk to QQuickTumbler::componentComplete()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickTumbler::~QQuickTumbler()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickTumblerPrivate::defaultPalette() const@Base" 6.2.0

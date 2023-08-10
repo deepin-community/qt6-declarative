@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQml module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qv4object_p.h"
 #include "qv4objectproto_p.h"
@@ -61,17 +25,52 @@ DEFINE_OBJECT_VTABLE(Object);
 
 void Object::setInternalClass(Heap::InternalClass *ic)
 {
-    d()->internalClass.set(engine(), ic);
-    if (ic->isUsedAsProto)
-        ic->updateProtoUsage(d());
     Q_ASSERT(ic && ic->vtable);
-    uint nInline = d()->vtable()->nInlineProperties;
-    if (ic->size <= nInline)
-        return;
-    bool hasMD = d()->memberData != nullptr;
-    uint requiredSize = ic->size - nInline;
-    if (!(hasMD && requiredSize) || (hasMD && d()->memberData->values.size < requiredSize))
-        d()->memberData.set(ic->engine, MemberData::allocate(ic->engine, requiredSize, d()->memberData));
+    Heap::Object *p = d();
+
+    if (ic->numRedundantTransitions < p->internalClass.get()->numRedundantTransitions) {
+        // IC was rebuilt. The indices are different now. We need to move everything.
+
+        Scope scope(engine());
+
+        // We allocate before setting the new IC. Protect it from GC.
+        Scoped<InternalClass> newIC(scope, ic);
+
+        // Pick the members of the old IC that are still valid in the new IC.
+        // Order them by index in memberData (or inline data).
+        Scoped<MemberData> newMembers(scope, MemberData::allocate(scope.engine, ic->size));
+        for (uint i = 0; i < ic->size; ++i)
+            newMembers->set(scope.engine, i, get(ic->nameMap.at(i)));
+
+        p->internalClass.set(scope.engine, ic);
+        const uint nInline = p->vtable()->nInlineProperties;
+
+        if (ic->size > nInline)
+            p->memberData.set(scope.engine, MemberData::allocate(ic->engine, ic->size - nInline));
+        else
+            p->memberData.set(scope.engine, nullptr);
+
+        const auto &memberValues = newMembers->d()->values;
+        for (uint i = 0; i < ic->size; ++i)
+            setProperty(i, memberValues[i]);
+    } else {
+        // The old indices are still the same. No need to move any values.
+        // We may need to re-allocate, though.
+
+        p->internalClass.set(ic->engine, ic);
+        const uint nInline = p->vtable()->nInlineProperties;
+        if (ic->size > nInline) {
+            const uint requiredSize = ic->size - nInline;
+            if ((p->memberData ? p->memberData->values.size : 0) < requiredSize) {
+                p->memberData.set(ic->engine, MemberData::allocate(
+                                      ic->engine, requiredSize, p->memberData));
+            }
+        }
+    }
+
+    if (ic->isUsedAsProto())
+        ic->updateProtoUsage(p);
+
 }
 
 void Object::getProperty(const InternalClassEntry &entry, Property *p) const
@@ -460,7 +459,7 @@ ReturnedValue Object::internalGet(PropertyKey id, const Value *receiver, bool *h
 bool Object::internalPut(PropertyKey id, const Value &value, Value *receiver)
 {
     Scope scope(this);
-    if (scope.engine->hasException)
+    if (scope.hasException())
         return false;
 
     Object *r = receiver->objectValue();
@@ -523,7 +522,7 @@ bool Object::internalPut(PropertyKey id, const Value &value, Value *receiver)
         jsCallData.args[0] = value;
         *jsCallData.thisObject = *receiver;
         setter->call(jsCallData);
-        return !scope.engine->hasException;
+        return !scope.hasException();
     }
 
     // Data property
@@ -566,7 +565,7 @@ bool Object::internalDeleteProperty(PropertyKey id)
     if (id.isArrayIndex()) {
         uint index = id.asArrayIndex();
         Scope scope(engine());
-        if (scope.engine->hasException)
+        if (scope.hasException())
             return false;
 
         Scoped<ArrayData> ad(scope, arrayData());
@@ -958,7 +957,7 @@ bool Object::virtualDefineOwnProperty(Managed *m, PropertyKey id, const Property
 
 bool Object::virtualIsExtensible(const Managed *m)
 {
-    return m->d()->internalClass->extensible;
+    return m->d()->internalClass->isExtensible();
 }
 
 bool Object::virtualPreventExtensions(Managed *m)
@@ -982,7 +981,7 @@ bool Object::virtualSetPrototypeOf(Managed *m, const Object *proto)
     Heap::Object *protod = proto ? proto->d() : nullptr;
     if (current == protod)
         return true;
-    if (!o->internalClass()->extensible)
+    if (!o->internalClass()->isExtensible())
         return false;
     Heap::Object *p = protod;
     while (p) {
@@ -1105,7 +1104,7 @@ void Heap::ArrayObject::init(const QStringList &list)
     // The result is a new Array object with length equal to the length
     // of the QStringList, and the elements being the QStringList's
     // elements converted to JS Strings.
-    int len = list.count();
+    int len = list.size();
     a->arrayReserve(len);
     ScopedValue v(scope);
     for (int ii = 0; ii < len; ++ii)

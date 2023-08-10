@@ -1,0 +1,9 @@
+Document: qt6-qtqmlworkerscript-manual
+Title: Qt 6 qtqmlworkerscript
+Author: The Qt Company Ltd
+Abstract: This is the HTML documentation for Qt 6 Qt QML worker script
+Section: Programming/C++
+
+Format: HTML
+Index: /usr/share/doc/qt6-declarative-doc-html/html/qtqmlworkerscript/qtqtqmlworkerscript.index
+Files: /usr/share/doc/qt6-declarative-doc-html/html/qtqmlworkerscript/*.html

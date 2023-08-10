@@ -1,30 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2020 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the test suite of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:GPL-EXCEPT$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 3 as published by the Free Software
-** Foundation with exceptions as appearing in the file LICENSE.GPL3-EXCEPT
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2020 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only WITH Qt-GPL-exception-1.0
 
 #include <QtTest/QtTest>
 #include <QtTest/QSignalSpy>
@@ -73,6 +48,8 @@ private slots:
     void mouseGestureStarted();
     void cancel();
     void stationaryTouchWithChangingPressure();
+    void touchFiltering();
+    void nestedPinchAreaMouse();
 
 private:
     QQuickView *createAndShowView(const QString &file);
@@ -1266,22 +1243,22 @@ void tst_QQuickMultiPointTouchArea::mouseGestureStarted() // QTBUG-70258
 
     QPoint p1 = QPoint(distanceFromOrigin, distanceFromOrigin);
     QTest::mousePress(view.data(), Qt::LeftButton, Qt::NoModifier, p1);
-    QCOMPARE(gestureStartedSpy.count(), 0);
+    QCOMPARE(gestureStartedSpy.size(), 0);
 
     p1 += QPoint(dragThreshold, dragThreshold);
     QTest::mouseMove(view.data(), p1);
-    QCOMPARE(gestureStartedSpy.count(), 0);
+    QCOMPARE(gestureStartedSpy.size(), 0);
 
     p1 += QPoint(1, 1);
     QTest::mouseMove(view.data(), p1);
-    QTRY_COMPARE(gestureStartedSpy.count(), 1);
+    QTRY_COMPARE(gestureStartedSpy.size(), 1);
     QTRY_COMPARE(area->property("gestureStartedX").toInt(), distanceFromOrigin);
     QCOMPARE(area->property("gestureStartedY").toInt(), distanceFromOrigin);
 
     p1 += QPoint(10, 10);
     QTest::mouseMove(view.data(), p1);
     // if nobody called gesteure->grab(), gestureStarted will keep happening
-    QTRY_COMPARE(gestureStartedSpy.count(), grabGesture ? 1 : 2);
+    QTRY_COMPARE(gestureStartedSpy.size(), grabGesture ? 1 : 2);
     QCOMPARE(area->property("gestureStartedX").toInt(), distanceFromOrigin);
     QCOMPARE(area->property("gestureStartedY").toInt(), distanceFromOrigin);
 
@@ -1351,26 +1328,26 @@ void tst_QQuickMultiPointTouchArea::stationaryTouchWithChangingPressure() // QTB
     QCOMPARE(point1->pressed(), false);
 
     QPoint p1(20,100);
-    QMutableEventPoint tp1(1);
+    QEventPoint tp1(1);
 
-    tp1.setGlobalPosition(window->mapToGlobal(p1));
-    tp1.setState(QEventPoint::State::Pressed);
-    tp1.setPressure(0.5);
+    QMutableEventPoint::setGlobalPosition(tp1, window->mapToGlobal(p1));
+    QMutableEventPoint::setState(tp1, QEventPoint::State::Pressed);
+    QMutableEventPoint::setPressure(tp1, 0.5);
     qt_handleTouchEvent(window.data(), device, {tp1});
     QQuickTouchUtils::flush(window.data());
 
     QCOMPARE(point1->pressed(), true);
     QCOMPARE(point1->pressure(), 0.5);
 
-    tp1.setState(QEventPoint::State::Stationary);
-    tp1.setPressure(0.6);
+    QMutableEventPoint::setState(tp1, QEventPoint::State::Stationary);
+    QMutableEventPoint::setPressure(tp1, 0.6);
     qt_handleTouchEvent(window.data(), device, {tp1});
     QQuickTouchUtils::flush(window.data());
 
     QCOMPARE(point1->pressure(), 0.6);
 
-    tp1.setState(QEventPoint::State::Released);
-    tp1.setPressure(0);
+    QMutableEventPoint::setState(tp1, QEventPoint::State::Released);
+    QMutableEventPoint::setPressure(tp1, 0);
     qt_handleTouchEvent(window.data(), device, {tp1});
     QQuickTouchUtils::flush(window.data());
 
@@ -1378,6 +1355,70 @@ void tst_QQuickMultiPointTouchArea::stationaryTouchWithChangingPressure() // QTB
     QCOMPARE(point1->pressure(), 0);
 }
 
+void tst_QQuickMultiPointTouchArea::touchFiltering() // QTBUG-74028
+{
+    QScopedPointer<QQuickView> window(createAndShowView("nestedMouseArea.qml"));
+    QVERIFY(window->rootObject() != nullptr);
+    QQuickMultiPointTouchArea *mpta = window->rootObject()->findChild<QQuickMultiPointTouchArea*>();
+    QVERIFY(mpta);
+    QQuickMouseArea *ma = window->rootObject()->findChild<QQuickMouseArea*>();
+    QVERIFY(ma);
+
+    QSignalSpy mptaSpy(mpta, &QQuickMultiPointTouchArea::pressed);
+    const QPoint pt = window->rootObject()->boundingRect().center().toPoint();
+    QTest::touchEvent(window.data(), device).press(1, pt);
+    QQuickTouchUtils::flush(window.data());
+    QTRY_COMPARE(mpta->parentItem()->property("mptaPoint").toPoint(), pt);
+    QCOMPARE(mpta->parentItem()->property("maPoint").toPoint(), ma->boundingRect().center().toPoint());
+    QCOMPARE(mptaSpy.size(), 1);
+}
+
+void tst_QQuickMultiPointTouchArea::nestedPinchAreaMouse() // QTBUG-83662
+{
+    QScopedPointer<QQuickView> window(createAndShowView("nestedPinchArea.qml"));
+    QQuickMultiPointTouchArea *mpta = qobject_cast<QQuickMultiPointTouchArea *>(window->rootObject());
+    QVERIFY(mpta);
+
+    QQuickTouchPoint *point1 = mpta->findChild<QQuickTouchPoint*>("point1");
+    QCOMPARE(point1->pressed(), false);
+    QQuickTouchPoint *point2 = mpta->findChild<QQuickTouchPoint*>("point2");
+    QCOMPARE(point2->pressed(), false);
+    QSignalSpy pressedSpy(mpta, &QQuickMultiPointTouchArea::pressed);
+    QSignalSpy updatedSpy(mpta, &QQuickMultiPointTouchArea::updated);
+    QSignalSpy releasedSpy(mpta, &QQuickMultiPointTouchArea::released);
+
+    QPoint p1(20, 20);
+    QTest::mousePress(window.data(), Qt::LeftButton, Qt::NoModifier, p1);
+    QCOMPARE(point1->pressed(), true);
+    QCOMPARE(point2->pressed(), false);
+    QCOMPARE(pressedSpy.size(), 1);
+    QCOMPARE(mpta->property("pressedCount").toInt(), 1);
+    QCOMPARE(updatedSpy.size(), 0);
+    QCOMPARE(mpta->property("updatedCount").toInt(), 0);
+    QCOMPARE(releasedSpy.size(), 0);
+    QCOMPARE(mpta->property("releasedCount").toInt(), 0);
+
+    p1 += QPoint(0, 15);
+    QTest::mouseMove(window.data(), p1);
+    QCOMPARE(point1->pressed(), true);
+    QCOMPARE(point2->pressed(), false);
+    QCOMPARE(pressedSpy.size(), 1);
+    QCOMPARE(mpta->property("pressedCount").toInt(), 1);
+    QCOMPARE(updatedSpy.size(), 1);
+    QCOMPARE(mpta->property("updatedCount").toInt(), 1);
+    QCOMPARE(releasedSpy.size(), 0);
+    QCOMPARE(mpta->property("releasedCount").toInt(), 0);
+
+    QTest::mouseRelease(window.data(), Qt::LeftButton, Qt::NoModifier, p1);
+    QCOMPARE(point1->pressed(), false);
+    QCOMPARE(point2->pressed(), false);
+    QCOMPARE(pressedSpy.size(), 1);
+    QCOMPARE(mpta->property("pressedCount").toInt(), 1);
+    QCOMPARE(updatedSpy.size(), 1);
+    QCOMPARE(mpta->property("updatedCount").toInt(), 1);
+    QCOMPARE(releasedSpy.size(), 1);
+    QCOMPARE(mpta->property("releasedCount").toInt(), 1);
+}
 
 QTEST_MAIN(tst_QQuickMultiPointTouchArea)
 

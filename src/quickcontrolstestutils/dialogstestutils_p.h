@@ -1,38 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2021 The Qt Company Ltd.
-** Contact: http://www.qt.io/licensing/
-**
-** This file is part of the test suite of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL3$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see http://www.qt.io/terms-conditions. For further
-** information use the contact form at http://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPLv3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or later as published by the Free
-** Software Foundation and appearing in the file LICENSE.GPL included in
-** the packaging of this file. Please review the following information to
-** ensure the GNU General Public License version 2.0 requirements will be
-** met: http://www.gnu.org/licenses/gpl-2.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2021 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #ifndef DIALOGSTESTUTILS_H
 #define DIALOGSTESTUTILS_H
@@ -74,6 +41,29 @@
     QCOMPARE(actualPaths, expectedPaths); \
 }
 
+#define OPEN_QUICK_DIALOG() \
+QVERIFY2(dialogHelper.isWindowInitialized(), dialogHelper.failureMessage()); \
+QVERIFY(dialogHelper.waitForWindowActive()); \
+QVERIFY(dialogHelper.openDialog()); \
+QTRY_VERIFY(dialogHelper.isQuickDialogOpen());
+
+#define CLOSE_QUICK_DIALOG() \
+    do { \
+        dialogHelper.dialog->close(); \
+        QVERIFY(!dialogHelper.dialog->isVisible()); \
+        QTRY_VERIFY(!dialogHelper.quickDialog->isVisible()); \
+    } while (false)
+
+QT_BEGIN_NAMESPACE
+class QWindow;
+
+class QQuickListView;
+
+class QQuickAbstractButton;
+
+class QQuickDialogButtonBox;
+class QQuickFolderBreadcrumbBar;
+
 namespace QQuickDialogTestUtils
 {
 
@@ -84,7 +74,7 @@ class DialogTestHelper
 public:
     DialogTestHelper(QQmlDataTest *testCase, const QString &testFilePath,
             const QStringList &qmlImportPaths = {}, const QVariantMap &initialProperties = {}) :
-        appHelper(testCase, testFilePath, qmlImportPaths, initialProperties)
+        appHelper(testCase, testFilePath, initialProperties, qmlImportPaths)
     {
         if (!appHelper.ready)
             return;
@@ -109,7 +99,11 @@ public:
         return QTest::qWaitForWindowActive(appHelper.window);
     }
 
-    bool openDialog()
+    /*
+        Opens the dialog. For non-native dialogs, it is necessary to ensure that
+        isQuickDialogOpen() returns true before trying to access its internals.
+    */
+    virtual bool openDialog()
     {
         dialog->open();
         if (!dialog->isVisible()) {
@@ -150,6 +144,15 @@ public:
     QuickDialogType *quickDialog = nullptr;
 };
 
+bool verifyFileDialogDelegates(QQuickListView *fileDialogListView, const QStringList &expectedFiles, QString &failureMessage);
+
+bool verifyBreadcrumbDelegates(QQuickFolderBreadcrumbBar *breadcrumbBar, const QUrl &expectedFolder, QString &failureMessage);
+
+QQuickAbstractButton *findDialogButton(QQuickDialogButtonBox *box, const QString &buttonText);
+
+void enterText(QWindow *window, const QString &textToEnter);
 }
+
+QT_END_NAMESPACE
 
 #endif // DIALOGSTESTUTILS_H

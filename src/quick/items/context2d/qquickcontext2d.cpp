@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQuick module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qquickcontext2d_p.h"
 #include "qquickcontext2dcommandbuffer_p.h"
@@ -137,10 +101,10 @@ Q_QUICK_PRIVATE_EXPORT QColor qt_color_from_string(const QV4::Value &name)
     QByteArray str = name.toQString().toUtf8();
 
     char *p = str.data();
-    int len = str.length();
+    int len = str.size();
     //rgb/hsl color string has at least 7 characters
     if (!p || len > 255 || len <= 7)
-        return QColor(p);
+        return QColor::fromString(p);
     else {
         bool isRgb(false), isHsl(false), hasAlpha(false);
         Q_UNUSED(isHsl);
@@ -151,7 +115,7 @@ Q_QUICK_PRIVATE_EXPORT QColor qt_color_from_string(const QV4::Value &name)
         else if (strncmp(p, "hsl", 3) == 0)
             isHsl = true;
         else
-            return QColor(p);
+            return QColor::fromString(p);
 
         p+=3; //skip "rgb" or "hsl"
         hasAlpha = (*p == 'a') ? true : false;
@@ -1409,7 +1373,7 @@ QV4::ReturnedValue QQuickJSContext2D::method_get_fillStyle(const QV4::FunctionOb
     QV4::Scoped<QQuickJSContext2D> r(scope, thisObject->as<QQuickJSContext2D>());
     CHECK_CONTEXT(r)
 
-    QColor color = r->d()->context()->state.fillStyle.color();
+    const QColor color = r->d()->context()->state.fillStyle.color().toRgb();
     if (color.isValid()) {
         if (color.alpha() == 255)
             RETURN_RESULT(scope.engine->newString(color.name()));
@@ -1518,7 +1482,7 @@ QV4::ReturnedValue QQuickJSContext2D::method_get_strokeStyle(const QV4::Function
     QV4::Scoped<QQuickJSContext2D> r(scope, thisObject->as<QQuickJSContext2D>());
     CHECK_CONTEXT(r)
 
-    QColor color = r->d()->context()->state.strokeStyle.color();
+    const QColor color = r->d()->context()->state.strokeStyle.color().toRgb();
     if (color.isValid()) {
         if (color.alpha() == 255)
             RETURN_RESULT(scope.engine->newString(color.name()));
@@ -1724,7 +1688,7 @@ QV4::ReturnedValue QQuickJSContext2DPrototype::method_createConicalGradient(cons
 }
 /*!
   \qmlmethod variant QtQuick::Context2D::createPattern(color color, enumeration patternMode)
-  This is a overload function.
+  This is an overloaded function.
   Returns a CanvasPattern object that uses the given \a color and \a patternMode.
   The valid pattern modes are:
     \list
@@ -2815,7 +2779,7 @@ QV4::ReturnedValue QQuickJSContext2D::method_set_font(const QV4::FunctionObject 
     CHECK_CONTEXT_SETTER(r)
 
     QV4::ScopedString s(scope, argc ? argv[0] : QV4::Value::undefinedValue(), QV4::ScopedString::Convert);
-    if (scope.engine->hasException)
+    if (scope.hasException())
         RETURN_UNDEFINED();
     QFont font = qt_font_from_string(s->toQString(), r->d()->context()->state.font);
     if (font != r->d()->context()->state.font) {
@@ -2867,7 +2831,7 @@ QV4::ReturnedValue QQuickJSContext2D::method_set_textAlign(const QV4::FunctionOb
     CHECK_CONTEXT_SETTER(r)
 
     QV4::ScopedString s(scope, argc ? argv[0] : QV4::Value::undefinedValue(), QV4::ScopedString::Convert);
-    if (scope.engine->hasException)
+    if (scope.hasException())
         RETURN_UNDEFINED();
     QString textAlign = s->toQString();
 
@@ -2934,7 +2898,7 @@ QV4::ReturnedValue QQuickJSContext2D::method_set_textBaseline(const QV4::Functio
     QV4::Scoped<QQuickJSContext2D> r(scope, *thisObject);
     CHECK_CONTEXT_SETTER(r)
     QV4::ScopedString s(scope, argc ? argv[0] : QV4::Value::undefinedValue(), QV4::ScopedString::Convert);
-    if (scope.engine->hasException)
+    if (scope.hasException())
         RETURN_UNDEFINED();
     QString textBaseline = s->toQString();
 

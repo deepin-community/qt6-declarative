@@ -1,30 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the test suite of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:GPL-EXCEPT$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 3 as published by the Free Software
-** Foundation with exceptions as appearing in the file LICENSE.GPL3-EXCEPT
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2021 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only WITH Qt-GPL-exception-1.0
 
 #include <qtest.h>
 #include <QLibraryInfo>
@@ -87,6 +62,7 @@ tst_examples::tst_examples()
     excludedDirs << "snippets/qml/imports";
     excludedDirs << "examples/quickcontrols2/imagine";
     excludedDirs << "examples/quickcontrols2/texteditor";
+    excludedDirs << "examples/quickcontrols2/ios/todolist"; // Must be run via executable.
     excludedFiles << "snippets/qml/image-ext.qml";
     excludedFiles << "examples/quick/shapes/content/main.qml"; // relies on resources
     excludedFiles << "examples/quick/shapes/content/interactive.qml"; // relies on resources
@@ -127,7 +103,7 @@ to have them tested by the examples() test.
 */
 void tst_examples::namingConvention(const QDir &d)
 {
-    for (int ii = 0; ii < excludedDirs.count(); ++ii) {
+    for (int ii = 0; ii < excludedDirs.size(); ++ii) {
         QString s = excludedDirs.at(ii);
         if (d.absolutePath().endsWith(s))
             return;
@@ -181,7 +157,7 @@ void tst_examples::namingConvention()
 
 QStringList tst_examples::findQmlFiles(const QDir &d)
 {
-    for (int ii = 0; ii < excludedDirs.count(); ++ii) {
+    for (int ii = 0; ii < excludedDirs.size(); ++ii) {
         QString s = excludedDirs.at(ii);
         if (d.absolutePath().endsWith(s))
             return QStringList();
@@ -196,7 +172,7 @@ QStringList tst_examples::findQmlFiles(const QDir &d)
         foreach (const QString &file, files) {
             if (file.at(0).isLower()) {
                 bool superContinue = false;
-                for (int ii = 0; ii < excludedFiles.count(); ++ii) {
+                for (int ii = 0; ii < excludedFiles.size(); ++ii) {
                     QString e = excludedFiles.at(ii);
                     if (d.absoluteFilePath(file).endsWith(e)) {
                         superContinue = true;
@@ -231,6 +207,9 @@ with a lower case letter.
 */
 void tst_examples::sgexamples_data()
 {
+#ifdef Q_OS_ANDROID
+    QSKIP("tst_examples::sgexamples_data needs adaptions for Android, QTBUG-102858.");
+#endif
     QTest::addColumn<QString>("file");
 
     const QDir repoSourceDir(QLatin1String(SRCDIR) + "/../../../..");
@@ -244,7 +223,7 @@ void tst_examples::sgexamples_data()
     QStringList files;
     files << findQmlFiles(examplesDir);
 
-    for (const QString &file : qAsConst(files))
+    for (const QString &file : std::as_const(files))
         QTest::newRow(qPrintable(repoSourceDir.relativeFilePath(file))) << file;
 }
 
@@ -278,6 +257,9 @@ void tst_examples::sgexamples()
 
 void tst_examples::sgsnippets_data()
 {
+#ifdef Q_OS_ANDROID
+    QSKIP("tst_examples::sgsnippets_data needs adaptions for Android, QTBUG-102858.");
+#endif
     QTest::addColumn<QString>("file");
 
     // Add QML snippets.
@@ -291,7 +273,7 @@ void tst_examples::sgsnippets_data()
 
     QStringList files;
     files << findQmlFiles(snippetsDir);
-    for (const QString &file : qAsConst(files))
+    for (const QString &file : std::as_const(files))
         QTest::newRow(qPrintable(repoSourceDir.relativeFilePath(file))) << file;
 
     // Add Quick snippets.
@@ -301,7 +283,7 @@ void tst_examples::sgsnippets_data()
 
     files.clear();
     files << findQmlFiles(snippetsDir);
-    for (const QString &file : qAsConst(files))
+    for (const QString &file : std::as_const(files))
         QTest::newRow(qPrintable(repoSourceDir.relativeFilePath(file))) << file;
 }
 
@@ -320,7 +302,7 @@ void tst_examples::sgsnippets()
     QQuickItem *root = qobject_cast<QQuickItem *>(object.data());
     if (!root && !window) {
         component.completeCreate();
-        QVERIFY(false);
+        QFAIL("No root and no window");
     }
     if (!window)
         window = new QQuickWindow;

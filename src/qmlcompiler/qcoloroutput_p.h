@@ -1,30 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2019 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the tools applications of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:GPL-EXCEPT$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 3 as published by the Free Software
-** Foundation with exceptions as appearing in the file LICENSE.GPL3-EXCEPT
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2021 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only WITH Qt-GPL-exception-1.0
 
 #ifndef QCOLOROUTPUT_H
 #define QCOLOROUTPUT_H
@@ -39,13 +14,17 @@
 //
 // We mean it.
 
-#include <QtCore/qglobal.h>
+#include <private/qtqmlcompilerexports_p.h>
+
+#include <QtCore/private/qglobal_p.h>
 #include <QtCore/qscopedpointer.h>
 #include <QtCore/qstring.h>
 
+QT_BEGIN_NAMESPACE
+
 class QColorOutputPrivate;
 
-class QColorOutput
+class Q_QMLCOMPILER_PRIVATE_EXPORT QColorOutput
 {
     enum
     {
@@ -89,8 +68,11 @@ public:
     using ColorCode = QFlags<ColorCodeComponent>;
     using ColorMapping = QHash<int, ColorCode>;
 
-    QColorOutput(bool silent);
+    QColorOutput();
     ~QColorOutput();
+
+    bool isSilent() const;
+    void setSilent(bool silent);
 
     void insertMapping(int colorID, ColorCode colorCode);
 
@@ -108,5 +90,7 @@ private:
 };
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(QColorOutput::ColorCode)
+
+QT_END_NAMESPACE
 
 #endif // QCOLOROUTPUT_H

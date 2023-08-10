@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2017 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQml module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2017 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 #ifndef QV4JSCALL_H
 #define QV4JSCALL_H
 
@@ -56,6 +20,7 @@
 #include "qv4context_p.h"
 #include "qv4scopedvalue_p.h"
 #include "qv4stackframe_p.h"
+#include "qv4qobjectwrapper_p.h"
 #include <private/qv4alloca_p.h>
 
 QT_BEGIN_NAMESPACE
@@ -134,27 +99,28 @@ ReturnedValue FunctionObject::call(const JSCallData &data) const
 void populateJSCallArguments(ExecutionEngine *v4, JSCallArguments &jsCall, int argc,
                              void **args, const QMetaType *types);
 
-struct ScopedStackFrame {
-    Scope &scope;
-    CppStackFrame frame;
-
-    ScopedStackFrame(Scope &scope, Heap::ExecutionContext *context)
-        : scope(scope)
+struct ScopedStackFrame
+{
+    ScopedStackFrame(const Scope &scope, ExecutionContext *context)
+        : engine(scope.engine)
     {
-        frame.setParentFrame(scope.engine->currentStackFrame);
-        if (!context)
-            return;
-        frame.jsFrame = reinterpret_cast<CallData *>(scope.alloc(sizeof(CallData)/sizeof(Value)));
-        frame.jsFrame->context = context;
-        if (auto *parent = frame.parentFrame())
-            frame.v4Function = parent->v4Function;
-        else
-            frame.v4Function = nullptr;
-        scope.engine->currentStackFrame = &frame;
+        if (auto currentFrame = engine->currentStackFrame) {
+            frame.init(currentFrame->v4Function, nullptr, context, nullptr, nullptr, 0);
+            frame.instructionPointer = currentFrame->instructionPointer;
+        } else {
+            frame.init(nullptr, nullptr, context, nullptr, nullptr, 0);
+        }
+        frame.push(engine);
     }
-    ~ScopedStackFrame() {
-        scope.engine->currentStackFrame = frame.parentFrame();
+
+    ~ScopedStackFrame()
+    {
+        frame.pop(engine);
     }
+
+private:
+    ExecutionEngine *engine = nullptr;
+    MetaTypesStackFrame frame;
 };
 
 template<typename Callable>
@@ -189,7 +155,10 @@ ReturnedValue convertAndCall(
         values[0] = nullptr;
     }
 
-    call(thisObject, values, types, argc);
+    if (const QV4::QObjectWrapper *cppThisObject = thisObject->as<QV4::QObjectWrapper>())
+        call(cppThisObject->object(), values, types, argc);
+    else
+        call(nullptr, values, types, argc);
 
     ReturnedValue result;
     if (values[0]) {
@@ -206,7 +175,7 @@ ReturnedValue convertAndCall(
 }
 
 template<typename Callable>
-bool convertAndCall(ExecutionEngine *engine, const Value *thisObject,
+bool convertAndCall(ExecutionEngine *engine, QObject *thisObject,
                     void **a, const QMetaType *types, int argc, Callable call)
 {
     Scope scope(engine);
@@ -215,7 +184,17 @@ bool convertAndCall(ExecutionEngine *engine, const Value *thisObject,
     for (int ii = 0; ii < argc; ++ii)
         jsCallData.args[ii] = engine->metaTypeToJS(types[ii + 1], a[ii + 1]);
 
-    ScopedValue jsResult(scope, call(thisObject, jsCallData.args, argc));
+    ScopedObject jsThisObject(scope);
+    if (thisObject) {
+        // The result of wrap() can only be null, undefined, or an object.
+        jsThisObject = QV4::QObjectWrapper::wrap(engine, thisObject);
+        if (!jsThisObject)
+            jsThisObject = engine->globalObject;
+    } else {
+        jsThisObject = engine->globalObject;
+    }
+
+    ScopedValue jsResult(scope, call(jsThisObject, jsCallData.args, argc));
     void *result = a[0];
     if (!result)
         return !jsResult->isUndefined();

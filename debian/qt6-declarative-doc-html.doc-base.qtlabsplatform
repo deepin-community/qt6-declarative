@@ -1,0 +1,9 @@
+Document: qt6-qtlabsplatform-manual
+Title: Qt 6 qtlabsplatform
+Author: The Qt Company Ltd
+Abstract: This is the HTML documentation for Qt 6 Qt Labs Platform
+Section: Programming/C++
+
+Format: HTML
+Index: /usr/share/doc/qt6-declarative-doc-html/html/qtlabsplatform/qtqtlabsplatform.index
+Files: /usr/share/doc/qt6-declarative-doc-html/html/qtlabsplatform/*.html

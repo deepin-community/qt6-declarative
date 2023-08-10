@@ -1,6 +1,6 @@
-# SymbolsHelper-Confirmed: 6.2.4 amd64 arm64
+# SymbolsHelper-Confirmed: 6.4.0 amd64
 libQt6LabsSharedImage.so.6 libqt6labssharedimage6 #MINVER#
-| libqt6labssharedimage6 #MINVER#, qt6-declarative-abi (= 6.2.4)
+| libqt6labssharedimage6 #MINVER#, qt6-declarative-abi (= 6.4.2)
 * Build-Depends-Packages: qt6-declarative-dev, qt6-declarative-private-dev
  _Z38qml_register_types_Qt_labs_sharedimagev@Base 6.2.0
  _ZN18QSharedImageLoader11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
@@ -18,13 +18,9 @@ libQt6LabsSharedImage.so.6 libqt6labssharedimage6 #MINVER#
  _ZN19SharedImageProviderC1Ev@Base 6.2.0
  _ZN19SharedImageProviderC2Ev@Base 6.2.0
  _ZNK18QSharedImageLoader10metaObjectEv@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# _ZNK7QString3argEiii5QChar@Base 6.2.4
  _ZTI18QSharedImageLoader@Base 6.2.0
  _ZTI19SharedImageProvider@Base 6.2.0
  _ZTS18QSharedImageLoader@Base 6.2.0
  _ZTS19SharedImageProvider@Base 6.2.0
  _ZTV18QSharedImageLoader@Base 6.2.0
  _ZTV19SharedImageProvider@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI5QSizeE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI5QSizeE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI5QSizeE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0

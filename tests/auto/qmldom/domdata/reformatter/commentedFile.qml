@@ -5,6 +5,10 @@ import QtQuick 2.15
 /* multi
 line */ // comment after multi line
 Item {
+function method(x) // function comment
+{ // just returns the double of x
+  return 2*x // yep twice as much
+} // post method
 // binding comment
 a: {// header
 
@@ -20,6 +24,9 @@ z + // after z
 // before zz
 zz - // after z + zz
 /*before (a b)*/(/*  before a  */ a * /* after a  */ b * /*after b*/ c) // after (a * b * c)
+
+    if (y == 6) // if comment
+        console.log("pippo")
 
     a + b // comment
 

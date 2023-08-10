@@ -1,38 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2017 The Qt Company Ltd.
-** Contact: http://www.qt.io/licensing/
-**
-** This file is part of the Qt Quick Templates 2 module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL3$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see http://www.qt.io/terms-conditions. For further
-** information use the contact form at http://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPLv3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or later as published by the Free
-** Software Foundation and appearing in the file LICENSE.GPL included in
-** the packaging of this file. Please review the following information to
-** ensure the GNU General Public License version 2.0 requirements will be
-** met: http://www.gnu.org/licenses/gpl-2.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2017 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qquickcombobox_p.h"
 #include "qquickcontrol_p_p.h"
@@ -46,6 +13,7 @@
 #include <QtCore/qglobal.h>
 #include <QtGui/qinputmethod.h>
 #include <QtGui/qguiapplication.h>
+#include <QtGui/private/qguiapplication_p.h>
 #include <QtGui/qpa/qplatformtheme.h>
 #include <QtQml/qjsvalue.h>
 #include <QtQml/qqmlcontext.h>
@@ -96,6 +64,19 @@ Q_LOGGING_CATEGORY(lcCalculateWidestTextWidth, "qt.quick.controls.combobox.calcu
     combo box by reacting to the \l accepted signal.
 
     \snippet qtquickcontrols2-combobox-accepted.qml combobox
+
+    \section1 ComboBox's Popup
+
+    By default, clicking outside of ComboBox's popup will close it, and the
+    event is propagated to items lower in the stacking order. To prevent the
+    popup from closing, set its \l {Popup::}{closePolicy}:
+
+    \snippet qtquickcontrols2-combobox-popup.qml closePolicy
+
+    To prevent event propagation, set its \l {Popup::}{modal} property to
+    \c true:
+
+    \snippet qtquickcontrols2-combobox-popup.qml modal
 
     \section1 ComboBox Model Roles
 
@@ -180,6 +161,7 @@ namespace {
     enum Highlighting { NoHighlight, Highlight };
 }
 
+// ### Qt7: Remove this class. Use QQmlDelegateModel instead.
 class QQuickComboBoxDelegateModel : public QQmlDelegateModel
 {
 public:
@@ -198,28 +180,30 @@ QQuickComboBoxDelegateModel::QQuickComboBoxDelegateModel(QQuickComboBox *combo)
 
 QVariant QQuickComboBoxDelegateModel::variantValue(int index, const QString &role)
 {
-    const QVariant model = combo->model();
-    if (model.userType() == QMetaType::QVariantList) {
-        QVariant object = model.toList().value(index);
-        if (object.userType() == QMetaType::QVariantMap) {
-            const QVariantMap data = object.toMap();
-            if (data.count() == 1 && role == QLatin1String("modelData"))
-                return data.first();
-            return data.value(role);
-        } else if (object.userType() == QMetaType::QObjectStar) {
-            const QObject *data = object.value<QObject *>();
-            if (data && role != QLatin1String("modelData"))
-                return data->property(role.toUtf8());
+    // ### Qt7: Get rid of this. Why do we special case lists of variant maps with
+    //          exactly one entry? There are many other ways of producing a list of
+    //          map-like things with exactly one entry. And what if some of the maps
+    //          in the list have more than one entry? You get inconsistent results.
+    if (role == QLatin1String("modelData")) {
+        const QVariant model = combo->model();
+        if (model.metaType() == QMetaType::fromType<QVariantList>()) {
+            const QVariant object = model.toList().value(index);
+            if (object.metaType() == QMetaType::fromType<QVariantMap>()) {
+                const QVariantMap data = object.toMap();
+                if (data.size() == 1)
+                    return data.first();
+            }
         }
     }
+
     return QQmlDelegateModel::variantValue(index, role);
 }
 
 class QQuickComboBoxPrivate : public QQuickControlPrivate
 {
+public:
     Q_DECLARE_PUBLIC(QQuickComboBox)
 
-public:
     bool isPopupVisible() const;
     void showPopup();
     void hidePopup(bool accept);
@@ -256,9 +240,9 @@ public:
 
     void createDelegateModel();
 
-    void handlePress(const QPointF &point) override;
-    void handleMove(const QPointF &point) override;
-    void handleRelease(const QPointF &point) override;
+    bool handlePress(const QPointF &point, ulong timestamp) override;
+    bool handleMove(const QPointF &point, ulong timestamp) override;
+    bool handleRelease(const QPointF &point, ulong timestamp) override;
     void handleUngrab() override;
 
     void cancelIndicator();
@@ -457,9 +441,10 @@ void QQuickComboBoxPrivate::updateEditText()
 
     if (extra.isAllocated() && extra->allowComplete && !text.isEmpty()) {
         const QString completed = tryComplete(text);
-        if (completed.length() > text.length()) {
+        if (completed.size() > text.size()) {
             input->setText(completed);
-            input->select(completed.length(), text.length());
+            // This will select the text backwards.
+            input->select(completed.size(), text.size());
             return;
         }
     }
@@ -530,12 +515,22 @@ void QQuickComboBoxPrivate::acceptInput()
 {
     Q_Q(QQuickComboBox);
     int idx = q->find(extra.value().editText, Qt::MatchFixedString);
-    if (idx > -1)
+    if (idx > -1) {
+        // The item that was accepted already exists, so make it the current item.
         q->setCurrentIndex(idx);
+        // After accepting text that matches an existing entry, the selection should be cleared.
+        QQuickTextInput *input = qobject_cast<QQuickTextInput *>(contentItem);
+        if (input) {
+            const auto text = input->text();
+            input->select(text.size(), text.size());
+        }
+    }
 
     extra.value().accepting = true;
     emit q->accepted();
 
+    // The user might have added the item since it didn't exist, so check again
+    // to see if we can select that new item.
     if (idx == -1)
         q->setCurrentIndex(q->find(extra.value().editText, Qt::MatchFixedString));
     extra.value().accepting = false;
@@ -553,14 +548,14 @@ QString QQuickComboBoxPrivate::tryComplete(const QString &input)
             continue;
 
         // either the first or the shortest match
-        if (match.isEmpty() || text.length() < match.length())
+        if (match.isEmpty() || text.size() < match.size())
             match = text;
     }
 
     if (match.isEmpty())
         return input;
 
-    return input + match.mid(input.length());
+    return input + match.mid(input.size());
 }
 
 void QQuickComboBoxPrivate::setCurrentIndex(int index, Activation activate)
@@ -736,28 +731,31 @@ void QQuickComboBoxPrivate::createDelegateModel()
         delete oldModel;
 }
 
-void QQuickComboBoxPrivate::handlePress(const QPointF &point)
+bool QQuickComboBoxPrivate::handlePress(const QPointF &point, ulong timestamp)
 {
     Q_Q(QQuickComboBox);
-    QQuickControlPrivate::handlePress(point);
+    QQuickControlPrivate::handlePress(point, timestamp);
     q->setPressed(true);
+    return true;
 }
 
-void QQuickComboBoxPrivate::handleMove(const QPointF &point)
+bool QQuickComboBoxPrivate::handleMove(const QPointF &point, ulong timestamp)
 {
     Q_Q(QQuickComboBox);
-    QQuickControlPrivate::handleMove(point);
+    QQuickControlPrivate::handleMove(point, timestamp);
     q->setPressed(q->contains(point));
+    return true;
 }
 
-void QQuickComboBoxPrivate::handleRelease(const QPointF &point)
+bool QQuickComboBoxPrivate::handleRelease(const QPointF &point, ulong timestamp)
 {
     Q_Q(QQuickComboBox);
-    QQuickControlPrivate::handleRelease(point);
+    QQuickControlPrivate::handleRelease(point, timestamp);
     if (pressed) {
         q->setPressed(false);
         togglePopup(false);
     }
+    return true;
 }
 
 void QQuickComboBoxPrivate::handleUngrab()
@@ -1982,16 +1980,22 @@ void QQuickComboBox::keyPressEvent(QKeyEvent *event)
     Q_D(QQuickComboBox);
     QQuickControl::keyPressEvent(event);
 
-    switch (event->key()) {
+    const auto key = event->key();
+    if (!isEditable()) {
+        const auto buttonPressKeys = QGuiApplicationPrivate::platformTheme()->themeHint(QPlatformTheme::ButtonPressKeys).value<QList<Qt::Key>>();
+        if (buttonPressKeys.contains(key)) {
+            if (!event->isAutoRepeat())
+                setPressed(true);
+            event->accept();
+            return;
+        }
+    }
+
+    switch (key) {
     case Qt::Key_Escape:
     case Qt::Key_Back:
         if (d->isPopupVisible())
             event->accept();
-        break;
-    case Qt::Key_Space:
-        if (!event->isAutoRepeat())
-            setPressed(true);
-        event->accept();
         break;
     case Qt::Key_Enter:
     case Qt::Key_Return:
@@ -2042,13 +2046,19 @@ void QQuickComboBox::keyReleaseEvent(QKeyEvent *event)
     if (event->isAutoRepeat())
         return;
 
-    switch (event->key()) {
-    case Qt::Key_Space:
-        if (!isEditable())
-            d->togglePopup(true);
-        setPressed(false);
-        event->accept();
-        break;
+    const auto key = event->key();
+    if (!isEditable()) {
+        const auto buttonPressKeys = QGuiApplicationPrivate::platformTheme()->themeHint(QPlatformTheme::ButtonPressKeys).value<QList<Qt::Key>>();
+        if (buttonPressKeys.contains(key)) {
+            if (!isEditable())
+                d->togglePopup(true);
+            setPressed(false);
+            event->accept();
+            return;
+        }
+    }
+
+    switch (key) {
     case Qt::Key_Enter:
     case Qt::Key_Return:
         if (!isEditable() || d->isPopupVisible())

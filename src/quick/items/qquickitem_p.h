@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQuick module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #ifndef QQUICKITEM_P_H
 #define QQUICKITEM_P_H
@@ -284,8 +248,9 @@ public:
 
     void localizedTouchEvent(const QTouchEvent *event, bool isFiltering, QMutableTouchEvent *localized);
     bool hasPointerHandlers() const;
-    bool hasHoverHandlers() const;
+    bool hasEnabledHoverHandlers() const;
     virtual void addPointerHandler(QQuickPointerHandler *h);
+    virtual void removePointerHandler(QQuickPointerHandler *h);
 
     // data property
     static void data_append(QQmlListProperty<QObject> *, QObject *);
@@ -358,6 +323,11 @@ public:
         QQuickItemChangeListener *listener;
         ChangeTypes types;
         QQuickGeometryChange gTypes;  //NOTE: not used for ==
+
+#ifndef QT_NO_DEBUG_STREAM
+    private:
+        friend QDebug operator<<(QDebug debug, const QQuickItemPrivate::ChangeListener &listener);
+#endif // QT_NO_DEBUG_STREAM
     };
 
     // call QQuickItemChangeListener PMF
@@ -430,6 +400,7 @@ public:
         // extremely common to set acceptedMouseButtons to LeftButton, but very
         // rare to use any of the other buttons.
         Qt::MouseButtons acceptedMouseButtons;
+        Qt::MouseButtons acceptedMouseButtonsWithoutHandlers;
 
         QQuickItem::TransformOrigin origin:5;
         uint transparentForPositioner : 1;
@@ -469,7 +440,7 @@ public:
     inline QQuickItem::TransformOrigin origin() const;
 
     // Bit 0
-    quint32 flags:5;
+    quint32 flags:7;
     bool widthValidFlag:1;
     bool heightValidFlag:1;
     bool componentComplete:1;
@@ -479,9 +450,9 @@ public:
     bool smooth:1;
     bool antialiasing:1;
     bool focus:1;
+    // Bit 16
     bool activeFocus:1;
     bool notifiedFocus:1;
-    // Bit 16
     bool notifiedActiveFocus:1;
     bool filtersChildMouseEvents:1;
     bool explicitVisible:1;
@@ -496,9 +467,9 @@ public:
     bool inheritMirrorFromItem:1;
     bool isAccessible:1;
     bool culled:1;
+    // Bit 32
     bool hasCursor:1;
     bool subtreeCursorEnabled:1;
-    // Bit 32
     bool subtreeHoverEnabled:1;
     bool activeFocusOnTab:1;
     bool implicitAntialiasing:1;
@@ -514,6 +485,9 @@ public:
     bool hasCursorHandler:1;
     // set true when this item does not expect events via a subscene delivery agent; false otherwise
     bool maybeHasSubsceneDeliveryAgent:1;
+    // set true if this item or any child wants QQuickItemPrivate::transformChanged() to visit all children
+    // (e.g. when parent has ItemIsViewport and child has ItemObservesViewport)
+    bool subtreeTransformChangedEnabled:1;
 
     enum DirtyType {
         TransformOrigin         = 0x00000001,
@@ -645,7 +619,7 @@ public:
     }
 
     QPointF computeTransformOrigin() const;
-    virtual void transformChanged();
+    virtual bool transformChanged(QQuickItem *transformedItem);
 
     QPointF adjustedPosForTransform(const QPointF &centroid,
                                     const QPointF &startPos, const QVector2D &activeTranslatation,
@@ -664,7 +638,7 @@ public:
     void deliverShortcutOverrideEvent(QKeyEvent *);
 
     bool anyPointerHandlerWants(const QPointerEvent *event, const QEventPoint &point) const;
-    virtual bool handlePointerEvent(QPointerEvent *, bool avoidExclusiveGrabber = false);
+    virtual bool handlePointerEvent(QPointerEvent *, bool avoidGrabbers = false);
 
     virtual void setVisible(bool visible);
 
@@ -715,6 +689,7 @@ public:
 #endif
 
     virtual void updatePolish() { }
+    virtual void dumpItemTree(int indent) const;
 };
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(QQuickItemPrivate::ExtraDataTags)
@@ -900,7 +875,7 @@ public:
     QQuickKeyEvent theKeyEvent;
 };
 
-class QQuickKeysAttached : public QObject, public QQuickItemKeyFilter
+class Q_QUICK_PRIVATE_EXPORT QQuickKeysAttached : public QObject, public QQuickItemKeyFilter
 {
     Q_OBJECT
     Q_DECLARE_PRIVATE(QQuickKeysAttached)

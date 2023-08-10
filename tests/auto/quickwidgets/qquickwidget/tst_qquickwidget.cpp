@@ -1,34 +1,10 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the test suite of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:GPL-EXCEPT$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 3 as published by the Free Software
-** Foundation with exceptions as appearing in the file LICENSE.GPL3-EXCEPT
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only WITH Qt-GPL-exception-1.0
 
 #include <qtest.h>
 #include <qtesttouch.h>
 #include <QtTest/QSignalSpy>
+#include <QtTest/private/qtesthelpers_p.h>
 #include <QtQml/qqmlcomponent.h>
 #include <QtQml/qqmlcontext.h>
 #include <QtQuick/qquickview.h>
@@ -85,17 +61,18 @@ public:
 class MouseRecordingItem : public QQuickItem
 {
 public:
-    MouseRecordingItem(bool acceptTouch, QQuickItem *parent = nullptr)
+    MouseRecordingItem(bool acceptTouch, bool acceptTouchPress, QQuickItem *parent = nullptr)
         : QQuickItem(parent)
-        , m_acceptTouch(acceptTouch)
+        , m_acceptTouchPress(acceptTouchPress)
     {
         setSize(QSizeF(300, 300));
         setAcceptedMouseButtons(Qt::LeftButton);
+        setAcceptTouchEvents(acceptTouch);
     }
 
 protected:
     void touchEvent(QTouchEvent* event) override {
-        event->setAccepted(m_acceptTouch);
+        event->setAccepted(m_acceptTouchPress);
         m_touchEvents << event->type();
         qCDebug(lcTests) << "accepted?" << event->isAccepted() << event;
     }
@@ -117,7 +94,7 @@ public:
     QList<QEvent::Type> m_touchEvents;
 
 private:
-    bool m_acceptTouch;
+    bool m_acceptTouchPress;
 };
 
 class tst_qquickwidget : public QQmlDataTest
@@ -162,7 +139,6 @@ private:
 tst_qquickwidget::tst_qquickwidget()
     : QQmlDataTest(QT_QMLTEST_DATADIR)
 {
-    QQuickWindow::setGraphicsApi(QSGRendererInterface::OpenGLRhi);
 }
 
 void tst_qquickwidget::showHide()
@@ -364,7 +340,7 @@ void tst_qquickwidget::errors()
     QQmlTestMessageHandler messageHandler;
     view->setSource(testFileUrl("error1.qml"));
     QCOMPARE(view->status(), QQuickWidget::Error);
-    QCOMPARE(view->errors().count(), 1);
+    QCOMPARE(view->errors().size(), 1);
 }
 
 void tst_qquickwidget::engine()
@@ -380,8 +356,6 @@ void tst_qquickwidget::engine()
 
 void tst_qquickwidget::readback()
 {
-    QWidget window;
-
     QScopedPointer<QQuickWidget> view(new QQuickWidget);
     view->setSource(testFileUrl("rectangle.qml"));
 
@@ -448,6 +422,9 @@ void tst_qquickwidget::grabBeforeShow()
 
 void tst_qquickwidget::reparentToNewWindow()
 {
+#ifdef Q_OS_ANDROID
+    QSKIP("This test crashes on Android (see QTBUG-100173)");
+#endif
     QWidget window1;
     QWidget window2;
 
@@ -543,6 +520,9 @@ void tst_qquickwidget::shortcuts()
 
 void tst_qquickwidget::enterLeave()
 {
+#ifdef Q_OS_ANDROID
+    QSKIP("Android has no cursor");
+#endif
     QQuickWidget view;
     view.setSource(testFileUrl("enterleave.qml"));
 
@@ -618,7 +598,7 @@ void tst_qquickwidget::synthMouseFromTouch()
     QWidget window;
     window.setAttribute(Qt::WA_AcceptTouchEvents);
     QScopedPointer<MouseRecordingQQWidget> childView(new MouseRecordingQQWidget(&window));
-    MouseRecordingItem *item = new MouseRecordingItem(acceptTouch, nullptr);
+    MouseRecordingItem *item = new MouseRecordingItem(!synthMouse, acceptTouch, nullptr);
     childView->setContent(QUrl(), nullptr, item);
     window.resize(300, 300);
     childView->resize(300, 300);
@@ -633,9 +613,9 @@ void tst_qquickwidget::synthMouseFromTouch()
     QTest::touchEvent(&window, device).move(0, p2, &window);
     QTest::touchEvent(&window, device).release(0, p2, &window);
 
-    QCOMPARE(item->m_touchEvents.count(), !synthMouse && !acceptTouch ? 1 : 3);
-    QCOMPARE(item->m_mouseEvents.count(), (acceptTouch || !synthMouse) ? 0 : 3);
-    QCOMPARE(childView->m_mouseEvents.count(), 0);
+    QCOMPARE(item->m_touchEvents.size(), synthMouse ? 0 : (acceptTouch ? 3 : 1));
+    QCOMPARE(item->m_mouseEvents.size(), synthMouse ? 3 : 0);
+    QCOMPARE(childView->m_mouseEvents.size(), 0);
     for (const auto &ev : item->m_mouseEvents)
         QCOMPARE(ev, Qt::MouseEventSynthesizedByQt);
 }
@@ -732,7 +712,7 @@ void tst_qquickwidget::resizeOverlay()
     overlay->startListening();
 
     widget.resize(200, 200);
-    widget.show();
+    QTestPrivate::androidCompatibleShow(&widget);
     QCOMPARE(rootItem->width(), 200);
     QCOMPARE(rootItem->height(), 200);
     QCOMPARE(overlay->width(), rootItem->width());
@@ -809,7 +789,7 @@ void tst_qquickwidget::focusOnClickInProxyWidget()
     QGraphicsView view1(&scene);
     view1.setFrameStyle(QFrame::NoFrame);
     view1.resize(400,400);
-    view1.show();
+    QTestPrivate::androidCompatibleShow(&view1);
 
 
 
@@ -845,7 +825,7 @@ void tst_qquickwidget::focusOnClickInProxyWidget()
     // Now create a second view and repeat, in order to verify that we handle one QQuickItem being in multiple windows
     QGraphicsView view2(&scene);
     view2.resize(400,400);
-    view2.show();
+    QTestPrivate::androidCompatibleShow(&view2);
 
     QVERIFY(QTest::qWaitForWindowExposed(&view2));
     QWindow *window2 = view2.windowHandle();

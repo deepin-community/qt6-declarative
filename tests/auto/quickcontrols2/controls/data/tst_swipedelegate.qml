@@ -1,57 +1,10 @@
-/****************************************************************************
-**
-** Copyright (C) 2017 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the test suite of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:BSD$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** BSD License Usage
-** Alternatively, you may use this file under the terms of the BSD license
-** as follows:
-**
-** "Redistribution and use in source and binary forms, with or without
-** modification, are permitted provided that the following conditions are
-** met:
-**   * Redistributions of source code must retain the above copyright
-**     notice, this list of conditions and the following disclaimer.
-**   * Redistributions in binary form must reproduce the above copyright
-**     notice, this list of conditions and the following disclaimer in
-**     the documentation and/or other materials provided with the
-**     distribution.
-**   * Neither the name of The Qt Company Ltd nor the names of its
-**     contributors may be used to endorse or promote products derived
-**     from this software without specific prior written permission.
-**
-**
-** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-** "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-** LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-** A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-** OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-** SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-** LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-** DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-** THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-** (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-** OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2017 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
 
 import QtQuick
 import QtTest
 import QtQuick.Controls
-
+import Qt.test.controls
 
 TestCase {
     id: testCase
@@ -121,14 +74,14 @@ TestCase {
 
     function test_horizontalAnchors_data() {
         return [
-            { tag: "background, fill", component: backgroundFillComponent, itemName: "background", warningLocation: ":69:25" },
-            { tag: "background, centerIn", component: backgroundCenterInComponent, itemName: "background", warningLocation: ":76:25" },
-            { tag: "background, left", component: backgroundLeftComponent, itemName: "background", warningLocation: ":83:25" },
-            { tag: "background, right", component: backgroundRightComponent, itemName: "background", warningLocation: ":90:25" },
-            { tag: "contentItem, fill", component: contentItemFillComponent, itemName: "contentItem", warningLocation: ":97:26" },
-            { tag: "contentItem, centerIn", component: contentItemCenterInComponent, itemName: "contentItem", warningLocation: ":104:26" },
-            { tag: "contentItem, left", component: contentItemLeftComponent, itemName: "contentItem", warningLocation: ":111:26" },
-            { tag: "contentItem, right", component: contentItemRightComponent, itemName: "contentItem", warningLocation: ":118:26" }
+            { tag: "background, fill", component: backgroundFillComponent, itemName: "background", warningLocation: ":22:25" },
+            { tag: "background, centerIn", component: backgroundCenterInComponent, itemName: "background", warningLocation: ":29:25" },
+            { tag: "background, left", component: backgroundLeftComponent, itemName: "background", warningLocation: ":36:25" },
+            { tag: "background, right", component: backgroundRightComponent, itemName: "background", warningLocation: ":43:25" },
+            { tag: "contentItem, fill", component: contentItemFillComponent, itemName: "contentItem", warningLocation: ":50:26" },
+            { tag: "contentItem, centerIn", component: contentItemCenterInComponent, itemName: "contentItem", warningLocation: ":57:26" },
+            { tag: "contentItem, left", component: contentItemLeftComponent, itemName: "contentItem", warningLocation: ":64:26" },
+            { tag: "contentItem, right", component: contentItemRightComponent, itemName: "contentItem", warningLocation: ":71:26" }
         ];
     }
 
@@ -695,7 +648,9 @@ TestCase {
 
                 property alias removeAnimation: onRemoveAnimation
 
-                ListView.onRemove: SequentialAnimation {
+                ListView.onRemove: onRemoveAnimation.start()
+
+                SequentialAnimation {
                     id: onRemoveAnimation
 
                     PropertyAction {
@@ -1268,10 +1223,10 @@ TestCase {
     // When this happens, it will grab the mouse and hence we must clear
     // that action's pressed state so that it doesn't stay pressed after releasing.
     function test_dragSideAction() {
-        var listView = createTemporaryObject(removableDelegatesComponent, testCase);
+        let listView = createTemporaryObject(removableDelegatesComponent, testCase);
         verify(listView);
 
-        var control = listView.itemAt(0, 0);
+        let control = listView.itemAt(0, 0);
         verify(control);
 
         // Expose the side action.
@@ -1279,15 +1234,43 @@ TestCase {
         verify(control.swipe.leftItem);
         tryCompare(control.swipe, "complete", true);
 
-        var pressedSpy = signalSpyComponent.createObject(control,
+        let pressedSpy = signalSpyComponent.createObject(control,
             { target: control.swipe.leftItem.SwipeDelegate, signalName: "pressedChanged" });
         verify(pressedSpy);
         verify(pressedSpy.valid);
 
+        let movingHorizontallySpy = createTemporaryObject(signalSpyComponent, testCase,
+            { target: listView, signalName: "movingHorizontallyChanged" })
+        verify(movingHorizontallySpy)
+        verify(movingHorizontallySpy.valid)
+
+        let movingVerticallySpy = createTemporaryObject(signalSpyComponent, testCase,
+            { target: listView, signalName: "movingVerticallyChanged" })
+        verify(movingVerticallySpy)
+        verify(movingVerticallySpy.valid)
+
+        let flickingHorizontallySpy = createTemporaryObject(signalSpyComponent, testCase,
+            { target: listView, signalName: "flickingHorizontallyChanged" })
+        verify(flickingHorizontallySpy)
+        verify(flickingHorizontallySpy.valid)
+
+        let flickingVerticallySpy = createTemporaryObject(signalSpyComponent, testCase,
+            { target: listView, signalName: "flickingVerticallyChanged" })
+        verify(flickingVerticallySpy)
+        verify(flickingVerticallySpy.valid)
+
+        // Drag the ListView vertically; its contentY should change.
         mouseDrag(listView, 20, 20, 0, listView.height);
         compare(pressedSpy.count, 2);
-        verify(listView.contentY !== 0);
 
+        // Wait for it to stop moving.
+        tryCompare(listView, "flickingVertically", false)
+
+        // 2 because it should change to true then false.
+        compare(movingHorizontallySpy.count, 0)
+        compare(movingVerticallySpy.count, 2)
+        compare(flickingHorizontallySpy.count, 0)
+        compare(flickingVerticallySpy.count, 2)
         compare(control.swipe.leftItem.SwipeDelegate.pressed, false);
     }
 
@@ -1742,5 +1725,24 @@ TestCase {
         compare(control.width, 200)
         compare(control.background.width, 200)
         compare(control.contentItem.width, 200 - control.leftPadding - control.rightPadding)
+    }
+
+    Component {
+        id: cppDelegateComponent
+
+        SwipeDelegate {
+            text: "SwipeDelegate"
+            width: 150
+            swipe.right: ComponentCreator.createComponent(
+                "import QtQuick; Rectangle { width: 100; height: parent.height; color: \"tomato\" }")
+        }
+    }
+
+    function test_delegateComponentCreatedInCpp() {
+        let control = createTemporaryObject(cppDelegateComponent, testCase)
+        verify(control)
+
+        swipe(control, 0, -1.0)
+        compare(control.swipe.rightItem.color, Qt.color("tomato"))
     }
 }

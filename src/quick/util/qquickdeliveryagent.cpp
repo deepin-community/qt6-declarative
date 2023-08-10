@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2021 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQuick module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2021 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include <QtCore/qdebug.h>
 #include <QtGui/private/qevent_p.h>
@@ -52,6 +16,8 @@
 #include <QtQuick/private/qquickprofiler_p.h>
 #include <QtQuick/private/qquickrendercontrol_p.h>
 #include <QtQuick/private/qquickwindow_p.h>
+
+#include <memory>
 
 QT_BEGIN_NAMESPACE
 
@@ -82,6 +48,7 @@ void QQuickDeliveryAgentPrivate::touchToMouseEvent(QEvent::Type type, const QEve
                                  (type == QEvent::MouseButtonRelease ? Qt::NoButton : Qt::LeftButton),
                                  touchEvent->modifiers(), Qt::MouseEventSynthesizedByQt);
     ret.setAccepted(true); // this now causes the persistent touchpoint to be accepted too
+    ret.setTimestamp(touchEvent->timestamp());
     *mouseEvent = ret;
 }
 
@@ -153,7 +120,7 @@ bool QQuickDeliveryAgentPrivate::deliverTouchAsMouse(QQuickItem *item, QTouchEve
     // FIXME: make this work for mouse events too and get rid of the asTouchEvent in here.
     QMutableTouchEvent event;
     QQuickItemPrivate::get(item)->localizedTouchEvent(pointerEvent, false, &event);
-    if (!event.points().count())
+    if (!event.points().size())
         return false;
 
     // For each point, check if it is accepted, if not, try the next point.
@@ -308,8 +275,8 @@ void QQuickDeliveryAgentPrivate::removeGrabber(QQuickItem *grabber, bool mouse, 
 void QQuickDeliveryAgentPrivate::translateTouchEvent(QTouchEvent *touchEvent)
 {
     for (qsizetype i = 0; i != touchEvent->pointCount(); ++i) {
-        auto &pt = QMutableEventPoint::from(touchEvent->point(i));
-        pt.setScenePosition(pt.position());
+        auto &pt = touchEvent->point(i);
+        QMutableEventPoint::setScenePosition(pt, pt.position());
     }
 }
 
@@ -458,7 +425,7 @@ void QQuickDeliveryAgentPrivate::setFocusInScope(QQuickItem *scope, QQuickItem *
         emit rootItem->window()->focusObjectChanged(activeFocusItem);
 
     if (!changed.isEmpty())
-        notifyFocusChangesRecur(changed.data(), changed.count() - 1, reason);
+        notifyFocusChangesRecur(changed.data(), changed.size() - 1, reason);
     if (isSubsceneAgent) {
         auto da = QQuickWindowPrivate::get(rootItem->window())->deliveryAgent;
         qCDebug(lcFocus) << "    delegating setFocusInScope to" << da;
@@ -558,8 +525,12 @@ void QQuickDeliveryAgentPrivate::clearFocusInScope(QQuickItem *scope, QQuickItem
         emit rootItem->window()->focusObjectChanged(activeFocusItem);
 
     if (!changed.isEmpty())
-        notifyFocusChangesRecur(changed.data(), changed.count() - 1, reason);
-
+        notifyFocusChangesRecur(changed.data(), changed.size() - 1, reason);
+    if (isSubsceneAgent) {
+        auto da = QQuickWindowPrivate::get(rootItem->window())->deliveryAgent;
+        qCDebug(lcFocus) << "    delegating clearFocusInScope to" << da;
+        QQuickWindowPrivate::get(rootItem->window())->deliveryAgentPrivate()->clearFocusInScope(da->rootItem(), item, reason, options);
+    }
     if (oldActiveFocusItem == activeFocusItem)
         qCDebug(lcFocus) << "activeFocusItem remains" << activeFocusItem << "in" << q;
     else
@@ -578,9 +549,6 @@ void QQuickDeliveryAgentPrivate::notifyFocusChangesRecur(QQuickItem **items, int
 {
     QPointer<QQuickItem> item(*items);
 
-    if (remaining)
-        notifyFocusChangesRecur(items + 1, remaining - 1, reason);
-
     if (item) {
         QQuickItemPrivate *itemPrivate = QQuickItemPrivate::get(item);
 
@@ -597,6 +565,9 @@ void QQuickDeliveryAgentPrivate::notifyFocusChangesRecur(QQuickItem **items, int
             emit item->activeFocusChanged(itemPrivate->activeFocus);
         }
     }
+
+    if (remaining)
+        notifyFocusChangesRecur(items + 1, remaining - 1, reason);
 }
 
 bool QQuickDeliveryAgentPrivate::clearHover(ulong timestamp)
@@ -751,10 +722,13 @@ bool QQuickDeliveryAgent::event(QEvent *ev)
         if (!d->rootItem)
             return false;
         QEnterEvent *enter = static_cast<QEnterEvent*>(ev);
-        bool accepted = d->deliverHoverEvent(enter->scenePosition(),
+        const auto scenePos = enter->scenePosition();
+        bool accepted = d->deliverHoverEvent(scenePos,
                                               enter->points().first().sceneLastPosition(),
                                               enter->modifiers(), enter->timestamp());
-        d->lastMousePosition = enter->scenePosition();
+        d->lastMousePosition = scenePos;
+        // deliverHoverEvent() constructs QHoverEvents: check that EPD didn't end up with corrupted scenePos
+        Q_ASSERT(enter->scenePosition() == scenePos);
         enter->setAccepted(accepted);
 #if QT_CONFIG(cursor)
         QQuickWindowPrivate::get(d->rootItem->window())->updateCursor(enter->scenePosition(), d->rootItem);
@@ -785,8 +759,7 @@ bool QQuickDeliveryAgent::event(QEvent *ev)
         break;
 #endif
     case QEvent::ShortcutOverride:
-        if (d->activeFocusItem)
-            QCoreApplication::sendEvent(d->activeFocusItem, ev);
+        d->deliverKeyEvent(static_cast<QKeyEvent *>(ev));
         break;
     case QEvent::InputMethod:
     case QEvent::InputMethodQuery:
@@ -826,7 +799,13 @@ bool QQuickDeliveryAgent::event(QEvent *ev)
     case QEvent::TabletPress:
     case QEvent::TabletMove:
     case QEvent::TabletRelease:
-        d->deliverPointerEvent(static_cast<QPointerEvent *>(ev));
+        {
+            auto *tabletEvent = static_cast<QTabletEvent *>(ev);
+            d->deliverPointerEvent(tabletEvent); // visits HoverHandlers too (unlike the mouse event case)
+#if QT_CONFIG(cursor)
+            QQuickWindowPrivate::get(d->rootItem->window())->updateCursor(tabletEvent->scenePosition(), d->rootItem);
+#endif
+        }
         break;
 #endif
     default:
@@ -840,10 +819,16 @@ void QQuickDeliveryAgentPrivate::deliverKeyEvent(QKeyEvent *e)
 {
     if (activeFocusItem) {
         const bool keyPress = (e->type() == QEvent::KeyPress);
-        if (keyPress)
+        switch (e->type()) {
+        case QEvent::KeyPress:
             Q_QUICK_INPUT_PROFILE(QQuickProfiler::Key, QQuickProfiler::InputKeyPress, e->key(), e->modifiers());
-        else
+            break;
+        case QEvent::KeyRelease:
             Q_QUICK_INPUT_PROFILE(QQuickProfiler::Key, QQuickProfiler::InputKeyRelease, e->key(), e->modifiers());
+            break;
+        default:
+            break;
+        }
 
         QQuickItem *item = activeFocusItem;
 
@@ -853,12 +838,10 @@ void QQuickDeliveryAgentPrivate::deliverKeyEvent(QKeyEvent *e)
                                          e->key(), e->modifiers(), e->text(),
                                          e->isAutoRepeat(), e->count());
 
-        e->accept();
-        QCoreApplication::sendEvent(item, e);
-        while (!e->isAccepted() && (item = item->parentItem())) {
+        do {
             e->accept();
             QCoreApplication::sendEvent(item, e);
-        }
+        } while (!e->isAccepted() && (item = item->parentItem()));
     }
 }
 
@@ -894,11 +877,11 @@ QQuickDeliveryAgentPrivate::~QQuickDeliveryAgentPrivate()
 QPointerEvent *QQuickDeliveryAgentPrivate::clonePointerEvent(QPointerEvent *event, std::optional<QPointF> transformedLocalPos)
 {
     QPointerEvent *ret = event->clone();
-    QMutableEventPoint &point = QMutableEventPoint::from(ret->point(0));
-    point.detach();
-    point.setTimestamp(event->timestamp());
+    QEventPoint &point = ret->point(0);
+    QMutableEventPoint::detach(point);
+    QMutableEventPoint::setTimestamp(point, event->timestamp());
     if (transformedLocalPos)
-        point.setPosition(*transformedLocalPos);
+        QMutableEventPoint::setPosition(point, *transformedLocalPos);
 
     return ret;
 }
@@ -910,29 +893,44 @@ void QQuickDeliveryAgentPrivate::deliverToPassiveGrabbers(const QVector<QPointer
             QQuickPointerHandlerPrivate::deviceDeliveryTargets(pointerEvent->device());
     QVarLengthArray<QPair<QQuickItem *, bool>, 4> sendFilteredPointerEventResult;
     hasFiltered.clear();
-    for (auto o : passiveGrabbers) {
-        QQuickPointerHandler *handler = qobject_cast<QQuickPointerHandler *>(o);
+    for (QObject *grabberObject : passiveGrabbers) {
         // a null pointer in passiveGrabbers is unlikely, unless the grabbing handler was deleted dynamically
-        if (Q_LIKELY(handler) && !eventDeliveryTargets.contains(handler)) {
-            bool alreadyFiltered = false;
-            QQuickItem *par = handler->parentItem();
+        if (Q_UNLIKELY(!grabberObject))
+            continue;
+        // a passiveGrabber might be an item or a handler
+        if (QQuickPointerHandler *handler = qobject_cast<QQuickPointerHandler *>(grabberObject)) {
+            if (handler && !eventDeliveryTargets.contains(handler)) {
+                bool alreadyFiltered = false;
+                QQuickItem *par = handler->parentItem();
 
-            // see if we already have sent a filter event to the parent
-            auto it = std::find_if(sendFilteredPointerEventResult.begin(), sendFilteredPointerEventResult.end(),
-                                        [par](const QPair<QQuickItem *, bool> &pair) { return pair.first == par; });
-            if (it != sendFilteredPointerEventResult.end()) {
-                // Yes, the event was already filtered to that parent, do not call it again but use
-                // the result of the previous call to determine if we should call the handler.
-                alreadyFiltered = it->second;
-            } else if (par) {
-                alreadyFiltered = sendFilteredPointerEvent(pointerEvent, par);
-                sendFilteredPointerEventResult << qMakePair(par, alreadyFiltered);
+                // see if we already have sent a filter event to the parent
+                auto it = std::find_if(sendFilteredPointerEventResult.begin(), sendFilteredPointerEventResult.end(),
+                                       [par](const QPair<QQuickItem *, bool> &pair) { return pair.first == par; });
+                if (it != sendFilteredPointerEventResult.end()) {
+                    // Yes, the event was sent to that parent for filtering: do not call it again, but use
+                    // the result of the previous call to determine whether we should call the handler.
+                    alreadyFiltered = it->second;
+                } else if (par) {
+                    alreadyFiltered = sendFilteredPointerEvent(pointerEvent, par);
+                    sendFilteredPointerEventResult << qMakePair(par, alreadyFiltered);
+                }
+                if (!alreadyFiltered) {
+                    if (par)
+                        localizePointerEvent(pointerEvent, par);
+                    handler->handlePointerEvent(pointerEvent);
+                }
             }
-            if (!alreadyFiltered) {
-                if (par)
-                    localizePointerEvent(pointerEvent, par);
-                handler->handlePointerEvent(pointerEvent);
+        } else if (QQuickItem *grabberItem = static_cast<QQuickItem *>(grabberObject)) {
+            // don't steal the grab if input should remain with the exclusive grabber only
+            if (QQuickItem *excGrabber = static_cast<QQuickItem *>(pointerEvent->exclusiveGrabber(pointerEvent->point(0)))) {
+                if ((isMouseEvent(pointerEvent) && excGrabber->keepMouseGrab())
+                 || (isTouchEvent(pointerEvent) && excGrabber->keepTouchGrab())) {
+                    return;
+                }
             }
+            localizePointerEvent(pointerEvent, grabberItem);
+            QCoreApplication::sendEvent(grabberItem, pointerEvent);
+            pointerEvent->accept();
         }
     }
 }
@@ -942,15 +940,15 @@ bool QQuickDeliveryAgentPrivate::sendHoverEvent(QEvent::Type type, QQuickItem *i
                                       Qt::KeyboardModifiers modifiers, ulong timestamp)
 {
     auto itemPrivate = QQuickItemPrivate::get(item);
-    const QTransform transform = itemPrivate->windowToItemTransform();
-    QHoverEvent hoverEvent(type, transform.map(scenePos), transform.map(lastScenePos), modifiers);
+    const auto transform = itemPrivate->windowToItemTransform();
+    const auto transformToGlobal = itemPrivate->windowToGlobalTransform();
+    auto globalPos = transformToGlobal.map(scenePos);
+    QHoverEvent hoverEvent(type, scenePos, globalPos, transform.map(lastScenePos), modifiers);
     hoverEvent.setTimestamp(timestamp);
     hoverEvent.setAccepted(true);
-    const QTransform transformToGlobal = itemPrivate->windowToGlobalTransform();
-    QMutableEventPoint &point = QMutableEventPoint::from(hoverEvent.point(0));
-    point.setScenePosition(scenePos);
-    point.setGlobalPosition(transformToGlobal.map(scenePos));
-    point.setGlobalLastPosition(transformToGlobal.map(lastScenePos));
+    QEventPoint &point = hoverEvent.point(0);
+    QMutableEventPoint::setPosition(point, transform.map(scenePos));
+    QMutableEventPoint::setGlobalLastPosition(point, transformToGlobal.map(lastScenePos));
 
     hasFiltered.clear();
     if (sendFilteredMouseEvent(&hoverEvent, item, item->parentItem()))
@@ -971,9 +969,6 @@ bool QQuickDeliveryAgentPrivate::deliverHoverEvent(
         const QPointF &scenePos, const QPointF &lastScenePos,
         Qt::KeyboardModifiers modifiers, ulong timestamp)
 {
-    if (!QQuickItemPrivate::get(rootItem)->subtreeHoverEnabled)
-        return false;
-
     // The first time this function is called, hoverItems is empty.
     // We then call deliverHoverEventRecursive from the rootItem, and
     // populate the list with all the children and grandchildren that
@@ -989,10 +984,19 @@ bool QQuickDeliveryAgentPrivate::deliverHoverEvent(
     // visit will still have an old hoverId. We can therefore go through the
     // list at the end of this function and look for items with an old hoverId,
     // remove them from the list, and update their state accordingly.
+
+    const bool subtreeHoverEnabled = QQuickItemPrivate::get(rootItem)->subtreeHoverEnabled;
+    const bool itemsWasHovered = !hoverItems.isEmpty();
+
+    if (!subtreeHoverEnabled && !itemsWasHovered)
+        return false;
+
     currentHoverId++;
 
-    const bool itemsWasHovered = !hoverItems.isEmpty();
-    deliverHoverEventRecursive(rootItem, scenePos, lastScenePos, modifiers, timestamp);
+    if (subtreeHoverEnabled) {
+        hoveredLeafItemFound = false;
+        deliverHoverEventRecursive(rootItem, scenePos, lastScenePos, modifiers, timestamp);
+    }
 
     // Prune the list for items that are no longer hovered
     for (auto it = hoverItems.begin(); it != hoverItems.end();) {
@@ -1023,10 +1027,11 @@ bool QQuickDeliveryAgentPrivate::deliverHoverEvent(
     accepted, recursion stops. Returns \c true in that case, or \c false if the
     event is rejected.
 
-    All items that have hover enabled (either explicitly, from
-    setAcceptHoverEvents(), or implicitly by having HoverHandlers) will have
-    the QQuickItemPrivate::hoverEnabled flag set. And all their anchestors will
-    have the QQuickItemPrivate::subtreeHoverEnabledset. This function will
+    Each item that has hover enabled (from setAcceptHoverEvents()) has the
+    QQuickItemPrivate::hoverEnabled flag set. This only controls whether we
+    should send hover events to the item itself. (HoverHandlers no longer set
+    this flag.) When an item has hoverEnabled set, all its ancestors have the
+    QQuickItemPrivate::subtreeHoverEnabled set. This function will
     follow the subtrees that have subtreeHoverEnabled by recursing into each
     child with that flag set. And for each child (in addition to the item
     itself) that also has hoverEnabled set, we call deliverHoverEventToItem()
@@ -1037,6 +1042,20 @@ bool QQuickDeliveryAgentPrivate::deliverHoverEvent(
     end up as the only one hovered. Any other HoverHandler that may be a child
     of an item that is stacked underneath, will not. Note that since siblings
     can overlap, there can be more than one leaf item under the mouse.
+
+    Note that HoverHandler doesn't set the hoverEnabled flag on the parent item.
+    But still, adding a HoverHandler to an item will set its subtreeHoverEnabled flag.
+    So all the propagation logic described above will otherwise be the same.
+    But the hoverEnabled flag can be used to resolve if subtreeHoverEnabled is on
+    because the application explicitly requested it (setAcceptHoverEvents()), or
+    indirectly, because the item has HoverHandlers.
+
+    For legacy reasons (Qt 6.1), as soon as we find a leaf item that has hover
+    enabled, and therefore receives the event, we stop recursing into the remaining
+    siblings (even if the event was ignored). This means that we only allow hover
+    events to propagate up the direct parent-child hierarchy, and not to siblings.
+    However, if the first candidate HoverHandler is disabled, delivery continues
+    to the next one, which may be a sibling (QTBUG-106548).
 */
 bool QQuickDeliveryAgentPrivate::deliverHoverEventRecursive(
         QQuickItem *item, const QPointF &scenePos, const QPointF &lastScenePos,
@@ -1046,13 +1065,13 @@ bool QQuickDeliveryAgentPrivate::deliverHoverEventRecursive(
     const QQuickItemPrivate *itemPrivate = QQuickItemPrivate::get(item);
     const QList<QQuickItem *> children = itemPrivate->paintOrderChildItems();
 
-    for (int ii = children.count() - 1; ii >= 0; --ii) {
+    for (int ii = children.size() - 1; ii >= 0; --ii) {
         QQuickItem *child = children.at(ii);
         const QQuickItemPrivate *childPrivate = QQuickItemPrivate::get(child);
 
         if (!child->isVisible() || childPrivate->culled)
             continue;
-        if (!child->isEnabled() && !childPrivate->subtreeHoverEnabled)
+        if (!childPrivate->subtreeHoverEnabled)
             continue;
         if (childPrivate->flags & QQuickItem::ItemClipsChildrenToShape) {
             const QPointF localPos = child->mapFromScene(scenePos);
@@ -1066,12 +1085,15 @@ bool QQuickDeliveryAgentPrivate::deliverHoverEventRecursive(
             // Stop propagation / recursion
             return true;
         }
+        if (hoveredLeafItemFound) {
+            // Don't propagate to siblings, only to ancestors
+            break;
+        }
     }
 
     // All decendants have been visited.
     // Now deliver the event to the item
-    if (itemPrivate->hoverEnabled)
-        return deliverHoverEventToItem(item, scenePos, lastScenePos, modifiers, timestamp, false);
+    return deliverHoverEventToItem(item, scenePos, lastScenePos, modifiers, timestamp, false);
 
     // Continue propagation / recursion
     return false;
@@ -1098,11 +1120,17 @@ bool QQuickDeliveryAgentPrivate::deliverHoverEventToItem(
     qCDebug(lcHoverTrace) << "item:" << item << "scene pos:" << scenePos << "localPos:" << localPos
                           << "wasHovering:" << wasHovering << "isHovering:" << isHovering;
 
-    // Send enter/move/leave event to the item
     bool accepted = false;
-    if (isHovering && !clearHover) {
+
+    // Start by sending out enter/move/leave events to the item.
+    // Note that hoverEnabled only controls if we should send out hover events to the
+    // item itself. HoverHandlers are not included, and are dealt with separately below.
+    if (itemPrivate->hoverEnabled && isHovering && !clearHover) {
         // Add the item to the list of hovered items (if it doesn't exist there
         // from before), and update hoverId to mark that it's (still) hovered.
+        // Also set hoveredLeafItemFound, so that only propagate in a straight
+        // line towards the root from now on.
+        hoveredLeafItemFound = true;
         hoverItems[item] = currentHoverId;
         if (wasHovering)
             accepted = sendHoverEvent(QEvent::HoverMove, item, scenePos, lastScenePos, modifiers, timestamp);
@@ -1117,6 +1145,7 @@ bool QQuickDeliveryAgentPrivate::deliverHoverEventToItem(
     if (!itemPrivate->hasPointerHandlers())
         return accepted;
 
+    // Next, send out hover events to the hover handlers.
     // If the item didn't accept the hover event, 'accepted' is now false.
     // Otherwise it's true, and then it should stay the way regardless of
     // whether or not the hoverhandlers themselves are hovered.
@@ -1125,11 +1154,13 @@ bool QQuickDeliveryAgentPrivate::deliverHoverEventToItem(
 
     if (clearHover) {
         // Note: a leave should never stop propagation
-        QHoverEvent hoverEvent(QEvent::HoverLeave, scenePos, lastScenePos, modifiers);
+        QHoverEvent hoverEvent(QEvent::HoverLeave, scenePos, globalPos, lastScenePos, modifiers);
         hoverEvent.setTimestamp(timestamp);
 
         for (QQuickPointerHandler *h : itemPrivate->extra->pointerHandlers) {
             if (QQuickHoverHandler *hh = qmlobject_cast<QQuickHoverHandler *>(h)) {
+                if (!hh->isHovered())
+                    continue;
                 hoverEvent.setAccepted(true);
                 QCoreApplication::sendEvent(hh, &hoverEvent);
             }
@@ -1140,12 +1171,20 @@ bool QQuickDeliveryAgentPrivate::deliverHoverEventToItem(
 
         for (QQuickPointerHandler *h : itemPrivate->extra->pointerHandlers) {
             if (QQuickHoverHandler *hh = qmlobject_cast<QQuickHoverHandler *>(h)) {
+                if (!hh->enabled())
+                    continue;
                 hoverEvent.setAccepted(true);
                 hh->handlePointerEvent(&hoverEvent);
                 if (hh->isHovered()) {
                     // Mark the whole item as updated, even if only the handler is
                     // actually in a hovered state (because of HoverHandler.margins)
+                    hoveredLeafItemFound = true;
                     hoverItems[item] = currentHoverId;
+                    if (hh->isBlocking()) {
+                        qCDebug(lcHoverTrace) << "skipping rest of hover delivery due to blocking" << hh;
+                        accepted = true;
+                        break;
+                    }
                 }
             }
         }
@@ -1158,11 +1197,26 @@ bool QQuickDeliveryAgentPrivate::deliverHoverEventToItem(
 // in the usual reverse-paint-order until propagation is stopped
 bool QQuickDeliveryAgentPrivate::deliverSinglePointEventUntilAccepted(QPointerEvent *event)
 {
-    Q_ASSERT(event->points().count() == 1);
+    Q_ASSERT(event->points().size() == 1);
     QQuickPointerHandlerPrivate::deviceDeliveryTargets(event->pointingDevice()).clear();
     QEventPoint &point = event->point(0);
     QVector<QQuickItem *> targetItems = pointerTargets(rootItem, event, point, false, false);
     point.setAccepted(false);
+
+    // Let passive grabbers see the event. This must be done before we deliver the
+    // event to the target and to handlers that might stop event propagation.
+    // Passive grabbers cannot stop event delivery.
+    for (const auto &passiveGrabber : event->passiveGrabbers(point)) {
+        if (auto *grabberItem = qobject_cast<QQuickItem *>(passiveGrabber)) {
+            if (targetItems.contains(grabberItem))
+                continue;
+            localizePointerEvent(event, grabberItem);
+            QCoreApplication::sendEvent(grabberItem, event);
+        }
+    }
+    // Maintain the invariant that items receive input events in accepted state.
+    // A passive grabber might have explicitly ignored the event.
+    event->accept();
 
     for (QQuickItem *item : targetItems) {
         QQuickItemPrivate *itemPrivate = QQuickItemPrivate::get(item);
@@ -1202,10 +1256,10 @@ void QQuickDeliveryAgentPrivate::deliverDelayedTouchEvent()
     // Deliver and delete delayedTouch.
     // Set delayedTouch to nullptr before delivery to avoid redelivery in case of
     // event loop recursions (e.g if it the touch starts a dnd session).
-    QScopedPointer<QTouchEvent> e(delayedTouch.take());
-    qCDebug(lcTouchCmprs) << "delivering" << e.data();
+    std::unique_ptr<QTouchEvent> e(std::move(delayedTouch));
+    qCDebug(lcTouchCmprs) << "delivering" << e.get();
     compressedTouchCount = 0;
-    deliverPointerEvent(e.data());
+    deliverPointerEvent(e.get());
 }
 
 /*! \internal
@@ -1267,8 +1321,8 @@ bool QQuickDeliveryAgentPrivate::allUpdatedPointsAccepted(const QPointerEvent *e
 void QQuickDeliveryAgentPrivate::localizePointerEvent(QPointerEvent *ev, const QQuickItem *dest)
 {
     for (int i = 0; i < ev->pointCount(); ++i) {
-        auto &point = QMutableEventPoint::from(ev->point(i));
-        QMutableEventPoint::from(point).setPosition(dest->mapFromScene(point.scenePosition()));
+        auto &point = ev->point(i);
+        QMutableEventPoint::setPosition(point, dest->mapFromScene(point.scenePosition()));
         qCDebug(lcPtrLoc) << ev->type() << "@" << point.scenePosition() << "to"
                           << dest << "@" << dest->mapToScene(QPointF()) << "->" << point;
     }
@@ -1293,6 +1347,15 @@ bool QQuickDeliveryAgentPrivate::anyPointGrabbed(const QPointerEvent *ev)
             return true;
     }
     return false;
+}
+
+bool QQuickDeliveryAgentPrivate::allPointsGrabbed(const QPointerEvent *ev)
+{
+    for (const auto &point : ev->points()) {
+        if (!ev->exclusiveGrabber(point) && ev->passiveGrabbers(point).isEmpty())
+            return false;
+    }
+    return true;
 }
 
 bool QQuickDeliveryAgentPrivate::isMouseEvent(const QPointerEvent *ev)
@@ -1347,6 +1410,18 @@ bool QQuickDeliveryAgentPrivate::isTabletEvent(const QPointerEvent *ev)
     }
 }
 
+bool QQuickDeliveryAgentPrivate::isEventFromMouseOrTouchpad(const QPointerEvent *ev)
+{
+    const auto devType = ev->device()->type();
+    return devType == QInputDevice::DeviceType::Mouse ||
+           devType == QInputDevice::DeviceType::TouchPad;
+}
+
+bool QQuickDeliveryAgentPrivate::isSynthMouse(const QPointerEvent *ev)
+{
+    return (!isEventFromMouseOrTouchpad(ev) && isMouseEvent(ev));
+}
+
 QQuickPointingDeviceExtra *QQuickDeliveryAgentPrivate::deviceExtra(const QInputDevice *device)
 {
     QInputDevicePrivate *devPriv = QInputDevicePrivate::get(const_cast<QInputDevice *>(device));
@@ -1387,6 +1462,11 @@ QQuickPointingDeviceExtra *QQuickDeliveryAgentPrivate::deviceExtra(const QInputD
 */
 bool QQuickDeliveryAgentPrivate::compressTouchEvent(QTouchEvent *event)
 {
+    // If this is a subscene agent, don't store any events, because
+    // flushFrameSynchronousEvents() is only called on the window's DA.
+    if (isSubsceneAgent)
+        return false;
+
     QEventPoint::States states = event->touchPointStates();
     if (states.testFlag(QEventPoint::State::Pressed) || states.testFlag(QEventPoint::State::Released)) {
         qCDebug(lcTouchCmprs) << "no compression" << event;
@@ -1399,10 +1479,10 @@ bool QQuickDeliveryAgentPrivate::compressTouchEvent(QTouchEvent *event)
         delayedTouch->setTimestamp(event->timestamp());
         for (qsizetype i = 0; i < delayedTouch->pointCount(); ++i) {
             auto &tp = delayedTouch->point(i);
-            QMutableEventPoint::from(tp).detach();
+            QMutableEventPoint::detach(tp);
         }
         ++compressedTouchCount;
-        qCDebug(lcTouchCmprs) << "delayed" << compressedTouchCount << delayedTouch.data();
+        qCDebug(lcTouchCmprs) << "delayed" << compressedTouchCount << delayedTouch.get();
         if (QQuickWindow *window = rootItem->window())
             window->maybeUpdate();
         return true;
@@ -1427,7 +1507,7 @@ bool QQuickDeliveryAgentPrivate::compressTouchEvent(QTouchEvent *event)
             }
 
             if (tpDelayed.state() == QEventPoint::State::Updated && tp.state() == QEventPoint::State::Stationary)
-                QMutableEventPoint::from(tpts[i]).setState(QEventPoint::State::Updated);
+                QMutableEventPoint::setState(tpts[i], QEventPoint::State::Updated);
         }
 
         // matching touch event? then give delayedTouch a merged set of touchpoints
@@ -1438,10 +1518,10 @@ bool QQuickDeliveryAgentPrivate::compressTouchEvent(QTouchEvent *event)
             delayedTouch->setTimestamp(event->timestamp());
             for (qsizetype i = 0; i < delayedTouch->pointCount(); ++i) {
                 auto &tp = delayedTouch->point(i);
-                QMutableEventPoint::from(tp).detach();
+                QMutableEventPoint::detach(tp);
             }
             ++compressedTouchCount;
-            qCDebug(lcTouchCmprs) << "coalesced" << compressedTouchCount << delayedTouch.data();
+            qCDebug(lcTouchCmprs) << "coalesced" << compressedTouchCount << delayedTouch.get();
             if (QQuickWindow *window = rootItem->window())
                 window->maybeUpdate();
             return true;
@@ -1518,24 +1598,24 @@ void QQuickDeliveryAgentPrivate::handleMouseEvent(QMouseEvent *event)
     case QEvent::MouseButtonDblClick:
         Q_QUICK_INPUT_PROFILE(QQuickProfiler::Mouse, QQuickProfiler::InputMouseDoubleClick,
                               event->button(), event->buttons());
-        if (allowDoubleClick)
-            deliverPointerEvent(event);
+        deliverPointerEvent(event);
         break;
     case QEvent::MouseMove: {
         Q_QUICK_INPUT_PROFILE(QQuickProfiler::Mouse, QQuickProfiler::InputMouseMove,
                               event->position().x(), event->position().y());
 
-#if QT_CONFIG(cursor)
-        QQuickWindowPrivate::get(rootItem->window())->updateCursor(event->scenePosition());
-#endif
         const QPointF last = lastMousePosition.isNull() ? event->scenePosition() : lastMousePosition;
         lastMousePosition = event->scenePosition();
         qCDebug(lcHoverTrace) << q << "mouse pos" << last << "->" << lastMousePosition;
-        if (!event->points().count() || !event->exclusiveGrabber(event->point(0))) {
+        if (!event->points().size() || !event->exclusiveGrabber(event->point(0))) {
             bool accepted = deliverHoverEvent(event->scenePosition(), last, event->modifiers(), event->timestamp());
             event->setAccepted(accepted);
         }
         deliverPointerEvent(event);
+#if QT_CONFIG(cursor)
+        // The pointer event could result in a cursor change (reaction), so update it afterwards.
+        QQuickWindowPrivate::get(rootItem->window())->updateCursor(event->scenePosition());
+#endif
         break;
     }
     default:
@@ -1575,6 +1655,8 @@ void QQuickDeliveryAgentPrivate::flushFrameSynchronousEvents(QQuickWindow *win)
         deliverHoverEvent(lastMousePosition, lastMousePosition, QGuiApplication::keyboardModifiers(), 0);
         qCDebug(lcHoverTrace) << q << "frame-sync hover delivery done";
     }
+#else
+    Q_UNUSED(win);
 #endif
     if (Q_UNLIKELY(QQuickDeliveryAgentPrivate::currentEventDeliveryAgent &&
                    QQuickDeliveryAgentPrivate::currentEventDeliveryAgent != q))
@@ -1657,17 +1739,19 @@ void QQuickDeliveryAgentPrivate::onGrabChanged(QObject *grabber, QPointingDevice
     }
 
     if (currentEventDeliveryAgent == q && event && event->device()) {
-        auto epd = QPointingDevicePrivate::get(const_cast<QPointingDevice*>(event->pointingDevice()))->queryPointById(point.id());
-        Q_ASSERT(epd);
         switch (transition) {
         case QPointingDevice::GrabPassive: {
+            auto epd = QPointingDevicePrivate::get(const_cast<QPointingDevice*>(event->pointingDevice()))->queryPointById(point.id());
+            Q_ASSERT(epd);
             QPointingDevicePrivate::setPassiveGrabberContext(epd, grabber, q);
             qCDebug(lcPtr) << "remembering that" << q << "handles point" << point.id() << "after" << transition;
         } break;
-        case QPointingDevice::GrabExclusive:
+        case QPointingDevice::GrabExclusive: {
+            auto epd = QPointingDevicePrivate::get(const_cast<QPointingDevice*>(event->pointingDevice()))->queryPointById(point.id());
+            Q_ASSERT(epd);
             epd->exclusiveGrabberContext = q;
             qCDebug(lcPtr) << "remembering that" << q << "handles point" << point.id() << "after" << transition;
-            break;
+        } break;
         case QPointingDevice::CancelGrabExclusive:
         case QPointingDevice::UngrabExclusive:
             // taken care of in QPointingDevicePrivate::setExclusiveGrabber(,,nullptr), removeExclusiveGrabber()
@@ -1713,10 +1797,10 @@ void QQuickDeliveryAgentPrivate::deliverPointerEvent(QPointerEvent *event)
     if (sceneTransform) {
         originalScenePositions.resize(event->pointCount());
         for (int i = 0; i < event->pointCount(); ++i) {
-            auto &mut = QMutableEventPoint::from(event->point(i));
-            originalScenePositions[i] = mut.scenePosition();
-            mut.setScenePosition(sceneTransform->map(mut.scenePosition()));
-            qCDebug(lcPtrLoc) << q << event->type() << mut.id() << "transformed scene pos" << mut.scenePosition();
+            auto &pt = event->point(i);
+            originalScenePositions[i] = pt.scenePosition();
+            QMutableEventPoint::setScenePosition(pt, sceneTransform->map(pt.scenePosition()));
+            qCDebug(lcPtrLoc) << q << event->type() << pt.id() << "transformed scene pos" << pt.scenePosition();
         }
     } else if (isSubsceneAgent) {
         qCDebug(lcPtrLoc) << q << event->type() << "no scene transform set";
@@ -1741,14 +1825,22 @@ void QQuickDeliveryAgentPrivate::deliverPointerEvent(QPointerEvent *event)
     if (event->isEndEvent())
         deliverPressOrReleaseEvent(event, true);
 
-    // failsafe: never allow touch->mouse synthesis to persist after release
-    if (event->isEndEvent() && isTouchEvent(event))
-        cancelTouchMouseSynthesis();
+    // failsafe: never allow touch->mouse synthesis to persist after all touchpoints are released,
+    // or after the touchmouse is released
+    if (isTouchEvent(event) && touchMouseId >= 0) {
+        if (static_cast<QTouchEvent *>(event)->touchPointStates() == QEventPoint::State::Released) {
+            cancelTouchMouseSynthesis();
+        } else {
+            auto touchMousePoint = event->pointById(touchMouseId);
+            if (touchMousePoint && touchMousePoint->state() == QEventPoint::State::Released)
+                cancelTouchMouseSynthesis();
+        }
+    }
 
     eventsInDelivery.pop();
     if (sceneTransform) {
         for (int i = 0; i < event->pointCount(); ++i)
-            QMutableEventPoint::from(event->point(i)).setScenePosition(originalScenePositions.at(i));
+            QMutableEventPoint::setScenePosition(event->point(i), originalScenePositions.at(i));
     }
     --pointerEventRecursionGuard;
     lastUngrabbed = nullptr;
@@ -1792,7 +1884,7 @@ QVector<QQuickItem *> QQuickDeliveryAgentPrivate::pointerTargets(QQuickItem *ite
         children.insert(it, item);
     }
 
-    for (int ii = children.count() - 1; ii >= 0; --ii) {
+    for (int ii = children.size() - 1; ii >= 0; --ii) {
         QQuickItem *child = children.at(ii);
         auto childPrivate = QQuickItemPrivate::get(child);
         if (!child->isVisible() || !child->isEnabled() || childPrivate->culled ||
@@ -1816,8 +1908,8 @@ QVector<QQuickItem *> QQuickDeliveryAgentPrivate::mergePointerTargets(const QVec
     // start at the end of list2
     // if item not in list, append it
     // if item found, move to next one, inserting before the last found one
-    int insertPosition = targets.length();
-    for (int i = list2.length() - 1; i >= 0; --i) {
+    int insertPosition = targets.size();
+    for (int i = list2.size() - 1; i >= 0; --i) {
         int newInsertPosition = targets.lastIndexOf(list2.at(i), insertPosition);
         if (newInsertPosition >= 0) {
             Q_ASSERT(newInsertPosition <= insertPosition);
@@ -1873,7 +1965,7 @@ void QQuickDeliveryAgentPrivate::deliverUpdatedPoints(QPointerEvent *event)
             continue;
         }
         QList<QPointer<QObject>> relevantPassiveGrabbers;
-        for (int i = 0; i < epd->passiveGrabbersContext.count(); ++i) {
+        for (int i = 0; i < epd->passiveGrabbersContext.size(); ++i) {
             if (epd->passiveGrabbersContext.at(i).data() == q)
                 relevantPassiveGrabbers << epd->passiveGrabbers.at(i);
         }
@@ -1885,7 +1977,7 @@ void QQuickDeliveryAgentPrivate::deliverUpdatedPoints(QPointerEvent *event)
         return;
 
     // If some points weren't grabbed, deliver only to non-grabber PointerHandlers in reverse paint order
-    if (!event->allPointsGrabbed()) {
+    if (!allPointsGrabbed(event)) {
         QVector<QQuickItem *> targetItems;
         for (auto &point : event->points()) {
             // Presses were delivered earlier; not the responsibility of deliverUpdatedTouchPoints.
@@ -1893,7 +1985,7 @@ void QQuickDeliveryAgentPrivate::deliverUpdatedPoints(QPointerEvent *event)
             if (point.state() == QEventPoint::Pressed || qmlobject_cast<QQuickItem *>(event->exclusiveGrabber(point)))
                 continue;
             QVector<QQuickItem *> targetItemsForPoint = pointerTargets(rootItem, event, point, false, false);
-            if (targetItems.count()) {
+            if (targetItems.size()) {
                 targetItems = mergePointerTargets(targetItems, targetItemsForPoint);
             } else {
                 targetItems = targetItemsForPoint;
@@ -1905,7 +1997,7 @@ void QQuickDeliveryAgentPrivate::deliverUpdatedPoints(QPointerEvent *event)
             QQuickItemPrivate *itemPrivate = QQuickItemPrivate::get(item);
             localizePointerEvent(event, item);
             itemPrivate->handlePointerEvent(event, true); // avoid re-delivering to grabbers
-            if (event->allPointsGrabbed())
+            if (allPointsGrabbed(event))
                 break;
         }
     }
@@ -1936,7 +2028,7 @@ bool QQuickDeliveryAgentPrivate::deliverPressOrReleaseEvent(QPointerEvent *event
     for (int i = 0; i < event->pointCount(); ++i) {
         auto &point = event->point(i);
         QVector<QQuickItem *> targetItemsForPoint = pointerTargets(rootItem, event, point, !isTouch, isTouch);
-        if (targetItems.count()) {
+        if (targetItems.size()) {
             targetItems = mergePointerTargets(targetItems, targetItemsForPoint);
         } else {
             targetItems = targetItemsForPoint;
@@ -1989,11 +2081,9 @@ void QQuickDeliveryAgentPrivate::deliverMatchingPointsToItem(QQuickItem *item, b
 
     // Let the Item's handlers (if any) have the event first.
     // However, double click should never be delivered to handlers.
-    if (pointerEvent->type() != QEvent::MouseButtonDblClick) {
-        bool wasAccepted = pointerEvent->allPointsAccepted();
+    if (pointerEvent->type() != QEvent::MouseButtonDblClick)
         itemPrivate->handlePointerEvent(pointerEvent);
-        allowDoubleClick = wasAccepted || !(isMouse && pointerEvent->isBeginEvent() && pointerEvent->allPointsAccepted());
-    }
+
     if (handlersOnly)
         return;
 
@@ -2032,7 +2122,7 @@ void QQuickDeliveryAgentPrivate::deliverMatchingPointsToItem(QQuickItem *item, b
                         item->mouseUngrabEvent();
                         lastUngrabbed = item;
                     }
-                } else if (item->isEnabled() && item->isVisible() && point.state() != QEventPoint::State::Released) {
+                } else if (item->isEnabled() && item->isVisible() && point.state() == QEventPoint::State::Pressed) {
                     pointerEvent->setExclusiveGrabber(point, item);
                 }
                 point.setAccepted(true);
@@ -2062,18 +2152,16 @@ void QQuickDeliveryAgentPrivate::deliverMatchingPointsToItem(QQuickItem *item, b
         qCDebug(lcTouch) << "actually delivering" << &touchEvent << " to " << item;
         QCoreApplication::sendEvent(item, &touchEvent);
         eventAccepted = touchEvent.isAccepted();
-    } else if (Q_LIKELY(QCoreApplication::testAttribute(Qt::AA_SynthesizeMouseForUnhandledTouchEvents))) {
+    } else {
         // If the touch event wasn't accepted, synthesize a mouse event and see if the item wants it.
-        if (!eventAccepted && (itemPrivate->acceptedMouseButtons() & Qt::LeftButton)) {
-            // send mouse event
-            if (deliverTouchAsMouse(item, &touchEvent))
-                eventAccepted = true;
-        }
+        if (Q_LIKELY(QCoreApplication::testAttribute(Qt::AA_SynthesizeMouseForUnhandledTouchEvents)) &&
+                !eventAccepted && (itemPrivate->acceptedMouseButtons() & Qt::LeftButton))
+            deliverTouchAsMouse(item, &touchEvent);
+        return;
     }
 
+    Q_ASSERT(item->acceptTouchEvents()); // else we would've returned early above
     if (eventAccepted) {
-        // If the touch was accepted (regardless by whom or in what form),
-        // update accepted new points.
         bool isPressOrRelease = pointerEvent->isBeginEvent() || pointerEvent->isEndEvent();
         for (int i = 0; i < touchEvent.pointCount(); ++i) {
             auto &point = touchEvent.point(i);
@@ -2126,6 +2214,7 @@ void QQuickDeliveryAgentPrivate::deliverDragEvent(QQuickDragGrabber *grabber, QE
             QDragLeaveEvent leaveEvent;
             for (; grabItem != grabber->end(); grabItem = grabber->release(grabItem))
                 QCoreApplication::sendEvent(**grabItem, &leaveEvent);
+            grabber->ignoreList().clear();
             return;
         } else {
             QDragMoveEvent *moveEvent = static_cast<QDragMoveEvent *>(event);
@@ -2183,6 +2272,8 @@ void QQuickDeliveryAgentPrivate::deliverDragEvent(QQuickDragGrabber *grabber, QE
                 e->modifiers());
         QQuickDropEventEx::copyActions(&enterEvent, *e);
         event->setAccepted(deliverDragEvent(grabber, rootItem, &enterEvent));
+    } else {
+        grabber->ignoreList().clear();
     }
 }
 
@@ -2196,8 +2287,13 @@ bool QQuickDeliveryAgentPrivate::deliverDragEvent(
     QPointF p = item->mapFromScene(event->position().toPoint());
     bool itemContained = item->contains(p);
 
-    if (!itemContained && itemPrivate->flags & QQuickItem::ItemClipsChildrenToShape) {
-        return false;
+    const int itemIndex = grabber->ignoreList().indexOf(item);
+    if (!itemContained) {
+        if (itemIndex >= 0)
+            grabber->ignoreList().remove(itemIndex);
+
+        if (itemPrivate->flags & QQuickItem::ItemClipsChildrenToShape)
+            return false;
     }
 
     QDragEnterEvent enterEvent(
@@ -2210,7 +2306,7 @@ bool QQuickDeliveryAgentPrivate::deliverDragEvent(
     QList<QQuickItem *> children = itemPrivate->paintOrderChildItems();
 
     // Check children in front of this item first
-    for (int ii = children.count() - 1; ii >= 0; --ii) {
+    for (int ii = children.size() - 1; ii >= 0; --ii) {
         if (children.at(ii)->z() < 0)
             continue;
         if (deliverDragEvent(grabber, children.at(ii), &enterEvent, currentGrabItems, formerTarget))
@@ -2227,15 +2323,19 @@ bool QQuickDeliveryAgentPrivate::deliverDragEvent(
         }
 
         if (event->type() == QEvent::DragMove || itemPrivate->flags & QQuickItem::ItemAcceptsDrops) {
-            if (event->type() == QEvent::DragEnter && formerTarget) {
-                QQuickItem *formerTargetItem = qobject_cast<QQuickItem *>(formerTarget);
-                if (formerTargetItem && currentGrabItems) {
-                    QDragLeaveEvent leaveEvent;
-                    QCoreApplication::sendEvent(formerTarget, &leaveEvent);
+            if (event->type() == QEvent::DragEnter) {
+                if (formerTarget) {
+                    QQuickItem *formerTargetItem = qobject_cast<QQuickItem *>(formerTarget);
+                    if (formerTargetItem && currentGrabItems) {
+                        QDragLeaveEvent leaveEvent;
+                        QCoreApplication::sendEvent(formerTarget, &leaveEvent);
 
-                    // Remove the item from the currentGrabItems so a leave event won't be generated
-                    // later on
-                    currentGrabItems->removeAll(formerTarget);
+                        // Remove the item from the currentGrabItems so a leave event won't be generated
+                        // later on
+                        currentGrabItems->removeAll(formerTarget);
+                    }
+                } else if (itemIndex >= 0) {
+                    return false;
                 }
             }
 
@@ -2251,6 +2351,8 @@ bool QQuickDeliveryAgentPrivate::deliverDragEvent(
                     grabber->grab(item);
                     grabber->setTarget(item);
                     return true;
+                } else if (itemIndex < 0) {
+                    grabber->ignoreList().append(item);
                 }
             } else {
                 return true;
@@ -2259,7 +2361,7 @@ bool QQuickDeliveryAgentPrivate::deliverDragEvent(
     }
 
     // Check children behind this item if this item or any higher children have not accepted
-    for (int ii = children.count() - 1; ii >= 0; --ii) {
+    for (int ii = children.size() - 1; ii >= 0; --ii) {
         if (children.at(ii)->z() >= 0)
             continue;
         if (deliverDragEvent(grabber, children.at(ii), &enterEvent, currentGrabItems, formerTarget))

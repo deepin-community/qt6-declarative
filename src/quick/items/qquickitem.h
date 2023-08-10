@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2020 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQuick module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2020 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #ifndef QQUICKITEM_H
 #define QQUICKITEM_H
@@ -166,7 +130,9 @@ public:
 #endif
         ItemIsFocusScope          = 0x04,
         ItemHasContents           = 0x08,
-        ItemAcceptsDrops          = 0x10
+        ItemAcceptsDrops          = 0x10,
+        ItemIsViewport            = 0x20,
+        ItemObservesViewport      = 0x40,
         // Remember to increment the size of QQuickItemPrivate::flags
     };
     Q_DECLARE_FLAGS(Flags, Flag)
@@ -292,6 +258,7 @@ public:
 
     virtual QRectF boundingRect() const;
     virtual QRectF clipRect() const;
+    QQuickItem *viewportItem() const;
 
     bool hasActiveFocus() const;
     bool hasFocus() const;
@@ -358,6 +325,9 @@ public:
     Q_INVOKABLE void forceActiveFocus(Qt::FocusReason reason);
     Q_REVISION(2, 1) Q_INVOKABLE QQuickItem *nextItemInFocusChain(bool forward = true);
     Q_INVOKABLE QQuickItem *childAt(qreal x, qreal y) const;
+    Q_REVISION(6, 3) Q_INVOKABLE void ensurePolished();
+
+    Q_REVISION(6, 3) Q_INVOKABLE void dumpItemTree() const;
 
 #if QT_CONFIG(im)
     virtual QVariant inputMethodQuery(Qt::InputMethodQuery query) const;
@@ -460,7 +430,6 @@ protected:
     virtual void releaseResources();
     virtual void updatePolish();
 
-protected:
     QQuickItem(QQuickItemPrivate &dd, QQuickItem *parent = nullptr);
 
 private:
@@ -472,15 +441,35 @@ private:
     friend class QSGRenderer;
     friend class QAccessibleQuickItem;
     friend class QQuickAccessibleAttached;
+    friend class QQuickAnchorChanges;
     Q_DISABLE_COPY(QQuickItem)
     Q_DECLARE_PRIVATE(QQuickItem)
 };
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(QQuickItem::Flags)
 
+#ifndef Q_QDOC
+template <> inline QQuickItem *qobject_cast<QQuickItem *>(QObject *o)
+{
+    if (!o || !o->isQuickItemType())
+        return nullptr;
+    return static_cast<QQuickItem *>(o);
+}
+template <> inline const QQuickItem *qobject_cast<const QQuickItem *>(const QObject *o)
+{
+    if (!o || !o->isQuickItemType())
+        return nullptr;
+    return static_cast<const QQuickItem *>(o);
+}
+#endif // !Q_QDOC
+
 #ifndef QT_NO_DEBUG_STREAM
-QDebug Q_QUICK_EXPORT operator<<(QDebug debug, QQuickItem *item);
+QDebug Q_QUICK_EXPORT operator<<(QDebug debug,
+#if QT_VERSION >= QT_VERSION_CHECK(7, 0, 0)
+                                 const
 #endif
+                                 QQuickItem *item);
+#endif // QT_NO_DEBUG_STREAM
 
 QT_END_NAMESPACE
 

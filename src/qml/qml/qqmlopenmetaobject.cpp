@@ -1,47 +1,13 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQml module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qqmlopenmetaobject_p.h"
 #include <private/qqmlpropertycache_p.h>
 #include <private/qqmldata_p.h>
+#include <private/qqmlmetatype_p.h>
 #include <private/qmetaobjectbuilder_p.h>
 #include <qdebug.h>
+#include <QtCore/qset.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -49,7 +15,7 @@ QT_BEGIN_NAMESPACE
 class QQmlOpenMetaObjectTypePrivate
 {
 public:
-    QQmlOpenMetaObjectTypePrivate() : mem(nullptr), cache(nullptr) {}
+    QQmlOpenMetaObjectTypePrivate() : mem(nullptr) {}
 
     void init(const QMetaObject *metaObj);
 
@@ -58,7 +24,13 @@ public:
     QHash<QByteArray, int> names;
     QMetaObjectBuilder mob;
     QMetaObject *mem;
-    QQmlPropertyCache *cache;
+
+    // TODO: We need to make sure that this does not escape into other threads.
+    //       In particular, all its non-const uses are probably wrong. You should
+    //       only set the open metaobject to "cached" once it's not going to be
+    //       modified anymore.
+    QQmlPropertyCache::Ptr cache;
+
     QSet<QQmlOpenMetaObject*> referers;
 };
 
@@ -72,8 +44,6 @@ QQmlOpenMetaObjectType::~QQmlOpenMetaObjectType()
 {
     if (d->mem)
         free(d->mem);
-    if (d->cache)
-        d->cache->release();
     delete d;
 }
 
@@ -89,24 +59,19 @@ int QQmlOpenMetaObjectType::signalOffset() const
 
 int QQmlOpenMetaObjectType::propertyCount() const
 {
-    return d->names.count();
+    return d->names.size();
 }
 
 QByteArray QQmlOpenMetaObjectType::propertyName(int idx) const
 {
-    Q_ASSERT(idx >= 0 && idx < d->names.count());
+    Q_ASSERT(idx >= 0 && idx < d->names.size());
 
     return d->mob.property(idx).name();
 }
 
-QMetaObject *QQmlOpenMetaObjectType::metaObject() const
-{
-    return d->mem;
-}
-
 void QQmlOpenMetaObjectType::createProperties(const QVector<QByteArray> &names)
 {
-    for (int i = 0; i < names.count(); ++i) {
+    for (int i = 0; i < names.size(); ++i) {
         const QByteArray &name = names.at(i);
         const int id = d->mob.propertyCount();
         d->mob.addSignal("__" + QByteArray::number(id) + "()");
@@ -128,13 +93,13 @@ void QQmlOpenMetaObjectType::createProperties(const QVector<QByteArray> &names)
 
 int QQmlOpenMetaObjectType::createProperty(const QByteArray &name)
 {
-    int id = d->mob.propertyCount();
-    d->mob.addSignal("__" + QByteArray::number(id) + "()");
-    QMetaPropertyBuilder build = d->mob.addProperty(name, "QVariant", id);
-    propertyCreated(id, build);
+    const int signalIdx = d->mob.addSignal(
+                "__" + QByteArray::number(d->mob.propertyCount()) + "()").index();
+    QMetaPropertyBuilder build = d->mob.addProperty(name, "QVariant", signalIdx);
+    propertyCreated(build.index(), build);
     free(d->mem);
     d->mem = d->mob.toMetaObject();
-    d->names.insert(name, id);
+    d->names.insert(name, build.index());
     QSet<QQmlOpenMetaObject*>::iterator it = d->referers.begin();
     while (it != d->referers.end()) {
         QQmlOpenMetaObject *omo = *it;
@@ -144,12 +109,12 @@ int QQmlOpenMetaObjectType::createProperty(const QByteArray &name)
         ++it;
     }
 
-    return d->propertyOffset + id;
+    return d->propertyOffset + build.index();
 }
 
 void QQmlOpenMetaObjectType::propertyCreated(int id, QMetaPropertyBuilder &builder)
 {
-    if (d->referers.count())
+    if (d->referers.size())
         (*d->referers.begin())->propertyCreated(id, builder);
 }
 
@@ -198,13 +163,13 @@ public:
     };
 
     inline void setPropertyValue(int idx, const QVariant &value) {
-        if (data.count() <= idx)
+        if (data.size() <= idx)
             data.resize(idx + 1);
         data[idx].setValue(value);
     }
 
     inline Property &propertyRef(int idx) {
-        if (data.count() <= idx)
+        if (data.size() <= idx)
             data.resize(idx + 1);
         Property &prop = data[idx];
         if (!prop.valueSet)
@@ -223,22 +188,18 @@ public:
     }
 
     inline bool hasProperty(int idx) const {
-        if (idx >= data.count())
+        if (idx >= data.size())
             return false;
         return data[idx].valueSet;
     }
 
     void dropPropertyCache() {
-        if (QQmlData *ddata = QQmlData::get(object, /*create*/false)) {
-            if (ddata->propertyCache) {
-                ddata->propertyCache->release();
-                ddata->propertyCache = nullptr;
-            }
-        }
+        if (QQmlData *ddata = QQmlData::get(object, /*create*/false))
+            ddata->propertyCache.reset();
     }
 
     QQmlOpenMetaObject *q;
-    QAbstractDynamicMetaObject *parent = nullptr;
+    QDynamicMetaObjectData *parent = nullptr;
     QVector<Property> data;
     QObject *object;
     QQmlRefPointer<QQmlOpenMetaObjectType> type;
@@ -254,19 +215,20 @@ QQmlOpenMetaObject::QQmlOpenMetaObject(QObject *obj, const QMetaObject *base)
     d->type->d->referers.insert(this);
 
     QObjectPrivate *op = QObjectPrivate::get(obj);
-    d->parent = static_cast<QAbstractDynamicMetaObject *>(op->metaObject);
+    d->parent = op->metaObject;
     *static_cast<QMetaObject *>(this) = *d->type->d->mem;
     op->metaObject = this;
 }
 
-QQmlOpenMetaObject::QQmlOpenMetaObject(QObject *obj, QQmlOpenMetaObjectType *type)
+QQmlOpenMetaObject::QQmlOpenMetaObject(
+        QObject *obj, const QQmlRefPointer<QQmlOpenMetaObjectType> &type)
 : d(new QQmlOpenMetaObjectPrivate(this, obj))
 {
     d->type = type;
     d->type->d->referers.insert(this);
 
     QObjectPrivate *op = QObjectPrivate::get(obj);
-    d->parent = static_cast<QAbstractDynamicMetaObject *>(op->metaObject);
+    d->parent = op->metaObject;
     *static_cast<QMetaObject *>(this) = *d->type->d->mem;
     op->metaObject = this;
 }
@@ -292,6 +254,11 @@ void QQmlOpenMetaObject::emitPropertyNotification(const QByteArray &propertyName
     activate(d->object, *iter + d->type->d->signalOffset, nullptr);
 }
 
+void QQmlOpenMetaObject::unparent()
+{
+    d->parent = nullptr;
+}
+
 int QQmlOpenMetaObject::metaCall(QObject *o, QMetaObject::Call c, int id, void **a)
 {
     Q_ASSERT(d->object == o);
@@ -303,7 +270,7 @@ int QQmlOpenMetaObject::metaCall(QObject *o, QMetaObject::Call c, int id, void *
             propertyRead(propId);
             *reinterpret_cast<QVariant *>(a[0]) = d->propertyValue(propId);
         } else if (c == QMetaObject::WriteProperty) {
-            if (propId >= d->data.count() || d->data.at(propId).value() != *reinterpret_cast<QVariant *>(a[0]))  {
+            if (propId >= d->data.size() || d->data.at(propId).value() != *reinterpret_cast<QVariant *>(a[0]))  {
                 propertyWrite(propId);
                 d->setPropertyValue(propId, propertyWriteValue(propId, *reinterpret_cast<QVariant *>(a[0])));
                 propertyWritten(propId);
@@ -319,7 +286,7 @@ int QQmlOpenMetaObject::metaCall(QObject *o, QMetaObject::Call c, int id, void *
     }
 }
 
-QAbstractDynamicMetaObject *QQmlOpenMetaObject::parent() const
+QDynamicMetaObjectData *QQmlOpenMetaObject::parent() const
 {
     return d->parent;
 }
@@ -408,7 +375,7 @@ void QQmlOpenMetaObject::setValues(const QHash<QByteArray, QVariant> &values, bo
     d->type->createProperties(missingProperties);
     d->dropPropertyCache();
 
-    for (const QByteArray &name : qAsConst(missingProperties))
+    for (const QByteArray &name : std::as_const(missingProperties))
         checkedSetValue(names[name], values[name], force);
 }
 
@@ -427,14 +394,15 @@ void QQmlOpenMetaObject::setCached(bool c)
 
     QQmlData *qmldata = QQmlData::get(d->object, true);
     if (d->cacheProperties) {
+        // As the propertyCache is not saved in QQmlMetaType (due to it being dynamic)
+        // we cannot leak it to other places before we're done with it. Yes, it's still
+        // terrible.
         if (!d->type->d->cache)
-            d->type->d->cache = new QQmlPropertyCache(this);
+            d->type->d->cache = QQmlPropertyCache::createStandalone(this);
         qmldata->propertyCache = d->type->d->cache;
-        d->type->d->cache->addref();
     } else {
-        if (d->type->d->cache)
-            d->type->d->cache->release();
-        qmldata->propertyCache = nullptr;
+        d->type->d->cache.reset();
+        qmldata->propertyCache.reset();
     }
 }
 
@@ -493,12 +461,12 @@ QVariant QQmlOpenMetaObject::initialValue(int)
 
 int QQmlOpenMetaObject::count() const
 {
-    return d->type->d->names.count();
+    return d->type->d->names.size();
 }
 
 QByteArray QQmlOpenMetaObject::name(int idx) const
 {
-    Q_ASSERT(idx >= 0 && idx < d->type->d->names.count());
+    Q_ASSERT(idx >= 0 && idx < d->type->d->names.size());
 
     return d->type->d->mob.property(idx).name();
 }

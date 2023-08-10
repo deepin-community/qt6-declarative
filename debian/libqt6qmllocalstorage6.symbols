@@ -1,6 +1,6 @@
-# SymbolsHelper-Confirmed: 6.2.4 amd64 arm64
+# SymbolsHelper-Confirmed: 6.2.0 amd64
 libQt6QmlLocalStorage.so.6 libqt6qmllocalstorage6 #MINVER#
-| libqt6qmllocalstorage6 #MINVER#, qt6-declarative-abi (= 6.2.4)
+| libqt6qmllocalstorage6 #MINVER#, qt6-declarative-abi (= 6.4.2)
 * Build-Depends-Packages: qt6-declarative-dev, qt6-declarative-private-dev
  _Z39qml_register_types_QtQuick_LocalStoragev@Base 6.2.0
  _ZN16QQmlLocalStorage11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
@@ -8,11 +8,8 @@ libQt6QmlLocalStorage.so.6 libqt6qmllocalstorage6 #MINVER#
  _ZN16QQmlLocalStorage16openDatabaseSyncEP14QQmlV4Function@Base 6.2.0
  _ZN16QQmlLocalStorage16staticMetaObjectE@Base 6.2.0
  _ZNK16QQmlLocalStorage10metaObjectEv@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# _ZNK3QV414StringOrSymbol13toPropertyKeyEv@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst)_ZNK3QV45Value2asINS_14FunctionObjectEEEPKT_v@Base 6.2.4
  _ZTI16QQmlLocalStorage@Base 6.2.0
  _ZTIN3QV415ExecutionEngine9DeletableE@Base 6.2.0
  _ZTS16QQmlLocalStorage@Base 6.2.0
  _ZTSN3QV415ExecutionEngine9DeletableE@Base 6.2.0
  _ZTV16QQmlLocalStorage@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# _ZTVN3QV415ExecutionEngine9DeletableE@Base 6.2.4

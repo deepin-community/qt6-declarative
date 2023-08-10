@@ -1,44 +1,13 @@
-/****************************************************************************
-**
-** Copyright (C) 2020 The Qt Company Ltd.
-** Contact: http://www.qt.io/licensing/
-**
-** This file is part of the test suite of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL3$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see http://www.qt.io/terms-conditions. For further
-** information use the contact form at http://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPLv3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or later as published by the Free
-** Software Foundation and appearing in the file LICENSE.GPL included in
-** the packaging of this file. Please review the following information to
-** ensure the GNU General Public License version 2.0 requirements will be
-** met: http://www.gnu.org/licenses/gpl-2.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2022 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only WITH Qt-GPL-exception-1.0
 
 #include <QtTest/qsignalspy.h>
 #include <QtTest/qtest.h>
+#include <QtQuickTest/quicktest.h>
 
 #include <QAbstractItemModelTester>
 #include <QtQml/QQmlEngine>
+#include <QtQml/QQmlComponent>
 #include <QtQuick/private/qquickwindow_p.h>
 #include <QtQuick/private/qquicktext_p.h>
 #include <QtQuickTestUtils/private/qmlutils_p.h>
@@ -218,7 +187,7 @@ public:
 private slots:
     void initTestCase() override;
     void cleanupTestCase();
-    void init();
+    void init() override;
     void cleanup();
 
     void defaults();
@@ -261,6 +230,8 @@ void tst_QQuickHeaderView::cleanupTestCase()
 
 void tst_QQuickHeaderView::init()
 {
+    QQmlDataTest::init();
+
     engine = new QQmlEngine(this);
 }
 
@@ -309,6 +280,13 @@ void tst_QQuickHeaderView::testOrientation()
 
     QScopedPointer<QObject> root(component.create());
     QVERIFY2(root, qPrintable(component.errorString()));
+    // Make sure that the window is shown at this point, so that the test
+    // behaves similarly on all platforms
+    QVERIFY(QTest::qWaitForWindowActive(qobject_cast<QWindow *>(root.data())));
+
+    // If we want to make use of syncDirection, we need to set syncView as well.
+    // For that we need to create a second dummy table view.
+    QQuickTableView otherView;
 
     auto hhv = root->findChild<QQuickHorizontalHeaderView *>("horizontalHeader");
     QVERIFY(hhv);
@@ -317,13 +295,14 @@ void tst_QQuickHeaderView::testOrientation()
     auto vhv = root->findChild<QQuickVerticalHeaderView *>("verticalHeader");
     QVERIFY(vhv);
 
+    hhv->setSyncView(&otherView);
     hhv->setSyncDirection(Qt::Vertical);
-    hhv->flick(10, 20);
+    QVERIFY(QQuickTest::qWaitForPolish(hhv));
 
+    vhv->setSyncView(&otherView);
     vhv->setSyncDirection(Qt::Horizontal);
-    vhv->flick(20, 10);
+    QVERIFY(QQuickTest::qWaitForPolish(vhv));
 
-    QVERIFY(QTest::qWaitForWindowActive(qobject_cast<QWindow *>(root.data())));
     // Explicitly setting a different synDirection is ignored
     QCOMPARE(hhv->syncDirection(), Qt::Horizontal);
     QCOMPARE(hhv->flickableDirection(), QQuickFlickable::HorizontalFlick);
@@ -350,16 +329,16 @@ void tst_QQuickHeaderView::testModel()
     QVERIFY(modelChangedSpy.isValid());
 
     hhv->setModel(QVariant::fromValue(thm));
-    QCOMPARE(modelChangedSpy.count(), 0);
+    QCOMPARE(modelChangedSpy.size(), 0);
 
     hhv->setModel(QVariant::fromValue(pm));
-    QCOMPARE(modelChangedSpy.count(), 1);
+    QCOMPARE(modelChangedSpy.size(), 1);
 
     TestTableModel ttm2;
     ttm2.setRowCount(100);
     ttm2.setColumnCount(30);
     hhv->setModel(QVariant::fromValue(&ttm2));
-    QCOMPARE(modelChangedSpy.count(), 2);
+    QCOMPARE(modelChangedSpy.size(), 2);
 }
 
 void tst_QQuickHeaderView::listModel()

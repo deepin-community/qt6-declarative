@@ -1,52 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2017 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the test suite of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:BSD$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** BSD License Usage
-** Alternatively, you may use this file under the terms of the BSD license
-** as follows:
-**
-** "Redistribution and use in source and binary forms, with or without
-** modification, are permitted provided that the following conditions are
-** met:
-**   * Redistributions of source code must retain the above copyright
-**     notice, this list of conditions and the following disclaimer.
-**   * Redistributions in binary form must reproduce the above copyright
-**     notice, this list of conditions and the following disclaimer in
-**     the documentation and/or other materials provided with the
-**     distribution.
-**   * Neither the name of The Qt Company Ltd nor the names of its
-**     contributors may be used to endorse or promote products derived
-**     from this software without specific prior written permission.
-**
-**
-** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-** "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-** LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-** A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-** OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-** SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-** LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-** DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-** THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-** (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-** OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2017 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
 
 import QtQuick
 import QtTest
@@ -685,5 +638,35 @@ TestCase {
             skip("grabImage() is not functional on the offscreen platform (QTBUG-63185)")
         var image = grabImage(control)
         compare(image.pixel(3, 3), "#ffff00")
+    }
+
+    Component {
+        id: translucentPages
+        SwipeView {
+            spacing: 10
+            padding: 10
+            Text { text: "page 0" }
+            Text { text: "page 1"; font.pointSize: 16 }
+            Text { text: "page 2"; font.pointSize: 24 }
+            Text { text: "page 3"; font.pointSize: 32 }
+        }
+    }
+
+    function test_initialPositions() { // QTBUG-102487
+        const control = createTemporaryObject(translucentPages, testCase, {width: 320, height: 200})
+        verify(control)
+        compare(control.orientation, Qt.Horizontal)
+        for (var i = 0; i < control.count; ++i) {
+            const page = control.itemAt(i)
+            // control.contentItem.width + control.spacing == 310; except Imagine style has contentItem.width == 320
+            compare(page.x, i * 310)
+            compare(page.y, 0)
+        }
+        control.orientation = Qt.Vertical
+        for (var i = 0; i < control.count; ++i) {
+            const page = control.itemAt(i)
+            compare(page.y, i * (control.contentItem.height + control.spacing))
+            compare(page.x, 0)
+        }
     }
 }

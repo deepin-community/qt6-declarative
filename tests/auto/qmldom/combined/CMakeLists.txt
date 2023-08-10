@@ -17,6 +17,7 @@ qt_internal_add_test(tst_dom_all
         ../domitem/tst_qmldomitem.h
         ../merging/tst_dommerging.h
         ../reformatter/tst_reformatter.h
+        ../standalone/tst_standalone.h
     INCLUDE_DIRECTORIES
         ..
     DEFINES
@@ -25,7 +26,6 @@ qt_internal_add_test(tst_dom_all
         QT_QMLTEST_DATADIR=\\\"${CMAKE_CURRENT_SOURCE_DIR}/../domdata\\\"
     PUBLIC_LIBRARIES
         Qt::Core
-        Qt::QmlDevToolsPrivate
         Qt::QmlDomPrivate
         Qt::Test
     TESTDATA ${test_data}

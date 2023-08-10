@@ -1,30 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2020 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the tools applications of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:GPL-EXCEPT$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 3 as published by the Free Software
-** Foundation with exceptions as appearing in the file LICENSE.GPL3-EXCEPT
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2020 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only WITH Qt-GPL-exception-1.0
 
 #ifndef QQMLJSIMPORTER_P_H
 #define QQMLJSIMPORTER_P_H
@@ -39,35 +14,41 @@
 //
 // We mean it.
 
+#include <private/qtqmlcompilerexports_p.h>
+
 #include "qqmljsscope_p.h"
 #include "qqmljsresourcefilemapper_p.h"
 #include <QtQml/private/qqmldirparser_p.h>
 
+#include <memory>
+
 QT_BEGIN_NAMESPACE
 
-class QQmlJSImporter
+class QQmlJSImportVisitor;
+class QQmlJSLogger;
+class Q_QMLCOMPILER_PRIVATE_EXPORT QQmlJSImporter
 {
 public:
     using ImportedTypes = QHash<QString, QQmlJSImportedScope>;
 
-    QQmlJSImporter(const QStringList &importPaths, QQmlJSResourceFileMapper *mapper)
-        : m_importPaths(importPaths)
-        , m_builtins({})
-        , m_mapper(mapper)
-    {}
+    QQmlJSImporter(const QStringList &importPaths, QQmlJSResourceFileMapper *mapper,
+                   bool useOptionalImports = false);
 
     QQmlJSResourceFileMapper *resourceFileMapper() { return m_mapper; }
     void setResourceFileMapper(QQmlJSResourceFileMapper *mapper) { m_mapper = mapper; }
 
     ImportedTypes importBuiltins();
-    void importQmltypes(const QStringList &qmltypesFiles);
+    void importQmldirs(const QStringList &qmltypesFiles);
 
     QQmlJSScope::Ptr importFile(const QString &file);
     ImportedTypes importDirectory(const QString &directory, const QString &prefix = QString());
 
-    ImportedTypes importModule(
-            const QString &module, const QString &prefix = QString(),
-            QTypeRevision version = QTypeRevision());
+    // ### qmltc needs this. once re-written, we no longer need to expose this
+    QHash<QString, QQmlJSScope::Ptr> importedFiles() const { return m_importedFiles; }
+
+    ImportedTypes importModule(const QString &module, const QString &prefix = QString(),
+                               QTypeRevision version = QTypeRevision(),
+                               QStringList *staticModuleList = nullptr);
 
     ImportedTypes builtinInternalNames();
 
@@ -78,8 +59,26 @@ public:
         return result;
     }
 
+    QList<QQmlJS::DiagnosticMessage> takeGlobalWarnings()
+    {
+        const auto result = std::move(m_globalWarnings);
+        m_globalWarnings.clear();
+        return result;
+    }
+
     QStringList importPaths() const { return m_importPaths; }
     void setImportPaths(const QStringList &importPaths);
+
+    QQmlJSScope::ConstPtr jsGlobalObject() const;
+
+    std::unique_ptr<QQmlJSImportVisitor>
+    makeImportVisitor(const QQmlJSScope::Ptr &target, QQmlJSImporter *importer,
+                      QQmlJSLogger *logger, const QString &implicitImportDirectory,
+                      const QStringList &qmldirFiles = QStringList());
+    using ImportVisitorCreator = QQmlJSImportVisitor *(*)(const QQmlJSScope::Ptr &,
+                                                          QQmlJSImporter *, QQmlJSLogger *,
+                                                          const QString &, const QStringList &);
+    void setImportVisitorCreator(ImportVisitorCreator create) { m_createImportVisitor = create; }
 
 private:
     friend class QDeferredFactory<QQmlJSScope>;
@@ -95,11 +94,21 @@ private:
 
         // Names the importing component sees, including any prefixes
         ImportedTypes qmlNames;
+
+        // Static modules included here
+        QStringList staticModules;
+
+        // Whether a system module has been imported
+        bool hasSystemModule = false;
     };
 
     struct Import {
-        QHash<QString, QQmlJSScope::Ptr> objects;
-        QHash<QString, QQmlJSScope::Ptr> scripts;
+        QString name;
+        bool isStaticModule = false;
+        bool isSystemModule = false;
+
+        QHash<QString, QQmlJSExportedScope> objects;
+        QHash<QString, QQmlJSExportedScope> scripts;
         QList<QQmlDirParser::Import> imports;
         QList<QQmlDirParser::Import> dependencies;
     };
@@ -108,47 +117,33 @@ private:
     bool importHelper(const QString &module, AvailableTypes *types,
                       const QString &prefix = QString(), QTypeRevision version = QTypeRevision(),
                       bool isDependency = false, bool isFile = false);
-    void processImport(const Import &import, AvailableTypes *types,
-                       const QString &prefix = QString(), QTypeRevision version = QTypeRevision());
+    void processImport(const QQmlJSScope::Import &importDescription, const Import &import,
+                       AvailableTypes *types);
     void importDependencies(const QQmlJSImporter::Import &import, AvailableTypes *types,
                             const QString &prefix = QString(),
                             QTypeRevision version = QTypeRevision(), bool isDependency = false);
-    void readQmltypes(const QString &filename, QHash<QString, QQmlJSScope::Ptr> *objects,
+    void readQmltypes(const QString &filename, QHash<QString, QQmlJSExportedScope> *objects,
                       QList<QQmlDirParser::Import> *dependencies);
     Import readQmldir(const QString &dirname);
+    Import readDirectory(const QString &directory);
+
     QQmlJSScope::Ptr localFile2ScopeTree(const QString &filePath);
+    static void setQualifiedNamesOn(const Import &import);
 
     QStringList m_importPaths;
 
-    struct CacheKey
-    {
-        QString prefix;
-        QString name;
-        QTypeRevision version;
-        bool isFile = false;
-        bool isDependency = false;
-
-        friend inline size_t qHash(const CacheKey &key, size_t seed = 0) noexcept
-        {
-            return qHashMulti(seed, key.prefix, key.name, key.version,
-                              key.isFile, key.isDependency);
-        }
-
-        friend inline bool operator==(const CacheKey &a, const CacheKey &b)
-        {
-            return a.prefix == b.prefix && a.name == b.name && a.version == b.version
-                    && a.isFile == b.isFile && a.isDependency == b.isDependency;
-        }
-    };
-
     QHash<QPair<QString, QTypeRevision>, QString> m_seenImports;
-    QHash<CacheKey, QSharedPointer<AvailableTypes>> m_cachedImportTypes;
+    QHash<QQmlJSScope::Import, QSharedPointer<AvailableTypes>> m_cachedImportTypes;
     QHash<QString, Import> m_seenQmldirFiles;
 
     QHash<QString, QQmlJSScope::Ptr> m_importedFiles;
+    QList<QQmlJS::DiagnosticMessage> m_globalWarnings;
     QList<QQmlJS::DiagnosticMessage> m_warnings;
     AvailableTypes m_builtins;
     QQmlJSResourceFileMapper *m_mapper = nullptr;
+    bool m_useOptionalImports;
+
+    ImportVisitorCreator m_createImportVisitor = nullptr;
 };
 
 QT_END_NAMESPACE

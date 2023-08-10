@@ -1,45 +1,10 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQuick module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2021 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qquicktextmetrics_p.h"
 
 #include <QFont>
+#include <QTextOption>
 
 QT_BEGIN_NAMESPACE
 
@@ -77,11 +42,8 @@ QQuickTextMetrics::QQuickTextMetrics(QObject *parent) :
     QObject(parent),
     m_metrics(m_font),
     m_elide(Qt::ElideNone),
-    m_elideWidth(0)
-{
-}
-
-QQuickTextMetrics::~QQuickTextMetrics()
+    m_elideWidth(0),
+    m_renderType(QQuickText::QtRendering)
 {
 }
 
@@ -186,7 +148,9 @@ void QQuickTextMetrics::setElideWidth(qreal elideWidth)
 */
 qreal QQuickTextMetrics::advanceWidth() const
 {
-    return m_metrics.horizontalAdvance(m_text);
+    QTextOption option;
+    option.setUseDesignMetrics(m_renderType == QQuickText::QtRendering);
+    return m_metrics.horizontalAdvance(m_text, option);
 }
 
 /*!
@@ -199,7 +163,9 @@ qreal QQuickTextMetrics::advanceWidth() const
 */
 QRectF QQuickTextMetrics::boundingRect() const
 {
-    return m_metrics.boundingRect(m_text);
+    QTextOption option;
+    option.setUseDesignMetrics(m_renderType == QQuickText::QtRendering);
+    return m_metrics.boundingRect(m_text, option);
 }
 
 /*!
@@ -246,7 +212,9 @@ qreal QQuickTextMetrics::height() const
 */
 QRectF QQuickTextMetrics::tightBoundingRect() const
 {
-    return m_metrics.tightBoundingRect(m_text);
+    QTextOption option;
+    option.setUseDesignMetrics(m_renderType == QQuickText::QtRendering);
+    return m_metrics.tightBoundingRect(m_text, option);
 }
 
 /*!
@@ -262,6 +230,36 @@ QRectF QQuickTextMetrics::tightBoundingRect() const
 QString QQuickTextMetrics::elidedText() const
 {
     return m_metrics.elidedText(m_text, m_elide, m_elideWidth);
+}
+
+/*!
+    \qmlproperty enumeration QtQuick::TextMetrics::renderType
+
+    Override the default rendering type for this component.
+
+    Supported render types are:
+    \list
+    \li Text.QtRendering
+    \li Text.NativeRendering
+    \endlist
+
+    This should match the intended renderType where you draw the text.
+
+    \since 6.3
+    \sa {Text::renderType}{Text.renderType}
+*/
+QQuickText::RenderType QQuickTextMetrics::renderType() const
+{
+    return m_renderType;
+}
+
+void QQuickTextMetrics::setRenderType(QQuickText::RenderType renderType)
+{
+    if (m_renderType == renderType)
+        return;
+
+    m_renderType = renderType;
+    emit renderTypeChanged();
 }
 
 QT_END_NAMESPACE

@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQuick module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qquickstateoperations_p.h"
 #include "qquickitem_p.h"
@@ -176,10 +140,6 @@ void QQuickParentChangePrivate::doChange(QQuickItem *targetParent)
 
 QQuickParentChange::QQuickParentChange(QObject *parent)
     : QQuickStateOperation(*(new QQuickParentChangePrivate), parent)
-{
-}
-
-QQuickParentChange::~QQuickParentChange()
 {
 }
 
@@ -486,12 +446,12 @@ void QQuickParentChangePrivate::reverseRewindHelper(const std::unique_ptr<QQuick
 {
     if (!target || !snapshot)
         return;
-    auto targetPriv = QQuickItemPrivate::get(target);
+
     // leave existing bindings alive; new bindings are applied in applyBindings
-    targetPriv->x.setValueBypassingBindings(snapshot->x);
-    targetPriv->y.setValueBypassingBindings(snapshot->y);
-    targetPriv->width.setValueBypassingBindings(snapshot->width);
-    targetPriv->height.setValueBypassingBindings(snapshot->height);
+    // setPosition and setSize update the geometry without invalidating bindings
+    target->setPosition(QPointF(snapshot->x, snapshot->y));
+    target->setSize(QSizeF(snapshot->width, snapshot->height));
+
     target->setScale(snapshot->scale);
     target->setRotation(snapshot->rotation);
     target->setParentItem(snapshot->parent);
@@ -544,7 +504,7 @@ void QQuickParentChange::saveCurrentValues()
         return;
 
     QList<QQuickItem *> children = d->rewind->parent->childItems();
-    for (int ii = 0; ii < children.count() - 1; ++ii) {
+    for (int ii = 0; ii < children.size() - 1; ++ii) {
         if (children.at(ii) == d->target) {
             d->rewind->stackBefore = children.at(ii + 1);
             break;
@@ -850,10 +810,6 @@ QQuickAnchorChanges::QQuickAnchorChanges(QObject *parent)
 {
 }
 
-QQuickAnchorChanges::~QQuickAnchorChanges()
-{
-}
-
 QQuickAnchorChanges::ActionList QQuickAnchorChanges::actions()
 {
     Q_D(QQuickAnchorChanges);
@@ -1102,6 +1058,7 @@ void QQuickAnchorChanges::reverse()
     QQuickAnchors::Anchors stateHAnchors = d->anchorSet->d_func()->usedAnchors & QQuickAnchors::Horizontal_Mask;
     QQuickAnchors::Anchors origHAnchors = targetPrivate->anchors()->usedAnchors() & QQuickAnchors::Horizontal_Mask;
 
+    const QRectF oldGeometry(d->target->position(), d->target->size());
     bool stateSetWidth = (stateHAnchors &&
                           stateHAnchors != QQuickAnchors::LeftAnchor &&
                           stateHAnchors != QQuickAnchors::RightAnchor &&
@@ -1110,8 +1067,11 @@ void QQuickAnchorChanges::reverse()
                          origHAnchors != QQuickAnchors::LeftAnchor &&
                          origHAnchors != QQuickAnchors::RightAnchor &&
                          origHAnchors != QQuickAnchors::HCenterAnchor);
-    if (d->origWidth.isValid() && stateSetWidth && !origSetWidth)
-        d->target->setWidth(d->origWidth.value);
+    if (d->origWidth.isValid() && stateSetWidth && !origSetWidth && !qt_is_nan(d->origWidth)) {
+        targetPrivate->widthValidFlag = true;
+        if (targetPrivate->width != d->origWidth)
+            targetPrivate->width.setValueBypassingBindings(d->origWidth);
+    }
 
     bool stateSetHeight = (stateVAnchors &&
                            stateVAnchors != QQuickAnchors::TopAnchor &&
@@ -1123,14 +1083,23 @@ void QQuickAnchorChanges::reverse()
                           origVAnchors != QQuickAnchors::BottomAnchor &&
                           origVAnchors != QQuickAnchors::VCenterAnchor &&
                           origVAnchors != QQuickAnchors::BaselineAnchor);
-    if (d->origHeight.isValid() && stateSetHeight && !origSetHeight)
-        d->target->setHeight(d->origHeight.value);
+    if (d->origHeight.isValid() && stateSetHeight && !origSetHeight && !!qt_is_nan(d->origHeight)) {
+        targetPrivate->heightValidFlag = true;
+        if (targetPrivate->height != d->origHeight)
+            targetPrivate->height.setValueBypassingBindings(d->origHeight);
+    }
 
-    if (stateHAnchors && !origHAnchors)
-        d->target->setX(d->origX);
+    if (stateHAnchors && !origHAnchors && !qt_is_nan(d->origX) && d->origX != targetPrivate->x)
+        targetPrivate->x.setValueBypassingBindings(d->origX);
 
-    if (stateVAnchors && !origVAnchors)
-        d->target->setY(d->origY);
+    if (stateVAnchors && !origVAnchors && !qt_is_nan(d->origY) && d->origY != targetPrivate->y)
+        targetPrivate->y.setValueBypassingBindings(d->origY);
+
+    const QRectF newGeometry(d->target->position(), d->target->size());
+    if (newGeometry != oldGeometry) {
+        targetPrivate->dirty(QQuickItemPrivate::Position);
+        d->target->geometryChange(newGeometry, oldGeometry);
+    }
 }
 
 QQuickStateActionEvent::EventType QQuickAnchorChanges::type() const
@@ -1324,15 +1293,31 @@ void QQuickAnchorChanges::rewind()
         return;
 
     QQuickItemPrivate *targetPrivate = QQuickItemPrivate::get(d->target);
+    const QRectF oldGeometry(d->target->position(), d->target->size());
 
-    //restore previous values (but not previous bindings, i.e. anchors)
-    d->target->setX(d->rewindX);
-    d->target->setY(d->rewindY);
-    if (targetPrivate->widthValid()) {
-        d->target->setWidth(d->rewindWidth);
+    // Restore previous values (but not previous bindings, i.e. anchors).
+    // Also, don't drop any new bindings.
+    if (!qt_is_nan(d->rewindX) && d->rewindX != targetPrivate->x)
+        targetPrivate->x.setValueBypassingBindings(d->rewindX);
+    if (!qt_is_nan(d->rewindY) && d->rewindY != targetPrivate->y)
+        targetPrivate->y.setValueBypassingBindings(d->rewindY);
+
+    if (targetPrivate->widthValid() && !qt_is_nan(d->rewindWidth)) {
+        targetPrivate->widthValidFlag = true;
+        if (d->rewindWidth != targetPrivate->width)
+            targetPrivate->width.setValueBypassingBindings(d->rewindWidth);
     }
-    if (targetPrivate->heightValid()) {
-        d->target->setHeight(d->rewindHeight);
+
+    if (targetPrivate->heightValid() && !qt_is_nan(d->rewindHeight)) {
+        targetPrivate->heightValidFlag = true;
+        if (d->rewindHeight != targetPrivate->height)
+            targetPrivate->height.setValueBypassingBindings(d->rewindHeight);
+    }
+
+    const QRectF newGeometry(d->target->position(), d->target->size());
+    if (newGeometry != oldGeometry) {
+        targetPrivate->dirty(QQuickItemPrivate::Position);
+        d->target->geometryChange(newGeometry, oldGeometry);
     }
 }
 

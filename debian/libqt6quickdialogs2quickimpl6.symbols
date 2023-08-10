@@ -1,34 +1,87 @@
-# SymbolsHelper-Confirmed: 6.2.4 amd64 arm64 i386 ia64 mips64el ppc64el riscv64 s390x sparc64
+# SymbolsHelper-Confirmed: 6.4.0 amd64
 libQt6QuickDialogs2QuickImpl.so.6 libqt6quickdialogs2quickimpl6 #MINVER#
-| libqt6quickdialogs2quickimpl6 #MINVER#, qt6-declarative-abi (= 6.2.4)
+| libqt6quickdialogs2quickimpl6 #MINVER#, qt6-declarative-abi (= 6.4.2)
 * Build-Depends-Packages: qt6-declarative-dev, qt6-declarative-private-dev
  _Z44qml_register_types_QtQuick_Dialogs_quickimplv@Base 6.2.0
+ _ZGVZN9QMetaType21registerConverterImplI5QListI10QQuickIconE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.4.0
+ _ZGVZN9QMetaType23registerMutableViewImplI5QListI10QQuickIconE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS8_EES_S_E10unregister@Base 6.4.0
+ _ZN13QMetaSequence12MetaSequenceI5QListI10QQuickIconEE5valueE@Base 6.4.0
+ _ZN17QQuickColorInputs10hslChangedEv@Base 6.4.0
+ _ZN17QQuickColorInputs11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.4.0
+ _ZN17QQuickColorInputs11qt_metacastEPKc@Base 6.4.0
+ _ZN17QQuickColorInputs11setHexInputEP15QQuickTextInput@Base 6.4.0
+ _ZN17QQuickColorInputs11setRedInputEP15QQuickTextInput@Base 6.4.0
+ _ZN17QQuickColorInputs12colorChangedERK6QColor@Base 6.4.0
+ _ZN17QQuickColorInputs12setBlueInputEP15QQuickTextInput@Base 6.4.0
+ _ZN17QQuickColorInputs12setShowAlphaEb@Base 6.4.0
+ _ZN17QQuickColorInputs13colorModifiedERK6QColor@Base 6.4.0
+ _ZN17QQuickColorInputs13setGreenInputEP15QQuickTextInput@Base 6.4.0
+ _ZN17QQuickColorInputs13setValueInputEP15QQuickTextInput@Base 6.4.0
+ _ZN17QQuickColorInputs14setHslHueInputEP15QQuickTextInput@Base 6.4.0
+ _ZN17QQuickColorInputs14setHsvHueInputEP15QQuickTextInput@Base 6.4.0
+ _ZN17QQuickColorInputs15hexInputChangedEv@Base 6.4.0
+ _ZN17QQuickColorInputs15redInputChangedEv@Base 6.4.0
+ _ZN17QQuickColorInputs16blueInputChangedEv@Base 6.4.0
+ _ZN17QQuickColorInputs16handleHexChangedEv@Base 6.4.0
+ _ZN17QQuickColorInputs16handleRedChangedEv@Base 6.4.0
+ _ZN17QQuickColorInputs16setHslAlphaInputEP15QQuickTextInput@Base 6.4.0
+ _ZN17QQuickColorInputs16setHsvAlphaInputEP15QQuickTextInput@Base 6.4.0
+ _ZN17QQuickColorInputs16setRgbAlphaInputEP15QQuickTextInput@Base 6.4.0
+ _ZN17QQuickColorInputs16showAlphaChangedEb@Base 6.4.0
+ _ZN17QQuickColorInputs16staticMetaObjectE@Base 6.4.0
+ _ZN17QQuickColorInputs17greenInputChangedEv@Base 6.4.0
+ _ZN17QQuickColorInputs17handleBlueChangedEv@Base 6.4.0
+ _ZN17QQuickColorInputs17setLightnessInputEP15QQuickTextInput@Base 6.4.0
+ _ZN17QQuickColorInputs17valueInputChangedEv@Base 6.4.0
+ _ZN17QQuickColorInputs18handleAlphaChangedERK7QString@Base 6.4.0
+ _ZN17QQuickColorInputs18handleGreenChangedEv@Base 6.4.0
+ _ZN17QQuickColorInputs18handleValueChangedEv@Base 6.4.0
+ _ZN17QQuickColorInputs18hslHueInputChangedEv@Base 6.4.0
+ _ZN17QQuickColorInputs18hsvHueInputChangedEv@Base 6.4.0
+ _ZN17QQuickColorInputs19handleHslHueChangedEv@Base 6.4.0
+ _ZN17QQuickColorInputs19handleHsvHueChangedEv@Base 6.4.0
+ _ZN17QQuickColorInputs20hslAlphaInputChangedEv@Base 6.4.0
+ _ZN17QQuickColorInputs20hsvAlphaInputChangedEv@Base 6.4.0
+ _ZN17QQuickColorInputs20rgbAlphaInputChangedEv@Base 6.4.0
+ _ZN17QQuickColorInputs21handleHslAlphaChangedEv@Base 6.4.0
+ _ZN17QQuickColorInputs21handleHsvAlphaChangedEv@Base 6.4.0
+ _ZN17QQuickColorInputs21handleRgbAlphaChangedEv@Base 6.4.0
+ _ZN17QQuickColorInputs21lightnessInputChangedEv@Base 6.4.0
+ _ZN17QQuickColorInputs21setHslSaturationInputEP15QQuickTextInput@Base 6.4.0
+ _ZN17QQuickColorInputs21setHsvSaturationInputEP15QQuickTextInput@Base 6.4.0
+ _ZN17QQuickColorInputs22handleLightnessChangedEv@Base 6.4.0
+ _ZN17QQuickColorInputs25hslSaturationInputChangedEv@Base 6.4.0
+ _ZN17QQuickColorInputs25hsvSaturationInputChangedEv@Base 6.4.0
+ _ZN17QQuickColorInputs26handleHslSaturationChangedEv@Base 6.4.0
+ _ZN17QQuickColorInputs26handleHsvSaturationChangedEv@Base 6.4.0
+ _ZN17QQuickColorInputs8setColorERK6QColor@Base 6.4.0
+ _ZN17QQuickColorInputsC1Ev@Base 6.4.0
+ _ZN17QQuickColorInputsC2Ev@Base 6.4.0
  _ZN20QQuickFileDialogImpl10itemChangeEN10QQuickItem10ItemChangeERKNS0_14ItemChangeDataE@Base 6.2.0
  _ZN20QQuickFileDialogImpl10setOptionsERK14QSharedPointerI18QFileDialogOptionsE@Base 6.2.0
  _ZN20QQuickFileDialogImpl11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
  _ZN20QQuickFileDialogImpl11qt_metacastEPKc@Base 6.2.0
+ _ZN20QQuickFileDialogImpl11setFileNameERK7QString@Base 6.4.0
  _ZN20QQuickFileDialogImpl12fileSelectedERK4QUrl@Base 6.2.0
  _ZN20QQuickFileDialogImpl14filterSelectedERK7QString@Base 6.2.0
  _ZN20QQuickFileDialogImpl14setAcceptLabelERK7QString@Base 6.2.0
- _ZN20QQuickFileDialogImpl14setCurrentFileERK4QUrl@Base 6.2.0
  _ZN20QQuickFileDialogImpl14setRejectLabelERK7QString@Base 6.2.0
  _ZN20QQuickFileDialogImpl15setSelectedFileERK4QUrl@Base 6.2.0
  _ZN20QQuickFileDialogImpl16resetNameFiltersEv@Base 6.2.0
  _ZN20QQuickFileDialogImpl16selectNameFilterERK7QString@Base 6.2.0
- _ZN20QQuickFileDialogImpl16setCurrentFolderERK4QUrl@Base 6.2.0
+ _ZN20QQuickFileDialogImpl16setCurrentFolderERK4QUrlNS_9SetReasonE@Base 6.4.0
  _ZN20QQuickFileDialogImpl16staticMetaObjectE@Base 6.2.0
  _ZN20QQuickFileDialogImpl17componentCompleteEv@Base 6.2.0
- _ZN20QQuickFileDialogImpl18currentFileChangedERK4QUrl@Base 6.2.0
  _ZN20QQuickFileDialogImpl18nameFiltersChangedEv@Base 6.2.0
- _ZN20QQuickFileDialogImpl19selectedFileChangedEv@Base 6.2.0
+ _ZN20QQuickFileDialogImpl19selectedFileChangedERK4QUrl@Base 6.3.0
  _ZN20QQuickFileDialogImpl20currentFolderChangedERK4QUrl@Base 6.2.0
  _ZN20QQuickFileDialogImpl21qmlAttachedPropertiesEP7QObject@Base 6.2.0
+ _ZN20QQuickFileDialogImpl38setInitialCurrentFolderAndSelectedFileERK4QUrl@Base 6.4.0
  _ZN20QQuickFileDialogImplC1EP7QObject@Base 6.2.0
  _ZN20QQuickFileDialogImplC2EP7QObject@Base 6.2.0
  _ZN20QQuickFontDialogImpl10setOptionsERK14QSharedPointerI18QFontDialogOptionsE@Base 6.2.0
  _ZN20QQuickFontDialogImpl11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
  _ZN20QQuickFontDialogImpl11qt_metacastEPKc@Base 6.2.0
- _ZN20QQuickFontDialogImpl12fontSelectedERK5QFont@Base 6.2.0
  _ZN20QQuickFontDialogImpl13focusOutEventEP11QFocusEvent@Base 6.2.0
  _ZN20QQuickFontDialogImpl14optionsChangedEv@Base 6.2.0
  _ZN20QQuickFontDialogImpl14setCurrentFontERK5QFontb@Base 6.2.2
@@ -39,15 +92,62 @@ libQt6QuickDialogs2QuickImpl.so.6 libqt6quickdialogs2quickimpl6 #MINVER#
  _ZN20QQuickFontDialogImpl4initEv@Base 6.2.2
  _ZN20QQuickFontDialogImplC1EP7QObject@Base 6.2.0
  _ZN20QQuickFontDialogImplC2EP7QObject@Base 6.2.0
- _ZN23QQuickDialogImplFactory26createPlatformDialogHelperEN14QPlatformTheme10DialogTypeEP7QObject@Base 6.2.0
+ _ZN21QQuickColorDialogImpl10setOptionsERK14QSharedPointerI19QColorDialogOptionsE@Base 6.4.0
+ _ZN21QQuickColorDialogImpl11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.4.0
+ _ZN21QQuickColorDialogImpl11qt_metacastEPKc@Base 6.4.0
+ _ZN21QQuickColorDialogImpl11specChangedEv@Base 6.4.0
+ _ZN21QQuickColorDialogImpl12colorChangedERK6QColor@Base 6.4.0
+ _ZN21QQuickColorDialogImpl12setLightnessEd@Base 6.4.0
+ _ZN21QQuickColorDialogImpl13setSaturationEd@Base 6.4.0
+ _ZN21QQuickColorDialogImpl16invokeEyeDropperEv@Base 6.4.0
+ _ZN21QQuickColorDialogImpl16staticMetaObjectE@Base 6.4.0
+ _ZN21QQuickColorDialogImpl21qmlAttachedPropertiesEP7QObject@Base 6.4.0
+ _ZN21QQuickColorDialogImpl6setHslEb@Base 6.4.0
+ _ZN21QQuickColorDialogImpl6setHueEd@Base 6.4.0
+ _ZN21QQuickColorDialogImpl6setRedEi@Base 6.4.0
+ _ZN21QQuickColorDialogImpl7setBlueEi@Base 6.4.0
+ _ZN21QQuickColorDialogImpl8setAlphaEd@Base 6.4.0
+ _ZN21QQuickColorDialogImpl8setColorERK6QColor@Base 6.4.0
+ _ZN21QQuickColorDialogImpl8setGreenEi@Base 6.4.0
+ _ZN21QQuickColorDialogImpl8setValueEd@Base 6.4.0
+ _ZN21QQuickColorDialogImplC1EP7QObject@Base 6.4.0
+ _ZN21QQuickColorDialogImplC2EP7QObject@Base 6.4.0
+ _ZN22QQuickFolderDialogImpl10itemChangeEN10QQuickItem10ItemChangeERKNS0_14ItemChangeDataE@Base 6.3.0
+ _ZN22QQuickFolderDialogImpl10setOptionsERK14QSharedPointerI18QFileDialogOptionsE@Base 6.3.0
+ _ZN22QQuickFolderDialogImpl11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.3.0
+ _ZN22QQuickFolderDialogImpl11qt_metacastEPKc@Base 6.3.0
+ _ZN22QQuickFolderDialogImpl14setAcceptLabelERK7QString@Base 6.3.0
+ _ZN22QQuickFolderDialogImpl14setRejectLabelERK7QString@Base 6.3.0
+ _ZN22QQuickFolderDialogImpl16setCurrentFolderERK4QUrl@Base 6.3.0
+ _ZN22QQuickFolderDialogImpl16staticMetaObjectE@Base 6.3.0
+ _ZN22QQuickFolderDialogImpl17componentCompleteEv@Base 6.3.0
+ _ZN22QQuickFolderDialogImpl17setSelectedFolderERK4QUrl@Base 6.3.0
+ _ZN22QQuickFolderDialogImpl18nameFiltersChangedEv@Base 6.3.0
+ _ZN22QQuickFolderDialogImpl20currentFolderChangedERK4QUrl@Base 6.3.0
+ _ZN22QQuickFolderDialogImpl21qmlAttachedPropertiesEP7QObject@Base 6.3.0
+ _ZN22QQuickFolderDialogImpl21selectedFolderChangedERK4QUrl@Base 6.3.0
+ _ZN22QQuickFolderDialogImplC1EP7QObject@Base 6.3.0
+ _ZN22QQuickFolderDialogImplC2EP7QObject@Base 6.3.0
+ _ZN23QQuickDialogImplFactory26createPlatformDialogHelperE16QQuickDialogTypeP7QObject@Base 6.3.0
+ _ZN23QQuickMessageDialogImpl10setOptionsERK14QSharedPointerI21QMessageDialogOptionsE@Base 6.3.0
+ _ZN23QQuickMessageDialogImpl11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.3.0
+ _ZN23QQuickMessageDialogImpl11qt_metacastEPKc@Base 6.3.0
+ _ZN23QQuickMessageDialogImpl13buttonClickedEN21QPlatformDialogHelper14StandardButtonENS0_10ButtonRoleE@Base 6.3.0
+ _ZN23QQuickMessageDialogImpl14optionsChangedEv@Base 6.3.0
+ _ZN23QQuickMessageDialogImpl16staticMetaObjectE@Base 6.3.0
+ _ZN23QQuickMessageDialogImpl21qmlAttachedPropertiesEP7QObject@Base 6.3.0
+ _ZN23QQuickMessageDialogImpl22toggleShowDetailedTextEv@Base 6.3.0
+ _ZN23QQuickMessageDialogImpl23showDetailedTextChangedEv@Base 6.3.0
+ _ZN23QQuickMessageDialogImplC1EP7QObject@Base 6.3.0
+ _ZN23QQuickMessageDialogImplC2EP7QObject@Base 6.3.0
  _ZN24QQuickFileDialogDelegate11fileChangedEv@Base 6.2.0
  _ZN24QQuickFileDialogDelegate11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
  _ZN24QQuickFileDialogDelegate11qt_metacastEPKc@Base 6.2.0
- _ZN24QQuickFileDialogDelegate13setFileDialogEP20QQuickFileDialogImpl@Base 6.2.0
+ _ZN24QQuickFileDialogDelegate13dialogChangedEv@Base 6.3.0
  _ZN24QQuickFileDialogDelegate15keyReleaseEventEP9QKeyEvent@Base 6.2.0
  _ZN24QQuickFileDialogDelegate16staticMetaObjectE@Base 6.2.0
- _ZN24QQuickFileDialogDelegate17fileDialogChangedEv@Base 6.2.0
  _ZN24QQuickFileDialogDelegate7setFileERK4QUrl@Base 6.2.0
+ _ZN24QQuickFileDialogDelegate9setDialogEP12QQuickDialog@Base 6.3.0
  _ZN24QQuickFileDialogDelegateC1EP10QQuickItem@Base 6.2.0
  _ZN24QQuickFileDialogDelegateC2EP10QQuickItem@Base 6.2.0
  _ZN24QQuickPlatformFileDialog10selectFileERK4QUrl@Base 6.2.0
@@ -71,18 +171,39 @@ libQt6QuickDialogs2QuickImpl.so.6 libqt6quickdialogs2quickimpl6 #MINVER#
  _ZN24QQuickPlatformFontDialog4showE6QFlagsIN2Qt10WindowTypeEENS1_14WindowModalityEP7QWindow@Base 6.2.0
  _ZN24QQuickPlatformFontDialogC1EP7QObject@Base 6.2.0
  _ZN24QQuickPlatformFontDialogC2EP7QObject@Base 6.2.0
+ _ZN25QQuickAbstractColorPicker10setPressedEb@Base 6.4.0
+ _ZN25QQuickAbstractColorPicker11colorPickedERK6QColor@Base 6.4.0
+ _ZN25QQuickAbstractColorPicker11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.4.0
+ _ZN25QQuickAbstractColorPicker11qt_metacastEPKc@Base 6.4.0
+ _ZN25QQuickAbstractColorPicker11updateColorERK7QPointF@Base 6.4.0
+ _ZN25QQuickAbstractColorPicker12colorChangedERK6QColor@Base 6.4.0
+ _ZN25QQuickAbstractColorPicker12setLightnessEd@Base 6.4.0
+ _ZN25QQuickAbstractColorPicker13handleChangedEv@Base 6.4.0
+ _ZN25QQuickAbstractColorPicker13setSaturationEd@Base 6.4.0
+ _ZN25QQuickAbstractColorPicker14pressedChangedEv@Base 6.4.0
+ _ZN25QQuickAbstractColorPicker16staticMetaObjectE@Base 6.4.0
+ _ZN25QQuickAbstractColorPicker17componentCompleteEv@Base 6.4.0
+ _ZN25QQuickAbstractColorPicker26implicitHandleWidthChangedEv@Base 6.4.0
+ _ZN25QQuickAbstractColorPicker27implicitHandleHeightChangedEv@Base 6.4.0
+ _ZN25QQuickAbstractColorPicker6setHueEd@Base 6.4.0
+ _ZN25QQuickAbstractColorPicker8setAlphaEd@Base 6.4.0
+ _ZN25QQuickAbstractColorPicker8setColorERK6QColor@Base 6.4.0
+ _ZN25QQuickAbstractColorPicker8setValueEd@Base 6.4.0
+ _ZN25QQuickAbstractColorPicker9setHandleEP10QQuickItem@Base 6.4.0
+ _ZN25QQuickAbstractColorPickerC1ER32QQuickAbstractColorPickerPrivateP10QQuickItem@Base 6.4.0
+ _ZN25QQuickAbstractColorPickerC2ER32QQuickAbstractColorPickerPrivateP10QQuickItem@Base 6.4.0
  _ZN25QQuickFolderBreadcrumbBar10itemChangeEN10QQuickItem10ItemChangeERKNS0_14ItemChangeDataE@Base 6.2.0
  _ZN25QQuickFolderBreadcrumbBar11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
  _ZN25QQuickFolderBreadcrumbBar11qt_metacastEPKc@Base 6.2.0
  _ZN25QQuickFolderBreadcrumbBar11setUpButtonEP20QQuickAbstractButton@Base 6.2.0
  _ZN25QQuickFolderBreadcrumbBar12setTextFieldEP15QQuickTextField@Base 6.2.0
- _ZN25QQuickFolderBreadcrumbBar13setFileDialogEP20QQuickFileDialogImpl@Base 6.2.0
+ _ZN25QQuickFolderBreadcrumbBar13dialogChangedEv@Base 6.3.0
+ _ZN25QQuickFolderBreadcrumbBar13keyPressEventEP9QKeyEvent@Base 6.4.0
  _ZN25QQuickFolderBreadcrumbBar14buttonDelegateEv@Base 6.2.0
  _ZN25QQuickFolderBreadcrumbBar15upButtonChangedEv@Base 6.2.0
  _ZN25QQuickFolderBreadcrumbBar16staticMetaObjectE@Base 6.2.0
  _ZN25QQuickFolderBreadcrumbBar16textFieldChangedEv@Base 6.2.0
  _ZN25QQuickFolderBreadcrumbBar17componentCompleteEv@Base 6.2.0
- _ZN25QQuickFolderBreadcrumbBar17fileDialogChangedEv@Base 6.2.0
  _ZN25QQuickFolderBreadcrumbBar17separatorDelegateEv@Base 6.2.0
  _ZN25QQuickFolderBreadcrumbBar17setButtonDelegateEP13QQmlComponent@Base 6.2.0
  _ZN25QQuickFolderBreadcrumbBar18setUpButtonSpacingEi@Base 6.2.0
@@ -92,19 +213,66 @@ libQt6QuickDialogs2QuickImpl.so.6 libqt6quickdialogs2quickimpl6 #MINVER#
  _ZN25QQuickFolderBreadcrumbBar24separatorDelegateChangedEv@Base 6.2.0
  _ZN25QQuickFolderBreadcrumbBar5eventEP6QEvent@Base 6.2.0
  _ZN25QQuickFolderBreadcrumbBar8upButtonEv@Base 6.2.0
+ _ZN25QQuickFolderBreadcrumbBar9setDialogEP12QQuickDialog@Base 6.3.0
  _ZN25QQuickFolderBreadcrumbBar9textFieldEv@Base 6.2.0
  _ZN25QQuickFolderBreadcrumbBarC1EP10QQuickItem@Base 6.2.0
  _ZN25QQuickFolderBreadcrumbBarC2EP10QQuickItem@Base 6.2.0
+ _ZN25QQuickPlatformColorDialog11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.4.0
+ _ZN25QQuickPlatformColorDialog11qt_metacastEPKc@Base 6.4.0
+ _ZN25QQuickPlatformColorDialog15setCurrentColorERK6QColor@Base 6.4.0
+ _ZN25QQuickPlatformColorDialog16staticMetaObjectE@Base 6.4.0
+ _ZN25QQuickPlatformColorDialog4execEv@Base 6.4.0
+ _ZN25QQuickPlatformColorDialog4hideEv@Base 6.4.0
+ _ZN25QQuickPlatformColorDialog4showE6QFlagsIN2Qt10WindowTypeEENS1_14WindowModalityEP7QWindow@Base 6.4.0
+ _ZN25QQuickPlatformColorDialogC1EP7QObject@Base 6.4.0
+ _ZN25QQuickPlatformColorDialogC2EP7QObject@Base 6.4.0
+ _ZN26QQuickPlatformFolderDialog10selectFileERK4QUrl@Base 6.3.0
+ _ZN26QQuickPlatformFolderDialog11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.3.0
+ _ZN26QQuickPlatformFolderDialog11qt_metacastEPKc@Base 6.3.0
+ _ZN26QQuickPlatformFolderDialog12setDirectoryERK4QUrl@Base 6.3.0
+ _ZN26QQuickPlatformFolderDialog16selectNameFilterERK7QString@Base 6.3.0
+ _ZN26QQuickPlatformFolderDialog16staticMetaObjectE@Base 6.3.0
+ _ZN26QQuickPlatformFolderDialog4execEv@Base 6.3.0
+ _ZN26QQuickPlatformFolderDialog4hideEv@Base 6.3.0
+ _ZN26QQuickPlatformFolderDialog4showE6QFlagsIN2Qt10WindowTypeEENS1_14WindowModalityEP7QWindow@Base 6.3.0
+ _ZN26QQuickPlatformFolderDialog9setFilterEv@Base 6.3.0
+ _ZN26QQuickPlatformFolderDialogC1EP7QObject@Base 6.3.0
+ _ZN26QQuickPlatformFolderDialogC2EP7QObject@Base 6.3.0
+ _ZN27QQuickFileDialogImplPrivate11handleClickEP20QQuickAbstractButton@Base 6.4.0
+ _ZN27QQuickFileDialogImplPrivate12handleAcceptEv@Base 6.4.0
+ _ZN27QQuickFileDialogImplPrivate13updateEnabledEv@Base 6.4.0
+ _ZN27QQuickFileDialogImplPrivate14attachedOrWarnEv@Base 6.4.0
+ _ZN27QQuickFileDialogImplPrivate14setNameFiltersERK5QListI7QStringE@Base 6.4.0
+ _ZN27QQuickFileDialogImplPrivate17fileListSortFlagsEv@Base 6.4.0
+ _ZN27QQuickFileDialogImplPrivate18updateSelectedFileERK7QString@Base 6.4.0
+ _ZN27QQuickFileDialogImplPrivate30fileDialogListViewCountChangedEv@Base 6.4.0
+ _ZN27QQuickFileDialogImplPrivate33setFileDialogListViewCurrentIndexEi@Base 6.4.0
+ _ZN27QQuickFileDialogImplPrivate39tryUpdateFileDialogListViewCurrentIndexEi@Base 6.4.0
+ _ZN27QQuickFileDialogImplPrivate8fileListERK4QDir@Base 6.4.0
+ _ZN27QQuickFileDialogImplPrivateC1Ev@Base 6.4.0
+ _ZN27QQuickFileDialogImplPrivateC2Ev@Base 6.4.0
+ _ZN27QQuickPlatformMessageDialog11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.3.0
+ _ZN27QQuickPlatformMessageDialog11qt_metacastEPKc@Base 6.3.0
+ _ZN27QQuickPlatformMessageDialog16staticMetaObjectE@Base 6.3.0
+ _ZN27QQuickPlatformMessageDialog4execEv@Base 6.3.0
+ _ZN27QQuickPlatformMessageDialog4hideEv@Base 6.3.0
+ _ZN27QQuickPlatformMessageDialog4showE6QFlagsIN2Qt10WindowTypeEENS1_14WindowModalityEP7QWindow@Base 6.3.0
+ _ZN27QQuickPlatformMessageDialogC1EP7QObject@Base 6.3.0
+ _ZN27QQuickPlatformMessageDialogC2EP7QObject@Base 6.3.0
  _ZN28QQuickFileDialogImplAttached11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
  _ZN28QQuickFileDialogImplAttached11qt_metacastEPKc@Base 6.2.0
  _ZN28QQuickFileDialogImplAttached12setButtonBoxEP21QQuickDialogButtonBox@Base 6.2.0
  _ZN28QQuickFileDialogImplAttached16buttonBoxChangedEv@Base 6.2.0
  _ZN28QQuickFileDialogImplAttached16selectNameFilterERK7QString@Base 6.2.0
  _ZN28QQuickFileDialogImplAttached16setBreadcrumbBarEP25QQuickFolderBreadcrumbBar@Base 6.2.0
+ _ZN28QQuickFileDialogImplAttached16setFileNameLabelEP11QQuickLabel@Base 6.4.0
  _ZN28QQuickFileDialogImplAttached16staticMetaObjectE@Base 6.2.0
  _ZN28QQuickFileDialogImplAttached20breadcrumbBarChangedEv@Base 6.2.0
+ _ZN28QQuickFileDialogImplAttached20fileNameLabelChangedEv@Base 6.4.0
+ _ZN28QQuickFileDialogImplAttached20setFileNameTextFieldEP15QQuickTextField@Base 6.4.0
  _ZN28QQuickFileDialogImplAttached21setFileDialogListViewEP14QQuickListView@Base 6.2.0
  _ZN28QQuickFileDialogImplAttached22setNameFiltersComboBoxEP14QQuickComboBox@Base 6.2.0
+ _ZN28QQuickFileDialogImplAttached24fileNameTextFieldChangedEv@Base 6.4.0
  _ZN28QQuickFileDialogImplAttached25fileDialogListViewChangedEv@Base 6.2.0
  _ZN28QQuickFileDialogImplAttached26nameFiltersComboBoxChangedEv@Base 6.2.0
  _ZN28QQuickFileDialogImplAttachedC1EP7QObject@Base 6.2.0
@@ -148,6 +316,45 @@ libQt6QuickDialogs2QuickImpl.so.6 libqt6quickdialogs2quickimpl6 #MINVER#
  _ZN28QQuickFontDialogImplAttached28writingSystemComboBoxChangedEv@Base 6.2.0
  _ZN28QQuickFontDialogImplAttachedC1EP7QObject@Base 6.2.0
  _ZN28QQuickFontDialogImplAttachedC2EP7QObject@Base 6.2.0
+ _ZN29QQuickColorDialogImplAttached11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.4.0
+ _ZN29QQuickColorDialogImplAttached11qt_metacastEPKc@Base 6.4.0
+ _ZN29QQuickColorDialogImplAttached12setButtonBoxEP21QQuickDialogButtonBox@Base 6.4.0
+ _ZN29QQuickColorDialogImplAttached14setAlphaSliderEP12QQuickSlider@Base 6.4.0
+ _ZN29QQuickColorDialogImplAttached14setColorInputsEP17QQuickColorInputs@Base 6.4.0
+ _ZN29QQuickColorDialogImplAttached14setColorPickerEP25QQuickAbstractColorPicker@Base 6.4.0
+ _ZN29QQuickColorDialogImplAttached16buttonBoxChangedEv@Base 6.4.0
+ _ZN29QQuickColorDialogImplAttached16staticMetaObjectE@Base 6.4.0
+ _ZN29QQuickColorDialogImplAttached18alphaSliderChangedEv@Base 6.4.0
+ _ZN29QQuickColorDialogImplAttached18colorInputsChangedEv@Base 6.4.0
+ _ZN29QQuickColorDialogImplAttached18colorPickerChangedEv@Base 6.4.0
+ _ZN29QQuickColorDialogImplAttached19setEyeDropperButtonEP20QQuickAbstractButton@Base 6.4.0
+ _ZN29QQuickColorDialogImplAttached23eyeDropperButtonChangedEv@Base 6.4.0
+ _ZN29QQuickColorDialogImplAttachedC1EP7QObject@Base 6.4.0
+ _ZN29QQuickColorDialogImplAttachedC2EP7QObject@Base 6.4.0
+ _ZN30QQuickFolderDialogImplAttached11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.3.0
+ _ZN30QQuickFolderDialogImplAttached11qt_metacastEPKc@Base 6.3.0
+ _ZN30QQuickFolderDialogImplAttached16setBreadcrumbBarEP25QQuickFolderBreadcrumbBar@Base 6.3.0
+ _ZN30QQuickFolderDialogImplAttached16staticMetaObjectE@Base 6.3.0
+ _ZN30QQuickFolderDialogImplAttached20breadcrumbBarChangedEv@Base 6.3.0
+ _ZN30QQuickFolderDialogImplAttached23setFolderDialogListViewEP14QQuickListView@Base 6.3.0
+ _ZN30QQuickFolderDialogImplAttached27folderDialogListViewChangedEv@Base 6.3.0
+ _ZN30QQuickFolderDialogImplAttachedC1EP7QObject@Base 6.3.0
+ _ZN30QQuickFolderDialogImplAttachedC2EP7QObject@Base 6.3.0
+ _ZN31QQuickMessageDialogImplAttached11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.3.0
+ _ZN31QQuickMessageDialogImplAttached11qt_metacastEPKc@Base 6.3.0
+ _ZN31QQuickMessageDialogImplAttached12setButtonBoxEP21QQuickDialogButtonBox@Base 6.3.0
+ _ZN31QQuickMessageDialogImplAttached16buttonBoxChangedEv@Base 6.3.0
+ _ZN31QQuickMessageDialogImplAttached16staticMetaObjectE@Base 6.3.0
+ _ZN31QQuickMessageDialogImplAttached21setDetailedTextButtonEP12QQuickButton@Base 6.3.0
+ _ZN31QQuickMessageDialogImplAttached25detailedTextButtonChangedEv@Base 6.3.0
+ _ZN31QQuickMessageDialogImplAttachedC1EP7QObject@Base 6.3.0
+ _ZN31QQuickMessageDialogImplAttachedC2EP7QObject@Base 6.3.0
+ _ZN31QQuickSaturationLightnessPicker11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.4.0
+ _ZN31QQuickSaturationLightnessPicker11qt_metacastEPKc@Base 6.4.0
+ _ZN31QQuickSaturationLightnessPicker16staticMetaObjectE@Base 6.4.0
+ _ZN31QQuickSaturationLightnessPicker7colorAtERK7QPointF@Base 6.4.0
+ _ZN31QQuickSaturationLightnessPickerC1EP10QQuickItem@Base 6.4.0
+ _ZN31QQuickSaturationLightnessPickerC2EP10QQuickItem@Base 6.4.0
  _ZN32QQuickFolderBreadcrumbBarPrivate10repopulateEv@Base 6.2.0
  _ZN32QQuickFolderBreadcrumbBarPrivate12crumbClickedEv@Base 6.2.0
  _ZN32QQuickFolderBreadcrumbBarPrivate13folderChangedEv@Base 6.2.0
@@ -156,6 +363,7 @@ libQt6QuickDialogs2QuickImpl.so.6 libqt6quickdialogs2quickimpl6 #MINVER#
  _ZN32QQuickFolderBreadcrumbBarPrivate14folderBaseNameERK7QString@Base 6.2.0
  _ZN32QQuickFolderBreadcrumbBarPrivate15cancelTextFieldEv@Base 6.2.0
  _ZN32QQuickFolderBreadcrumbBarPrivate15executeUpButtonEb@Base 6.2.0
+ _ZN32QQuickFolderBreadcrumbBarPrivate15setDialogFolderERK4QUrl@Base 6.3.0
  _ZN32QQuickFolderBreadcrumbBarPrivate16executeTextFieldEb@Base 6.2.0
  _ZN32QQuickFolderBreadcrumbBarPrivate17textFieldAcceptedEv@Base 6.2.0
  _ZN32QQuickFolderBreadcrumbBarPrivate18createDelegateItemEP13QQmlComponentRK4QMapI7QString8QVariantE@Base 6.2.0
@@ -163,27 +371,73 @@ libQt6QuickDialogs2QuickImpl.so.6 libqt6quickdialogs2quickimpl6 #MINVER#
  _ZN32QQuickFolderBreadcrumbBarPrivate19itemGeometryChangedEP10QQuickItem20QQuickGeometryChangeRK6QRectF@Base 6.2.0
  _ZN32QQuickFolderBreadcrumbBarPrivate20handleTextFieldShownEv@Base 6.2.0
  _ZN32QQuickFolderBreadcrumbBarPrivate21handleTextFieldHiddenEv@Base 6.2.0
+ _ZN32QQuickFolderBreadcrumbBarPrivate22ungrabEditPathShortcutEv@Base 6.4.0
  _ZN32QQuickFolderBreadcrumbBarPrivate23textFieldVisibleChangedEv@Base 6.2.0
- _ZN32QQuickFolderBreadcrumbBarPrivate23ungrabEditPathShortcutsEv@Base 6.2.0
  _ZN32QQuickFolderBreadcrumbBarPrivate24itemImplicitWidthChangedEP10QQuickItem@Base 6.2.0
  _ZN32QQuickFolderBreadcrumbBarPrivate25itemImplicitHeightChangedEP10QQuickItem@Base 6.2.0
  _ZN32QQuickFolderBreadcrumbBarPrivate25toggleTextFieldVisibilityEv@Base 6.2.0
  _ZN32QQuickFolderBreadcrumbBarPrivate27textFieldActiveFocusChangedEv@Base 6.2.0
  _ZN32QQuickFolderBreadcrumbBarPrivate4goUpEv@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZN7QString5clearEv@Base 6.2.4
+ _ZNK17QQuickColorInputs10greenInputEv@Base 6.4.0
+ _ZNK17QQuickColorInputs10metaObjectEv@Base 6.4.0
+ _ZNK17QQuickColorInputs10valueInputEv@Base 6.4.0
+ _ZNK17QQuickColorInputs11hslHueInputEv@Base 6.4.0
+ _ZNK17QQuickColorInputs11hsvHueInputEv@Base 6.4.0
+ _ZNK17QQuickColorInputs13hslAlphaInputEv@Base 6.4.0
+ _ZNK17QQuickColorInputs13hslSaturationEv@Base 6.4.0
+ _ZNK17QQuickColorInputs13hsvAlphaInputEv@Base 6.4.0
+ _ZNK17QQuickColorInputs13hsvSaturationEv@Base 6.4.0
+ _ZNK17QQuickColorInputs13rgbAlphaInputEv@Base 6.4.0
+ _ZNK17QQuickColorInputs14lightnessInputEv@Base 6.4.0
+ _ZNK17QQuickColorInputs18hslSaturationInputEv@Base 6.4.0
+ _ZNK17QQuickColorInputs18hsvSaturationInputEv@Base 6.4.0
+ _ZNK17QQuickColorInputs3hueEv@Base 6.4.0
+ _ZNK17QQuickColorInputs3redEv@Base 6.4.0
+ _ZNK17QQuickColorInputs4blueEv@Base 6.4.0
+ _ZNK17QQuickColorInputs5alphaEv@Base 6.4.0
+ _ZNK17QQuickColorInputs5colorEv@Base 6.4.0
+ _ZNK17QQuickColorInputs5greenEv@Base 6.4.0
+ _ZNK17QQuickColorInputs5valueEv@Base 6.4.0
+ _ZNK17QQuickColorInputs8hexInputEv@Base 6.4.0
+ _ZNK17QQuickColorInputs8redInputEv@Base 6.4.0
+ _ZNK17QQuickColorInputs9blueInputEv@Base 6.4.0
+ _ZNK17QQuickColorInputs9lightnessEv@Base 6.4.0
+ _ZNK17QQuickColorInputs9showAlphaEv@Base 6.4.0
  _ZNK20QQuickFileDialogImpl10metaObjectEv@Base 6.2.0
- _ZNK20QQuickFileDialogImpl11currentFileEv@Base 6.2.0
  _ZNK20QQuickFileDialogImpl11nameFiltersEv@Base 6.2.0
  _ZNK20QQuickFileDialogImpl12selectedFileEv@Base 6.2.0
  _ZNK20QQuickFileDialogImpl13currentFolderEv@Base 6.2.0
  _ZNK20QQuickFileDialogImpl18selectedNameFilterEv@Base 6.2.0
  _ZNK20QQuickFileDialogImpl7optionsEv@Base 6.2.0
+ _ZNK20QQuickFileDialogImpl8fileNameEv@Base 6.4.0
  _ZNK20QQuickFontDialogImpl10metaObjectEv@Base 6.2.0
  _ZNK20QQuickFontDialogImpl11currentFontEv@Base 6.2.0
  _ZNK20QQuickFontDialogImpl7optionsEv@Base 6.2.0
- _ZNK24QQuickFileDialogDelegate10fileDialogEv@Base 6.2.0
+ _ZNK21QQuickColorDialogImpl10metaObjectEv@Base 6.4.0
+ _ZNK21QQuickColorDialogImpl10saturationEv@Base 6.4.0
+ _ZNK21QQuickColorDialogImpl3hueEv@Base 6.4.0
+ _ZNK21QQuickColorDialogImpl3redEv@Base 6.4.0
+ _ZNK21QQuickColorDialogImpl4blueEv@Base 6.4.0
+ _ZNK21QQuickColorDialogImpl5alphaEv@Base 6.4.0
+ _ZNK21QQuickColorDialogImpl5colorEv@Base 6.4.0
+ _ZNK21QQuickColorDialogImpl5greenEv@Base 6.4.0
+ _ZNK21QQuickColorDialogImpl5isHslEv@Base 6.4.0
+ _ZNK21QQuickColorDialogImpl5valueEv@Base 6.4.0
+ _ZNK21QQuickColorDialogImpl7optionsEv@Base 6.4.0
+ _ZNK21QQuickColorDialogImpl9lightnessEv@Base 6.4.0
+ _ZNK22QQuickFolderDialogImpl10metaObjectEv@Base 6.3.0
+ _ZNK22QQuickFolderDialogImpl13currentFolderEv@Base 6.3.0
+ _ZNK22QQuickFolderDialogImpl14selectedFolderEv@Base 6.3.0
+ _ZNK22QQuickFolderDialogImpl7optionsEv@Base 6.3.0
+ _ZNK23QQuickMessageDialogImpl10metaObjectEv@Base 6.3.0
+ _ZNK23QQuickMessageDialogImpl12detailedTextEv@Base 6.3.0
+ _ZNK23QQuickMessageDialogImpl15informativeTextEv@Base 6.3.0
+ _ZNK23QQuickMessageDialogImpl16showDetailedTextEv@Base 6.3.0
+ _ZNK23QQuickMessageDialogImpl4textEv@Base 6.3.0
+ _ZNK23QQuickMessageDialogImpl7optionsEv@Base 6.3.0
  _ZNK24QQuickFileDialogDelegate10metaObjectEv@Base 6.2.0
  _ZNK24QQuickFileDialogDelegate4fileEv@Base 6.2.0
+ _ZNK24QQuickFileDialogDelegate6dialogEv@Base 6.3.0
  _ZNK24QQuickPlatformFileDialog10metaObjectEv@Base 6.2.0
  _ZNK24QQuickPlatformFileDialog13selectedFilesEv@Base 6.2.0
  _ZNK24QQuickPlatformFileDialog18selectedNameFilterEv@Base 6.2.0
@@ -195,14 +449,41 @@ libQt6QuickDialogs2QuickImpl.so.6 libqt6quickdialogs2quickimpl6 #MINVER#
  _ZNK24QQuickPlatformFontDialog11currentFontEv@Base 6.2.0
  _ZNK24QQuickPlatformFontDialog6dialogEv@Base 6.2.0
  _ZNK24QQuickPlatformFontDialog7isValidEv@Base 6.2.0
- _ZNK25QQuickFolderBreadcrumbBar10fileDialogEv@Base 6.2.0
+ _ZNK25QQuickAbstractColorPicker10metaObjectEv@Base 6.4.0
+ _ZNK25QQuickAbstractColorPicker10saturationEv@Base 6.4.0
+ _ZNK25QQuickAbstractColorPicker19implicitHandleWidthEv@Base 6.4.0
+ _ZNK25QQuickAbstractColorPicker20implicitHandleHeightEv@Base 6.4.0
+ _ZNK25QQuickAbstractColorPicker3hueEv@Base 6.4.0
+ _ZNK25QQuickAbstractColorPicker5alphaEv@Base 6.4.0
+ _ZNK25QQuickAbstractColorPicker5colorEv@Base 6.4.0
+ _ZNK25QQuickAbstractColorPicker5valueEv@Base 6.4.0
+ _ZNK25QQuickAbstractColorPicker6handleEv@Base 6.4.0
+ _ZNK25QQuickAbstractColorPicker9isPressedEv@Base 6.4.0
+ _ZNK25QQuickAbstractColorPicker9lightnessEv@Base 6.4.0
  _ZNK25QQuickFolderBreadcrumbBar10metaObjectEv@Base 6.2.0
  _ZNK25QQuickFolderBreadcrumbBar11defaultFontEv@Base 6.2.0
  _ZNK25QQuickFolderBreadcrumbBar14accessibleRoleEv@Base 6.2.0
  _ZNK25QQuickFolderBreadcrumbBar15upButtonSpacingEv@Base 6.2.0
+ _ZNK25QQuickFolderBreadcrumbBar6dialogEv@Base 6.3.0
  _ZNK25QQuickFolderBreadcrumbBar9isContentEP10QQuickItem@Base 6.2.0
+ _ZNK25QQuickPlatformColorDialog10metaObjectEv@Base 6.4.0
+ _ZNK25QQuickPlatformColorDialog12currentColorEv@Base 6.4.0
+ _ZNK25QQuickPlatformColorDialog6dialogEv@Base 6.4.0
+ _ZNK25QQuickPlatformColorDialog7isValidEv@Base 6.4.0
+ _ZNK26QQuickPlatformFolderDialog10metaObjectEv@Base 6.3.0
+ _ZNK26QQuickPlatformFolderDialog13selectedFilesEv@Base 6.3.0
+ _ZNK26QQuickPlatformFolderDialog18selectedNameFilterEv@Base 6.3.0
+ _ZNK26QQuickPlatformFolderDialog25defaultNameFilterDisablesEv@Base 6.3.0
+ _ZNK26QQuickPlatformFolderDialog6dialogEv@Base 6.3.0
+ _ZNK26QQuickPlatformFolderDialog7isValidEv@Base 6.3.0
+ _ZNK26QQuickPlatformFolderDialog9directoryEv@Base 6.3.0
+ _ZNK27QQuickPlatformMessageDialog10metaObjectEv@Base 6.3.0
+ _ZNK27QQuickPlatformMessageDialog6dialogEv@Base 6.3.0
+ _ZNK27QQuickPlatformMessageDialog7isValidEv@Base 6.3.0
  _ZNK28QQuickFileDialogImplAttached10metaObjectEv@Base 6.2.0
  _ZNK28QQuickFileDialogImplAttached13breadcrumbBarEv@Base 6.2.0
+ _ZNK28QQuickFileDialogImplAttached13fileNameLabelEv@Base 6.4.0
+ _ZNK28QQuickFileDialogImplAttached17fileNameTextFieldEv@Base 6.4.0
  _ZNK28QQuickFileDialogImplAttached18fileDialogListViewEv@Base 6.2.0
  _ZNK28QQuickFileDialogImplAttached18selectedNameFilterEv@Base 6.2.0
  _ZNK28QQuickFileDialogImplAttached19nameFiltersComboBoxEv@Base 6.2.0
@@ -219,61 +500,101 @@ libQt6QuickDialogs2QuickImpl.so.6 libqt6quickdialogs2quickimpl6 #MINVER#
  _ZNK28QQuickFontDialogImplAttached8sizeEditEv@Base 6.2.0
  _ZNK28QQuickFontDialogImplAttached9buttonBoxEv@Base 6.2.0
  _ZNK28QQuickFontDialogImplAttached9styleEditEv@Base 6.2.0
+ _ZNK29QQuickColorDialogImplAttached10metaObjectEv@Base 6.4.0
+ _ZNK29QQuickColorDialogImplAttached11alphaSliderEv@Base 6.4.0
+ _ZNK29QQuickColorDialogImplAttached11colorInputsEv@Base 6.4.0
+ _ZNK29QQuickColorDialogImplAttached11colorPickerEv@Base 6.4.0
+ _ZNK29QQuickColorDialogImplAttached16eyeDropperButtonEv@Base 6.4.0
+ _ZNK29QQuickColorDialogImplAttached9buttonBoxEv@Base 6.4.0
+ _ZNK30QQuickFolderDialogImplAttached10metaObjectEv@Base 6.3.0
+ _ZNK30QQuickFolderDialogImplAttached13breadcrumbBarEv@Base 6.3.0
+ _ZNK30QQuickFolderDialogImplAttached20folderDialogListViewEv@Base 6.3.0
+ _ZNK31QQuickMessageDialogImplAttached10metaObjectEv@Base 6.3.0
+ _ZNK31QQuickMessageDialogImplAttached18detailedTextButtonEv@Base 6.3.0
+ _ZNK31QQuickMessageDialogImplAttached9buttonBoxEv@Base 6.3.0
+ _ZNK31QQuickSaturationLightnessPicker10metaObjectEv@Base 6.4.0
+ _ZNK32QQuickFolderBreadcrumbBarPrivate12asFileDialogEv@Base 6.3.0
+ _ZNK32QQuickFolderBreadcrumbBarPrivate12dialogFolderEv@Base 6.3.0
+ _ZNK32QQuickFolderBreadcrumbBarPrivate12isFileDialogEv@Base 6.3.0
+ _ZNK32QQuickFolderBreadcrumbBarPrivate14asFolderDialogEv@Base 6.3.0
  _ZNK32QQuickFolderBreadcrumbBarPrivate15getContentWidthEv@Base 6.2.0
  _ZNK32QQuickFolderBreadcrumbBarPrivate16getContentHeightEv@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNSt8_Rb_treeI7QStringSt4pairIKS0_8QVariantESt10_Select1stIS4_ESt4lessIS0_ESaIS4_EE14_M_insert_nodeEPSt18_Rb_tree_node_baseSC_PSt13_Rb_tree_nodeIS4_E@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNSt8_Rb_treeI7QStringSt4pairIKS0_8QVariantESt10_Select1stIS4_ESt4lessIS0_ESaIS4_EE14_M_lower_boundEPSt13_Rb_tree_nodeIS4_EPSt18_Rb_tree_node_baseRS2_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNSt8_Rb_treeI7QStringSt4pairIKS0_8QVariantESt10_Select1stIS4_ESt4lessIS0_ESaIS4_EE22_M_emplace_hint_uniqueIJRKSt21piecewise_construct_tSt5tupleIJRS2_EESF_IJRKS3_EEEEESt17_Rb_tree_iteratorIS4_ESt23_Rb_tree_const_iteratorIS4_EDpOT_@Base 6.2.4
- (optional=templinst)_ZNSt8_Rb_treeI7QStringSt4pairIKS0_8QVariantESt10_Select1stIS4_ESt4lessIS0_ESaIS4_EE24_M_get_insert_unique_posERS2_@Base 6.2.0
- (optional=templinst|arch=!i386 !s390x)_ZNSt8_Rb_treeI7QStringSt4pairIKS0_8QVariantESt10_Select1stIS4_ESt4lessIS0_ESaIS4_EE29_M_get_insert_hint_unique_posESt23_Rb_tree_const_iteratorIS4_ERS2_@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64)_ZNSt8_Rb_treeI7QStringSt4pairIKS0_8QVariantESt10_Select1stIS4_ESt4lessIS0_ESaIS4_EE7_M_copyILb0ENSA_11_Alloc_nodeEEEPSt13_Rb_tree_nodeIS4_ESF_PSt18_Rb_tree_node_baseRT0_@Base 6.2.4
- (optional=templinst|arch=i386)_ZNSt8_Rb_treeI7QStringSt4pairIKS0_8QVariantESt10_Select1stIS4_ESt4lessIS0_ESaIS4_EE7_M_copyINSA_11_Alloc_nodeEEEPSt13_Rb_tree_nodeIS4_EPKSE_PSt18_Rb_tree_node_baseRT_@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (optional=templinst|arch=amd64 arm64 i386)_ZNSt8_Rb_treeI7QStringSt4pairIKS0_8QVariantESt10_Select1stIS4_ESt4lessIS0_ESaIS4_EE8_M_eraseEPSt13_Rb_tree_nodeIS4_E@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# (arch=amd64 arm64)_ZSt19piecewise_construct@Base 6.2.4
+ _ZTI17QQuickColorInputs@Base 6.4.0
  _ZTI20QQuickFileDialogImpl@Base 6.2.0
  _ZTI20QQuickFontDialogImpl@Base 6.2.0
+ _ZTI21QQuickColorDialogImpl@Base 6.4.0
+ _ZTI22QQuickFolderDialogImpl@Base 6.3.0
+ _ZTI23QQuickMessageDialogImpl@Base 6.3.0
  _ZTI24QQuickFileDialogDelegate@Base 6.2.0
  _ZTI24QQuickPlatformFileDialog@Base 6.2.0
  _ZTI24QQuickPlatformFontDialog@Base 6.2.0
+ _ZTI25QQuickAbstractColorPicker@Base 6.4.0
  _ZTI25QQuickFolderBreadcrumbBar@Base 6.2.0
+ _ZTI25QQuickPlatformColorDialog@Base 6.4.0
+ _ZTI26QQuickPlatformFolderDialog@Base 6.3.0
+ _ZTI27QQuickFileDialogImplPrivate@Base 6.4.0
+ _ZTI27QQuickPlatformMessageDialog@Base 6.3.0
  _ZTI28QQuickFileDialogImplAttached@Base 6.2.0
  _ZTI28QQuickFontDialogImplAttached@Base 6.2.0
+ _ZTI29QQuickColorDialogImplAttached@Base 6.4.0
+ _ZTI30QQuickFolderDialogImplAttached@Base 6.3.0
+ _ZTI31QQuickMessageDialogImplAttached@Base 6.3.0
+ _ZTI31QQuickSaturationLightnessPicker@Base 6.4.0
  _ZTI32QQuickFolderBreadcrumbBarPrivate@Base 6.2.0
+ _ZTIZN9QMetaType17registerConverterI5QListI10QQuickIconE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS3_EEEEbT1_EUlPKvPvE_@Base 6.4.0
+ _ZTIZN9QMetaType19registerMutableViewI5QListI10QQuickIconE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS3_EEEEbT1_EUlPvSB_E_@Base 6.4.0
+ _ZTS17QQuickColorInputs@Base 6.4.0
  _ZTS20QQuickFileDialogImpl@Base 6.2.0
  _ZTS20QQuickFontDialogImpl@Base 6.2.0
+ _ZTS21QQuickColorDialogImpl@Base 6.4.0
+ _ZTS22QQuickFolderDialogImpl@Base 6.3.0
+ _ZTS23QQuickMessageDialogImpl@Base 6.3.0
  _ZTS24QQuickFileDialogDelegate@Base 6.2.0
  _ZTS24QQuickPlatformFileDialog@Base 6.2.0
  _ZTS24QQuickPlatformFontDialog@Base 6.2.0
+ _ZTS25QQuickAbstractColorPicker@Base 6.4.0
  _ZTS25QQuickFolderBreadcrumbBar@Base 6.2.0
+ _ZTS25QQuickPlatformColorDialog@Base 6.4.0
+ _ZTS26QQuickPlatformFolderDialog@Base 6.3.0
+ _ZTS27QQuickFileDialogImplPrivate@Base 6.4.0
+ _ZTS27QQuickPlatformMessageDialog@Base 6.3.0
  _ZTS28QQuickFileDialogImplAttached@Base 6.2.0
  _ZTS28QQuickFontDialogImplAttached@Base 6.2.0
+ _ZTS29QQuickColorDialogImplAttached@Base 6.4.0
+ _ZTS30QQuickFolderDialogImplAttached@Base 6.3.0
+ _ZTS31QQuickMessageDialogImplAttached@Base 6.3.0
+ _ZTS31QQuickSaturationLightnessPicker@Base 6.4.0
  _ZTS32QQuickFolderBreadcrumbBarPrivate@Base 6.2.0
+ _ZTSZN9QMetaType17registerConverterI5QListI10QQuickIconE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS3_EEEEbT1_EUlPKvPvE_@Base 6.4.0
+ _ZTSZN9QMetaType19registerMutableViewI5QListI10QQuickIconE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS3_EEEEbT1_EUlPvSB_E_@Base 6.4.0
+ _ZTV17QQuickColorInputs@Base 6.4.0
  _ZTV20QQuickFileDialogImpl@Base 6.2.0
  _ZTV20QQuickFontDialogImpl@Base 6.2.0
+ _ZTV21QQuickColorDialogImpl@Base 6.4.0
+ _ZTV22QQuickFolderDialogImpl@Base 6.3.0
+ _ZTV23QQuickMessageDialogImpl@Base 6.3.0
  _ZTV24QQuickFileDialogDelegate@Base 6.2.0
  _ZTV24QQuickPlatformFileDialog@Base 6.2.0
  _ZTV24QQuickPlatformFontDialog@Base 6.2.0
+ _ZTV25QQuickAbstractColorPicker@Base 6.4.0
  _ZTV25QQuickFolderBreadcrumbBar@Base 6.2.0
+ _ZTV25QQuickPlatformColorDialog@Base 6.4.0
+ _ZTV26QQuickPlatformFolderDialog@Base 6.3.0
+ _ZTV27QQuickFileDialogImplPrivate@Base 6.4.0
+ _ZTV27QQuickPlatformMessageDialog@Base 6.3.0
  _ZTV28QQuickFileDialogImplAttached@Base 6.2.0
  _ZTV28QQuickFontDialogImplAttached@Base 6.2.0
+ _ZTV29QQuickColorDialogImplAttached@Base 6.4.0
+ _ZTV30QQuickFolderDialogImplAttached@Base 6.3.0
+ _ZTV31QQuickMessageDialogImplAttached@Base 6.3.0
+ _ZTV31QQuickSaturationLightnessPicker@Base 6.4.0
  _ZTV32QQuickFolderBreadcrumbBarPrivate@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI4QUrlE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI4QUrlE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI4QUrlE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI4QUrlE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI5QListI7QStringEE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES7_S8_SA_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI5QListI7QStringEE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS8_E_4_FUNES7_S8_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI5QListI7QStringEE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES7_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI5QListI7QStringEE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES7_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QStringE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QStringE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QStringE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QStringE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIiE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES4_S5_S7_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIiE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS5_E_4_FUNES4_S5_S5_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIiE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES4_S5_@Base 6.2.0
+ (optional=templinst)_ZZN9QMetaType21registerConverterImplI5QListI10QQuickIconE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Base 6.4.0
+ (optional=templinst)_ZZN9QMetaType23registerMutableViewImplI5QListI10QQuickIconE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS8_EES_S_E10unregister@Base 6.4.0
+ (c++)"non-virtual thunk to QQuickAbstractColorPicker::componentComplete()@Base" 6.4.0
  (c++)"non-virtual thunk to QQuickFileDialogImpl::componentComplete()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickFolderBreadcrumbBar::componentComplete()@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickFolderBreadcrumbBarPrivate::itemGeometryChanged(QQuickItem*, QQuickGeometryChange, QRectF const&)@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickFolderBreadcrumbBarPrivate::itemImplicitHeightChanged(QQuickItem*)@Base" 6.2.0
  (c++)"non-virtual thunk to QQuickFolderBreadcrumbBarPrivate::itemImplicitWidthChanged(QQuickItem*)@Base" 6.2.0
+ (c++)"non-virtual thunk to QQuickFolderDialogImpl::componentComplete()@Base" 6.3.0

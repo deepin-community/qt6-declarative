@@ -1,38 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2020 The Qt Company Ltd.
-** Contact: http://www.qt.io/licensing/
-**
-** This file is part of the Qt Quick Controls 2 module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL3$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see http://www.qt.io/terms-conditions. For further
-** information use the contact form at http://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPLv3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or later as published by the Free
-** Software Foundation and appearing in the file LICENSE.GPL included in
-** the packaging of this file. Please review the following information to
-** ensure the GNU General Public License version 2.0 requirements will be
-** met: http://www.gnu.org/licenses/gpl-2.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2020 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qquickdrawutil.h"
 
@@ -125,6 +92,20 @@ void qDrawShadeLine(QPainter *p, int x1, int y1, int x2, int y2,
     if (Q_UNLIKELY(!p || lineWidth < 0 || midLineWidth < 0)) {
         qWarning("qDrawShadeLine: Invalid parameters");
         return;
+    }
+    PainterStateGuard painterGuard(p);
+    const qreal devicePixelRatio = p->device()->devicePixelRatio();
+    if (!qFuzzyCompare(devicePixelRatio, qreal(1))) {
+        painterGuard.save();
+        const qreal inverseScale = qreal(1) / devicePixelRatio;
+        p->scale(inverseScale, inverseScale);
+        x1 = qRound(devicePixelRatio * x1);
+        y1 = qRound(devicePixelRatio * y1);
+        x2 = qRound(devicePixelRatio * x2);
+        y2 = qRound(devicePixelRatio * y2);
+        lineWidth = qRound(devicePixelRatio * lineWidth);
+        midLineWidth = qRound(devicePixelRatio * midLineWidth);
+        p->translate(0.5, 0.5);
     }
     int tlw = lineWidth*2 + midLineWidth;        // total line width
     QPen oldPen = p->pen();                        // save pen
@@ -255,6 +236,7 @@ void qDrawShadeRect(QPainter *p, int x, int y, int w, int h,
         h = qRound(devicePixelRatio * h);
         lineWidth = qRound(devicePixelRatio * lineWidth);
         midLineWidth = qRound(devicePixelRatio * midLineWidth);
+        p->translate(0.5, 0.5);
     }
 
     QPen oldPen = p->pen();
@@ -359,6 +341,7 @@ void qDrawShadePanel(QPainter *p, int x, int y, int w, int h,
 
     PainterStateGuard painterGuard(p);
     const qreal devicePixelRatio = p->device()->devicePixelRatioF();
+    bool isTranslated = false;
     if (!qFuzzyCompare(devicePixelRatio, qreal(1))) {
         painterGuard.save();
         const qreal inverseScale = qreal(1) / devicePixelRatio;
@@ -368,6 +351,8 @@ void qDrawShadePanel(QPainter *p, int x, int y, int w, int h,
         w = qRound(devicePixelRatio * w);
         h = qRound(devicePixelRatio * h);
         lineWidth = qRound(devicePixelRatio * lineWidth);
+        p->translate(0.5, 0.5);
+        isTranslated = true;
     }
 
     QColor shade = pal.dark().color();
@@ -418,8 +403,11 @@ void qDrawShadePanel(QPainter *p, int x, int y, int w, int h,
         lines << QLineF(x1--, y1++, x2--, y2);
     }
     p->drawLines(lines);
-    if (fill)                                // fill with fill color
+    if (fill) {                                // fill with fill color
+        if (isTranslated)
+            p->translate(-0.5, -0.5);
         p->fillRect(x+lineWidth, y+lineWidth, w-lineWidth*2, h-lineWidth*2, *fill);
+    }
     p->setPen(oldPen);                        // restore pen
 }
 
@@ -450,6 +438,7 @@ static void qDrawWinShades(QPainter *p,
 
     PainterStateGuard painterGuard(p);
     const qreal devicePixelRatio = p->device()->devicePixelRatioF();
+    bool isTranslated = false;
     if (!qFuzzyCompare(devicePixelRatio, qreal(1))) {
         painterGuard.save();
         const qreal inverseScale = qreal(1) / devicePixelRatio;
@@ -458,6 +447,8 @@ static void qDrawWinShades(QPainter *p,
         y = qRound(devicePixelRatio * y);
         w = qRound(devicePixelRatio * w);
         h = qRound(devicePixelRatio * h);
+        p->translate(0.5, 0.5);
+        isTranslated = true;
     }
 
     QPen oldPen = p->pen();
@@ -474,8 +465,11 @@ static void qDrawWinShades(QPainter *p,
         QPoint d[3] = { QPoint(x+1, y+h-2), QPoint(x+w-2, y+h-2), QPoint(x+w-2, y+1) };
         p->setPen(c4);
         p->drawPolyline(d, 3);
-        if (fill)
+        if (fill) {
+            if (isTranslated)
+                p->translate(-0.5, -0.5);
             p->fillRect(QRect(x+2, y+2, w-4, h-4), *fill);
+        }
     }
     p->setPen(oldPen);
 }
@@ -601,6 +595,7 @@ void qDrawPlainRect(QPainter *p, int x, int y, int w, int h, const QColor &c,
         w = qRound(devicePixelRatio * w);
         h = qRound(devicePixelRatio * h);
         lineWidth = qRound(devicePixelRatio * lineWidth);
+        p->translate(0.5, 0.5);
     }
 
     QPen   oldPen   = p->pen();

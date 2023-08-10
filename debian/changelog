@@ -1,17 +1,325 @@
-qt6-declarative (6.2.4.1-1+dde1) unstable; urgency=medium
+qt6-declarative (6.4.2+dfsg-3deepin) unstable; urgency=medium
 
-  * Update symbols.
+  * Update d/libqt6qml6.symbols, d/libqt6quick6.symbols
 
- -- Tianyu Chen <sweetyfish@deepin.org>  Thu, 13 Jul 2023 10:02:15 +0800
+ -- Tianyu Chen <sweetyfish@deepin.org>  Mon, 07 Aug 2023 13:05:11 +0800
 
-qt6-declarative (6.2.4.1-1+dde) unstable; urgency=medium
+qt6-declarative (6.4.2+dfsg-3) unstable; urgency=medium
 
-  * Update symbols.
+  * Team upload.
+  * Release to unstable.
 
- -- Lu YaNing <luyaning@uniontech.com>  Wed, 21 Sep 2022 14:17:42 +0800
+ -- Lisandro Damián Nicanor Pérez Meyer <lisandro@debian.org>  Sun, 23 Jul 2023 10:11:37 -0300
 
-qt6-declarative (6.2.4-1+dde) stable; urgency=medium
+qt6-declarative (6.4.2+dfsg-2) experimental; urgency=medium
 
-  * ['Rebuild  against by  current gcc 11.2']
+  * Team upload.
 
- -- Deepin Packages Builder <packages@deepin.org>  Wed, 31 Aug 2022 15:44:36 +0800
+  [ Pino Toscano ]
+  * Add the missing qt6-qmllint-plugins dependency to qt6-declarative-dev,
+    so the cmake config files work.
+
+  [ Patrick Franz ]
+  * Remove dependencies on libqt6opengl6-dev as it has been merged into
+    qt6-base-dev.
+
+  [ Lisandro Damián Nicanor Pérez Meyer ]
+  * Add documentation and examples packages.
+
+ -- Lisandro Damián Nicanor Pérez Meyer <lisandro@debian.org>  Sun, 23 Jul 2023 00:04:14 -0300
+
+qt6-declarative (6.4.2+dfsg-1) unstable; urgency=medium
+
+  [ Patrick Franz ]
+  * Switch to the official 6.4.2 tarball, the tarball is the same.
+
+ -- Patrick Franz <deltaone@debian.org>  Thu, 26 Jan 2023 22:32:37 +0100
+
+qt6-declarative (6.4.2+dfsg~rc1-2) unstable; urgency=medium
+
+  [ Patrick Franz ]
+  * Upload to unstable.
+
+ -- Patrick Franz <deltaone@debian.org>  Fri, 30 Dec 2022 16:58:17 +0100
+
+qt6-declarative (6.4.2+dfsg~rc1-1) experimental; urgency=medium
+
+  [ Patrick Franz ]
+  * New upstream release (6.4.2).
+  * Bump Qt B-Ds to 6.4.2.
+  * Update ABI to 6.4.2.
+  * Update symbols from buildlogs.
+  * Bump Standards-Version to 4.6.2 (no changes needed).
+
+ -- Patrick Franz <deltaone@debian.org>  Tue, 27 Dec 2022 22:26:40 +0100
+
+qt6-declarative (6.4.1+dfsg-3) experimental; urgency=medium
+
+  [ Patrick Franz ]
+  * Add qt6-base-private-dev as a dependency for qt6-declarative-private-
+    dev (Closes: #1024888).
+  * Adjust build-dependencies.
+
+ -- Patrick Franz <deltaone@debian.org>  Tue, 06 Dec 2022 00:40:02 +0100
+
+qt6-declarative (6.4.1+dfsg-2) experimental; urgency=medium
+
+  [ Patrick Franz ]
+  * Update symbols from buildlogs.
+
+ -- Patrick Franz <deltaone@debian.org>  Thu, 17 Nov 2022 13:39:42 +0100
+
+qt6-declarative (6.4.1+dfsg-1) experimental; urgency=medium
+
+  [ Patrick Franz ]
+  * Update symbols from buildlogs.
+  * New upstream release (6.4.1).
+  * Bump Qt B-Ds to 6.4.1.
+  * Update ABI to 6.4.1.
+  * Update list of installed files.
+  * Update symbols from buildlogs.
+
+ -- Patrick Franz <deltaone@debian.org>  Wed, 16 Nov 2022 06:51:36 +0100
+
+qt6-declarative (6.4.0+dfsg-5) experimental; urgency=medium
+
+  [ Patrick Franz ]
+  * Enable link time optimization (Closes: #1015619).
+  * Fix FTCBFS, thx to Helmut Grohne: (Closes: #1023073).
+    + Pass QT_HOST_* variables to cmake.
+    + Build tools when cross compiling.
+    + Build depend on ourselves during cross compiling.
+
+ -- Patrick Franz <deltaone@debian.org>  Sun, 13 Nov 2022 15:31:32 +0100
+
+qt6-declarative (6.4.0+dfsg-4) experimental; urgency=medium
+
+  * Team upload.
+  * Update symbols files from the logs of buildds.
+
+ -- Pino Toscano <pino@debian.org>  Mon, 17 Oct 2022 21:17:39 +0200
+
+qt6-declarative (6.4.0+dfsg-3) experimental; urgency=medium
+
+  [ Patrick Franz ]
+  * Update symbols from buildlogs.
+
+ -- Patrick Franz <deltaone@debian.org>  Fri, 14 Oct 2022 21:44:10 +0200
+
+qt6-declarative (6.4.0+dfsg-2) experimental; urgency=medium
+
+  [ Patrick Franz ]
+  * Update symbols from buildlogs.
+
+ -- Patrick Franz <deltaone@debian.org>  Thu, 13 Oct 2022 11:48:23 +0200
+
+qt6-declarative (6.4.0+dfsg-1) experimental; urgency=medium
+
+  [ Lisandro Damián Nicanor Pérez Meyer ]
+  * Bump minimum CMake version in order to get pkg-config's .pc files.
+  * Add debian/.gitignore.
+  * Add libqt6opengl6-dev as a qt6-declarative-dev dependency, as it's
+    required by some of it's headers.
+
+  [ Patrick Franz ]
+  * Increase CMake verbosity level.
+  * New upstream release (6.4.0).
+  * Bump Qt B-Ds to 6.4.0.
+  * Update ABI to 6.4.0.
+  * New binary packages libqt6qmlcompiler6 & qt6-qmllint-plugins and
+    update list of installed files.
+  * Update symbols from buildlogs.
+  * Update lintian-overrides.
+  * Do not install cmake-files for Qml plugins.
+  * Update d/copyright.
+
+ -- Patrick Franz <deltaone@debian.org>  Tue, 11 Oct 2022 19:30:47 +0200
+
+qt6-declarative (6.3.1+dfsg-5) unstable; urgency=medium
+
+  * Team upload.
+  * Update symbols files from the logs of buildds.
+
+ -- Pino Toscano <pino@debian.org>  Sun, 04 Sep 2022 07:34:45 +0200
+
+qt6-declarative (6.3.1+dfsg-4) unstable; urgency=medium
+
+  * Team upload.
+  * Update symbols files from the logs of buildds.
+  * Update lintian overrides.
+
+ -- Pino Toscano <pino@debian.org>  Thu, 25 Aug 2022 05:19:47 +0200
+
+qt6-declarative (6.3.1+dfsg-3) unstable; urgency=medium
+
+  [ Patrick Franz ]
+  * Update symbols from buildlogs.
+
+ -- Patrick Franz <deltaone@debian.org>  Tue, 16 Aug 2022 11:59:08 +0200
+
+qt6-declarative (6.3.1+dfsg-2) unstable; urgency=medium
+
+  [ Patrick Franz ]
+  * Update symbols from buildlogs (Closes: #1013022).
+
+ -- Patrick Franz <deltaone@debian.org>  Mon, 15 Aug 2022 19:03:28 +0200
+
+qt6-declarative (6.3.1+dfsg-1) experimental; urgency=medium
+
+  [ Pino Toscano ]
+  * Update symbols files from the logs of buildds.
+  * Enable qmlls, the QML Language Server:
+    - add the qt6-languageserver-private-dev build dependency
+    - backport upstream commit 95665d84fbe3f0a8ef47458bfbd7a3b8837869bc to look
+      for the proper CMake module; patch
+      upstream_CMake-Look-for-QtLanguageServerPrivate.patch
+    - install qmlls in qt6-declarative-dev-tools
+
+  [ Patrick Franz ]
+  * Merge changes from 6.2.4+dfsg-6.
+  * New upstream release (6.3.1).
+  * Bump Qt B-Ds to 6.3.1.
+  * Bump Standards-Version to 4.6.1 (no changes needed).
+  * Update ABI to 6.3.1.
+  * Remove upstream_CMake-Look-for-QtLanguageServerPrivate.patch as it
+    has been applied upstream.
+  * Update list of installed files.
+  * Update symbols from buildlogs.
+  * Update lintian-overrides.
+
+ -- Patrick Franz <deltaone@debian.org>  Sat, 16 Jul 2022 12:23:37 +0200
+
+qt6-declarative (6.3.0+dfsg-2) experimental; urgency=medium
+
+  [ Patrick Franz ]
+  * Update symbols from buildlogs.
+
+ -- Patrick Franz <deltaone@debian.org>  Fri, 27 May 2022 17:33:58 +0200
+
+qt6-declarative (6.3.0+dfsg-1) experimental; urgency=medium
+
+  [ Patrick Franz ]
+  * New upstream release (6.3.0).
+  * Bump Qt B-Ds to 6.3.0.
+  * Update ABI to 6.3.0.
+  * Update list of installed files.
+  * Update symbols from buildlogs.
+
+ -- Patrick Franz <deltaone@debian.org>  Thu, 26 May 2022 14:28:18 +0200
+
+qt6-declarative (6.2.4+dfsg-6) unstable; urgency=medium
+
+  [ Patrick Franz ]
+  * Remove dependency to qtchooser as it is dead upstream.
+
+ -- Patrick Franz <deltaone@debian.org>  Fri, 24 Jun 2022 11:17:43 +0200
+
+qt6-declarative (6.2.4+dfsg-5) unstable; urgency=medium
+
+  [ Pino Toscano ]
+  * Bump the libqt6shadertools6-dev build dependency to 6.2.4-2, to make sure
+    to get the fixes for big endian architectures.
+
+  [ Patrick Franz ]
+  * Upload to unstable.
+
+ -- Patrick Franz <deltaone@debian.org>  Fri, 22 Apr 2022 20:06:35 +0200
+
+qt6-declarative (6.2.4+dfsg-4) experimental; urgency=medium
+
+  * Team upload.
+  * Update symbols files from the logs of buildds.
+
+ -- Pino Toscano <pino@debian.org>  Fri, 15 Apr 2022 14:09:59 +0200
+
+qt6-declarative (6.2.4+dfsg-3) experimental; urgency=medium
+
+  [ Patrick Franz ]
+  * Update symbols from buildlogs.
+
+ -- Patrick Franz <deltaone@debian.org>  Tue, 12 Apr 2022 07:50:51 +0200
+
+qt6-declarative (6.2.4+dfsg-2) experimental; urgency=medium
+
+  [ Patrick Franz ]
+  * Update symbols from buildlogs.
+
+ -- Patrick Franz <deltaone@debian.org>  Mon, 28 Mar 2022 12:49:02 +0200
+
+qt6-declarative (6.2.4+dfsg-1) experimental; urgency=medium
+
+  [ Patrick Franz ]
+  * New upstream release (6.2.4).
+  * Bump Qt B-Ds to 6.2.4.
+  * Update ABI to 6.2.4.
+  * Update symbols from buildlogs.
+
+ -- Patrick Franz <deltaone@debian.org>  Sun, 27 Mar 2022 18:40:14 +0200
+
+qt6-declarative (6.2.2+dfsg-4) unstable; urgency=medium
+
+  [ Patrick Franz ]
+  * Upload to unstable.
+
+ -- Patrick Franz <deltaone@debian.org>  Tue, 15 Feb 2022 21:55:41 +0100
+
+qt6-declarative (6.2.2+dfsg-3) experimental; urgency=medium
+
+  * Team upload.
+
+  [ Pino Toscano ]
+  * Update symbols files from the logs of buildds; limit Linux-only symbols as
+    well.
+  * Limit the liblttng-ust-dev build dependency as linux-any, as it is specific
+    to Linux.
+
+  [ Patrick Franz ]
+  * Remove copyright-script as it is now in the pkg-kde-tools package.
+
+ -- Pino Toscano <pino@debian.org>  Sun, 30 Jan 2022 15:17:06 +0100
+
+qt6-declarative (6.2.2+dfsg-2) experimental; urgency=medium
+
+  [ Patrick Franz ]
+  * Fix list of files not to be installed.
+
+ -- Patrick Franz <deltaone@debian.org>  Fri, 03 Dec 2021 10:47:35 +0100
+
+qt6-declarative (6.2.2+dfsg-1) experimental; urgency=medium
+
+  [ Patrick Franz ]
+  * New upstream release (6.2.2).
+  * Bump Qt B-Ds to 6.2.2.
+  * Update ABI to 6.2.2.
+  * Update installed files.
+  * Update symbols from buildlog.
+  * Update d/copyright.
+
+ -- Patrick Franz <deltaone@debian.org>  Fri, 03 Dec 2021 09:18:40 +0100
+
+qt6-declarative (6.2.1+dfsg-4) experimental; urgency=medium
+
+  * Team upload.
+  * Update symbols files from the logs of buildds.
+
+ -- Pino Toscano <pino@debian.org>  Fri, 26 Nov 2021 18:29:21 +0100
+
+qt6-declarative (6.2.1+dfsg-3) experimental; urgency=medium
+
+  * Team upload.
+  * Update symbols files from the logs of buildds.
+
+ -- Pino Toscano <pino@debian.org>  Tue, 23 Nov 2021 07:00:18 +0100
+
+qt6-declarative (6.2.1+dfsg-2) experimental; urgency=medium
+
+  [ Patrick Franz ]
+  * Add lintian-overrides for generated files.
+
+ -- Patrick Franz <deltaone@debian.org>  Mon, 22 Nov 2021 00:40:47 +0100
+
+qt6-declarative (6.2.1+dfsg-1) experimental; urgency=medium
+
+  * Initial release (Closes: #995962).
+
+ -- Patrick Franz <deltaone@debian.org>  Wed, 06 Oct 2021 02:53:22 +0200

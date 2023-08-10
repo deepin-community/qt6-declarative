@@ -1,30 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2019 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQml module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:GPL-EXCEPT$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 3 as published by the Free Software
-** Foundation with exceptions as appearing in the file LICENSE.GPL3-EXCEPT
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2019 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only WITH Qt-GPL-exception-1.0
 
 #include <QtTest/QtTest>
 
@@ -55,6 +30,7 @@ private slots:
     void dragHandlerInSiblingStealingGrabFromMouseAreaViaTouch_data();
     void dragHandlerInSiblingStealingGrabFromMouseAreaViaTouch();
     void hoverHandlerDoesntHoverOnPress();
+    void doubleClickInMouseAreaWithDragHandlerInGrandparent();
 
 private:
     void createView(QScopedPointer<QQuickView> &window, const char *fileName);
@@ -194,20 +170,37 @@ void tst_MouseAreaInterop::hoverHandlerDoesntHoverOnPress() // QTBUG-72843
     QTRY_COMPARE(handler->isHovered(), true);
     // move the mouse into the "button"
     QTest::mouseMove(&window, p);
-    // current behavior: the mouse is still within the HoverHandler's region of interest, but MouseArea is obstructing.
-    QTRY_COMPARE(handler->isHovered(), false);
+    // both the hoverhandler and the mouse area should now be hovered!
+    QTRY_COMPARE(handler->isHovered(), true);
     QCOMPARE(ma->hovered(), true);
 
-    // So HoverHandler is no longer hovered (unfortunately).  Clicking should not change it.
     QSignalSpy hoveredChangedSpy(handler, SIGNAL(hoveredChanged()));
     QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, p);
     QTRY_COMPARE(ma->pressed(), true);
-    QCOMPARE(handler->isHovered(), false);
-    QCOMPARE(hoveredChangedSpy.count(), 0);
+    QCOMPARE(handler->isHovered(), true);
+    QCOMPARE(hoveredChangedSpy.size(), 0);
     QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, p);
     QTRY_COMPARE(ma->pressed(), false);
-    QCOMPARE(handler->isHovered(), false);
-    QCOMPARE(hoveredChangedSpy.count(), 0);
+    QCOMPARE(handler->isHovered(), true);
+    QCOMPARE(hoveredChangedSpy.size(), 0);
+}
+
+void tst_MouseAreaInterop::doubleClickInMouseAreaWithDragHandlerInGrandparent()
+{
+    QQuickView window;
+    QVERIFY(QQuickTest::showView(window, testFileUrl("dragHandlerInMouseAreaGrandparent.qml")));
+
+    QQuickDragHandler *handler = window.rootObject()->findChild<QQuickDragHandler*>();
+    QVERIFY(handler);
+    QSignalSpy dragActiveSpy(handler, &QQuickDragHandler::activeChanged);
+    QQuickMouseArea *ma = window.rootObject()->findChild<QQuickMouseArea*>();
+    QVERIFY(ma);
+    QSignalSpy dClickSpy(ma, &QQuickMouseArea::doubleClicked);
+    QPoint p = ma->mapToScene(ma->boundingRect().center()).toPoint();
+
+    QTest::mouseDClick(&window, Qt::LeftButton, Qt::NoModifier, p);
+    QCOMPARE(dClickSpy.size(), 1);
+    QCOMPARE(dragActiveSpy.size(), 0);
 }
 
 QTEST_MAIN(tst_MouseAreaInterop)

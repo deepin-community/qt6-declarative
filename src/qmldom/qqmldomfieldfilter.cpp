@@ -1,48 +1,41 @@
-/****************************************************************************
-**
-** Copyright (C) 2020 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQml module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**/
-
+// Copyright (C) 2020 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 #include "qqmldomfieldfilter_p.h"
+#include "qqmldompath_p.h"
 #include "QtCore/qglobal.h"
 
 QT_BEGIN_NAMESPACE
 
 namespace QQmlJS {
 namespace Dom {
+
+/*!
+\internal
+\class QQmljs::Dom::FieldFilter
+
+\brief Class that represent a filter on DomItem, when dumping or comparing
+
+DomItem can be duped or compared, but often one is interested only in a subset
+of them, FieldFilter is a simple way to select a subset of them.
+It uses two basic elements: the type of the object (internalKind) and the
+name of fields.
+
+A basic filter can be represented by <op><typeName>:<fieldName> or <op><fieldName>
+where op is either + or - (if the matching elements should be added or removed)
+Both typeName and fieldName can be the empty string (meaning any value matches).
+
+Basic filters are ordered from the most specific to the least specific as follow:
+type+field > type > field > empty.
+When combining several filters the most specific always wins, so
+-code,+ScriptExpression:code is the same as +ScriptExpression:code,-code and means
+that normally the field code is not outputted but for a ScriptExpression DomItem
+it is.
+
+It is possible to get the string representation of the current filter with
+FieldFilter::describeFieldsFilter(), and change the current filter with
+FieldFilter::addFilter(), but after it one should call FieldFilter::setFiltred()
+to ensure that the internal cache used to speed up comparisons is correct.
+*/
 
 QString FieldFilter::describeFieldsFilter() const
 {
@@ -104,9 +97,11 @@ bool FieldFilter::operator()(DomItem &base, const PathEls::PathComponent &c, Dom
 
 bool FieldFilter::addFilter(QString fFields)
 {
-    for (QString fField : fFields.split(QLatin1Char(','))) {
+    for (const QString &fField : fFields.split(QLatin1Char(','))) {
+        // parses a base filter of the form <op><typeName>:<fieldName> or <op><fieldName>
+        // as described in this class documentation
         QRegularExpression fieldRe(QRegularExpression::anchoredPattern(QStringLiteral(
-                uR"((?<op>[-+])?(?:(?<type>[a-zA-Z0-9_]*):)?(?<field>[a-zA-Z0-9_]+))")));
+                uR"((?<op>[-+])?(?:(?<type>[a-zA-Z0-9_]*):)?(?<field>[a-zA-Z0-9_]*))")));
         QRegularExpressionMatch m = fieldRe.match(fField);
         if (m.hasMatch()) {
             if (m.captured(u"op") == u"+") {
@@ -128,11 +123,18 @@ FieldFilter FieldFilter::defaultFilter()
 {
     QMultiMap<QString, QString> fieldFilterAdd { { QLatin1String("ScriptExpression"),
                                                    QLatin1String("code") } };
-    QMultiMap<QString, QString> fieldFilterRemove { { QString(), QLatin1String("code") },
-                                                    { QString(), QLatin1String("propertyInfos") },
-                                                    { QLatin1String("AttachedInfo"),
-                                                      QLatin1String("parent") } };
-
+    QMultiMap<QString, QString> fieldFilterRemove {
+        { QString(), QString::fromUtf16(Fields::code) },
+        { QString(), QString::fromUtf16(Fields::postCode) },
+        { QString(), QString::fromUtf16(Fields::preCode) },
+        { QString(), QString::fromUtf16(Fields::importScope) },
+        { QString(), QString::fromUtf16(Fields::fileLocationsTree) },
+        { QString(), QString::fromUtf16(Fields::astComments) },
+        { QString(), QString::fromUtf16(Fields::comments) },
+        { QString(), QString::fromUtf16(Fields::exports) },
+        { QString(), QString::fromUtf16(Fields::propertyInfos) },
+        { QLatin1String("AttachedInfo"), QString::fromUtf16(Fields::parent) }
+    };
     return FieldFilter { fieldFilterAdd, fieldFilterRemove };
 }
 
@@ -143,11 +145,14 @@ QQmlJS::Dom::FieldFilter QQmlJS::Dom::FieldFilter::noLocationFilter()
         { QString(), QLatin1String("code") },
         { QString(), QLatin1String("propertyInfos") },
         { QString(), QLatin1String("fileLocationsTree") },
+        { QString(), QLatin1String("location") },
         { QLatin1String("ScriptExpression"), QLatin1String("localOffset") },
         { QLatin1String("ScriptExpression"), QLatin1String("preCode") },
         { QLatin1String("ScriptExpression"), QLatin1String("postCode") },
         { QLatin1String("AttachedInfo"), QLatin1String("parent") },
-        { QLatin1String("Reference"), QLatin1String("get") }
+        { QLatin1String("Reference"), QLatin1String("get") },
+        { QLatin1String("QmlComponent"), QLatin1String("ids") },
+        { QLatin1String("QmlObject"), QLatin1String("prototypes") }
     };
     return FieldFilter { fieldFilterAdd, fieldFilterRemove };
 }
@@ -160,6 +165,8 @@ FieldFilter FieldFilter::compareFilter()
         { QLatin1String("ScriptExpression"), QLatin1String("localOffset") },
         { QLatin1String("FileLocations"), QLatin1String("regions") },
         { QLatin1String("AttachedInfo"), QLatin1String("parent") },
+        { QLatin1String("QmlComponent"), QLatin1String("ids") },
+        { QLatin1String("QmlObject"), QLatin1String("prototypes") },
         { QLatin1String("Reference"), QLatin1String("get") }
     };
     return FieldFilter { fieldFilterAdd, fieldFilterRemove };
@@ -172,16 +179,19 @@ FieldFilter FieldFilter::compareNoCommentsFilter()
         { QString(), QLatin1String("propertyInfos") },
         { QLatin1String("FileLocations"), QLatin1String("regions") },
         { QLatin1String("Reference"), QLatin1String("get") },
+        { QLatin1String("QmlComponent"), QLatin1String("ids") },
+        { QLatin1String("QmlObject"), QLatin1String("prototypes") },
         { QLatin1String(), QLatin1String("code") },
         { QLatin1String("ScriptExpression"), QLatin1String("localOffset") },
         { QLatin1String("AttachedInfo"), QLatin1String("parent") },
-        { QLatin1String(), QLatin1String("fileLocationsTree") },
-        { QLatin1String(), QLatin1String("preCode") },
-        { QLatin1String(), QLatin1String("postCode") },
-        { QLatin1String(), QLatin1String("comments") },
-        { QLatin1String(), QLatin1String("preCommentLocations") },
-        { QLatin1String(), QLatin1String("postCommentLocations") },
-        { QLatin1String(), QLatin1String("astComments") }
+        { QString(), QLatin1String("fileLocationsTree") },
+        { QString(), QLatin1String("preCode") },
+        { QString(), QLatin1String("postCode") },
+        { QString(), QLatin1String("comments") },
+        { QString(), QLatin1String("preCommentLocations") },
+        { QString(), QLatin1String("postCommentLocations") },
+        { QString(), QLatin1String("astComments") },
+        { QString(), QLatin1String("location") }
     };
     return FieldFilter { fieldFilterAdd, fieldFilterRemove };
 }
@@ -228,7 +238,7 @@ void FieldFilter::setFiltred()
         if (fieldToId.contains(s)) {
             m_filtredTypes.insert(fieldToId.value(s));
         } else {
-            qCWarning(domLog) << "Filter on unknonw type " << s << " will be ignored";
+            qCWarning(domLog) << "Filter on unknown type " << s << " will be ignored";
         }
     }
 }
@@ -237,3 +247,5 @@ void FieldFilter::setFiltred()
 } // end namespace QQmlJS
 
 QT_END_NAMESPACE
+
+#include "moc_qqmldomfieldfilter_p.cpp"

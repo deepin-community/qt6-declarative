@@ -1,6 +1,6 @@
-# SymbolsHelper-Confirmed: 6.2.4 amd64 arm64
+# SymbolsHelper-Confirmed: 6.4.0 amd64
 libQt6QuickWidgets.so.6 libqt6quickwidgets6 #MINVER#
-| libqt6quickwidgets6 #MINVER#, qt6-declarative-abi (= 6.2.4)
+| libqt6quickwidgets6 #MINVER#, qt6-declarative-abi (= 6.4.2)
 * Build-Depends-Packages: qt6-declarative-dev, qt6-declarative-private-dev
  _ZN12QQuickWidget10paintEventEP11QPaintEvent@Base 6.2.0
  _ZN12QQuickWidget10setContentERK4QUrlP13QQmlComponentP7QObject@Base 6.2.0
@@ -46,7 +46,6 @@ libQt6QuickWidgets.so.6 libqt6quickwidgets6 #MINVER#
  _ZN12QQuickWidgetD0Ev@Base 6.2.0
  _ZN12QQuickWidgetD1Ev@Base 6.2.0
  _ZN12QQuickWidgetD2Ev@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# _ZN7QWidget16setMouseTrackingEb@Base 6.2.4
  _ZNK12QQuickWidget10metaObjectEv@Base 6.2.0
  _ZNK12QQuickWidget10resizeModeEv@Base 6.2.0
  _ZNK12QQuickWidget10rootObjectEv@Base 6.2.0
@@ -60,31 +59,9 @@ libQt6QuickWidgets.so.6 libqt6quickwidgets6 #MINVER#
  _ZNK12QQuickWidget6sourceEv@Base 6.2.0
  _ZNK12QQuickWidget6statusEv@Base 6.2.0
  _ZNK12QQuickWidget8sizeHintEv@Base 6.2.0
-#MISSING: 6.2.4.1-1+dde+u005# _ZNK7QWidget12parentWidgetEv@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# _ZNK7QWidget4sizeEv@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# _ZNK7QWidget8isWindowEv@Base 6.2.4
-#MISSING: 6.2.4.1-1+dde+u005# _ZNK7QWidget9isVisibleEv@Base 6.2.4
  _ZTI12QQuickWidget@Base 6.2.0
  _ZTI26QQuickRenderControlPrivate@Base 6.2.4
  _ZTS12QQuickWidget@Base 6.2.0
  _ZTS26QQuickRenderControlPrivate@Base 6.2.4
  _ZTV12QQuickWidget@Base 6.2.0
- _ZTV26QQuickRenderControlPrivate@Base 6.2.4
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI4QUrlE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI4QUrlE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI4QUrlE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI4QUrlE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI6QRectFE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI6QRectFE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI6QRectFE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QPointFE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QPointFE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QPointFE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QStringE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES5_S6_S8_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QStringE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS6_E_4_FUNES5_S6_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QStringE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeI7QStringE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIP7QObjectE10getCopyCtrEvENUlPKNS_18QMetaTypeInterfaceEPvPKvE_4_FUNES6_S7_S9_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIP7QObjectE10getMoveCtrEvENUlPKNS_18QMetaTypeInterfaceEPvS7_E_4_FUNES6_S7_S7_@Base 6.2.0
- (optional=templinst)_ZZN9QtPrivate16QMetaTypeForTypeIP7QObjectE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES6_S7_@Base 6.2.0
  (c++)"non-virtual thunk to QQuickWidget::~QQuickWidget()@Base" 6.2.0

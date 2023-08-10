@@ -1,42 +1,6 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Copyright (C) 2018 Intel Corporation.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQml module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// Copyright (C) 2018 Intel Corporation.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include <qv4compiler_p.h>
 #include <qv4codegen_p.h>
@@ -110,8 +74,8 @@ void QV4::Compiler::StringTableGenerator::serialize(CompiledData::Unit *unit)
 
         QV4::CompiledData::String *s = reinterpret_cast<QV4::CompiledData::String *>(stringData);
         Q_ASSERT(reinterpret_cast<uintptr_t>(s) % alignof(QV4::CompiledData::String) == 0);
-        Q_ASSERT(qstr.length() >= 0);
-        s->size = qstr.length();
+        Q_ASSERT(qstr.size() >= 0);
+        s->size = qstr.size();
 
         ushort *uc = reinterpret_cast<ushort *>(reinterpret_cast<char *>(s) + sizeof(*s));
         qToLittleEndian<ushort>(qstr.constData(), s->size, uc);
@@ -130,7 +94,7 @@ void QV4::Compiler::JSUnitGenerator::generateUnitChecksum(QV4::CompiledData::Uni
             = offsetof(QV4::CompiledData::Unit, md5Checksum) + sizeof(unit->md5Checksum);
 
     const char *dataPtr = reinterpret_cast<const char *>(unit) + checksummableDataOffset;
-    hash.addData(dataPtr, unit->unitSize - checksummableDataOffset);
+    hash.addData({dataPtr, qsizetype(unit->unitSize - checksummableDataOffset)});
 
     QByteArray checksum = hash.result();
     Q_ASSERT(checksum.size() == sizeof(unit->md5Checksum));
@@ -154,10 +118,7 @@ int QV4::Compiler::JSUnitGenerator::registerGetterLookup(const QString &name)
 
 int QV4::Compiler::JSUnitGenerator::registerGetterLookup(int nameIndex)
 {
-    CompiledData::Lookup l;
-    l.type_and_flags = CompiledData::Lookup::Type_Getter;
-    l.nameIndex = nameIndex;
-    lookups << l;
+    lookups << CompiledData::Lookup(CompiledData::Lookup::Type_Getter, nameIndex);
     return lookups.size() - 1;
 }
 
@@ -168,49 +129,37 @@ int QV4::Compiler::JSUnitGenerator::registerSetterLookup(const QString &name)
 
 int QV4::Compiler::JSUnitGenerator::registerSetterLookup(int nameIndex)
 {
-    CompiledData::Lookup l;
-    l.type_and_flags = CompiledData::Lookup::Type_Setter;
-    l.nameIndex = nameIndex;
-    lookups << l;
+    lookups << CompiledData::Lookup(CompiledData::Lookup::Type_Setter, nameIndex);
     return lookups.size() - 1;
 }
 
 int QV4::Compiler::JSUnitGenerator::registerGlobalGetterLookup(int nameIndex)
 {
-    CompiledData::Lookup l;
-    l.type_and_flags = CompiledData::Lookup::Type_GlobalGetter;
-    l.nameIndex = nameIndex;
-    lookups << l;
+    lookups << CompiledData::Lookup(CompiledData::Lookup::Type_GlobalGetter, nameIndex);
     return lookups.size() - 1;
 }
 
 int QV4::Compiler::JSUnitGenerator::registerQmlContextPropertyGetterLookup(int nameIndex)
 {
-    CompiledData::Lookup l;
-    l.type_and_flags = CompiledData::Lookup::Type_QmlContextPropertyGetter;
-    l.nameIndex = nameIndex;
-    lookups << l;
+    lookups << CompiledData::Lookup(CompiledData::Lookup::Type_QmlContextPropertyGetter, nameIndex);
     return lookups.size() - 1;
 }
 
 int QV4::Compiler::JSUnitGenerator::registerRegExp(QQmlJS::AST::RegExpLiteral *regexp)
 {
-    CompiledData::RegExp re;
-    re.stringIndex = registerString(regexp->pattern.toString());
-
-    re.flags = 0;
+    quint32 flags = 0;
     if (regexp->flags & QQmlJS::Lexer::RegExp_Global)
-        re.flags |= CompiledData::RegExp::RegExp_Global;
+        flags |= CompiledData::RegExp::RegExp_Global;
     if (regexp->flags &  QQmlJS::Lexer::RegExp_IgnoreCase)
-        re.flags |= CompiledData::RegExp::RegExp_IgnoreCase;
+        flags |= CompiledData::RegExp::RegExp_IgnoreCase;
     if (regexp->flags &  QQmlJS::Lexer::RegExp_Multiline)
-        re.flags |= CompiledData::RegExp::RegExp_Multiline;
+        flags |= CompiledData::RegExp::RegExp_Multiline;
     if (regexp->flags &  QQmlJS::Lexer::RegExp_Unicode)
-        re.flags |= CompiledData::RegExp::RegExp_Unicode;
+        flags |= CompiledData::RegExp::RegExp_Unicode;
     if (regexp->flags &  QQmlJS::Lexer::RegExp_Sticky)
-        re.flags |= CompiledData::RegExp::RegExp_Sticky;
+        flags |= CompiledData::RegExp::RegExp_Sticky;
 
-    regexps.append(re);
+    regexps.append(CompiledData::RegExp(flags, registerString(regexp->pattern.toString())));
     return regexps.size() - 1;
 }
 
@@ -223,7 +172,7 @@ int QV4::Compiler::JSUnitGenerator::registerConstant(QV4::ReturnedValue v)
     return constants.size() - 1;
 }
 
-QV4::ReturnedValue QV4::Compiler::JSUnitGenerator::constant(int idx)
+QV4::ReturnedValue QV4::Compiler::JSUnitGenerator::constant(int idx) const
 {
     return constants.at(idx);
 }
@@ -243,8 +192,7 @@ int QV4::Compiler::JSUnitGenerator::registerJSClass(const QStringList &members)
     CompiledData::JSClassMember *member = reinterpret_cast<CompiledData::JSClassMember*>(jsClass + 1);
 
     for (const auto &name : members) {
-        member->nameOffset = registerString(name);
-        member->isAccessor = false;
+        member->set(registerString(name), false);
         ++member;
     }
 
@@ -261,7 +209,7 @@ QV4::CompiledData::Unit *QV4::Compiler::JSUnitGenerator::generateUnit(GeneratorO
 {
     registerString(module->fileName);
     registerString(module->finalUrl);
-    for (Context *f : qAsConst(module->functions)) {
+    for (Context *f : std::as_const(module->functions)) {
         registerString(f->name);
         registerString(f->returnType);
         for (int i = 0; i < f->arguments.size(); ++i) {
@@ -271,7 +219,7 @@ QV4::CompiledData::Unit *QV4::Compiler::JSUnitGenerator::generateUnit(GeneratorO
         for (int i = 0; i < f->locals.size(); ++i)
             registerString(f->locals.at(i));
     }
-    for (Context *c : qAsConst(module->blocks)) {
+    for (Context *c : std::as_const(module->blocks)) {
         for (int i = 0; i < c->locals.size(); ++i)
             registerString(c->locals.at(i));
     }
@@ -342,7 +290,7 @@ QV4::CompiledData::Unit *QV4::Compiler::JSUnitGenerator::generateUnit(GeneratorO
     }
 
     CompiledData::Lookup *lookupsToWrite = reinterpret_cast<CompiledData::Lookup*>(dataPtr + unit->offsetToLookupTable);
-    for (const CompiledData::Lookup &l : qAsConst(lookups))
+    for (const CompiledData::Lookup &l : std::as_const(lookups))
         *lookupsToWrite++ = l;
 
     CompiledData::RegExp *regexpTable = reinterpret_cast<CompiledData::RegExp *>(dataPtr + unit->offsetToRegexpTable);
@@ -365,12 +313,12 @@ QV4::CompiledData::Unit *QV4::Compiler::JSUnitGenerator::generateUnit(GeneratorO
 
         // write js classes and js class lookup table
         quint32_le *jsClassOffsetTable = reinterpret_cast<quint32_le *>(dataPtr + unit->offsetToJSClassTable);
-        for (int i = 0; i < jsClassOffsets.count(); ++i)
+        for (int i = 0; i < jsClassOffsets.size(); ++i)
             jsClassOffsetTable[i] = jsClassDataOffset + jsClassOffsets.at(i);
     }
 
-    if (translations.count()) {
-        memcpy(dataPtr + unit->offsetToTranslationTable, translations.constData(), translations.count() * sizeof(CompiledData::TranslationData));
+    if (translations.size()) {
+        memcpy(dataPtr + unit->offsetToTranslationTable, translations.constData(), translations.size() * sizeof(CompiledData::TranslationData));
     }
 
     {
@@ -474,8 +422,7 @@ void QV4::Compiler::JSUnitGenerator::writeFunction(char *f, QV4::Compiler::Conte
         currentOffset += function->nLabelInfos * sizeof(quint32);
     }
 
-    function->location.line = irFunction->line;
-    function->location.column = irFunction->column;
+    function->location.set(irFunction->line, irFunction->column);
 
     function->codeOffset = currentOffset;
     function->codeSize = irFunction->code.size();
@@ -641,7 +588,7 @@ QV4::CompiledData::Unit QV4::Compiler::JSUnitGenerator::generateHeader(QV4::Comp
     unit.offsetToBlockTable = nextOffset;
     nextOffset += unit.blockTableSize * sizeof(uint);
 
-    unit.lookupTableSize = lookups.count();
+    unit.lookupTableSize = lookups.size();
     unit.offsetToLookupTable = nextOffset;
     nextOffset += unit.lookupTableSize * sizeof(CompiledData::Lookup);
 
@@ -656,7 +603,7 @@ QV4::CompiledData::Unit QV4::Compiler::JSUnitGenerator::generateHeader(QV4::Comp
     unit.offsetToConstantTable = nextOffset;
     nextOffset += unit.constantTableSize * sizeof(ReturnedValue);
 
-    unit.jsClassTableSize = jsClassOffsets.count();
+    unit.jsClassTableSize = jsClassOffsets.size();
     unit.offsetToJSClassTable = nextOffset;
     nextOffset += unit.jsClassTableSize * sizeof(uint);
 
@@ -665,7 +612,7 @@ QV4::CompiledData::Unit QV4::Compiler::JSUnitGenerator::generateHeader(QV4::Comp
 
     nextOffset = static_cast<quint32>(roundUpToMultipleOf(8, nextOffset));
 
-    unit.translationTableSize = translations.count();
+    unit.translationTableSize = translations.size();
     unit.offsetToTranslationTable = nextOffset;
     nextOffset += unit.translationTableSize * sizeof(CompiledData::TranslationData);
 
@@ -678,16 +625,16 @@ QV4::CompiledData::Unit QV4::Compiler::JSUnitGenerator::generateHeader(QV4::Comp
         nextOffset = static_cast<quint32>(roundUpToMultipleOf(8, nextOffset));
     };
 
-    reserveExportTable(module->localExportEntries.count(), &unit.localExportEntryTableSize, &unit.offsetToLocalExportEntryTable);
-    reserveExportTable(module->indirectExportEntries.count(), &unit.indirectExportEntryTableSize, &unit.offsetToIndirectExportEntryTable);
-    reserveExportTable(module->starExportEntries.count(), &unit.starExportEntryTableSize, &unit.offsetToStarExportEntryTable);
+    reserveExportTable(module->localExportEntries.size(), &unit.localExportEntryTableSize, &unit.offsetToLocalExportEntryTable);
+    reserveExportTable(module->indirectExportEntries.size(), &unit.indirectExportEntryTableSize, &unit.offsetToIndirectExportEntryTable);
+    reserveExportTable(module->starExportEntries.size(), &unit.starExportEntryTableSize, &unit.offsetToStarExportEntryTable);
 
-    unit.importEntryTableSize = module->importEntries.count();
+    unit.importEntryTableSize = module->importEntries.size();
     unit.offsetToImportEntryTable = nextOffset;
     nextOffset += unit.importEntryTableSize * sizeof(CompiledData::ImportEntry);
     nextOffset = static_cast<quint32>(roundUpToMultipleOf(8, nextOffset));
 
-    unit.moduleRequestTableSize = module->moduleRequests.count();
+    unit.moduleRequestTableSize = module->moduleRequests.size();
     unit.offsetToModuleRequestTable = nextOffset;
     nextOffset += unit.moduleRequestTableSize * sizeof(uint);
     nextOffset = static_cast<quint32>(roundUpToMultipleOf(8, nextOffset));
@@ -749,7 +696,7 @@ QV4::CompiledData::Unit QV4::Compiler::JSUnitGenerator::generateHeader(QV4::Comp
     if (showStats) {
         qDebug() << "Generated JS unit that is" << unit.unitSize << "bytes contains:";
         qDebug() << "    " << functionSize << "bytes for non-code function data for" << unit.functionTableSize << "functions";
-        qDebug() << "    " << translations.count() * sizeof(CompiledData::TranslationData) << "bytes for" << translations.count() << "translations";
+        qDebug() << "    " << translations.size() * sizeof(CompiledData::TranslationData) << "bytes for" << translations.size() << "translations";
     }
 
     return unit;

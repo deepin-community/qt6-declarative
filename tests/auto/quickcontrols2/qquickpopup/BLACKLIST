@@ -6,16 +6,9 @@ macos # QTBUG-89938
 [zOrder]
 macos # QTBUG-89938
 
-[closePolicy]
-macos # QTBUG-89938
-
 # QTBUG-94251
 [closePolicy]
 opensuse-leap
 
 [cursorShape]
 opensuse-leap
-
-# QTBUG-100253
-[orientation]
-android

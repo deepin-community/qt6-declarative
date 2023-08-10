@@ -1,38 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2017 The Qt Company Ltd.
-** Contact: http://www.qt.io/licensing/
-**
-** This file is part of the test suite of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL3$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see http://www.qt.io/terms-conditions. For further
-** information use the contact form at http://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPLv3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or later as published by the Free
-** Software Foundation and appearing in the file LICENSE.GPL included in
-** the packaging of this file. Please review the following information to
-** ensure the GNU General Public License version 2.0 requirements will be
-** met: http://www.gnu.org/licenses/gpl-2.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2017 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only WITH Qt-GPL-exception-1.0
 
 #include <QtTest>
 #include <QtQuick>
@@ -95,13 +62,17 @@ void tst_ObjectCount::cleanup()
 
 static void initTestRows(QQmlEngine *engine)
 {
-    addTestRowForEachControl(engine, QQC2_IMPORT_PATH, "basic", "QtQuick/Controls/Basic");
+    // Calendar is excluded because it's a singleton and can't be created.
+    // TreeViewDelegate is excluded since it's a delegate that can only be created by TreeView.
+    addTestRowForEachControl(engine, QQC2_IMPORT_PATH, "basic", "QtQuick/Controls/Basic",
+        QStringList() << "Calendar" << "TreeViewDelegate");
     addTestRowForEachControl(engine, QQC2_IMPORT_PATH, "fusion", "QtQuick/Controls/Fusion",
-        QStringList() << "ButtonPanel" << "CheckIndicator" << "RadioIndicator" << "SliderGroove" << "SliderHandle" << "SwitchIndicator");
+        QStringList() << "ButtonPanel" << "CheckIndicator" << "RadioIndicator" << "SliderGroove"
+                             << "SliderHandle" << "SwitchIndicator" << "TreeViewDelegate");
     addTestRowForEachControl(engine, QQC2_IMPORT_PATH, "imagine", "QtQuick/Controls/Imagine");
     addTestRowForEachControl(engine, QQC2_IMPORT_PATH, "material", "QtQuick/Controls/Material",
         QStringList() << "Ripple" << "SliderHandle" << "CheckIndicator" << "RadioIndicator"
-            << "SwitchIndicator" << "BoxShadow" << "ElevationEffect" << "CursorDelegate");
+            << "SwitchIndicator" << "BoxShadow" << "ElevationEffect" << "CursorDelegate" << "TreeViewDelegate");
     addTestRowForEachControl(engine, QQC2_IMPORT_PATH, "universal", "QtQuick/Controls/Universal",
         QStringList() << "CheckIndicator" << "RadioIndicator" << "SwitchIndicator");
 }
@@ -118,7 +89,7 @@ static void doBenchmark(QQmlEngine *engine, const QUrl &url)
     QVERIFY2(object.data(), qPrintable(component.errorString()));
 
     QObjectList objects;
-    for (QObject *object : qAsConst(*qt_qobjects())) {
+    for (QObject *object : std::as_const(*qt_qobjects())) {
         if (qobject_cast<T *>(object))
             objects += object;
     }
@@ -128,7 +99,7 @@ static void doBenchmark(QQmlEngine *engine, const QUrl &url)
             qInfo() << "\t" << object;
     }
 
-    QTest::setBenchmarkResult(objects.count(), QTest::Events);
+    QTest::setBenchmarkResult(objects.size(), QTest::Events);
 }
 
 void tst_ObjectCount::qobjects()

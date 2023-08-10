@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2020 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQml module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2020 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 #ifndef INLINECOMPONENTUTILS_P_H
 #define INLINECOMPONENTUTILS_P_H
 
@@ -53,28 +17,42 @@
 #include <private/qv4compileddata_p.h>
 #include <private/qv4resolvedtypereference_p.h>
 
+QT_BEGIN_NAMESPACE
+
 namespace icutils {
 struct Node {
+private:
+    using IndexType = std::vector<QV4::CompiledData::InlineComponent>::size_type;
+    using IndexField = quint32_le_bitfield_member<0, 30, IndexType>;
+    using TemporaryMarkField = quint32_le_bitfield_member<30, 1>;
+    using PermanentMarkField = quint32_le_bitfield_member<31, 1>;
+    quint32_le_bitfield_union<IndexField, TemporaryMarkField, PermanentMarkField> m_data;
+
+public:
     Node() = default;
     Node(const Node &) = default;
     Node(Node &&) = default;
     Node& operator=(Node const &) = default;
     Node& operator=(Node &&) = default;
-    bool operator==(Node const &other) const {return index == other.index;}
+    bool operator==(Node const &other) const {return m_data.data() == other.m_data.data(); }
 
-    Node(std::vector<QV4::CompiledData::InlineComponent>::size_type s)
-        : index{0}
+    Node(IndexType s) : m_data(QSpecialIntegerBitfieldZero) { m_data.set<IndexField>(s); }
+
+    bool hasPermanentMark() const { return m_data.get<PermanentMarkField>(); }
+    bool hasTemporaryMark() const { return m_data.get<TemporaryMarkField>(); }
+
+    void setPermanentMark()
     {
-        index = quint32(s);
-        temporaryMark = 0;
-        permanentMark = 0;
+        m_data.set<TemporaryMarkField>(0);
+        m_data.set<PermanentMarkField>(1);
     }
 
-    union {
-        quint32_le_bitfield<0, 30> index;
-        quint32_le_bitfield<30, 1> temporaryMark;
-        quint32_le_bitfield<31, 1> permanentMark;
-    };
+    void setTemporaryMark()
+    {
+        m_data.set<TemporaryMarkField>(1);
+    }
+
+    IndexType index() const { return m_data.get<IndexField>(); }
 };
 
 using AdjacencyList = std::vector<std::vector<Node*>>;
@@ -111,8 +89,11 @@ void fillAdjacencyListForInlineComponents(ObjectContainer *objectContainer, Adja
         auto referencedInICObjectIndex = ic.objectIndex + 1;
         while (int(referencedInICObjectIndex) < objectContainer->objectCount()) {
             auto potentiallyReferencedInICObject = objectContainer->objectAt(referencedInICObjectIndex);
-            bool stillInIC = !(potentiallyReferencedInICObject-> flags & QV4::CompiledData::Object::IsInlineComponentRoot)
-                    && (potentiallyReferencedInICObject-> flags & QV4::CompiledData::Object::InPartOfInlineComponent);
+            bool stillInIC
+                    = !potentiallyReferencedInICObject->hasFlag(
+                              QV4::CompiledData::Object::IsInlineComponentRoot)
+                    && potentiallyReferencedInICObject->hasFlag(
+                            QV4::CompiledData::Object::IsPartOfInlineComponent);
             if (!stillInIC)
                 break;
             createEdgeFromTypeRef(objectContainer->resolvedType(potentiallyReferencedInICObject->inheritedTypeNameIndex));
@@ -122,21 +103,20 @@ void fillAdjacencyListForInlineComponents(ObjectContainer *objectContainer, Adja
 };
 
 inline void topoVisit(Node *node, AdjacencyList &adjacencyList, bool &hasCycle, std::vector<Node> &nodesSorted) {
-    if (node->permanentMark)
+    if (node->hasPermanentMark())
         return;
-    if (node->temporaryMark) {
+    if (node->hasTemporaryMark()) {
         hasCycle = true;
         return;
     }
-    node->temporaryMark = 1;
+    node->setTemporaryMark();
 
-    auto const &edges = adjacencyList[node->index];
+    auto const &edges = adjacencyList[node->index()];
     for (auto edgeTarget =edges.begin(); edgeTarget != edges.end(); ++edgeTarget) {
         topoVisit(*edgeTarget, adjacencyList, hasCycle, nodesSorted);
     }
 
-    node->temporaryMark = 0;
-    node->permanentMark = 1;
+    node->setPermanentMark();
     nodesSorted.push_back(*node);
 };
 
@@ -147,7 +127,7 @@ inline std::vector<Node> topoSort(std::vector<Node> &nodes, AdjacencyList &adjac
 
     hasCycle = false;
     auto currentNodeIt = std::find_if(nodes.begin(), nodes.end(), [](const Node& node) {
-        return node.permanentMark == 0;
+        return !node.hasPermanentMark();
     });
     // Do a topological sort of all inline components
     // afterwards, nodesSorted contains the nodes for the inline components in reverse topological order
@@ -155,11 +135,13 @@ inline std::vector<Node> topoSort(std::vector<Node> &nodes, AdjacencyList &adjac
         Node& currentNode = *currentNodeIt;
         topoVisit(&currentNode, adjacencyList, hasCycle, nodesSorted);
         currentNodeIt = std::find_if(nodes.begin(), nodes.end(), [](const Node& node) {
-            return node.permanentMark == 0;
+            return !node.hasPermanentMark();
         });
     }
     return nodesSorted;
 }
 }
+
+QT_END_NAMESPACE
 
 #endif // INLINECOMPONENTUTILS_P_H

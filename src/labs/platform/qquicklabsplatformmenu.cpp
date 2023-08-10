@@ -1,38 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2020 The Qt Company Ltd.
-** Contact: http://www.qt.io/licensing/
-**
-** This file is part of the Qt Labs Platform module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL3$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see http://www.qt.io/terms-conditions. For further
-** information use the contact form at http://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPLv3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or later as published by the Free
-** Software Foundation and appearing in the file LICENSE.GPL included in
-** the packaging of this file. Please review the following information to
-** ensure the GNU General Public License version 2.0 requirements will be
-** met: http://www.gnu.org/licenses/gpl-2.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2020 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qquicklabsplatformmenu_p.h"
 #include "qquicklabsplatformmenubar_p.h"
@@ -192,7 +159,7 @@ QT_BEGIN_NAMESPACE
     This signal is emitted when the menu is about to be hidden from the user.
 */
 
-Q_DECLARE_LOGGING_CATEGORY(qtLabsPlatformMenus)
+Q_LOGGING_CATEGORY(qtLabsPlatformMenus, "qt.labs.platform.menus")
 
 QQuickLabsPlatformMenu::QQuickLabsPlatformMenu(QObject *parent)
     : QObject(parent),
@@ -227,7 +194,7 @@ QQuickLabsPlatformMenu::~QQuickLabsPlatformMenu()
 
 void QQuickLabsPlatformMenu::unparentSubmenus()
 {
-    for (QQuickLabsPlatformMenuItem *item : qAsConst(m_items)) {
+    for (QQuickLabsPlatformMenuItem *item : std::as_const(m_items)) {
         if (QQuickLabsPlatformMenu *subMenu = item->subMenu())
             subMenu->setParentMenu(nullptr);
         item->setMenu(nullptr);
@@ -267,7 +234,7 @@ QPlatformMenu * QQuickLabsPlatformMenu::create()
             connect(m_handle, &QPlatformMenu::aboutToShow, this, &QQuickLabsPlatformMenu::aboutToShow);
             connect(m_handle, &QPlatformMenu::aboutToHide, this, &QQuickLabsPlatformMenu::aboutToHide);
 
-            for (QQuickLabsPlatformMenuItem *item : qAsConst(m_items))
+            for (QQuickLabsPlatformMenuItem *item : std::as_const(m_items))
                 m_handle->insertMenuItem(item->create(), nullptr);
 
             if (m_menuItem) {
@@ -311,7 +278,7 @@ void QQuickLabsPlatformMenu::sync()
         m_systemTrayIcon->handle()->updateMenu(m_handle);
 #endif
 
-    for (QQuickLabsPlatformMenuItem *item : qAsConst(m_items))
+    for (QQuickLabsPlatformMenuItem *item : std::as_const(m_items))
         item->sync();
 }
 
@@ -597,7 +564,7 @@ void QQuickLabsPlatformMenu::setIcon(const QQuickLabsPlatformIcon &icon)
 */
 void QQuickLabsPlatformMenu::addItem(QQuickLabsPlatformMenuItem *item)
 {
-    insertItem(m_items.count(), item);
+    insertItem(m_items.size(), item);
 }
 
 /*!
@@ -646,7 +613,7 @@ void QQuickLabsPlatformMenu::removeItem(QQuickLabsPlatformMenuItem *item)
 */
 void QQuickLabsPlatformMenu::addMenu(QQuickLabsPlatformMenu *menu)
 {
-    insertMenu(m_items.count(), menu);
+    insertMenu(m_items.size(), menu);
 }
 
 /*!
@@ -687,7 +654,7 @@ void QQuickLabsPlatformMenu::clear()
     if (m_items.isEmpty())
         return;
 
-    for (QQuickLabsPlatformMenuItem *item : qAsConst(m_items)) {
+    for (QQuickLabsPlatformMenuItem *item : std::as_const(m_items)) {
         m_data.removeOne(item);
         if (m_handle)
             m_handle->removeMenuItem(item->handle());
@@ -842,7 +809,7 @@ void QQuickLabsPlatformMenu::data_append(QQmlListProperty<QObject> *property, QO
 qsizetype QQuickLabsPlatformMenu::data_count(QQmlListProperty<QObject> *property)
 {
     QQuickLabsPlatformMenu *menu = static_cast<QQuickLabsPlatformMenu *>(property->object);
-    return menu->m_data.count();
+    return menu->m_data.size();
 }
 
 QObject *QQuickLabsPlatformMenu::data_at(QQmlListProperty<QObject> *property, qsizetype index)
@@ -866,7 +833,7 @@ void QQuickLabsPlatformMenu::items_append(QQmlListProperty<QQuickLabsPlatformMen
 qsizetype QQuickLabsPlatformMenu::items_count(QQmlListProperty<QQuickLabsPlatformMenuItem> *property)
 {
     QQuickLabsPlatformMenu *menu = static_cast<QQuickLabsPlatformMenu *>(property->object);
-    return menu->m_items.count();
+    return menu->m_items.size();
 }
 
 QQuickLabsPlatformMenuItem *QQuickLabsPlatformMenu::items_at(QQmlListProperty<QQuickLabsPlatformMenuItem> *property, qsizetype index)

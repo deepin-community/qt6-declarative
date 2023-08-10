@@ -1,38 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2017 The Qt Company Ltd.
-** Contact: http://www.qt.io/licensing/
-**
-** This file is part of the Qt Quick Templates 2 module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL3$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see http://www.qt.io/terms-conditions. For further
-** information use the contact form at http://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPLv3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or later as published by the Free
-** Software Foundation and appearing in the file LICENSE.GPL included in
-** the packaging of this file. Please review the following information to
-** ensure the GNU General Public License version 2.0 requirements will be
-** met: http://www.gnu.org/licenses/gpl-2.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2017 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qquickdial_p.h"
 #include "qquickdeferredexecute_p_p.h"
@@ -110,9 +77,9 @@ public:
     bool isLargeChange(const QPointF &eventPos, qreal proposedPosition) const;
     bool isHorizontalOrVertical() const;
 
-    void handlePress(const QPointF &point) override;
-    void handleMove(const QPointF &point) override;
-    void handleRelease(const QPointF &point) override;
+    bool handlePress(const QPointF &point, ulong timestamp) override;
+    bool handleMove(const QPointF &point, ulong timestamp) override;
+    bool handleRelease(const QPointF &point, ulong timestamp) override;
     void handleUngrab() override;
 
     void cancelHandle();
@@ -241,19 +208,20 @@ bool QQuickDialPrivate::isHorizontalOrVertical() const
     return inputMode == QQuickDial::Horizontal || inputMode == QQuickDial::Vertical;
 }
 
-void QQuickDialPrivate::handlePress(const QPointF &point)
+bool QQuickDialPrivate::handlePress(const QPointF &point, ulong timestamp)
 {
     Q_Q(QQuickDial);
-    QQuickControlPrivate::handlePress(point);
+    QQuickControlPrivate::handlePress(point, timestamp);
     pressPoint = point;
     positionBeforePress = position;
     q->setPressed(true);
+    return true;
 }
 
-void QQuickDialPrivate::handleMove(const QPointF &point)
+bool QQuickDialPrivate::handleMove(const QPointF &point, ulong timestamp)
 {
     Q_Q(QQuickDial);
-    QQuickControlPrivate::handleMove(point);
+    QQuickControlPrivate::handleMove(point, timestamp);
     const qreal oldPos = position;
     qreal pos = positionAt(point);
     if (snapMode == QQuickDial::SnapAlways)
@@ -267,12 +235,13 @@ void QQuickDialPrivate::handleMove(const QPointF &point)
         if (!qFuzzyCompare(pos, oldPos))
             emit q->moved();
     }
+    return true;
 }
 
-void QQuickDialPrivate::handleRelease(const QPointF &point)
+bool QQuickDialPrivate::handleRelease(const QPointF &point, ulong timestamp)
 {
     Q_Q(QQuickDial);
-    QQuickControlPrivate::handleRelease(point);
+    QQuickControlPrivate::handleRelease(point, timestamp);
     if (q->keepMouseGrab() || q->keepTouchGrab()) {
         const qreal oldPos = position;
         qreal pos = positionAt(point);
@@ -291,6 +260,7 @@ void QQuickDialPrivate::handleRelease(const QPointF &point)
     q->setPressed(false);
     pressPoint = QPointF();
     positionBeforePress = 0;
+    return true;
 }
 
 void QQuickDialPrivate::handleUngrab()
@@ -766,7 +736,7 @@ void QQuickDial::mousePressEvent(QMouseEvent *event)
 {
     Q_D(QQuickDial);
     QQuickControl::mousePressEvent(event);
-    d->handleMove(event->position());
+    d->handleMove(event->position(), event->timestamp());
     setKeepMouseGrab(true);
 }
 
@@ -792,7 +762,7 @@ void QQuickDial::touchEvent(QTouchEvent *event)
                     }
                 }
                 if (keepTouchGrab())
-                    d->handleMove(point.position());
+                    d->handleMove(point.position(), event->timestamp());
                 break;
 
             default:
@@ -857,3 +827,5 @@ QAccessible::Role QQuickDial::accessibleRole() const
 #endif
 
 QT_END_NAMESPACE
+
+#include "moc_qquickdial_p.cpp"

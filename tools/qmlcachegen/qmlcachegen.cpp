@@ -1,30 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQml module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:GPL-EXCEPT$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 3 as published by the Free Software
-** Foundation with exceptions as appearing in the file LICENSE.GPL3-EXCEPT
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only WITH Qt-GPL-exception-1.0
 
 #include <QCoreApplication>
 #include <QStringList>
@@ -36,6 +11,8 @@
 #include <QSaveFile>
 #include <QScopedPointer>
 #include <QScopeGuard>
+#include <QLibraryInfo>
+#include <QLoggingCategory>
 
 #include <private/qqmlirbuilder_p.h>
 #include <private/qqmljsparser_p.h>
@@ -46,8 +23,6 @@
 #include <private/qresourcerelocater_p.h>
 
 #include <algorithm>
-
-using namespace QQmlJS;
 
 static bool argumentsFromCommandLineAndFile(QStringList& allArguments, const QStringList &arguments)
 {
@@ -91,6 +66,8 @@ int main(int argc, char **argv)
     parser.addHelpOption();
     parser.addVersionOption();
 
+    QCommandLineOption bareOption(QStringLiteral("bare"), QCoreApplication::translate("main", "Do not include default import directories. This may be used to run qmlcachegen on a project using a different Qt version."));
+    parser.addOption(bareOption);
     QCommandLineOption filterResourceFileOption(QStringLiteral("filter-resource-file"), QCoreApplication::translate("main", "Filter out QML/JS files from a resource file that can be cached ahead of time instead"));
     parser.addOption(filterResourceFileOption);
     QCommandLineOption resourceFileMappingOption(QStringLiteral("resource-file-mapping"), QCoreApplication::translate("main", "Path from original resource file to new one"), QCoreApplication::translate("main", "old-name=new-name"));
@@ -106,12 +83,21 @@ int main(int argc, char **argv)
     QCommandLineOption directCallsOption(QStringLiteral("direct-calls"), QCoreApplication::translate("main", "This option is ignored."));
     directCallsOption.setFlags(QCommandLineOption::HiddenFromHelp);
     parser.addOption(directCallsOption);
-    QCommandLineOption includesOption(QStringLiteral("i"), QCoreApplication::translate("main", "This option is ignored."), QCoreApplication::translate("main", "ignored file"));
-    includesOption.setFlags(QCommandLineOption::HiddenFromHelp);
-    parser.addOption(includesOption);
-    QCommandLineOption importPathOption(QStringLiteral("I"), QCoreApplication::translate("main", "This option is ignored."), QCoreApplication::translate("main", "ignored path"));
-    importPathOption.setFlags(QCommandLineOption::HiddenFromHelp);
+    QCommandLineOption importsOption(
+                QStringLiteral("i"),
+                QCoreApplication::translate("main", "Import extra qmldir"),
+                QCoreApplication::translate("main", "qmldir file"));
+    parser.addOption(importsOption);
+    QCommandLineOption importPathOption(
+                QStringLiteral("I"),
+                QCoreApplication::translate("main", "Look for QML modules in specified directory"),
+                QCoreApplication::translate("main", "import directory"));
     parser.addOption(importPathOption);
+    QCommandLineOption onlyBytecode(
+                QStringLiteral("only-bytecode"),
+                QCoreApplication::translate(
+                    "main", "Generate only byte code for bindings and functions, no C++ code"));
+    parser.addOption(onlyBytecode);
 
     QCommandLineOption outputFileOption(QStringLiteral("o"), QCoreApplication::translate("main", "Output file name"), QCoreApplication::translate("main", "file name"));
     parser.addOption(outputFileOption);
@@ -188,35 +174,34 @@ int main(int argc, char **argv)
     QString inputFileUrl = inputFile;
 
     QQmlJSSaveFunction saveFunction;
-    if (target == GenerateCpp) {
-        QQmlJSResourceFileMapper fileMapper(parser.values(resourceOption));
-        QString inputResourcePath = parser.value(resourcePathOption);
+    QQmlJSResourceFileMapper fileMapper(parser.values(resourceOption));
+    QString inputResourcePath = parser.value(resourcePathOption);
 
-        // If the user didn't specify the resource path corresponding to the file on disk being
-        // compiled, try to determine it from the resource file, if one was supplied.
-        if (inputResourcePath.isEmpty()) {
-            const QStringList resourcePaths = fileMapper.resourcePaths(
-                        QQmlJSResourceFileMapper::localFileFilter(inputFile));
-            if (resourcePaths.isEmpty()) {
-                fprintf(stderr, "No resource path for file: %s\n", qPrintable(inputFile));
-                return EXIT_FAILURE;
-            }
-
-            if (resourcePaths.size() != 1) {
-                fprintf(stderr, "Multiple resource paths for file %s. "
-                                "Use the --%s option to disambiguate:\n",
-                        qPrintable(inputFile),
-                        qPrintable(resourcePathOption.names().first()));
-                for (const QString &resourcePath: resourcePaths)
-                    fprintf(stderr, "\t%s\n", qPrintable(resourcePath));
-                return EXIT_FAILURE;
-            }
-
-            inputResourcePath = resourcePaths.first();
+    // If the user didn't specify the resource path corresponding to the file on disk being
+    // compiled, try to determine it from the resource file, if one was supplied.
+    if (inputResourcePath.isEmpty()) {
+        const QStringList resourcePaths = fileMapper.resourcePaths(
+                    QQmlJSResourceFileMapper::localFileFilter(inputFile));
+        if (target == GenerateCpp && resourcePaths.isEmpty()) {
+            fprintf(stderr, "No resource path for file: %s\n", qPrintable(inputFile));
+            return EXIT_FAILURE;
         }
 
-        inputFileUrl = QStringLiteral("qrc://") + inputResourcePath;
+        if (resourcePaths.size() == 1) {
+            inputResourcePath = resourcePaths.first();
+        } else if (target == GenerateCpp) {
+            fprintf(stderr, "Multiple resource paths for file %s. "
+                            "Use the --%s option to disambiguate:\n",
+                    qPrintable(inputFile),
+                    qPrintable(resourcePathOption.names().first()));
+            for (const QString &resourcePath: resourcePaths)
+                fprintf(stderr, "\t%s\n", qPrintable(resourcePath));
+            return EXIT_FAILURE;
+        }
+    }
 
+    if (target == GenerateCpp) {
+        inputFileUrl = QStringLiteral("qrc://") + inputResourcePath;
         saveFunction = [inputResourcePath, outputFileName](
                                const QV4::CompiledData::SaveableUnitPointer &unit,
                                const QQmlJSAotFunctionMap &aotFunctions,
@@ -240,9 +225,53 @@ int main(int argc, char **argv)
 
     if (inputFile.endsWith(QLatin1String(".qml"))) {
         QQmlJSCompileError error;
-        if (!qCompileQmlFile(inputFile, saveFunction, nullptr, &error)) {
-            error.augment(QLatin1String("Error compiling qml file: ")).print();
-            return EXIT_FAILURE;
+        if (target != GenerateCpp || inputResourcePath.isEmpty() || parser.isSet(onlyBytecode)) {
+            if (!qCompileQmlFile(inputFile, saveFunction, nullptr, &error,
+                                 /* storeSourceLocation */ false)) {
+                error.augment(QStringLiteral("Error compiling qml file: ")).print();
+                return EXIT_FAILURE;
+            }
+        } else {
+            QStringList importPaths;
+            if (parser.isSet(importPathOption))
+                importPaths = parser.values(importPathOption);
+
+            if (!parser.isSet(bareOption))
+                importPaths.append(QLibraryInfo::path(QLibraryInfo::QmlImportsPath));
+
+            QQmlJSImporter importer(
+                        importPaths, parser.isSet(resourceOption) ? &fileMapper : nullptr);
+            QQmlJSLogger logger;
+
+            // Always trigger the qFatal() on "pragma Strict" violations.
+            logger.setCategoryLevel(Log_Compiler, QtCriticalMsg);
+            logger.setCategoryIgnored(Log_Compiler, false);
+            logger.setCategoryFatal(Log_Compiler, true);
+
+            // By default, we're completely silent,
+            // as the lcAotCompiler category default is QtFatalMsg
+            const bool loggingEnabled = lcAotCompiler().isDebugEnabled()
+                    || lcAotCompiler().isInfoEnabled() || lcAotCompiler().isWarningEnabled()
+                    || lcAotCompiler().isCriticalEnabled();
+            if (!loggingEnabled)
+                logger.setSilent(true);
+
+            QQmlJSAotCompiler cppCodeGen(
+                        &importer, u':' + inputResourcePath, parser.values(importsOption), &logger);
+
+            if (!qCompileQmlFile(inputFile, saveFunction, &cppCodeGen, &error,
+                                 /* storeSourceLocation */ true)) {
+                error.augment(QStringLiteral("Error compiling qml file: ")).print();
+                return EXIT_FAILURE;
+            }
+
+            QList<QQmlJS::DiagnosticMessage> warnings = importer.takeGlobalWarnings();
+
+            if (!warnings.isEmpty()) {
+                logger.log(QStringLiteral("Type warnings occurred while compiling file:"),
+                           Log_Import, QQmlJS::SourceLocation());
+                logger.processMessages(warnings, Log_Import);
+            }
         }
     } else if (inputFile.endsWith(QLatin1String(".js")) || inputFile.endsWith(QLatin1String(".mjs"))) {
         QQmlJSCompileError error;

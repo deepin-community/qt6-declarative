@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2020 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQuick module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2020 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qquickwheelhandler_p.h"
 #include "qquickwheelhandler_p_p.h"
@@ -91,7 +55,7 @@ QQuickWheelHandler::QQuickWheelHandler(QQuickItem *parent)
 }
 
 /*!
-    \qmlproperty enum QtQuick::WheelHandler::orientation
+    \qmlproperty enumeration QtQuick::WheelHandler::orientation
 
     Which wheel to react to.  The default is \c Qt.Vertical.
 
@@ -354,6 +318,29 @@ void QQuickWheelHandler::setTargetTransformAroundCursor(bool ttac)
     emit targetTransformAroundCursorChanged();
 }
 
+/*!
+    \qmlproperty bool QtQuick::WheelHandler::blocking
+    \since 6.3
+
+    Whether this handler prevents other items or handlers behind it from
+    handling the same wheel event. This property is \c true by default.
+*/
+bool QQuickWheelHandler::isBlocking() const
+{
+    Q_D(const QQuickWheelHandler);
+    return d->blocking;
+}
+
+void QQuickWheelHandler::setBlocking(bool blocking)
+{
+    Q_D(QQuickWheelHandler);
+    if (d->blocking == blocking)
+        return;
+
+    d->blocking = blocking;
+    emit blockingChanged();
+}
+
 bool QQuickWheelHandler::wantsPointerEvent(QPointerEvent *event)
 {
     if (!event)
@@ -393,7 +380,8 @@ void QQuickWheelHandler::handleEventPoint(QPointerEvent *ev, QEventPoint &point)
         return;
     const QWheelEvent *event = static_cast<const QWheelEvent *>(ev);
     setActive(true); // ScrollEnd will not happen unless it was already active (see setActive(false) below)
-    point.setAccepted();
+    if (d->blocking)
+        point.setAccepted();
     qreal inversion = !d->invertible && event->isInverted() ? -1 : 1;
     qreal angleDelta = inversion * qreal(orientation() == Qt::Horizontal ? event->angleDelta().x() :
                                                                            event->angleDelta().y()) / 8;
@@ -548,3 +536,5 @@ QMetaProperty &QQuickWheelHandlerPrivate::targetMetaProperty() const
 */
 
 QT_END_NAMESPACE
+
+#include "moc_qquickwheelhandler_p.cpp"

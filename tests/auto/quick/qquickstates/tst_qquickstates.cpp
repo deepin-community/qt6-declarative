@@ -1,30 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the test suite of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:GPL-EXCEPT$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 3 as published by the Free Software
-** Foundation with exceptions as appearing in the file LICENSE.GPL3-EXCEPT
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only WITH Qt-GPL-exception-1.0
 #include <qtest.h>
 #include <QtQml/qqmlengine.h>
 #include <QtQml/qqmlcomponent.h>
@@ -38,6 +13,7 @@
 #include <private/qquickitem_p.h>
 #include <private/qqmlproperty_p.h>
 #include <QtQuickTestUtils/private/qmlutils_p.h>
+#include <QtTest/qsignalspy.h>
 
 class MyAttached : public QObject
 {
@@ -199,11 +175,15 @@ private slots:
     void revertListMemoryLeak();
     void duplicateStateName();
     void trivialWhen();
+    void jsValueWhen();
     void noStateOsciallation();
     void parentChangeCorrectReversal();
     void revertNullObjectBinding();
     void bindableProperties();
     void parentChangeInvolvingBindings();
+    void deferredProperties();
+    void rewindAnchorChange();
+    void bindingProperlyRemovedWithTransition();
 };
 
 void tst_qquickstates::initTestCase()
@@ -1348,7 +1328,7 @@ void tst_qquickstates::illegalObjectCreation()
 
     QQmlComponent component(&engine, testFileUrl("illegalObj.qml"));
     QList<QQmlError> errors = component.errors();
-    QCOMPARE(errors.count(), 1);
+    QCOMPARE(errors.size(), 1);
     const QQmlError &error = errors.at(0);
     QCOMPARE(error.line(), 9);
     QCOMPARE(error.column(), 23);
@@ -1503,7 +1483,7 @@ void tst_qquickstates::editProperties()
     rectPrivate->setState("");
 
 
-    QCOMPARE(propertyChangesBlue->actions().length(), 2);
+    QCOMPARE(propertyChangesBlue->actions().size(), 2);
     QVERIFY(propertyChangesBlue->containsValue("width"));
     QVERIFY(!propertyChangesBlue->containsProperty("x"));
     QCOMPARE(propertyChangesBlue->value("width").toInt(), 50);
@@ -1511,20 +1491,20 @@ void tst_qquickstates::editProperties()
 
     propertyChangesBlue->changeValue("width", 60);
     QCOMPARE(propertyChangesBlue->value("width").toInt(), 60);
-    QCOMPARE(propertyChangesBlue->actions().length(), 2);
+    QCOMPARE(propertyChangesBlue->actions().size(), 2);
 
 
     propertyChangesBlue->changeExpression("width", "myRectangle.width / 2");
     QVERIFY(!propertyChangesBlue->containsValue("width"));
     QVERIFY(propertyChangesBlue->containsExpression("width"));
     QCOMPARE(propertyChangesBlue->value("width").toInt(), 0);
-    QCOMPARE(propertyChangesBlue->actions().length(), 2);
+    QCOMPARE(propertyChangesBlue->actions().size(), 2);
 
     propertyChangesBlue->changeValue("width", 50);
     QVERIFY(propertyChangesBlue->containsValue("width"));
     QVERIFY(!propertyChangesBlue->containsExpression("width"));
     QCOMPARE(propertyChangesBlue->value("width").toInt(), 50);
-    QCOMPARE(propertyChangesBlue->actions().length(), 2);
+    QCOMPARE(propertyChangesBlue->actions().size(), 2);
 
     QVERIFY(QQmlAnyBinding::ofProperty(QQmlProperty(childRect, "width")));
     rectPrivate->setState("blue");
@@ -1533,7 +1513,7 @@ void tst_qquickstates::editProperties()
 
     propertyChangesBlue->changeValue("width", 60);
     QCOMPARE(propertyChangesBlue->value("width").toInt(), 60);
-    QCOMPARE(propertyChangesBlue->actions().length(), 2);
+    QCOMPARE(propertyChangesBlue->actions().size(), 2);
     QCOMPARE(childRect->width(), qreal(60));
     QVERIFY(!QQmlAnyBinding::ofProperty(QQmlProperty(childRect, "width")));
 
@@ -1541,7 +1521,7 @@ void tst_qquickstates::editProperties()
     QVERIFY(!propertyChangesBlue->containsValue("width"));
     QVERIFY(propertyChangesBlue->containsExpression("width"));
     QCOMPARE(propertyChangesBlue->value("width").toInt(), 0);
-    QCOMPARE(propertyChangesBlue->actions().length(), 2);
+    QCOMPARE(propertyChangesBlue->actions().size(), 2);
     QVERIFY(QQmlAnyBinding::ofProperty(QQmlProperty(childRect, "width")));
     QCOMPARE(childRect->width(), qreal(200));
 
@@ -1552,13 +1532,13 @@ void tst_qquickstates::editProperties()
     QCOMPARE(childRect->width(), qreal(402));
     QVERIFY(QQmlAnyBinding::ofProperty(QQmlProperty(childRect, "width")));
 
-    QCOMPARE(propertyChangesGreen->actions().length(), 2);
+    QCOMPARE(propertyChangesGreen->actions().size(), 2);
     rectPrivate->setState("green");
     QCOMPARE(childRect->width(), qreal(200));
     QCOMPARE(childRect->height(), qreal(100));
     QVERIFY(QQmlAnyBinding::ofProperty(QQmlProperty(childRect, "width")));
     QVERIFY(greenState->bindingInRevertList(childRect, "width"));
-    QCOMPARE(propertyChangesGreen->actions().length(), 2);
+    QCOMPARE(propertyChangesGreen->actions().size(), 2);
 
 
     propertyChangesGreen->removeProperty("height");
@@ -1715,6 +1695,16 @@ void tst_qquickstates::trivialWhen()
     QVERIFY(root);
 }
 
+void tst_qquickstates::jsValueWhen()
+{
+    QQmlEngine engine;
+
+    QQmlComponent c(&engine, testFileUrl("jsValueWhen.qml"));
+    QScopedPointer<QObject> root(c.create());
+    QVERIFY(root);
+    QVERIFY(root->property("works").toBool());
+}
+
 void tst_qquickstates::noStateOsciallation()
 {
    QQmlEngine engine;
@@ -1795,33 +1785,204 @@ void tst_qquickstates::bindableProperties()
     }
 }
 
+struct Listener : QQuickItemChangeListener
+{
+    // We want to get notified about all the states.
+    constexpr static const QRectF expectations[] = {
+        QRectF(40, 40, 400, 400),
+        QRectF(40, 0, 400, 400),
+        QRectF(0, 0, 400, 400),
+        QRectF(0, 0, 800, 400),
+        QRectF(0, 0, 800, 200),
+        QRectF(0, 0, 400, 200),
+        QRectF(0, 20, 400, 200),
+        QRectF(40, 20, 400, 200),
+        QRectF(84, 42, 400, 200),
+        QRectF(84, 42, 86, 43),
+        QRectF(40, 40, 86, 43),
+        QRectF(40, 40, 400, 400),
+        QRectF(40, 20, 400, 400),
+        QRectF(40, 20, 400, 200),
+        QRectF(20, 20, 400, 200),
+        QRectF(20, 20, 200, 200),
+        QRectF(20, 20, 200, 300),
+        QRectF(20, 20, 300, 300),
+        QRectF(20, 30, 300, 300),
+        QRectF(30, 30, 300, 300),
+    };
+
+    int position = 0;
+    bool ok = true;
+
+    void itemGeometryChanged(QQuickItem *, QQuickGeometryChange, const QRectF &rect) override
+    {
+        if (rect != expectations[position]) {
+            qDebug() << position << rect;
+            ok = false;
+        }
+        ++position;
+    }
+};
+
 void tst_qquickstates::parentChangeInvolvingBindings()
 {
    QQmlEngine engine;
    QQmlComponent c(&engine, testFileUrl("parentChangeInvolvingBindings.qml"));
+   Listener listener;
    QScopedPointer<QQuickItem> root { qobject_cast<QQuickItem *>(c.create()) };
    QVERIFY2(root, qPrintable(c.errorString()));
+
+   QObject *child = qmlContext(root.data())->objectForName(QStringLiteral("firstChild"));
+   QVERIFY(child);
+   QQuickItem *childItem = qobject_cast<QQuickItem *>(child);
+   QVERIFY(childItem);
+   QQuickItemPrivate::get(childItem)->addItemChangeListener(&listener, QQuickItemPrivate::Geometry);
+
+
    QCOMPARE(root->property("childWidth").toInt(), 400);
+   QCOMPARE(root->property("childX").toInt(), 40);
    QCOMPARE(root->property("childRotation").toInt(), 100);
    root->setState("reparented");
 
    QCOMPARE(root->property("childWidth").toInt(), 800);
+   QCOMPARE(root->property("childX").toInt(), 0); // x gets zeroed here, from unrelated place.
    QCOMPARE(root->property("childRotation").toInt(), 200);
 
    root->setProperty("myrotation2", 300);
    root->setHeight(200);
+   root->setY(20);
    QCOMPARE(root->property("childRotation").toInt(), 300);
    QCOMPARE(root->property("childWidth").toInt(), 400);
+   QCOMPARE(root->property("childX").toInt(), 40);
+
+   QObject *inner = qmlContext(root.data())->objectForName(QStringLiteral("inner"));
+   QVERIFY(inner);
+   QQuickItem *innerItem = qobject_cast<QQuickItem *>(inner);
+   QVERIFY(innerItem);
+
+   QCOMPARE(innerItem->size(), childItem->size());
+
+   // Does not break bindings and does not survive the state change.
+   // However, since the binding between x and y stays intact, we don't know
+   // whether x is set another time from the new y. We pass a pair of numbers that
+   // matches the binding.
+   childItem->setPosition(QPointF(84, 42));
+   QCOMPARE(root->property("childX").toInt(), 84);
+   QVERIFY(listener.ok);
+   childItem->setSize(QSizeF(86, 43));
+   QCOMPARE(root->property("childWidth").toInt(), 86);
+   QVERIFY(listener.ok);
+
+   QCOMPARE(innerItem->size(), childItem->size());
+
+   QSignalSpy xSpy(childItem, SIGNAL(xChanged()));
+   QSignalSpy widthSpy(childItem, SIGNAL(widthChanged()));
 
    root->setState("");
-   QCOMPARE(root->property("childRotation").toInt(), 100);
-   // QCOMPARE(root->property("childWidth").toInt(), 200);
 
+   QVERIFY(listener.ok);
+   QCOMPARE(root->property("childRotation").toInt(), 100);
+
+   // First change to 40 via reverse(), then to 20 via binding.
+   QCOMPARE(xSpy.size(), 2);
+
+   // First change to 400 via reverse(), then to 200 via binding.
+   QCOMPARE(widthSpy.size(), 2);
+
+   QCOMPARE(root->property("childX").toInt(), 20);
+   QCOMPARE(root->property("childWidth").toInt(), 200);
+
+   QCOMPARE(innerItem->size(), childItem->size());
 
    root->setProperty("myrotation", 50);
    root->setHeight(300);
+   QVERIFY(listener.ok);
+   root->setY(30);
+   QVERIFY(listener.ok);
    QCOMPARE(root->property("childWidth").toInt(), 300);
+   QCOMPARE(root->property("childX").toInt(), 30);
    QCOMPARE(root->property("childRotation").toInt(), 50);
+
+   QCOMPARE(innerItem->size(), childItem->size());
+}
+
+void tst_qquickstates::deferredProperties()
+{
+    QQmlEngine engine;
+    QQmlComponent c(&engine, testFileUrl("cleanPropertyChange.qml"));
+    QVERIFY2(c.isReady(), qPrintable(c.errorString()));
+    QScopedPointer<QQuickRectangle> root(qobject_cast<QQuickRectangle *>(c.create()));
+    QVERIFY(root);
+
+    QCOMPARE(root->color(), QColor(Qt::red));
+    QCOMPARE(qvariant_cast<QColor>(root->property("extendedColor")), QColor(Qt::cyan));
+    QCOMPARE(root->width(), 100.0);
+    QCOMPARE(root->height(), 100.0);
+
+    QCOMPARE(root->state(), QString());
+    root->setState(QStringLiteral("green"));
+
+    QCOMPARE(root->color(), QColor(Qt::yellow));
+    QCOMPARE(qvariant_cast<QColor>(root->property("extendedColor")), QColor(Qt::blue));
+    QCOMPARE(root->width(), 90.0);
+    QCOMPARE(root->height(), 90.0);
+
+    QMetaObject::invokeMethod(root.get(), "didSomething");
+    const QColor green = qRgb(0x00, 0x80, 0x00);
+    QCOMPARE(root->color(), green);
+    QCOMPARE(qvariant_cast<QColor>(root->property("extendedColor")), green);
+    QCOMPARE(root->width(), 90.0);
+    QCOMPARE(root->height(), 90.0);
+
+    root->setState(QString());
+
+    QCOMPARE(root->color(), QColor(Qt::red));
+    QCOMPARE(qvariant_cast<QColor>(root->property("extendedColor")), QColor(Qt::cyan));
+    QCOMPARE(root->width(), 100.0);
+    QCOMPARE(root->height(), 100.0);
+}
+
+void tst_qquickstates::rewindAnchorChange()
+{
+    QQmlEngine engine;
+    QQmlComponent c(&engine, testFileUrl("anchorRewind.qml"));
+    QVERIFY2(c.isReady(), qPrintable(c.errorString()));
+    QScopedPointer<QObject> root(c.create());
+    QVERIFY(root);
+
+    QQmlContext *context = qmlContext(root.data());
+    QVERIFY(context);
+
+    QObject *inner = context->objectForName(QStringLiteral("inner"));
+    QVERIFY(inner);
+
+    QQuickItem *innerRect = qobject_cast<QQuickItem *>(inner);
+    QVERIFY(innerRect);
+
+    QTRY_COMPARE(innerRect->x(), 0);
+    QTRY_COMPARE(innerRect->y(), 0);
+    QTRY_COMPARE(innerRect->width(), 200);
+    QTRY_COMPARE(innerRect->height(), 200);
+}
+
+void tst_qquickstates::bindingProperlyRemovedWithTransition()
+{
+    QQmlEngine engine;
+    QQmlComponent c(&engine, testFileUrl("removeBindingWithTransition.qml"));
+    QVERIFY2(c.isReady(), qPrintable(c.errorString()));
+    QScopedPointer<QObject> root(c.create());
+    QVERIFY(root);
+    QQuickItem *item = qobject_cast<QQuickItem *>(root.get());
+    QVERIFY(item);
+
+    item->setProperty("toggle", false);
+    QTRY_COMPARE(item->width(), 300);
+
+    item->setProperty("state1Width", 100);
+    QCOMPARE(item->width(), 300);
+
+    item->setProperty("toggle", true);
+    QTRY_COMPARE(item->width(), 100);
 }
 
 QTEST_MAIN(tst_qquickstates)

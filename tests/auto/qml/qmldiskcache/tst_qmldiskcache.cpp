@@ -1,30 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the test suite of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:GPL-EXCEPT$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 3 as published by the Free Software
-** Foundation with exceptions as appearing in the file LICENSE.GPL3-EXCEPT
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only WITH Qt-GPL-exception-1.0
 
 #include <qtest.h>
 
@@ -346,7 +321,7 @@ void tst_qmldiskcache::regenerateAfterChange()
 
         const QV4::CompiledData::Object *obj = qmlUnit->objectAt(0);
         QCOMPARE(quint32(obj->nBindings), quint32(1));
-        QCOMPARE(quint32(obj->bindingTable()->type), quint32(QV4::CompiledData::Binding::Type_Script));
+        QCOMPARE(obj->bindingTable()->type(), QV4::CompiledData::Binding::Type_Script);
         QCOMPARE(quint32(obj->bindingTable()->value.compiledScriptIndex), quint32(0));
 
         QCOMPARE(quint32(testUnit->functionTableSize), quint32(1));
@@ -374,7 +349,7 @@ void tst_qmldiskcache::regenerateAfterChange()
 
         const QV4::CompiledData::Object *obj = qmlUnit->objectAt(0);
         QCOMPARE(quint32(obj->nBindings), quint32(2));
-        QCOMPARE(quint32(obj->bindingTable()->type), quint32(QV4::CompiledData::Binding::Type_Number));
+        QCOMPARE(obj->bindingTable()->type(), QV4::CompiledData::Binding::Type_Number);
 
         const QV4::Value value(testUnit->constants()[obj->bindingTable()->value.constantValueIndex]);
         QCOMPARE(value.doubleValue(), double(42));
@@ -409,19 +384,21 @@ void tst_qmldiskcache::registerImportForImplicitComponent()
         QCOMPARE(quint32(qmlUnit->nImports), quint32(2));
         QCOMPARE(testUnit->stringAtInternal(qmlUnit->importAt(0)->uriIndex), QStringLiteral("QtQuick"));
 
-        QQmlType componentType = QQmlMetaType::qmlType(&QQmlComponent::staticMetaObject);
+        QQmlType componentType = QQmlMetaType::qmlType(
+                    &QQmlComponent::staticMetaObject, QStringLiteral("QML"),
+                    QTypeRevision::fromVersion(1, 0));
 
         QCOMPARE(testUnit->stringAtInternal(qmlUnit->importAt(1)->uriIndex), QString(componentType.module()));
-        QCOMPARE(testUnit->stringAtInternal(qmlUnit->importAt(1)->qualifierIndex), QStringLiteral("QmlInternals"));
+        QCOMPARE(testUnit->stringAtInternal(qmlUnit->importAt(1)->qualifierIndex), QStringLiteral("QML"));
 
         QCOMPARE(quint32(qmlUnit->nObjects), quint32(3));
 
         const QV4::CompiledData::Object *obj = qmlUnit->objectAt(0);
         QCOMPARE(quint32(obj->nBindings), quint32(1));
-        QCOMPARE(quint32(obj->bindingTable()->type), quint32(QV4::CompiledData::Binding::Type_Object));
+        QCOMPARE(obj->bindingTable()->type(), QV4::CompiledData::Binding::Type_Object);
 
         const QV4::CompiledData::Object *implicitComponent = qmlUnit->objectAt(obj->bindingTable()->value.objectIndex);
-        QCOMPARE(testUnit->stringAtInternal(implicitComponent->inheritedTypeNameIndex), QStringLiteral("QmlInternals.") + componentType.elementName());
+        QCOMPARE(testUnit->stringAtInternal(implicitComponent->inheritedTypeNameIndex), QStringLiteral("QML.") + componentType.elementName());
     }
 }
 
@@ -720,7 +697,7 @@ void tst_qmldiskcache::cacheResources()
     }
 
     const QSet<QString> entries = entrySet(m_qmlCacheDirectory).subtract(existingFiles);
-    QCOMPARE(entries.count(), 1);
+    QCOMPARE(entries.size(), 1);
 
     QDateTime cacheFileTimeStamp;
 
@@ -749,7 +726,7 @@ void tst_qmldiskcache::cacheResources()
 
     {
         const QSet<QString> entries = entrySet(m_qmlCacheDirectory).subtract(existingFiles);
-        QCOMPARE(entries.count(), 1);
+        QCOMPARE(entries.size(), 1);
 
         QCOMPARE(QFileInfo(m_qmlCacheDirectory.absoluteFilePath(*entries.cbegin())).lastModified().toMSecsSinceEpoch(),
                            cacheFileTimeStamp.toMSecsSinceEpoch());
@@ -990,12 +967,12 @@ void tst_qmldiskcache::cacheModuleScripts()
         QVERIFY(unitData);
         QVERIFY(unitData->flags & QV4::CompiledData::Unit::StaticData);
         QVERIFY(unitData->flags & QV4::CompiledData::Unit::IsESModule);
-        QVERIFY(!compilationUnit->backingFile.isNull());
+        QVERIFY(compilationUnit->backingFile);
     }
 
     const QSet<QString> entries = entrySet(m_qmlCacheDirectory, QStringList("*.mjsc"));
 
-    QCOMPARE(entries.count(), 1);
+    QCOMPARE(entries.size(), 1);
 
     QDateTime cacheFileTimeStamp;
 

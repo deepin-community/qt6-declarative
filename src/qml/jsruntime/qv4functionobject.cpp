@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQml module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qv4object_p.h"
 #include "qv4objectproto_p.h"
@@ -161,7 +125,7 @@ void FunctionObject::createDefaultPrototypeProperty(uint protoConstructorSlot)
     defineDefaultProperty(s.engine->id_prototype(), proto, Attr_NotEnumerable|Attr_NotConfigurable);
 }
 
-void FunctionObject::call(const Value *thisObject, void **a, const QMetaType *types, int argc)
+void FunctionObject::call(QObject *thisObject, void **a, const QMetaType *types, int argc)
 {
     if (const auto callWithMetaTypes = d()->jsCallWithMetaTypes) {
         callWithMetaTypes(this, thisObject, a, types, argc);
@@ -185,7 +149,7 @@ ReturnedValue FunctionObject::virtualCall(const FunctionObject *, const Value *,
 }
 
 void FunctionObject::virtualCallWithMetaTypes(
-        const FunctionObject *, const Value *, void **, const QMetaType *, int)
+        const FunctionObject *, QObject *, void **, const QMetaType *, int)
 {
 }
 
@@ -387,36 +351,31 @@ ReturnedValue FunctionPrototype::method_apply(const QV4::FunctionObject *b, cons
     if (!arr)
         return v4->throwTypeError();
 
-    const qint64 len64 = arr->getLength();
-    if (len64 < 0ll || len64 > qint64(std::numeric_limits<int>::max()))
-        return v4->throwRangeError(QStringLiteral("Invalid array length."));
-    if (len64 > qint64(v4->jsStackLimit - v4->jsStackTop))
-        return v4->throwRangeError(QStringLiteral("Array too large for apply()."));
-
-    const uint len = uint(len64);
-
     Scope scope(v4);
+    const int len = v4->safeForAllocLength(arr->getLength());
+    CHECK_EXCEPTION();
+
     Value *arguments = scope.alloc<Scope::Uninitialized>(len);
     if (len) {
         if (ArgumentsObject::isNonStrictArgumentsObject(arr) && !arr->cast<ArgumentsObject>()->fullyCreated()) {
             QV4::ArgumentsObject *a = arr->cast<ArgumentsObject>();
-            int l = qMin(len, (uint)a->d()->context->argc());
+            int l = qMin(len, a->d()->context->argc());
             memcpy(arguments, a->d()->context->args(), l*sizeof(Value));
-            for (quint32 i = l; i < len; ++i)
+            for (int i = l; i < len; ++i)
                 arguments[i] = Value::undefinedValue();
         } else if (arr->arrayType() == Heap::ArrayData::Simple && !arr->protoHasArray()) {
             auto sad = static_cast<Heap::SimpleArrayData *>(arr->arrayData());
-            uint alen = sad ? sad->values.size : 0;
+            int alen = sad ? sad->values.size : 0;
             if (alen > len)
                 alen = len;
-            for (uint i = 0; i < alen; ++i)
+            for (int i = 0; i < alen; ++i)
                 arguments[i] = sad->data(i);
-            for (quint32 i = alen; i < len; ++i)
+            for (int i = alen; i < len; ++i)
                 arguments[i] = Value::undefinedValue();
         } else {
             // need to init the arguments array, as the get() calls below can have side effects
             memset(arguments, 0, len*sizeof(Value));
-            for (quint32 i = 0; i < len; ++i)
+            for (int i = 0; i < len; ++i)
                 arguments[i] = arr->get(i);
         }
     }
@@ -532,7 +491,7 @@ ReturnedValue ScriptFunction::virtualCallAsConstructor(const FunctionObject *fo,
 
 DEFINE_OBJECT_VTABLE(ArrowFunction);
 
-void ArrowFunction::virtualCallWithMetaTypes(const FunctionObject *fo, const Value *thisObject,
+void ArrowFunction::virtualCallWithMetaTypes(const FunctionObject *fo, QObject *thisObject,
                                              void **a, const QMetaType *types, int argc)
 {
     if (!fo->function()->aotFunction) {
@@ -543,16 +502,13 @@ void ArrowFunction::virtualCallWithMetaTypes(const FunctionObject *fo, const Val
         return;
     }
 
-    ExecutionEngine *engine = fo->engine();
+    QV4::Scope scope(fo->engine());
+    QV4::Scoped<ExecutionContext> context(scope, fo->scope());
     MetaTypesStackFrame frame;
-    frame.init(fo->function(), a, types, argc);
-    frame.setupJSFrame(engine->jsStackTop, *fo, fo->scope(),
-                       thisObject ? *thisObject : Value::undefinedValue());
-
-    frame.push(engine);
-    engine->jsStackTop += frame.requiredJSStackFrameSize();
-    Moth::VME::exec(&frame, engine);
-    frame.pop(engine);
+    frame.init(fo->function(), thisObject, context, a, types, argc);
+    frame.push(scope.engine);
+    Moth::VME::exec(&frame, scope.engine);
+    frame.pop(scope.engine);
 }
 
 ReturnedValue ArrowFunction::virtualCall(const FunctionObject *fo, const Value *thisObject, const Value *argv, int argc)
@@ -560,7 +516,7 @@ ReturnedValue ArrowFunction::virtualCall(const FunctionObject *fo, const Value *
     if (const auto *aotFunction = fo->function()->aotFunction) {
         return QV4::convertAndCall(
                     fo->engine(), aotFunction, thisObject, argv, argc,
-                    [fo](const Value *thisObject, void **a, const QMetaType *types, int argc) {
+                    [fo](QObject *thisObject, void **a, const QMetaType *types, int argc) {
             ArrowFunction::virtualCallWithMetaTypes(fo, thisObject, a, types, argc);
         });
     }

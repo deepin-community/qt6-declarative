@@ -1,41 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2019 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQuick module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2019 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qquicktaphandler_p.h"
 #include "qquicksinglepointhandler_p_p.h"
@@ -111,7 +75,7 @@ bool QQuickTapHandler::wantsEventPoint(const QPointerEvent *event, const QEventP
     // Don't forget to emit released in case of a cancel.
     bool ret = false;
     bool overThreshold = d_func()->dragOverThreshold(point);
-    if (overThreshold) {
+    if (overThreshold && m_gesturePolicy != DragWithinBounds) {
         m_longPressTimer.stop();
         m_holdTimer.invalidate();
     }
@@ -126,6 +90,7 @@ bool QQuickTapHandler::wantsEventPoint(const QPointerEvent *event, const QEventP
             ret = !overThreshold && parentContains(point);
             break;
         case WithinBounds:
+        case DragWithinBounds:
             ret = parentContains(point);
             break;
         case ReleaseWithinBounds:
@@ -152,24 +117,14 @@ bool QQuickTapHandler::wantsEventPoint(const QPointerEvent *event, const QEventP
 
 void QQuickTapHandler::handleEventPoint(QPointerEvent *event, QEventPoint &point)
 {
+    const bool isTouch = QQuickDeliveryAgentPrivate::isTouchEvent(event);
     switch (point.state()) {
     case QEventPoint::Pressed:
         setPressed(true, false, event, point);
         break;
     case QEventPoint::Released: {
-        // If the point has an exclusive grabber Item, then if it got the grab by filtering (like Flickable does),
-        // it's OK for DragHandler to react in spite of that.  But in other cases, if an exclusive grab
-        // still exists at the time of release, TapHandler should not react, because it would be redundant:
-        // some other item is already reacting, i.e. acting as if it has been clicked or tapped.
-        // So in that case we cancel the pressed state and do not emit tapped().
-        bool nonFilteringExclusiveGrabber = false;
-        if (auto g = qmlobject_cast<QQuickItem *>(event->exclusiveGrabber(point))) {
-            if (!g->filtersChildMouseEvents())
-                nonFilteringExclusiveGrabber = true;
-        }
-        if (QQuickDeliveryAgentPrivate::isTouchEvent(event) ||
-                (static_cast<const QSinglePointEvent *>(event)->buttons() & acceptedButtons()) == Qt::NoButton)
-            setPressed(false, nonFilteringExclusiveGrabber, event, point);
+        if (isTouch || (static_cast<const QSinglePointEvent *>(event)->buttons() & acceptedButtons()) == Qt::NoButton)
+            setPressed(false, false, event, point);
         break;
     }
     default:
@@ -177,6 +132,11 @@ void QQuickTapHandler::handleEventPoint(QPointerEvent *event, QEventPoint &point
     }
 
     QQuickSinglePointHandler::handleEventPoint(event, point);
+
+    // If TapHandler only needs a passive grab, it should not block other items and handlers from reacting.
+    // If the point is accepted, QQuickItemPrivate::localizedTouchEvent() would skip it.
+    if (isTouch && m_gesturePolicy == DragThreshold)
+        point.setAccepted(false);
 }
 
 /*!
@@ -257,6 +217,21 @@ void QQuickTapHandler::timerEvent(QTimerEvent *event)
            necessary for TapHandler to take the
            \l {QPointerEvent::setExclusiveGrabber}{exclusive grab} on press
            and retain it until release in order to detect this gesture.
+
+    \value TapHandler.DragWithinBounds
+           On press, TapHandler takes the
+           \l {QPointerEvent::setExclusiveGrabber}{exclusive grab}; after that,
+           the event point can be dragged within the bounds of the \c parent
+           item, while the \l timeHeld property keeps counting, and the
+           \l longPressed() signal will be emitted regardless of drag distance.
+           However, like \c WithinBounds, if the point leaves the bounds,
+           the tap gesture is \l {PointerHandler::}{canceled()}, \l active()
+           becomes \c false, and \l timeHeld stops counting. This is suitable
+           for implementing press-drag-release components, such as menus, in
+           which a single TapHandler detects press, \c timeHeld drives an
+           "opening" animation, and then the user can drag to a menu item and
+           release, while never leaving the bounds of the parent scene containing
+           the menu. This value was added in Qt 6.3.
 */
 void QQuickTapHandler::setGesturePolicy(QQuickTapHandler::GesturePolicy gesturePolicy)
 {
@@ -397,6 +372,11 @@ void QQuickTapHandler::updateTimeHeld()
 
     A value of less than zero means no point is being held within this
     handler's \l [QML] Item.
+
+    \note If \l gesturePolicy is set to \c TapHandler.DragWithinBounds,
+    \c timeHeld does not stop counting even when the pressed point is moved
+    beyond the drag threshold, but only when the point leaves the \l {Item::}
+    {parent} item's \l {QtQuick::Item::contains()}{bounds}.
 */
 
 /*!
@@ -461,3 +441,5 @@ void QQuickTapHandler::updateTimeHeld()
     from the previous \c tapCount.
 */
 QT_END_NAMESPACE
+
+#include "moc_qquicktaphandler_p.cpp"

@@ -1,38 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2020 The Qt Company Ltd.
-** Contact: http://www.qt.io/licensing/
-**
-** This file is part of the test suite of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL3$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see http://www.qt.io/terms-conditions. For further
-** information use the contact form at http://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPLv3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or later as published by the Free
-** Software Foundation and appearing in the file LICENSE.GPL included in
-** the packaging of this file. Please review the following information to
-** ensure the GNU General Public License version 2.0 requirements will be
-** met: http://www.gnu.org/licenses/gpl-2.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2020 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only WITH Qt-GPL-exception-1.0
 
 #include <QtTest/qtest.h>
 #include <QtTest/qsignalspy.h>
@@ -41,6 +8,7 @@
 #include <QtQuickTestUtils/private/visualtestutils_p.h>
 #include <QtQuickTemplates2/private/qquickbutton_p.h>
 #include <QtQuickControlsTestUtils/private/qtest_quickcontrols_p.h>
+#include <QtQuick/private/qquicktext_p_p.h>
 
 using namespace QQuickVisualTestUtils;
 
@@ -54,6 +22,8 @@ public:
 private slots:
     void initTestCase() override;
     void flickable();
+    void fractionalFontSize();
+    void resizeBackgroundKeepsBindings();
 
 private:
     QScopedPointer<QPointingDevice> touchDevice;
@@ -94,11 +64,46 @@ void tst_QQuickControl::flickable()
     QSignalSpy buttonClickedSpy(button, SIGNAL(clicked()));
     QVERIFY(buttonClickedSpy.isValid());
 
-    QTest::touchEvent(window, touchDevice.data()).press(0, QPoint(button->width() / 2, button->height() / 2));
-    QTRY_COMPARE(buttonPressedSpy.count(), 1);
-    QTest::touchEvent(window, touchDevice.data()).release(0, QPoint(button->width() / 2, button->height() / 2));
-    QTRY_COMPARE(buttonReleasedSpy.count(), 1);
-    QTRY_COMPARE(buttonClickedSpy.count(), 1);
+    QPoint p(button->width() / 2, button->height() / 2);
+    QTest::touchEvent(window, touchDevice.data()).press(0, p);
+    QTRY_COMPARE(buttonPressedSpy.size(), 1);
+    p += QPoint(1, 1); // less than the drag threshold
+    QTest::touchEvent(window, touchDevice.data()).move(0, p);
+    QTest::touchEvent(window, touchDevice.data()).release(0, p);
+    QTRY_COMPARE(buttonReleasedSpy.size(), 1);
+    QTRY_COMPARE(buttonClickedSpy.size(), 1);
+}
+
+void tst_QQuickControl::fractionalFontSize()
+{
+    QQuickApplicationHelper helper(this, QStringLiteral("fractionalFontSize.qml"));
+    QQuickWindow *window = helper.window;
+    window->show();
+    QVERIFY(QTest::qWaitForWindowExposed(window));
+    const QQuickControl *control = window->property("control").value<QQuickControl *>();
+    QVERIFY(control);
+    QQuickText *contentItem = qobject_cast<QQuickText *>(control->contentItem());
+    QVERIFY(contentItem);
+
+    QVERIFY(!contentItem->truncated());
+
+    QVERIFY2(qFuzzyCompare(contentItem->contentWidth(),
+            QQuickTextPrivate::get(contentItem)->layout.boundingRect().width()),
+            "The QQuickText::contentWidth() doesn't match the layout's preferred text width");
+}
+
+void tst_QQuickControl::resizeBackgroundKeepsBindings()
+{
+    QQuickApplicationHelper helper(this, QStringLiteral("resizeBackgroundKeepsBindings.qml"));
+    QQuickWindow *window = helper.window;
+    window->show();
+    QVERIFY(QTest::qWaitForWindowExposed(window));
+    auto ctxt = qmlContext(window);
+    QVERIFY(ctxt);
+    auto background = qobject_cast<QQuickItem *>(ctxt->objectForName("background"));
+    QVERIFY(background);
+    QCOMPARE(background->height(), 4);
+    QVERIFY(background->bindableHeight().hasBinding());
 }
 
 QTEST_QUICKCONTROLS_MAIN(tst_QQuickControl)

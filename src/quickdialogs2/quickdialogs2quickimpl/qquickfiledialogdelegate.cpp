@@ -1,38 +1,5 @@
-/****************************************************************************
-**
-** Copyright (C) 2021 The Qt Company Ltd.
-** Contact: http://www.qt.io/licensing/
-**
-** This file is part of the Qt Quick Dialogs module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL3$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see http://www.qt.io/terms-conditions. For further
-** information use the contact form at http://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPLv3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or later as published by the Free
-** Software Foundation and appearing in the file LICENSE.GPL included in
-** the packaging of this file. Please review the following information to
-** ensure the GNU General Public License version 2.0 requirements will be
-** met: http://www.gnu.org/licenses/gpl-2.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2021 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qquickfiledialogdelegate_p.h"
 
@@ -44,20 +11,23 @@
 #include <QtQuickTemplates2/private/qquickitemdelegate_p_p.h>
 
 #include "qquickfiledialogimpl_p.h"
+#include "qquickfolderdialogimpl_p.h"
 
 QT_BEGIN_NAMESPACE
 
 class QQuickFileDialogDelegatePrivate : public QQuickItemDelegatePrivate
 {
+public:
     Q_DECLARE_PUBLIC(QQuickFileDialogDelegate)
 
-public:
     void highlightFile();
     void chooseFile();
 
     bool acceptKeyClick(Qt::Key key) const override;
 
+    QQuickDialog *dialog = nullptr;
     QQuickFileDialogImpl *fileDialog = nullptr;
+    QQuickFolderDialogImpl *folderDialog = nullptr;
     QUrl file;
 };
 
@@ -77,7 +47,10 @@ void QQuickFileDialogDelegatePrivate::highlightFile()
     const int index = q->property("index").toInt(&converted);
     if (converted) {
         attached->view()->setCurrentIndex(index);
-        fileDialog->setCurrentFile(file);
+        if (fileDialog)
+            fileDialog->setSelectedFile(file);
+        else if (folderDialog)
+            folderDialog->setSelectedFolder(file);
     }
 }
 
@@ -86,8 +59,12 @@ void QQuickFileDialogDelegatePrivate::chooseFile()
     const QFileInfo fileInfo(QQmlFile::urlToLocalFileOrQrc(file));
     if (fileInfo.isDir()) {
         // If it's a directory, navigate to it.
-        fileDialog->setCurrentFolder(file);
+        if (fileDialog)
+            fileDialog->setCurrentFolder(file);
+        else
+            folderDialog->setCurrentFolder(file);
     } else {
+        Q_ASSERT(fileDialog);
         // Otherwise it's a file, so select it and close the dialog.
         fileDialog->setSelectedFile(file);
         fileDialog->accept();
@@ -113,20 +90,22 @@ QQuickFileDialogDelegate::QQuickFileDialogDelegate(QQuickItem *parent)
         d, &QQuickFileDialogDelegatePrivate::chooseFile);
 }
 
-QQuickFileDialogImpl *QQuickFileDialogDelegate::fileDialog() const
+QQuickDialog *QQuickFileDialogDelegate::dialog() const
 {
     Q_D(const QQuickFileDialogDelegate);
-    return d->fileDialog;
+    return d->dialog;
 }
 
-void QQuickFileDialogDelegate::setFileDialog(QQuickFileDialogImpl *fileDialog)
+void QQuickFileDialogDelegate::setDialog(QQuickDialog *dialog)
 {
     Q_D(QQuickFileDialogDelegate);
-    if (fileDialog == d->fileDialog)
+    if (dialog == d->dialog)
         return;
 
-    d->fileDialog = fileDialog;
-    emit fileDialogChanged();
+    d->dialog = dialog;
+    d->fileDialog = qobject_cast<QQuickFileDialogImpl*>(dialog);
+    d->folderDialog = qobject_cast<QQuickFolderDialogImpl*>(dialog);
+    emit dialogChanged();
 }
 
 QUrl QQuickFileDialogDelegate::file() const
@@ -138,10 +117,20 @@ QUrl QQuickFileDialogDelegate::file() const
 void QQuickFileDialogDelegate::setFile(const QUrl &file)
 {
     Q_D(QQuickFileDialogDelegate);
-    if (file == d->file)
+    QUrl adjustedFile = file;
+#ifdef Q_OS_WIN32
+    // Work around QTBUG-99105 (FolderListModel uses lowercase drive letter).
+    QString path = adjustedFile.path();
+    const int driveColonIndex = path.indexOf(QLatin1Char(':'));
+    if (driveColonIndex == 2) {
+        path.replace(1, 1, path.at(1).toUpper());
+        adjustedFile.setPath(path);
+    }
+#endif
+    if (adjustedFile == d->file)
         return;
 
-    d->file = file;
+    d->file = adjustedFile;
     emit fileChanged();
 }
 

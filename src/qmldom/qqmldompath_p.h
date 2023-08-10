@@ -1,40 +1,6 @@
-/****************************************************************************
-**
-** Copyright (C) 2020 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the QtQml module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**/
+// Copyright (C) 2020 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+
 #ifndef QMLDOM_PATH_H
 #define QMLDOM_PATH_H
 
@@ -474,6 +440,7 @@ public:
 // namespace, so it cam be reopened to add more entries
 namespace Fields{
 QMLDOM_FIELD(access);
+QMLDOM_FIELD(accessSemantics);
 QMLDOM_FIELD(allSources);
 QMLDOM_FIELD(annotations);
 QMLDOM_FIELD(astComments);
@@ -482,6 +449,7 @@ QMLDOM_FIELD(attachedType);
 QMLDOM_FIELD(attachedTypeName);
 QMLDOM_FIELD(autoExports);
 QMLDOM_FIELD(base);
+QMLDOM_FIELD(bindable);
 QMLDOM_FIELD(bindingType);
 QMLDOM_FIELD(bindings);
 QMLDOM_FIELD(body);
@@ -503,14 +471,15 @@ QMLDOM_FIELD(currentRevision);
 QMLDOM_FIELD(defaultPropertyName);
 QMLDOM_FIELD(defaultValue);
 QMLDOM_FIELD(designerSupported);
-QMLDOM_FIELD(elementCanonicalPath);
 QMLDOM_FIELD(elLocation);
+QMLDOM_FIELD(elementCanonicalPath);
 QMLDOM_FIELD(enumerations);
 QMLDOM_FIELD(errors);
 QMLDOM_FIELD(exportSource);
 QMLDOM_FIELD(exports);
 QMLDOM_FIELD(expr);
 QMLDOM_FIELD(expressionType);
+QMLDOM_FIELD(extensionTypeName);
 QMLDOM_FIELD(fileLocationsTree);
 QMLDOM_FIELD(fileName);
 QMLDOM_FIELD(fullRegion);
@@ -518,6 +487,7 @@ QMLDOM_FIELD(get);
 QMLDOM_FIELD(globalScopeName);
 QMLDOM_FIELD(globalScopeWithName);
 QMLDOM_FIELD(hasCallback);
+QMLDOM_FIELD(hasCustomParser);
 QMLDOM_FIELD(idStr);
 QMLDOM_FIELD(ids);
 QMLDOM_FIELD(implicit);
@@ -530,10 +500,13 @@ QMLDOM_FIELD(imports);
 QMLDOM_FIELD(inProgress);
 QMLDOM_FIELD(infoItem);
 QMLDOM_FIELD(inheritVersion);
+QMLDOM_FIELD(interfaceNames);
 QMLDOM_FIELD(isAlias);
 QMLDOM_FIELD(isComposite);
+QMLDOM_FIELD(isConstructor);
 QMLDOM_FIELD(isCreatable);
 QMLDOM_FIELD(isDefaultMember);
+QMLDOM_FIELD(isFinal);
 QMLDOM_FIELD(isInternal);
 QMLDOM_FIELD(isLatest);
 QMLDOM_FIELD(isList);
@@ -567,9 +540,10 @@ QMLDOM_FIELD(nCallbacks);
 QMLDOM_FIELD(nLoaded);
 QMLDOM_FIELD(nNotdone);
 QMLDOM_FIELD(name);
+QMLDOM_FIELD(newlinesBefore);
 QMLDOM_FIELD(nextComponent);
 QMLDOM_FIELD(nextScope);
-QMLDOM_FIELD(newlinesBefore);
+QMLDOM_FIELD(notify);
 QMLDOM_FIELD(objects);
 QMLDOM_FIELD(onAttachedObject);
 QMLDOM_FIELD(options);
@@ -579,13 +553,13 @@ QMLDOM_FIELD(parentObject);
 QMLDOM_FIELD(path);
 QMLDOM_FIELD(plugins);
 QMLDOM_FIELD(postCode);
-QMLDOM_FIELD(postComments);
 QMLDOM_FIELD(postCommentLocations);
+QMLDOM_FIELD(postComments);
 QMLDOM_FIELD(pragma);
 QMLDOM_FIELD(pragmas);
 QMLDOM_FIELD(preCode);
-QMLDOM_FIELD(preComments);
 QMLDOM_FIELD(preCommentLocations);
+QMLDOM_FIELD(preComments);
 QMLDOM_FIELD(propertyDef);
 QMLDOM_FIELD(propertyDefRef);
 QMLDOM_FIELD(propertyDefs);
@@ -602,6 +576,7 @@ QMLDOM_FIELD(qmltypesFiles);
 QMLDOM_FIELD(qualifiedImports);
 QMLDOM_FIELD(queue);
 QMLDOM_FIELD(rawComment);
+QMLDOM_FIELD(read);
 QMLDOM_FIELD(referredObject);
 QMLDOM_FIELD(referredObjectPath);
 QMLDOM_FIELD(regionComments);
@@ -632,9 +607,11 @@ QMLDOM_FIELD(uris);
 QMLDOM_FIELD(validExposedAt);
 QMLDOM_FIELD(validItem);
 QMLDOM_FIELD(value);
+QMLDOM_FIELD(valueTypeName);
 QMLDOM_FIELD(values);
 QMLDOM_FIELD(version);
 QMLDOM_FIELD(when);
+QMLDOM_FIELD(write);
 }
 
 class Source;
@@ -810,18 +787,6 @@ inline QDebug operator<<(QDebug debug, const Path &p)
 
 } // end namespace Dom
 } // end namespace QQmlJS
-
-namespace QTypeTraits {
-// workaround for QTBUG-89456 : supporting an object that contains itself in Qt6 with windows
-// otherwise the compiler complains with errors like
-// type_traits(61): error C2039: 'value': is not a member of 'QTypeTraits::detail::expand_operator_equal_container<T,true>'
-//        with
-//        [
-//            T=QQmlJS::Dom::Path
-//        ]
-template <> struct has_operator_equal<QQmlJS::Dom::Path> : std::true_type { };
-template <> struct has_operator_less_than<QQmlJS::Dom::Path> : std::true_type { };
-}
 
 QT_END_NAMESPACE
 
