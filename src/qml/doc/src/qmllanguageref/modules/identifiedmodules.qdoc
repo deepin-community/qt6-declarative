@@ -20,6 +20,12 @@ Identified modules must be installed into the
 \l{qtqml-syntax-imports.html#qml-import-path}{import path} in order to be found
 by the QML engine.
 
+Syntactically, each dot-separated segment of the URI must be a well-formed
+ECMAScript Identifier Name. This means, for example, the segments must not start
+with a number and they must not contain \e{-} (minus) characters. As the URI
+will be translated into directory names, you should restrict it to alphanumeric
+characters of the latin alphabet, underscores, and dots.
+
 \section1 Locally Installed Identified Modules
 
 A directory of QML and/or C++ files can be shared as an identified module if it
@@ -147,7 +153,6 @@ An identified module has several restrictions upon it:
 \li the module must register its types into the module identifier type
     namespace
 \li the module may not register types into any other module's namespace
-\li clients must specify a version when importing the module
 \endlist
 
 For example, if an identified module is installed into
@@ -164,10 +169,9 @@ module com.example.CustomUi
 \endcode
 
 Clients will then be able to import the above module with the following import
-statement (assuming that the module registers types into version 1.0 of its
-namespace):
+statement:
 \qml
-import com.example.CustomUi 1.0
+import com.example.CustomUi
 \endqml
 
 */

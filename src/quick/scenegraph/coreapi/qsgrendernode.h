@@ -9,6 +9,8 @@
 QT_BEGIN_NAMESPACE
 
 class QSGRenderNodePrivate;
+class QRhiRenderTarget;
+class QRhiCommandBuffer;
 
 class Q_QUICK_EXPORT QSGRenderNode : public QSGNode
 {
@@ -54,9 +56,12 @@ public:
     virtual RenderingFlags flags() const;
     virtual QRectF rect() const;
 
+    const QMatrix4x4 *projectionMatrix() const;
     const QMatrix4x4 *matrix() const;
     const QSGClipNode *clipList() const;
     qreal inheritedOpacity() const;
+    QRhiRenderTarget *renderTarget() const;
+    QRhiCommandBuffer *commandBuffer() const;
 
 private:
     QSGRenderNodePrivate *d;

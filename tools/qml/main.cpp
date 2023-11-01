@@ -73,12 +73,16 @@ static QQmlApplicationEngine *qae = nullptr;
 #if defined(Q_OS_DARWIN) || defined(QT_GUI_LIB)
 static int exitTimerId = -1;
 #endif
-static const QString iconResourcePath(QStringLiteral(":/qt-project.org/QmlRuntime/resources/qml-64.png"));
-static const QString confResourcePath(QStringLiteral(":/qt-project.org/QmlRuntime/conf/"));
+static const QString iconResourcePath(QStringLiteral(":/qt-project.org/imports/QmlRuntime/Config/resources/qml-64.png"));
+static const QString confResourcePath(QStringLiteral(":/qt-project.org/imports/QmlRuntime/Config/"));
 static const QString customConfFileName(QStringLiteral("configuration.qml"));
 static bool verboseMode = false;
 static bool quietMode = false;
 static bool glShareContexts = true;
+static bool disableShaderCache = true;
+static bool requestAlphaChannel = false;
+static bool requestMSAA = false;
+static bool requestCoreProfile = false;
 
 static void loadConf(const QString &override, bool quiet) // Terminates app on failure
 {
@@ -152,8 +156,16 @@ static void listConfFiles()
 {
     const QDir confResourceDir(confResourcePath);
     printf("%s\n", qPrintable(QCoreApplication::translate("main", "Built-in configurations:")));
-    for (const QFileInfo &fi : confResourceDir.entryInfoList(QDir::Files))
-        printf("  %s\n", qPrintable(fi.baseName()));
+    for (const QFileInfo &fi : confResourceDir.entryInfoList(QDir::Files)) {
+        if (fi.completeSuffix() != QLatin1String("qml"))
+            continue;
+
+        const QString baseName = fi.baseName();
+        if (baseName.isEmpty() || baseName[0].isUpper())
+            continue;
+
+        printf("  %s\n", qPrintable(baseName));
+    }
     printf("%s\n", qPrintable(QCoreApplication::translate("main", "Other configurations:")));
     bool foundOther = false;
     const QStringList otherLocations = QStandardPaths::standardLocations(QStandardPaths::AppConfigLocation);
@@ -234,16 +246,14 @@ public Q_SLOTS:
     {
         Q_UNUSED(url);
         if (o) {
-            checkForWindow(o);
+            ++createdObjects;
             if (conf && qae)
                 for (PartialScene *ps : std::as_const(conf->completers))
                     if (o->inherits(ps->itemType().toUtf8().constData()))
                         contain(o, ps->container());
         }
-        if (haveWindow)
-            return;
 
-        if (! --expectedFileCount) {
+        if (!--expectedFileCount && !createdObjects) {
             printf("qml: Did not load any objects, exiting.\n");
             exit(2);
             QCoreApplication::exit(2);
@@ -262,11 +272,10 @@ public Q_SLOTS:
 
 private:
     void contain(QObject *o, const QUrl &containPath);
-    void checkForWindow(QObject *o);
 
 private:
-    bool haveWindow = false;
     int expectedFileCount;
+    int createdObjects = 0;
 };
 
 void LoadWatcher::contain(QObject *o, const QUrl &containPath)
@@ -276,23 +285,12 @@ void LoadWatcher::contain(QObject *o, const QUrl &containPath)
     if (!o2)
         return;
     o2->setParent(this);
-    checkForWindow(o2);
     bool success = false;
     int idx;
     if ((idx = o2->metaObject()->indexOfProperty("containedObject")) != -1)
         success = o2->metaObject()->property(idx).write(o2, QVariant::fromValue<QObject*>(o));
     if (!success)
         o->setParent(o2); // Set QObject parent, and assume container will react as needed
-}
-
-void LoadWatcher::checkForWindow(QObject *o)
-{
-#if defined(QT_GUI_LIB)
-    if (o->isWindowType() && o->inherits("QQuickWindow"))
-        haveWindow = true;
-#else
-    Q_UNUSED(o);
-#endif // QT_GUI_LIB
 }
 
 void quietMessageHandler(QtMsgType type, const QMessageLogContext &ctxt, const QString &msg)
@@ -338,6 +336,14 @@ static void getAppFlags(int argc, char **argv)
             QCoreApplication::setAttribute(Qt::AA_UseSoftwareOpenGL);
         } else if (!strcmp(argv[i], "-disable-context-sharing") || !strcmp(argv[i], "--disable-context-sharing")) {
             glShareContexts = false;
+        } else if (!strcmp(argv[i], "-enable-shader-cache") || !strcmp(argv[i], "--enable-shader-cache")) {
+            disableShaderCache = false;
+        } else if (!strcmp(argv[i], "-transparent") || !strcmp(argv[i], "--transparent")) {
+            requestAlphaChannel = true;
+        } else if (!strcmp(argv[i], "-multisample") || !strcmp(argv[i], "--multisample")) {
+            requestMSAA = true;
+        } else if (!strcmp(argv[i], "-core-profile") || !strcmp(argv[i], "--core-profile")) {
+            requestCoreProfile = true;
         }
     }
 #else
@@ -376,8 +382,31 @@ int main(int argc, char *argv[])
 {
     getAppFlags(argc, argv);
 
+    // Must set the default QSurfaceFormat before creating the app object if
+    // AA_ShareOpenGLContexts is going to be set.
+#if defined(QT_GUI_LIB)
+    QSurfaceFormat surfaceFormat;
+    surfaceFormat.setDepthBufferSize(24);
+    surfaceFormat.setStencilBufferSize(8);
+    if (requestMSAA)
+        surfaceFormat.setSamples(4);
+    if (requestAlphaChannel)
+        surfaceFormat.setAlphaBufferSize(8);
+    if (qEnvironmentVariableIsSet("QSG_CORE_PROFILE")
+            || qEnvironmentVariableIsSet("QML_CORE_PROFILE")
+            || requestCoreProfile)
+    {
+        // intentionally requesting 4.1 core to play nice with macOS
+        surfaceFormat.setVersion(4, 1);
+        surfaceFormat.setProfile(QSurfaceFormat::CoreProfile);
+    }
+    QSurfaceFormat::setDefaultFormat(surfaceFormat);
+#endif
+
     if (glShareContexts)
         QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
+    if (disableShaderCache)
+        QCoreApplication::setAttribute(Qt::AA_DisableShaderDiskCache);
 
     std::unique_ptr<QCoreApplication> app;
     switch (applicationType) {
@@ -404,7 +433,6 @@ int main(int argc, char *argv[])
     app->setOrganizationDomain("qt-project.org");
     QCoreApplication::setApplicationVersion(QLatin1String(QT_VERSION_STR));
 
-    QQmlApplicationEngine e;
     QStringList files;
     QString confFile;
     QString translationFile;
@@ -413,8 +441,8 @@ int main(int argc, char *argv[])
     QCommandLineParser parser;
     parser.setSingleDashWordOptionMode(QCommandLineParser::ParseAsLongOptions);
     parser.setOptionsAfterPositionalArgumentsMode(QCommandLineParser::ParseAsPositionalArguments);
-    const QCommandLineOption helpOption = parser.addHelpOption();
-    const QCommandLineOption versionOption = parser.addVersionOption();
+    parser.addHelpOption();
+    parser.addVersionOption();
 #ifdef QT_GUI_LIB
     QCommandLineOption apptypeOption(QStringList() << QStringLiteral("a") << QStringLiteral("apptype"),
         QCoreApplication::translate("main", "Select which application class to use. Default is gui."),
@@ -458,11 +486,22 @@ int main(int argc, char *argv[])
     parser.addOption(glSoftwareOption); // Just for the help text... we've already handled this argument above
     QCommandLineOption glCoreProfile(QStringLiteral("core-profile"),
         QCoreApplication::translate("main", "Force use of OpenGL Core Profile."));
-    parser.addOption(glCoreProfile);
+    parser.addOption(glCoreProfile); // Just for the help text... we've already handled this argument above
     QCommandLineOption glContextSharing(QStringLiteral("disable-context-sharing"),
         QCoreApplication::translate("main", "Disable the use of a shared GL context for QtQuick Windows"));
     parser.addOption(glContextSharing); // Just for the help text... we've already handled this argument above
+    // Options relevant for other 3D APIs as well
+    QCommandLineOption shaderCaching(QStringLiteral("enable-shader-cache"),
+        QCoreApplication::translate("main", "Enable persistent caching of generated shaders"));
+    parser.addOption(shaderCaching); // Just for the help text... we've already handled this argument above
+    QCommandLineOption transparentOption(QStringLiteral("transparent"),
+        QCoreApplication::translate("main", "Requests an alpha channel in order to enable semi-transparent windows."));
+    parser.addOption(transparentOption); // Just for the help text... we've already handled this argument above
+    QCommandLineOption multisampleOption(QStringLiteral("multisample"),
+        QCoreApplication::translate("main", "Requests 4x multisample antialiasing."));
+    parser.addOption(multisampleOption); // Just for the help text... we've already handled this argument above
 #endif // QT_GUI_LIB
+
     // Debugging and verbosity options
     QCommandLineOption quietOption(QStringLiteral("quiet"),
         QCoreApplication::translate("main", "Suppress all output."));
@@ -491,14 +530,7 @@ int main(int argc, char *argv[])
     parser.addPositionalArgument("args",
         QCoreApplication::translate("main", "Arguments after '--' are ignored, but passed through to the application.arguments variable in QML."), "[-- args...]");
 
-    if (!parser.parse(QCoreApplication::arguments())) {
-        qWarning() << parser.errorText();
-        exit(1);
-    }
-    if (parser.isSet(versionOption))
-        parser.showVersion();
-    if (parser.isSet(helpOption))
-        parser.showHelp();
+    parser.process(*app);
     if (parser.isSet(verboseOption))
         verboseMode = true;
     if (parser.isSet(quietOption)) {
@@ -521,6 +553,9 @@ int main(int argc, char *argv[])
     if (parser.isSet(fixedAnimationsOption))
         QUnifiedTimer::instance()->setConsistentTiming(true);
 #endif
+
+    QQmlApplicationEngine e;
+
     for (const QString &importPath : parser.values(importOption))
         e.addImportPath(importPath);
 
@@ -530,17 +565,6 @@ int main(int argc, char *argv[])
 
     if (!customSelectors.isEmpty())
         e.setExtraFileSelectors(customSelectors);
-
-#if defined(QT_GUI_LIB)
-    if (qEnvironmentVariableIsSet("QSG_CORE_PROFILE") || qEnvironmentVariableIsSet("QML_CORE_PROFILE") || parser.isSet(glCoreProfile)) {
-        QSurfaceFormat surfaceFormat;
-        surfaceFormat.setStencilBufferSize(8);
-        surfaceFormat.setDepthBufferSize(24);
-        surfaceFormat.setVersion(4, 1);
-        surfaceFormat.setProfile(QSurfaceFormat::CoreProfile);
-        QSurfaceFormat::setDefaultFormat(surfaceFormat);
-    }
-#endif
 
     files << parser.values(qmlFileOption);
     if (parser.isSet(configOption))
@@ -564,9 +588,8 @@ int main(int argc, char *argv[])
 #if QT_CONFIG(translation)
     // Need to be installed before QQmlApplicationEngine's automatic translation loading
     // (qt_ translations are loaded there)
+    QTranslator translator;
     if (!translationFile.isEmpty()) {
-        QTranslator translator;
-
         if (translator.load(translationFile)) {
             app->installTranslator(&translator);
             if (verboseMode)

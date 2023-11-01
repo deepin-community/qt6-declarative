@@ -8,6 +8,7 @@
 #include <QtQuick/qquickwindow.h>
 #include <QtQuick/qquickview.h>
 #include "private/qquickfocusscope_p.h"
+#include "private/qquickrectangle_p.h"
 #include "private/qquickitem_p.h"
 #include <QtGui/private/qevent_p.h>
 #include <qpa/qwindowsysteminterface.h>
@@ -225,6 +226,9 @@ private slots:
     void receivesLocaleChangeEvent();
     void polishLoopDetection_data();
     void polishLoopDetection();
+
+    void objectCastInDestructor();
+    void listsAreNotLists();
 
 private:
 
@@ -1091,7 +1095,9 @@ void tst_qquickitem::setParentItem()
 
 void tst_qquickitem::visible()
 {
+    QQuickWindow window;
     QQuickItem *root = new QQuickItem;
+    root->setParentItem(window.contentItem());
 
     QQuickItem *child1 = new QQuickItem;
     child1->setParentItem(root);
@@ -2433,6 +2439,177 @@ void tst_qquickitem::receivesLocaleChangeEvent()
 
     QTRY_COMPARE(child1->localeChangeEventCount, 1);
     QCOMPARE(child2->localeChangeEventCount, 1);
+}
+
+void tst_qquickitem::objectCastInDestructor()
+{
+    QQuickView view;
+    view.setSource(testFileUrl("objectCastInDestructor.qml"));
+    view.show();
+
+    QQuickItem *item = view.findChild<QQuickItem *>("testRectangle");
+    QVERIFY(item);
+    bool destroyed = false;
+    connect(item, &QObject::destroyed, [&]{
+        destroyed = true;
+        QCOMPARE(qobject_cast<QQuickItem *>(item), nullptr);
+        QCOMPARE(qobject_cast<QQuickRectangle *>(item), nullptr);
+    });
+
+    QQuickItem *loader = view.findChild<QQuickItem *>("loader");
+    QVERIFY(loader);
+    loader->setProperty("active", false);
+
+    QVERIFY(QTest::qWaitFor([&destroyed]{ return destroyed; }));
+}
+
+template<typename T>
+void verifyListProperty(const T &data)
+{
+    QVERIFY(data.object);
+    QVERIFY(data.append);
+    QVERIFY(data.count);
+    QVERIFY(data.at);
+    QVERIFY(data.clear);
+    QVERIFY(data.removeLast);
+
+    // We must not synthesize the replace and removeLast methods on those properties.
+    // They would be even more broken than the explicitly defined methods.
+    QVERIFY(!data.replace);
+}
+
+void tst_qquickitem::listsAreNotLists()
+{
+    QQuickItem item;
+    QQuickItem child;
+    QObject resource;
+
+    QQmlListProperty<QObject> data
+        = item.property("data").value<QQmlListProperty<QObject>>();
+    QQmlListProperty<QObject> resources
+        = item.property("resources").value<QQmlListProperty<QObject>>();
+    QQmlListProperty<QQuickItem> children
+        = item.property("children").value<QQmlListProperty<QQuickItem>>();
+
+    verifyListProperty(data);
+    verifyListProperty(resources);
+    verifyListProperty(children);
+
+
+    QCOMPARE(data.count(&data), 0);
+    QCOMPARE(resources.count(&resources), 0);
+    QCOMPARE(children.count(&children), 0);
+    children.append(&children, &child);
+    QCOMPARE(data.count(&data), 1);
+    QCOMPARE(resources.count(&resources), 0);
+    QCOMPARE(children.count(&children), 1);
+    children.removeLast(&children);
+    QCOMPARE(data.count(&data), 0);
+    QCOMPARE(resources.count(&resources), 0);
+    QCOMPARE(children.count(&children), 0);
+    data.append(&data, &child);
+    QCOMPARE(data.count(&data), 1);
+    QCOMPARE(resources.count(&resources), 0);
+    QCOMPARE(children.count(&children), 1);
+    data.removeLast(&data);
+    QCOMPARE(data.count(&data), 0);
+    QCOMPARE(resources.count(&resources), 0);
+    QCOMPARE(children.count(&children), 0);
+    children.append(&children, &child);
+    QCOMPARE(data.count(&data), 1);
+    QCOMPARE(resources.count(&resources), 0);
+    QCOMPARE(children.count(&children), 1);
+    data.removeLast(&data);
+    QCOMPARE(data.count(&data), 0);
+    QCOMPARE(resources.count(&resources), 0);
+    QCOMPARE(children.count(&children), 0);
+    data.append(&data, &child);
+    QCOMPARE(data.count(&data), 1);
+    QCOMPARE(resources.count(&resources), 0);
+    QCOMPARE(children.count(&children), 1);
+    children.removeLast(&children);
+    QCOMPARE(data.count(&data), 0);
+    QCOMPARE(resources.count(&resources), 0);
+    QCOMPARE(children.count(&children), 0);
+
+
+    resources.append(&resources, &resource);
+    QCOMPARE(data.count(&data), 1);
+    QCOMPARE(resources.count(&resources), 1);
+    QCOMPARE(children.count(&children), 0);
+    resources.removeLast(&resources);
+    QCOMPARE(data.count(&data), 0);
+    QCOMPARE(resources.count(&resources), 0);
+    QCOMPARE(children.count(&children), 0);
+    data.append(&data, &resource);
+    QCOMPARE(data.count(&data), 1);
+    QCOMPARE(resources.count(&resources), 1);
+    QCOMPARE(children.count(&children), 0);
+    data.removeLast(&data);
+    QCOMPARE(data.count(&data), 0);
+    QCOMPARE(resources.count(&resources), 0);
+    QCOMPARE(children.count(&children), 0);
+    resources.append(&resources, &resource);
+    QCOMPARE(data.count(&data), 1);
+    QCOMPARE(resources.count(&resources), 1);
+    QCOMPARE(children.count(&children), 0);
+    data.removeLast(&data);
+    QCOMPARE(data.count(&data), 0);
+    QCOMPARE(resources.count(&resources), 0);
+    QCOMPARE(children.count(&children), 0);
+    data.append(&data, &resource);
+    QCOMPARE(data.count(&data), 1);
+    QCOMPARE(resources.count(&resources), 1);
+    QCOMPARE(children.count(&children), 0);
+    resources.removeLast(&resources);
+    QCOMPARE(data.count(&data), 0);
+    QCOMPARE(resources.count(&resources), 0);
+    QCOMPARE(children.count(&children), 0);
+
+
+    children.append(&children, &child);
+    resources.append(&resources, &resource);
+    QCOMPARE(data.count(&data), 2);
+    QCOMPARE(resources.count(&resources), 1);
+    QCOMPARE(children.count(&children), 1);
+    children.removeLast(&children);
+    QCOMPARE(data.count(&data), 1);
+    QCOMPARE(resources.count(&resources), 1);
+    QCOMPARE(children.count(&children), 0);
+    resources.removeLast(&resources);
+    QCOMPARE(data.count(&data), 0);
+    QCOMPARE(resources.count(&resources), 0);
+    QCOMPARE(children.count(&children), 0);
+
+
+    children.append(&children, &child);
+    resources.append(&resources, &resource);
+    QCOMPARE(data.count(&data), 2);
+    QCOMPARE(resources.count(&resources), 1);
+    QCOMPARE(children.count(&children), 1);
+    resources.removeLast(&resources);
+    QCOMPARE(data.count(&data), 1);
+    QCOMPARE(resources.count(&resources), 0);
+    QCOMPARE(children.count(&children), 1);
+    children.removeLast(&children);
+    QCOMPARE(data.count(&data), 0);
+    QCOMPARE(resources.count(&resources), 0);
+    QCOMPARE(children.count(&children), 0);
+
+
+    data.append(&data, &child);
+    data.append(&data, &resource);
+    QCOMPARE(data.count(&data), 2);
+    QCOMPARE(resources.count(&resources), 1);
+    QCOMPARE(children.count(&children), 1);
+    data.removeLast(&data);
+    QCOMPARE(data.count(&data), 1);
+    QCOMPARE(resources.count(&resources), 1);
+    QCOMPARE(children.count(&children), 0);
+    data.removeLast(&data);
+    QCOMPARE(data.count(&data), 0);
+    QCOMPARE(resources.count(&resources), 0);
+    QCOMPARE(children.count(&children), 0);
 }
 
 QTEST_MAIN(tst_qquickitem)

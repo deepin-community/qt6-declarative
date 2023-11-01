@@ -1,39 +1,26 @@
-# SymbolsHelper-Confirmed: 6.2.0 amd64
+# SymbolsHelper-Confirmed: 6.6.0 amd64
 libQt6QuickControls2.so.6 libqt6quickcontrols2-6 #MINVER#
-| libqt6quickcontrols2-6 #MINVER#, qt6-declarative-abi (= 6.4.2)
+| libqt6quickcontrols2-6 #MINVER#, qt6-declarative-private-abi (= 6.6.0)
 * Build-Depends-Packages: qt6-declarative-dev, qt6-declarative-private-dev
- _Z35qml_register_types_QtQuick_Controlsv@Base 6.2.0
- _ZN11QQuickStyle16setFallbackStyleERK7QString@Base 6.2.0
- _ZN11QQuickStyle4nameEv@Base 6.2.0
- _ZN11QQuickStyle8setStyleERK7QString@Base 6.2.0
- _ZN17QQuickStylePlugin11createThemeERK7QString@Base 6.2.0
- _ZN17QQuickStylePlugin11qt_metacallEN11QMetaObject4CallEiPPv@Base 6.2.0
- _ZN17QQuickStylePlugin11qt_metacastEPKc@Base 6.2.0
- _ZN17QQuickStylePlugin13registerTypesEPKc@Base 6.2.0
- _ZN17QQuickStylePlugin15unregisterTypesEv@Base 6.2.0
- _ZN17QQuickStylePlugin16staticMetaObjectE@Base 6.2.0
- _ZN17QQuickStylePluginC1EP7QObject@Base 6.2.0
- _ZN17QQuickStylePluginC2EP7QObject@Base 6.2.0
- _ZN17QQuickStylePluginD0Ev@Base 6.2.0
- _ZN17QQuickStylePluginD1Ev@Base 6.2.0
- _ZN17QQuickStylePluginD2Ev@Base 6.2.0
- _ZN18QQuickStylePrivate10isResolvedEv@Base 6.2.0
- _ZN18QQuickStylePrivate11readPaletteERK14QSharedPointerI9QSettingsE@Base 6.2.0
- _ZN18QQuickStylePrivate13builtInStylesEv@Base 6.2.0
- _ZN18QQuickStylePrivate13fallbackStyleEv@Base 6.2.0
- _ZN18QQuickStylePrivate13isCustomStyleEv@Base 6.2.0
- _ZN18QQuickStylePrivate14configFilePathEv@Base 6.2.0
- _ZN18QQuickStylePrivate17isDarkSystemThemeEv@Base 6.2.0
- _ZN18QQuickStylePrivate18effectiveStyleNameERK7QString@Base 6.2.0
- _ZN18QQuickStylePrivate19isUsingDefaultStyleEv@Base 6.2.0
- _ZN18QQuickStylePrivate4initEv@Base 6.2.0
- _ZN18QQuickStylePrivate5resetEv@Base 6.2.0
- _ZN18QQuickStylePrivate5styleEv@Base 6.2.0
- _ZN18QQuickStylePrivate8readFontERK14QSharedPointerI9QSettingsE@Base 6.2.0
- _ZN18QQuickStylePrivate8settingsERK7QString@Base 6.2.0
- _ZNK17QQuickStylePlugin10metaObjectEv@Base 6.2.0
- _ZTI17QQuickStylePlugin@Base 6.2.0
- _ZTS17QQuickStylePlugin@Base 6.2.0
- _ZTV17QQuickStylePlugin@Base 6.2.0
- (c++)"non-virtual thunk to QQuickStylePlugin::registerTypes(char const*)@Base" 6.2.0
- (c++)"non-virtual thunk to QQuickStylePlugin::~QQuickStylePlugin()@Base" 6.2.0
+ Qt_6@Qt_6 6.6.0
+ (symver)Qt_6_PRIVATE_API 0
+ _Z35qml_register_types_QtQuick_Controlsv@Qt_6 6.6.0
+ _ZN11QQuickStyle16setFallbackStyleERK7QString@Qt_6 6.6.0
+ _ZN11QQuickStyle4nameEv@Qt_6 6.6.0
+ _ZN11QQuickStyle8setStyleERK7QString@Qt_6 6.6.0
+ _ZN32QQuickAttachedPropertyPropagator10initializeEv@Qt_6 6.6.0
+ _ZN32QQuickAttachedPropertyPropagator11qt_metacallEN11QMetaObject4CallEiPPv@Qt_6 6.6.0
+ _ZN32QQuickAttachedPropertyPropagator11qt_metacastEPKc@Qt_6 6.6.0
+ _ZN32QQuickAttachedPropertyPropagator16staticMetaObjectE@Qt_6 6.6.0
+ _ZN32QQuickAttachedPropertyPropagator20attachedParentChangeEPS_S0_@Qt_6 6.6.0
+ _ZN32QQuickAttachedPropertyPropagatorC1EP7QObject@Qt_6 6.6.0
+ _ZN32QQuickAttachedPropertyPropagatorC2EP7QObject@Qt_6 6.6.0
+ _ZN32QQuickAttachedPropertyPropagatorD0Ev@Qt_6 6.6.0
+ _ZN32QQuickAttachedPropertyPropagatorD1Ev@Qt_6 6.6.0
+ _ZN32QQuickAttachedPropertyPropagatorD2Ev@Qt_6 6.6.0
+ _ZNK32QQuickAttachedPropertyPropagator10metaObjectEv@Qt_6 6.6.0
+ _ZNK32QQuickAttachedPropertyPropagator14attachedParentEv@Qt_6 6.6.0
+ _ZNK32QQuickAttachedPropertyPropagator16attachedChildrenEv@Qt_6 6.6.0
+ _ZTI32QQuickAttachedPropertyPropagator@Qt_6 6.6.0
+ _ZTS32QQuickAttachedPropertyPropagator@Qt_6 6.6.0
+ _ZTV32QQuickAttachedPropertyPropagator@Qt_6 6.6.0

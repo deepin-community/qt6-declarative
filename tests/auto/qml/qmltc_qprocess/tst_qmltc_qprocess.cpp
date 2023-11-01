@@ -47,6 +47,11 @@ private slots:
     void inlineComponent();
     void singleton();
     void warningsAsErrors();
+    void invalidAliasRevision();
+    void topLevelComponent();
+    void dashesInFilename();
+    void invalidSignalHandlers();
+    void exports();
 };
 
 #ifndef TST_QMLTC_QPROCESS_RESOURCES
@@ -174,22 +179,120 @@ void tst_qmltc_qprocess::noQtQml()
 
 void tst_qmltc_qprocess::inlineComponent()
 {
-    const auto errors = runQmltc(u"inlineComponent.qml"_s, false);
-    QEXPECT_FAIL("", "qmltc does not support inline components at the moment", Continue);
-    QVERIFY(!errors.contains(u"Inline components are not supported"_s));
+    {
+        const auto errors = runQmltc(u"inlineComponentInvalidAlias.qml"_s, false);
+        QVERIFY(errors.contains(u"Cannot resolve alias \"myHello\" [unresolved-alias]"_s));
+    }
+    {
+        const auto errors = runQmltc(u"inlineComponentWithEnum.qml"_s, false);
+        QVERIFY(errors.contains(
+                u"inlineComponentWithEnum.qml:5:9: Enums declared inside of inline component are ignored. [syntax]"_s));
+    }
 }
 
 void tst_qmltc_qprocess::singleton()
 {
-    const auto errors = runQmltc(u"SingletonThing.qml"_s, false);
-    QEXPECT_FAIL("", "qmltc does not support singletons at the moment", Continue);
-    QVERIFY(!errors.contains(u"Singleton types are not supported"_s));
+    {
+        const auto errors = runQmltc(u"singletonUncreatable.qml"_s, false);
+        QVERIFY(errors.contains("singletonUncreatable.qml:4:1: Type UncreatableType is not "
+                                "creatable. [uncreatable-type]"));
+    }
+    {
+        const auto errors = runQmltc(u"uncreatable.qml"_s, false);
+        QVERIFY(errors.contains(
+                "uncreatable.qml:6:5: Type UncreatableType is not creatable. [uncreatable-type]"));
+        QVERIFY(errors.contains("uncreatable.qml:7:5: Singleton Type SingletonThing is not "
+                                "creatable. [uncreatable-type]"));
+        QVERIFY(errors.contains("uncreatable.qml:8:5: Singleton Type SingletonType is not "
+                                "creatable. [uncreatable-type]"));
+        QVERIFY(errors.contains("uncreatable.qml:10:18: Singleton Type SingletonThing is not "
+                                "creatable. [uncreatable-type]"));
+        QVERIFY(errors.contains("uncreatable.qml:15:18: Singleton Type SingletonType is not "
+                                "creatable. [uncreatable-type]"));
+        QVERIFY(!errors.contains("NotSingletonType"));
+    }
 }
 
 void tst_qmltc_qprocess::warningsAsErrors()
 {
     const auto errors = runQmltc(u"erroneousFile.qml"_s, false);
     QVERIFY2(errors.contains(u"Error:"_s), qPrintable(errors)); // Note: not a warning!
+}
+
+void tst_qmltc_qprocess::invalidAliasRevision()
+{
+    const auto errors = runQmltc(u"invalidAliasRevision.qml"_s, false);
+    QVERIFY(errors.contains(u"Cannot resolve alias \"unexistingProperty\" [unresolved-alias]"_s));
+}
+
+void tst_qmltc_qprocess::topLevelComponent()
+{
+    {
+        const auto errors = runQmltc(u"ComponentType.qml"_s, false);
+        QVERIFY(errors.contains(
+                u"ComponentType.qml:2:1: Qml top level type cannot be 'Component'. [top-level-component]"_s));
+    }
+}
+
+void tst_qmltc_qprocess::dashesInFilename()
+{
+    {
+        const auto errors = runQmltc(u"kebab-case.qml"_s, false);
+        QVERIFY(errors.contains(
+                u"The given QML filename is unsuited for type compilation: the name must consist of letters, digits and underscores, starting with a letter or an underscore and ending in '.qml'!"_s));
+    }
+}
+
+void tst_qmltc_qprocess::invalidSignalHandlers()
+{
+    {
+        const auto errors = runQmltc(u"invalidSignalHandlers.qml"_s, false);
+        QVERIFY(errors.contains(
+                u"invalidSignalHandlers.qml:5:5: Type QFont of parameter in signal called signalWithConstPointerToGadget should be passed by value or const reference to be able to compile onSignalWithConstPointerToGadget.  [signal-handler-parameters]"_s));
+        QVERIFY(errors.contains(
+                u"invalidSignalHandlers.qml:6:5: Type QFont of parameter in signal called signalWithConstPointerToGadgetConst should be passed by value or const reference to be able to compile onSignalWithConstPointerToGadgetConst.  [signal-handler-parameters]"_s));
+        QVERIFY(errors.contains(
+                u"invalidSignalHandlers.qml:7:5: Type QFont of parameter in signal called signalWithPointerToGadgetConst should be passed by value or const reference to be able to compile onSignalWithPointerToGadgetConst.  [signal-handler-parameters]"_s));
+        QVERIFY(errors.contains(
+                u"invalidSignalHandlers.qml:8:5: Type QFont of parameter in signal called signalWithPointerToGadget should be passed by value or const reference to be able to compile onSignalWithPointerToGadget.  [signal-handler-parameters]"_s));
+        QVERIFY(errors.contains(
+                u"invalidSignalHandlers.qml:9:5: Type int of parameter in signal called signalWithPrimitivePointer should be passed by value or const reference to be able to compile onSignalWithPrimitivePointer.  [signal-handler-parameters]"_s));
+        QVERIFY(errors.contains(
+                u"invalidSignalHandlers.qml:10:5: Type int of parameter in signal called signalWithConstPrimitivePointer should be passed by value or const reference to be able to compile onSignalWithConstPrimitivePointer.  [signal-handler-parameters]"_s));
+    }
+}
+
+static QString fileToString(const QString &path)
+{
+    QFile f(path);
+    if (f.open(QIODevice::ReadOnly))
+        return QString::fromLatin1(f.readAll());
+    return QString();
+}
+
+void tst_qmltc_qprocess::exports()
+{
+    const QString fileName = u"dummy.qml"_s;
+    QStringList extraArgs;
+    extraArgs << "--export"
+              << "MYLIB_EXPORT_MACRO"
+              << "--exportInclude"
+              << "exportheader.h";
+    const auto errors = runQmltc(fileName, true, extraArgs);
+
+    const QString headerName = m_tmpPath + u"/"_s + QFileInfo(fileName).baseName() + u".h"_s;
+    const QString header = fileToString(headerName);
+    const QString implementationName =
+            m_tmpPath + u"/"_s + QFileInfo(fileName).baseName() + u".cpp"_s;
+    const QString implementation = fileToString(implementationName);
+
+    QCOMPARE(errors.size(), 0);
+
+    QVERIFY(header.contains(u"class MYLIB_EXPORT_MACRO dummy : public QObject\n"_s));
+    QVERIFY(!implementation.contains(u"MYLIB_EXPORT_MACRO"_s));
+
+    QVERIFY(header.contains(u"#include \"exportheader.h\"\n"_s));
+    QVERIFY(!implementation.contains(u"exportheader.h"_s));
 }
 
 QTEST_MAIN(tst_qmltc_qprocess)

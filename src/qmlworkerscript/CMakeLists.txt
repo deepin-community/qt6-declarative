@@ -1,3 +1,6 @@
+# Copyright (C) 2022 The Qt Company Ltd.
+# SPDX-License-Identifier: BSD-3-Clause
+
 #####################################################################
 ## QmlWorkerScript Module:
 #####################################################################
@@ -8,6 +11,8 @@ qt_internal_add_qml_module(QmlWorkerScript
     DESIGNER_SUPPORTED
     PLUGIN_TARGET workerscriptplugin
     CLASS_NAME QtQmlWorkerScriptPlugin
+    DEPENDENCIES
+        QtQml.Base/auto
     SOURCES
         qquickworkerscript.cpp qquickworkerscript_p.h
         qtqmlworkerscriptglobal.h qtqmlworkerscriptglobal_p.h
@@ -50,11 +55,6 @@ qt_internal_add_qml_module(QmlWorkerScript
         Qt::QmlPrivate
     GENERATE_CPP_EXPORTS
     GENERATE_PRIVATE_CPP_EXPORTS
-)
-
-qt_internal_extend_target(QmlWorkerScript CONDITION WIN32
-    DEFINES
-        NOMINMAX
 )
 
 qt_internal_extend_target(QmlWorkerScript CONDITION disassembler AND ((TEST_architecture_arch STREQUAL "i386") OR (TEST_architecture_arch STREQUAL "x86_64"))

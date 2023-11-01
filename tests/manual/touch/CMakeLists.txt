@@ -1,3 +1,6 @@
+# Copyright (C) 2022 The Qt Company Ltd.
+# SPDX-License-Identifier: BSD-3-Clause
+
 # Generated from touch.pro.
 
 #####################################################################
@@ -8,7 +11,7 @@ qt_internal_add_manual_test(tst_manual_touch
     GUI
     SOURCES
         main.cpp
-    PUBLIC_LIBRARIES
+    LIBRARIES
         Qt::Gui
         Qt::Qml
         Qt::Quick
@@ -16,9 +19,24 @@ qt_internal_add_manual_test(tst_manual_touch
 
 # Resources:
 set(qml_resource_files
+    "basic-flickable.qml"
+    "flickresize.qml"
     "flicktext.qml"
     "main.qml"
     "mpta-crosshairs.qml"
+    "qt-logo.jpg"
+    "bearwhack/heart-blur.png"
+    "bearwhack/Bear0.png"
+    "bearwhack/BearWhackParticleSystem.qml"
+    "bearwhack/blur-circle.png"
+    "bearwhack/Bear1.png"
+    "bearwhack/bearwhack.qml"
+    "bearwhack/Bear2.png"
+    "bearwhack/title.png"
+    "bearwhack/blur-circle3.png"
+    "bearwhack/Bear3.png"
+    "bearwhack/AugmentedTouchPoint.qml"
+    "bearwhack/BearB.png"
 )
 
 qt_internal_add_resource(tst_manual_touch "qml"
@@ -50,7 +68,3 @@ qt_internal_add_resource(tst_manual_touch "quick_shared"
     FILES
         ${quick_shared_resource_files}
 )
-
-
-#### Keys ignored in scope 1:.:.:touch.pro:<TRUE>:
-# TEMPLATE = "app"

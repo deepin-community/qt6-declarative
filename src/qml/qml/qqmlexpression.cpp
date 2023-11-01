@@ -4,9 +4,7 @@
 #include "qqmlexpression.h"
 #include "qqmlexpression_p.h"
 
-#include "qqmlglobal_p.h"
 #include "qqmlengine_p.h"
-#include "qqmlcontext_p.h"
 #include "qqmlscriptstring_p.h"
 #include "qqmlbinding_p.h"
 #include <private/qqmlsourcecoordinate_p.h>
@@ -107,6 +105,14 @@ QQmlExpression::QQmlExpression(const QQmlScriptString &script, QQmlContext *ctxt
         return;
 
     const QQmlScriptStringPrivate *scriptPrivate = script.d.data();
+    if (!scriptPrivate) {
+        // A null QQmlScriptStringPrivate is an empty expression without context.
+        // We may still want the explicitly passed context, though.
+        if (ctxt)
+            d->init(QQmlContextData::get(ctxt), QString(), scope);
+        return;
+    }
+
     if (!ctxt && (!scriptPrivate->context || !scriptPrivate->context->isValid()))
         return;
 
@@ -245,7 +251,7 @@ QVariant QQmlExpressionPrivate::value(bool *isUndefined)
         QV4::Scope scope(engine->handle());
         QV4::ScopedValue result(scope, v4value(isUndefined));
         if (!hasError())
-            rv = scope.engine->toVariant(result, QMetaType {});
+            rv = QV4::ExecutionEngine::toVariant(result, QMetaType {});
     }
 
     ep->dereferenceScarceResources(); // "release" scarce resources if top-level expression evaluation is complete.

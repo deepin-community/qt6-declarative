@@ -1,3 +1,6 @@
+# Copyright (C) 2022 The Qt Company Ltd.
+# SPDX-License-Identifier: BSD-3-Clause
+
 # Generated from quick.pro.
 
 add_subdirectory(geometry)
@@ -11,6 +14,7 @@ endif()
 add_subdirectory(drawingmodes)
 
 if(QT_FEATURE_private_tests)
+    add_subdirectory(doc)
     add_subdirectory(examples)
     add_subdirectory(nokeywords)
     add_subdirectory(propertyrequirements)
@@ -41,6 +45,7 @@ if(QT_FEATURE_private_tests)
     add_subdirectory(qquickwindow)
     add_subdirectory(qquickdeliveryagent)
     add_subdirectory(qquickdrag)
+    add_subdirectory(qquickdragattached)
     add_subdirectory(qquickdroparea)
     add_subdirectory(qquickflickable)
     add_subdirectory(qquickflipable)
@@ -73,9 +78,7 @@ if(QT_FEATURE_private_tests)
     add_subdirectory(qquickvisualdatamodel)
     add_subdirectory(qquickview)
     add_subdirectory(qquickview_extra)
-    if(NOT ANDROID) # QTBUG-103099
-        add_subdirectory(qquickcanvasitem)
-    endif()
+    add_subdirectory(qquickcanvasitem)
     add_subdirectory(qquickdesignersupport)
     add_subdirectory(qquickscreen)
     add_subdirectory(touchmouse)
@@ -88,10 +91,10 @@ if(QT_FEATURE_private_tests)
     add_subdirectory(qquickanimatedsprite)
     add_subdirectory(qquickspritesequence)
     add_subdirectory(qquickitemrhiintegration)
+    add_subdirectory(rendernode)
 
     if(QT_FEATURE_opengl)
         add_subdirectory(qquickframebufferobject)
-        add_subdirectory(rendernode)
     endif()
 
     add_subdirectory(softwarerenderer)

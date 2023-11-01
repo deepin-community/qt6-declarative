@@ -13,6 +13,8 @@ QT_WARNING_DISABLE_GCC("-Wmaybe-uninitialized")
 QT_WARNING_POP
 
 #include "qqmljslogger_p.h"
+#include "qqmljsloggingutils.h"
+#include "qqmlsa_p.h"
 
 #include <QtCore/qfile.h>
 #include <QtCore/qfileinfo.h>
@@ -21,99 +23,201 @@ QT_BEGIN_NAMESPACE
 
 using namespace Qt::StringLiterals;
 
-const QMap<QString, QQmlJSLogger::Option> &QQmlJSLogger::options() {
-    static QMap<QString, QQmlJSLogger::Option> optionsMap = {
-        { QStringLiteral("required"),
-          QQmlJSLogger::Option(Log_Required, QStringLiteral("RequiredProperty"),
-                               QStringLiteral("Warn about required properties"), QtWarningMsg) },
-        { QStringLiteral("alias"),
-          QQmlJSLogger::Option(Log_Alias, QStringLiteral("PropertyAlias"),
-                               QStringLiteral("Warn about alias errors"), QtWarningMsg) },
-        { QStringLiteral("import"),
-          QQmlJSLogger::Option(Log_Import, QStringLiteral("ImportFailure"),
-                               QStringLiteral("Warn about failing imports and deprecated qmltypes"),
-                               QtWarningMsg) },
-        { QStringLiteral("with"),
-          QQmlJSLogger::Option(Log_WithStatement, QStringLiteral("WithStatement"),
-                               QStringLiteral("Warn about with statements as they can cause false "
-                                              "positives when checking for unqualified access"),
-                               QtWarningMsg) },
-        { QStringLiteral("inheritance-cycle"),
-          QQmlJSLogger::Option(Log_InheritanceCycle, QStringLiteral("InheritanceCycle"),
-                               QStringLiteral("Warn about inheritance cycles"), QtWarningMsg) },
-        { QStringLiteral("deprecated"),
-          QQmlJSLogger::Option(Log_Deprecation, QStringLiteral("Deprecated"),
-                               QStringLiteral("Warn about deprecated properties and types"),
-                               QtWarningMsg) },
-        { QStringLiteral("signal"),
-          QQmlJSLogger::Option(Log_Signal, QStringLiteral("BadSignalHandler"),
-                               QStringLiteral("Warn about bad signal handler parameters"),
-                               QtWarningMsg) },
-        { QStringLiteral("type"),
-          QQmlJSLogger::Option(Log_Type, QStringLiteral("TypeError"),
-                               QStringLiteral("Warn about unresolvable types and type mismatches"),
-                               QtWarningMsg) },
-        { QStringLiteral("property"),
-          QQmlJSLogger::Option(Log_Property, QStringLiteral("UnknownProperty"),
-                               QStringLiteral("Warn about unknown properties"), QtWarningMsg) },
-        { QStringLiteral("deferred-property-id"),
-          QQmlJSLogger::Option(
-                  Log_DeferredPropertyId, QStringLiteral("DeferredPropertyId"),
-                  QStringLiteral(
-                          "Warn about making deferred properties immediate by giving them an id."),
-                  QtWarningMsg) },
-        { QStringLiteral("unqualified"),
-          QQmlJSLogger::Option(
-                  Log_UnqualifiedAccess, QStringLiteral("UnqualifiedAccess"),
-                  QStringLiteral("Warn about unqualified identifiers and how to fix them"),
-                  QtWarningMsg) },
-        { QStringLiteral("unused-imports"),
-          QQmlJSLogger::Option(Log_UnusedImport, QStringLiteral("UnusedImports"),
-                               QStringLiteral("Warn about unused imports"), QtInfoMsg) },
-        { QStringLiteral("multiline-strings"),
-          QQmlJSLogger::Option(Log_MultilineString, QStringLiteral("MultilineStrings"),
-                               QStringLiteral("Warn about multiline strings"), QtInfoMsg) },
-        { QStringLiteral("compiler"),
-          QQmlJSLogger::Option(Log_Compiler, QStringLiteral("CompilerWarnings"),
-                               QStringLiteral("Warn about compiler issues"), QtCriticalMsg, true) },
-        { QStringLiteral("controls-sanity"),
-          QQmlJSLogger::Option(
-                  Log_ControlsSanity, QStringLiteral("ControlsSanity"),
-                  QStringLiteral("Performance checks used for QuickControl's implementation"),
-                  QtCriticalMsg, true) },
-        { QStringLiteral("multiple-attached-objects"),
-          QQmlJSLogger::Option(
-                  Log_AttachedPropertyReuse, QStringLiteral("AttachedPropertyReuse"),
-                  QStringLiteral("Warn if attached types from parent components aren't reused"),
-                  QtCriticalMsg, true) },
-        { QStringLiteral("plugin"),
-          QQmlJSLogger::Option(Log_Plugin, QStringLiteral("LintPluginWarnings"),
-                               QStringLiteral("Warn if a qmllint plugin finds an issue"),
-                               QtWarningMsg) }
-    };
-
-    return optionsMap;
-}
+const QQmlSA::LoggerWarningId qmlRequired{ "required" };
+const QQmlSA::LoggerWarningId qmlAliasCycle{ "alias-cycle" };
+const QQmlSA::LoggerWarningId qmlUnresolvedAlias{ "unresolved-alias" };
+const QQmlSA::LoggerWarningId qmlImport{ "import" };
+const QQmlSA::LoggerWarningId qmlRecursionDepthErrors{ "recursion-depth-errors" };
+const QQmlSA::LoggerWarningId qmlWith{ "with" };
+const QQmlSA::LoggerWarningId qmlInheritanceCycle{ "inheritance-cycle" };
+const QQmlSA::LoggerWarningId qmlDeprecated{ "deprecated" };
+const QQmlSA::LoggerWarningId qmlSignalParameters{ "signal-handler-parameters" };
+const QQmlSA::LoggerWarningId qmlMissingType{ "missing-type" };
+const QQmlSA::LoggerWarningId qmlUnresolvedType{ "unresolved-type" };
+const QQmlSA::LoggerWarningId qmlRestrictedType{ "restricted-type" };
+const QQmlSA::LoggerWarningId qmlPrefixedImportType{ "prefixed-import-type" };
+const QQmlSA::LoggerWarningId qmlIncompatibleType{ "incompatible-type" };
+const QQmlSA::LoggerWarningId qmlMissingProperty{ "missing-property" };
+const QQmlSA::LoggerWarningId qmlNonListProperty{ "non-list-property" };
+const QQmlSA::LoggerWarningId qmlReadOnlyProperty{ "read-only-property" };
+const QQmlSA::LoggerWarningId qmlDuplicatePropertyBinding{ "duplicate-property-binding" };
+const QQmlSA::LoggerWarningId qmlDuplicatedName{ "duplicated-name" };
+const QQmlSA::LoggerWarningId qmlDeferredPropertyId{ "deferred-property-id" };
+const QQmlSA::LoggerWarningId qmlUnqualified{ "unqualified" };
+const QQmlSA::LoggerWarningId qmlUnusedImports{ "unused-imports" };
+const QQmlSA::LoggerWarningId qmlMultilineStrings{ "multiline-strings" };
+const QQmlSA::LoggerWarningId qmlSyntax{ "syntax" };
+const QQmlSA::LoggerWarningId qmlSyntaxIdQuotation{ "syntax.id-quotation" };
+const QQmlSA::LoggerWarningId qmlSyntaxDuplicateIds{ "syntax.duplicate-ids" };
+const QQmlSA::LoggerWarningId qmlCompiler{ "compiler" };
+const QQmlSA::LoggerWarningId qmlAttachedPropertyReuse{ "attached-property-reuse" };
+const QQmlSA::LoggerWarningId qmlPlugin{ "plugin" };
+const QQmlSA::LoggerWarningId qmlVarUsedBeforeDeclaration{ "var-used-before-declaration" };
+const QQmlSA::LoggerWarningId qmlInvalidLintDirective{ "invalid-lint-directive" };
+const QQmlSA::LoggerWarningId qmlUseProperFunction{ "use-proper-function" };
+const QQmlSA::LoggerWarningId qmlAccessSingleton{ "access-singleton-via-object" };
+const QQmlSA::LoggerWarningId qmlTopLevelComponent{ "top-level-component" };
+const QQmlSA::LoggerWarningId qmlUncreatableType{ "uncreatable-type" };
+const QQmlSA::LoggerWarningId qmlMissingEnumEntry{ "missing-enum-entry" };
 
 QQmlJSLogger::QQmlJSLogger()
 {
-    const auto &opt = options();
-    for (auto it = opt.cbegin(); it != opt.cend(); ++it) {
-        m_categoryLevels[it.value().m_category] = it.value().m_level;
-        m_categoryIgnored[it.value().m_category] = it.value().m_ignored;
-    }
+    static const QList<QQmlJS::LoggerCategory> cats = defaultCategories();
 
-    // These have to be set up manually since we don't expose it as an option
-    m_categoryLevels[Log_RecursionDepthError] = QtCriticalMsg;
-    m_categoryLevels[Log_Syntax] = QtWarningMsg; // TODO: because we usually report it as a warning!
-    m_categoryLevels[Log_SyntaxIdQuotation] = QtWarningMsg;
-    m_categoryLevels[Log_SyntaxDuplicateIds] = QtCriticalMsg;
+    for (const QQmlJS::LoggerCategory &category : cats)
+        registerCategory(category);
 
     // setup color output
     m_output.insertMapping(QtCriticalMsg, QColorOutput::RedForeground);
     m_output.insertMapping(QtWarningMsg, QColorOutput::PurpleForeground); // Yellow?
     m_output.insertMapping(QtInfoMsg, QColorOutput::BlueForeground);
     m_output.insertMapping(QtDebugMsg, QColorOutput::GreenForeground); // None?
+}
+
+const QList<QQmlJS::LoggerCategory> &QQmlJSLogger::defaultCategories()
+{
+    static const QList<QQmlJS::LoggerCategory> cats = {
+        QQmlJS::LoggerCategory{ qmlRequired.name().toString(), QStringLiteral("RequiredProperty"),
+                                QStringLiteral("Warn about required properties"), QtWarningMsg },
+        QQmlJS::LoggerCategory{ qmlAliasCycle.name().toString(),
+                                QStringLiteral("PropertyAliasCycles"),
+                                QStringLiteral("Warn about alias cycles"), QtWarningMsg },
+        QQmlJS::LoggerCategory{ qmlUnresolvedAlias.name().toString(),
+                                QStringLiteral("PropertyAliasCycles"),
+                                QStringLiteral("Warn about unresolved aliases"), QtWarningMsg },
+        QQmlJS::LoggerCategory{
+                qmlImport.name().toString(), QStringLiteral("ImportFailure"),
+                QStringLiteral("Warn about failing imports and deprecated qmltypes"),
+                QtWarningMsg },
+        QQmlJS::LoggerCategory{
+                qmlRecursionDepthErrors.name().toString(), QStringLiteral("ImportFailure"),
+                QStringLiteral("Warn about failing imports and deprecated qmltypes"), QtWarningMsg,
+                false, true },
+        QQmlJS::LoggerCategory{ qmlWith.name().toString(), QStringLiteral("WithStatement"),
+                                QStringLiteral("Warn about with statements as they can cause false "
+                                               "positives when checking for unqualified access"),
+                                QtWarningMsg },
+        QQmlJS::LoggerCategory{ qmlInheritanceCycle.name().toString(),
+                                QStringLiteral("InheritanceCycle"),
+                                QStringLiteral("Warn about inheritance cycles"), QtWarningMsg },
+        QQmlJS::LoggerCategory{ qmlDeprecated.name().toString(), QStringLiteral("Deprecated"),
+                                QStringLiteral("Warn about deprecated properties and types"),
+                                QtWarningMsg },
+        QQmlJS::LoggerCategory{
+                qmlSignalParameters.name().toString(), QStringLiteral("BadSignalHandlerParameters"),
+                QStringLiteral("Warn about bad signal handler parameters"), QtWarningMsg },
+        QQmlJS::LoggerCategory{ qmlMissingType.name().toString(), QStringLiteral("MissingType"),
+                                QStringLiteral("Warn about missing types"), QtWarningMsg },
+        QQmlJS::LoggerCategory{ qmlUnresolvedType.name().toString(),
+                                QStringLiteral("UnresolvedType"),
+                                QStringLiteral("Warn about unresolved types"), QtWarningMsg },
+        QQmlJS::LoggerCategory{ qmlRestrictedType.name().toString(),
+                                QStringLiteral("RestrictedType"),
+                                QStringLiteral("Warn about restricted types"), QtWarningMsg },
+        QQmlJS::LoggerCategory{ qmlPrefixedImportType.name().toString(),
+                                QStringLiteral("PrefixedImportType"),
+                                QStringLiteral("Warn about prefixed import types"), QtWarningMsg },
+        QQmlJS::LoggerCategory{ qmlIncompatibleType.name().toString(),
+                                QStringLiteral("IncompatibleType"),
+                                QStringLiteral("Warn about missing types"), QtWarningMsg },
+        QQmlJS::LoggerCategory{ qmlMissingProperty.name().toString(),
+                                QStringLiteral("MissingProperty"),
+                                QStringLiteral("Warn about missing properties"), QtWarningMsg },
+        QQmlJS::LoggerCategory{ qmlNonListProperty.name().toString(),
+                                QStringLiteral("NonListProperty"),
+                                QStringLiteral("Warn about non-list properties"), QtWarningMsg },
+        QQmlJS::LoggerCategory{
+                qmlReadOnlyProperty.name().toString(), QStringLiteral("ReadOnlyProperty"),
+                QStringLiteral("Warn about writing to read-only properties"), QtWarningMsg },
+        QQmlJS::LoggerCategory{ qmlDuplicatePropertyBinding.name().toString(),
+                                QStringLiteral("DuplicatePropertyBinding"),
+                                QStringLiteral("Warn about duplicate property bindings"),
+                                QtWarningMsg },
+        QQmlJS::LoggerCategory{
+                qmlDuplicatedName.name().toString(), QStringLiteral("DuplicatedName"),
+                QStringLiteral("Warn about duplicated property/signal names"), QtWarningMsg },
+        QQmlJS::LoggerCategory{
+                qmlDeferredPropertyId.name().toString(), QStringLiteral("DeferredPropertyId"),
+                QStringLiteral(
+                        "Warn about making deferred properties immediate by giving them an id."),
+                QtInfoMsg, true, true },
+        QQmlJS::LoggerCategory{
+                qmlUnqualified.name().toString(), QStringLiteral("UnqualifiedAccess"),
+                QStringLiteral("Warn about unqualified identifiers and how to fix them"),
+                QtWarningMsg },
+        QQmlJS::LoggerCategory{ qmlUnusedImports.name().toString(), QStringLiteral("UnusedImports"),
+                                QStringLiteral("Warn about unused imports"), QtInfoMsg },
+        QQmlJS::LoggerCategory{ qmlMultilineStrings.name().toString(),
+                                QStringLiteral("MultilineStrings"),
+                                QStringLiteral("Warn about multiline strings"), QtInfoMsg },
+        QQmlJS::LoggerCategory{ qmlSyntax.name().toString(), QString(),
+                                QStringLiteral("Syntax errors"), QtWarningMsg, false, true },
+        QQmlJS::LoggerCategory{ qmlSyntaxIdQuotation.name().toString(), QString(),
+                                QStringLiteral("ID quotation"), QtWarningMsg, false, true },
+        QQmlJS::LoggerCategory{ qmlSyntaxDuplicateIds.name().toString(), QString(),
+                                QStringLiteral("ID duplication"), QtCriticalMsg, false, true },
+        QQmlJS::LoggerCategory{ qmlCompiler.name().toString(), QStringLiteral("CompilerWarnings"),
+                                QStringLiteral("Warn about compiler issues"), QtWarningMsg, true },
+        QQmlJS::LoggerCategory{
+                qmlAttachedPropertyReuse.name().toString(), QStringLiteral("AttachedPropertyReuse"),
+                QStringLiteral("Warn if attached types from parent components "
+                               "aren't reused. This is handled by the QtQuick "
+                               "lint plugin. Use Quick.AttachedPropertyReuse instead."),
+                QtCriticalMsg, true },
+        QQmlJS::LoggerCategory{ qmlPlugin.name().toString(), QStringLiteral("LintPluginWarnings"),
+                                QStringLiteral("Warn if a qmllint plugin finds an issue"),
+                                QtWarningMsg, true },
+        QQmlJS::LoggerCategory{ qmlVarUsedBeforeDeclaration.name().toString(),
+                                QStringLiteral("VarUsedBeforeDeclaration"),
+                                QStringLiteral("Warn if a variable is used before declaration"),
+                                QtWarningMsg },
+        QQmlJS::LoggerCategory{
+                qmlInvalidLintDirective.name().toString(), QStringLiteral("InvalidLintDirective"),
+                QStringLiteral("Warn if an invalid qmllint comment is found"), QtWarningMsg },
+        QQmlJS::LoggerCategory{
+                qmlUseProperFunction.name().toString(), QStringLiteral("UseProperFunction"),
+                QStringLiteral("Warn if var is used for storing functions"), QtWarningMsg },
+        QQmlJS::LoggerCategory{
+                qmlAccessSingleton.name().toString(), QStringLiteral("AccessSingletonViaObject"),
+                QStringLiteral("Warn if a singleton is accessed via an object"), QtWarningMsg },
+        QQmlJS::LoggerCategory{
+                qmlTopLevelComponent.name().toString(), QStringLiteral("TopLevelComponent"),
+                QStringLiteral("Fail when a top level Component are encountered"), QtWarningMsg },
+        QQmlJS::LoggerCategory{
+                qmlUncreatableType.name().toString(), QStringLiteral("UncreatableType"),
+                QStringLiteral("Warn if uncreatable types are created"), QtWarningMsg }
+    };
+
+    return cats;
+}
+
+bool QQmlJSFixSuggestion::operator==(const QQmlJSFixSuggestion &other) const
+{
+    return m_location == other.m_location && m_fixDescription == other.m_fixDescription
+            && m_replacement == other.m_replacement && m_filename == other.m_filename
+            && m_hint == other.m_hint && m_autoApplicable == other.m_autoApplicable;
+}
+
+bool QQmlJSFixSuggestion::operator!=(const QQmlJSFixSuggestion &other) const
+{
+    return !(*this == other);
+}
+
+QList<QQmlJS::LoggerCategory> QQmlJSLogger::categories() const
+{
+    return m_categories.values();
+}
+
+void QQmlJSLogger::registerCategory(const QQmlJS::LoggerCategory &category)
+{
+    if (m_categories.contains(category.name())) {
+        qWarning() << "Trying to re-register existing logger category" << category.name();
+        return;
+    }
+
+    m_categoryLevels[category.name()] = category.level();
+    m_categoryIgnored[category.name()] = category.isIgnored();
+    m_categories.insert(category.name(), category);
 }
 
 static bool isMsgTypeLess(QtMsgType a, QtMsgType b)
@@ -126,17 +230,20 @@ static bool isMsgTypeLess(QtMsgType a, QtMsgType b)
     return level[a] < level[b];
 }
 
-void QQmlJSLogger::log(const QString &message, QQmlJSLoggerCategory category,
+void QQmlJSLogger::log(const QString &message, QQmlJS::LoggerWarningId id,
                        const QQmlJS::SourceLocation &srcLocation, QtMsgType type, bool showContext,
-                       bool showFileName, const std::optional<FixSuggestion> &suggestion,
+                       bool showFileName, const std::optional<QQmlJSFixSuggestion> &suggestion,
                        const QString overrideFileName)
 {
-    if (isCategoryIgnored(category))
+    Q_ASSERT(m_categoryLevels.contains(id.name().toString()));
+
+    if (isCategoryIgnored(id))
         return;
 
     // Note: assume \a type is the type we should prefer for logging
 
-    if (srcLocation.isValid() && m_ignoredWarnings[srcLocation.startLine].contains(category))
+    if (srcLocation.isValid()
+        && m_ignoredWarnings[srcLocation.startLine].contains(id.name().toString()))
         return;
 
     QString prefix;
@@ -157,10 +264,11 @@ void QQmlJSLogger::log(const QString &message, QQmlJSLoggerCategory category,
 
     // Note: since we clamped our \a type, the output message is not printed
     // exactly like it was requested, bear with us
-    m_output.writePrefixedMessage(prefix + message, type);
+    m_output.writePrefixedMessage(u"%1%2 [%3]"_s.arg(prefix, message, id.name().toString()), type);
 
     Message diagMsg;
     diagMsg.message = message;
+    diagMsg.id = id.name();
     diagMsg.loc = srcLocation;
     diagMsg.type = type;
     diagMsg.fixSuggestion = suggestion;
@@ -172,7 +280,7 @@ void QQmlJSLogger::log(const QString &message, QQmlJSLoggerCategory category,
     default: break;
     }
 
-    if (srcLocation.isValid() && !m_code.isEmpty() && showContext)
+    if (srcLocation.length > 0 && !m_code.isEmpty() && showContext)
         printContext(overrideFileName, srcLocation);
 
     if (suggestion.has_value())
@@ -180,9 +288,9 @@ void QQmlJSLogger::log(const QString &message, QQmlJSLoggerCategory category,
 }
 
 void QQmlJSLogger::processMessages(const QList<QQmlJS::DiagnosticMessage> &messages,
-                                   QQmlJSLoggerCategory category)
+                                   QQmlJS::LoggerWarningId id)
 {
-    if (messages.isEmpty() || isCategoryIgnored(category))
+    if (messages.isEmpty() || isCategoryIgnored(id))
         return;
 
     m_output.write(QStringLiteral("---\n"));
@@ -190,7 +298,7 @@ void QQmlJSLogger::processMessages(const QList<QQmlJS::DiagnosticMessage> &messa
     // TODO: we should instead respect message's category here (potentially, it
     // should hold a category instead of type)
     for (const QQmlJS::DiagnosticMessage &message : messages)
-        log(message.message, category, QQmlJS::SourceLocation(), false, false);
+        log(message.message, id, QQmlJS::SourceLocation(), false, false);
 
     m_output.write(QStringLiteral("---\n\n"));
 }
@@ -229,59 +337,65 @@ void QQmlJSLogger::printContext(const QString &overrideFileName,
                    + QString::fromLatin1("^").repeated(locationLength) + QLatin1Char('\n'));
 }
 
-void QQmlJSLogger::printFix(const FixSuggestion &fix)
+void QQmlJSLogger::printFix(const QQmlJSFixSuggestion &fixItem)
 {
     const QString currentFileAbsPath = QFileInfo(m_fileName).absolutePath();
     QString code = m_code;
     QString currentFile;
-    for (const auto &fixItem : fix.fixes) {
-        m_output.writePrefixedMessage(fixItem.message, QtInfoMsg);
+    m_output.writePrefixedMessage(fixItem.fixDescription(), QtInfoMsg);
 
-        if (!fixItem.cutLocation.isValid())
-            continue;
+    if (!fixItem.location().isValid())
+        return;
 
-        if (fixItem.fileName == currentFile) {
-            // Nothing to do in this case, we've already read the code
-        } else if (fixItem.fileName.isEmpty() || fixItem.fileName == currentFileAbsPath) {
-            code = m_code;
-        } else {
-            QFile file(fixItem.fileName);
-            const bool success = file.open(QFile::ReadOnly);
-            Q_ASSERT(success);
-            code = QString::fromUtf8(file.readAll());
-            currentFile = fixItem.fileName;
-        }
-
-        IssueLocationWithContext issueLocationWithContext { code, fixItem.cutLocation };
-
-        if (const QStringView beforeText = issueLocationWithContext.beforeText();
-            !beforeText.isEmpty()) {
-            m_output.write(beforeText);
-        }
-
-        // The replacement string can be empty if we're only pointing something out to the user
-        QStringView replacementString = fixItem.replacementString.isEmpty()
-                ? issueLocationWithContext.issueText()
-                : fixItem.replacementString;
-
-        // But if there's nothing to change it has to be a hint
-        if (fixItem.replacementString.isEmpty())
-            Q_ASSERT(fixItem.isHint);
-
-        m_output.write(replacementString, QtDebugMsg);
-        m_output.write(issueLocationWithContext.afterText().toString() + u'\n');
-
-        int tabCount = issueLocationWithContext.beforeText().count(u'\t');
-
-        // Do not draw location indicator for multiline replacement strings
-        if (replacementString.contains(u'\n'))
-            continue;
-
-        m_output.write(u" "_s.repeated(
-                               issueLocationWithContext.beforeText().size() - tabCount)
-                       + u"\t"_s.repeated(tabCount)
-                       + u"^"_s.repeated(fixItem.replacementString.size()) + u'\n');
+    const QString filename = fixItem.filename();
+    if (filename == currentFile) {
+        // Nothing to do in this case, we've already read the code
+    } else if (filename.isEmpty() || filename == currentFileAbsPath) {
+        code = m_code;
+    } else {
+        QFile file(filename);
+        const bool success = file.open(QFile::ReadOnly);
+        Q_ASSERT(success);
+        code = QString::fromUtf8(file.readAll());
+        currentFile = filename;
     }
+
+    IssueLocationWithContext issueLocationWithContext { code, fixItem.location() };
+
+    if (const QStringView beforeText = issueLocationWithContext.beforeText();
+        !beforeText.isEmpty()) {
+        m_output.write(beforeText);
+    }
+
+    // The replacement string can be empty if we're only pointing something out to the user
+    const QString replacement = fixItem.replacement();
+    QStringView replacementString = replacement.isEmpty()
+            ? issueLocationWithContext.issueText()
+            : replacement;
+
+    // But if there's nothing to change it cannot be auto-applied
+    Q_ASSERT(!replacement.isEmpty() || !fixItem.isAutoApplicable());
+
+    m_output.write(replacementString, QtDebugMsg);
+    m_output.write(issueLocationWithContext.afterText().toString() + u'\n');
+
+    int tabCount = issueLocationWithContext.beforeText().count(u'\t');
+
+    // Do not draw location indicator for multiline replacement strings
+    if (replacementString.contains(u'\n'))
+        return;
+
+    m_output.write(u" "_s.repeated(
+                           issueLocationWithContext.beforeText().size() - tabCount)
+                   + u"\t"_s.repeated(tabCount)
+                   + u"^"_s.repeated(replacement.size()) + u'\n');
+}
+
+QQmlJSFixSuggestion::QQmlJSFixSuggestion(const QString &fixDescription,
+                                         const QQmlJS::SourceLocation &location,
+                                         const QString &replacement)
+    : m_location{ location }, m_fixDescription{ fixDescription }, m_replacement{ replacement }
+{
 }
 
 QT_END_NAMESPACE

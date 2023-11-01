@@ -24,8 +24,8 @@ class Q_QUICK_PRIVATE_EXPORT QQuickWindowQmlImplPrivate : public QQuickWindowPri
 public:
     QQuickWindowQmlImplPrivate();
 
-    bool complete = false;
     bool visible = false;
+    bool visibleExplicitlySet = false;
     QQuickWindow::Visibility visibility = QQuickWindow::AutomaticVisibility;
     QV4::PersistentValue rootItemMarker;
 };

@@ -63,8 +63,9 @@ struct ResolvedTypeReferenceMap: public QHash<int, ResolvedTypeReference*>
     bool addToHash(QCryptographicHash *hash, QHash<quintptr, QByteArray> *checksums) const;
 };
 
-class Q_QML_PRIVATE_EXPORT ExecutableCompilationUnit final: public CompiledData::CompilationUnit,
-                                                            public QQmlRefCount
+class Q_QML_PRIVATE_EXPORT ExecutableCompilationUnit final
+    : public CompiledData::CompilationUnit,
+      public QQmlRefCounted<ExecutableCompilationUnit>
 {
     Q_DISABLE_COPY_MOVE(ExecutableCompilationUnit)
 public:
@@ -87,7 +88,6 @@ public:
 
     QIntrusiveListNode nextCompilationUnit;
     ExecutionEngine *engine = nullptr;
-    QQmlEnginePrivate *qmlEngine = nullptr; // only used in QML environment for composite types, not in plain QJSEngine case.
 
     // url() and fileName() shall be used to load the actual QML/JS code or to show errors or
     // warnings about that code. They include any potential URL interceptions and thus represent the
@@ -127,12 +127,12 @@ public:
     QHash<int, IdentifierHash> namedObjectsPerComponentCache;
     inline IdentifierHash namedObjectsPerComponent(int componentObjectIndex);
 
-    void finalizeCompositeType(QQmlEnginePrivate *qmlEngine, CompositeMetaTypeIds typeIdsForComponent);
+    void finalizeCompositeType(CompositeMetaTypeIds typeIdsForComponent);
 
     int m_totalBindingsCount = 0; // Number of bindings used in this type
     int m_totalParserStatusCount = 0; // Number of instantiated types that are QQmlParserStatus subclasses
     int m_totalObjectCount = 0; // Number of objects explicitly instantiated
-    int icRoot = -1;
+    std::unique_ptr<QString> icRootName;
 
     int totalBindingsCount() const;
     int totalParserStatusCount() const;
@@ -144,19 +144,45 @@ public:
 
     bool verifyChecksum(const CompiledData::DependentTypesHasher &dependencyHasher) const;
 
-    CompositeMetaTypeIds typeIdsForComponent(int objectid = 0) const;
+    CompositeMetaTypeIds typeIdsForComponent(const QString &inlineComponentName = QString()) const;
 
     CompositeMetaTypeIds typeIds;
     bool isRegistered = false;
 
-    QHash<int, InlineComponentData> inlineComponentData;
+    QHash<QString, InlineComponentData> inlineComponentData;
+
+    int inlineComponentId(const QString &inlineComponentName) const
+    {
+        for (int i = 0; i < objectCount(); ++i) {
+            auto *object = objectAt(i);
+            for (auto it = object->inlineComponentsBegin(), end = object->inlineComponentsEnd();
+                 it != end; ++it) {
+                if (stringAt(it->nameIndex) == inlineComponentName)
+                    return it->objectIndex;
+            }
+        }
+        return -1;
+    }
 
     std::unique_ptr<CompilationUnitMapper> backingFile;
 
     // --- interface for QQmlPropertyCacheCreator
-    using CompiledObject = CompiledData::Object;
-    using CompiledFunction = CompiledData::Function;
+    using CompiledObject = const CompiledData::Object;
+    using CompiledFunction = const CompiledData::Function;
+    using CompiledBinding = const CompiledData::Binding;
     enum class ListPropertyAssignBehavior { Append, Replace, ReplaceIfNotDefault };
+
+    // Empty dummy. We don't need to do this when loading from cache.
+    class IdToObjectMap
+    {
+    public:
+        void insert(int, int) {}
+        void clear() {}
+
+        // We have already checked uniqueness of IDs when creating the CU
+        bool contains(int) { return false; }
+    };
+
     ListPropertyAssignBehavior listPropertyAssignBehavior() const
     {
         if (data->flags & CompiledData::Unit::ListPropertyAssignReplace)
@@ -164,6 +190,26 @@ public:
         if (data->flags & CompiledData::Unit::ListPropertyAssignReplaceIfNotDefault)
             return ListPropertyAssignBehavior::ReplaceIfNotDefault;
         return ListPropertyAssignBehavior::Append;
+    }
+
+    bool enforcesFunctionSignature() const
+    {
+        return data->flags & CompiledData::Unit::FunctionSignaturesEnforced;
+    }
+
+    bool nativeMethodsAcceptThisObjects() const
+    {
+        return data->flags & CompiledData::Unit::NativeMethodsAcceptThisObject;
+    }
+
+    bool valueTypesAreCopied() const
+    {
+        return data->flags & CompiledData::Unit::ValueTypesCopied;
+    }
+
+    bool valueTypesAreAddressable() const
+    {
+        return data->flags & CompiledData::Unit::ValueTypesAddressable;
     }
 
     int objectCount() const { return qmlData->nObjects; }
@@ -251,6 +297,14 @@ public:
     bool saveToDisk(const QUrl &unitUrl, QString *errorString);
 
     QString bindingValueAsString(const CompiledData::Binding *binding) const;
+
+    struct TranslationDataIndex
+    {
+        uint index;
+        bool byId;
+    };
+
+    QString translateFrom(TranslationDataIndex index) const;
 
     static bool verifyHeader(const CompiledData::Unit *unit, QDateTime expectedSourceTimeStamp,
                              QString *errorString);

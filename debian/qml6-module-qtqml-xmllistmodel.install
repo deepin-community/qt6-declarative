@@ -1,3 +1,4 @@
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/qml/QtQml/XmlListModel/libqmlxmllistmodelplugin.so
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/qml/QtQml/XmlListModel/plugins.qmltypes
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/qml/QtQml/XmlListModel/qmldir
+usr/lib/${DEB_HOST_MULTIARCH}/libQt6QmlXmlListModel.so.*

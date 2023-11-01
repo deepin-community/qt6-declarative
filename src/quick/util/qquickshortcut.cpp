@@ -18,8 +18,9 @@
     \ingroup qtquick-input
     \brief Provides keyboard shortcuts.
 
-    The Shortcut type provides a way of handling keyboard shortcuts. The shortcut can
-    be set to one of the \l{QKeySequence::StandardKey}{standard keyboard shortcuts},
+    The Shortcut type lets you handle keyboard shortcuts. The shortcut can
+    be set to one of the
+    \l{QKeySequence::StandardKey}{standard keyboard shortcuts},
     or it can be described with a string containing a sequence of up to four key
     presses that are needed to \l{Shortcut::activated}{activate} the shortcut.
 
@@ -30,7 +31,7 @@
         property int currentIndex
 
         Shortcut {
-            sequence: StandardKey.NextChild
+            sequences: [StandardKey.NextChild]
             onActivated: view.currentIndex++
         }
     }
@@ -146,6 +147,10 @@ QQuickShortcut::~QQuickShortcut()
         onActivated: edit.wrapMode = TextEdit.Wrap
     }
     \endqml
+
+    \note Given that standard keys can resolve to one shortcut on some
+    platforms, but multiple shortcuts on other platforms, we recommend always
+    using \l{Shortcut::}{sequences} for standard keys.
 
     \sa sequences
 */
@@ -319,10 +324,11 @@ void QQuickShortcut::setAutoRepeat(bool repeat)
     This property holds the \l{Qt::ShortcutContext}{shortcut context}.
 
     Supported values are:
-    \list
-    \li \c Qt.WindowShortcut (default) - The shortcut is active when its parent item is in an active top-level window.
-    \li \c Qt.ApplicationShortcut - The shortcut is active when one of the application's windows are active.
-    \endlist
+
+    \value Qt.WindowShortcut
+        (default) The shortcut is active when its parent item is in an active top-level window.
+    \value Qt.ApplicationShortcut
+        The shortcut is active when one of the application's windows are active.
 
     \qml
     Shortcut {

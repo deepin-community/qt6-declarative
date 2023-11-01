@@ -7,6 +7,7 @@
 #include <QtQml/qqmlcomponent.h>
 #include <QtQml/qjsvalue.h>
 #include <QtQuick/private/qquicktext_p.h>
+#include <QtQuick/private/qquickflickable_p.h>
 #include <QtQuick/private/qquickmousearea_p.h>
 #include <QtQuickTest/QtQuickTest>
 #include <private/qquicktext_p_p.h>
@@ -53,6 +54,7 @@ private slots:
     void implicitElide_data();
     void implicitElide();
     void textFormat();
+    void clipRectOutsideViewportDynamicallyChanged();
 
     void baseUrl();
     void embeddedImages_data();
@@ -88,6 +90,7 @@ private slots:
     void implicitSize_data();
     void implicitSize();
     void implicitSizeChangeRewrap();
+    void implicitSizeMaxLineCount();
     void dependentImplicitSizes();
     void contentSize();
     void implicitSizeBinding_data();
@@ -99,6 +102,7 @@ private slots:
     void clipRect();
     void largeTextObservesViewport_data();
     void largeTextObservesViewport();
+    void largeTextInDelayedLoader();
     void lineLaidOut();
     void lineLaidOutRelayout();
     void lineLaidOutHAlign();
@@ -824,6 +828,28 @@ void tst_qquicktext::textFormat()
         QVERIFY(textPrivate->elideLayout);
         QVERIFY(textPrivate->layout.formats().isEmpty());
     }
+}
+
+void tst_qquicktext::clipRectOutsideViewportDynamicallyChanged()
+{
+    // QTBUG-106205
+    QScopedPointer<QQuickView> view(createView(testFile("qtbug_106205.qml")));
+    view->setWidth(100);
+    view->setHeight(200);
+    view->showNormal();
+    QQuickItem *root = view->rootObject();
+    QVERIFY(root);
+    QVERIFY(QTest::qWaitForWindowExposed(view.get()));
+
+    auto clipRectMatches = [&]() -> bool {
+        auto *textOutsideInitialViewport = root->findChild<QQuickText *>("textOutsideViewport");
+        if (!textOutsideInitialViewport)
+            return false;
+        auto *clipNode = QQuickItemPrivate::get(textOutsideInitialViewport)->clipNode();
+
+        return textOutsideInitialViewport->clipRect() == clipNode->clipRect();
+    };
+    QTRY_VERIFY(clipRectMatches());
 }
 
 //the alignment tests may be trivial o.oa
@@ -2169,14 +2195,6 @@ void tst_qquicktext::embeddedImages()
     QFETCH(QUrl, qmlfile);
     QFETCH(QString, error);
 
-#if defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)
-    if (qstrcmp(QTest::currentDataTag(), "remote") == 0
-        || qstrcmp(QTest::currentDataTag(), "remote-error") == 0
-        || qstrcmp(QTest::currentDataTag(), "remote-relative") == 0) {
-        QSKIP("Remote tests cause occasional hangs in the CI system -- QTBUG-45655");
-    }
-#endif
-
     TestHTTPServer server;
     QVERIFY2(server.listen(), qPrintable(server.errorString()));
     server.serveDirectory(testFile("http"));
@@ -2375,6 +2393,20 @@ void tst_qquicktext::implicitSize()
     QCOMPARE(textObject->height(), textObject->implicitHeight());
 
     delete textObject;
+}
+
+void tst_qquicktext::implicitSizeMaxLineCount()
+{
+    QScopedPointer<QQuickText> textObject(new QQuickText);
+
+    textObject->setText("1st line");
+    const auto referenceWidth = textObject->implicitWidth();
+
+    textObject->setText(textObject->text() + "\n2nd long long long long long line");
+    QCOMPARE_GT(textObject->implicitWidth(), referenceWidth);
+
+    textObject->setMaximumLineCount(1);
+    QCOMPARE_EQ(textObject->implicitWidth(), referenceWidth);
 }
 
 void tst_qquicktext::dependentImplicitSizes()
@@ -3022,6 +3054,29 @@ void tst_qquicktext::largeTextObservesViewport()
     QVERIFY(qAbs(renderedLineRange.second - (expectedLastLine + 1)) < (linesAboveViewport > 80 ? 4 : 2));
 }
 
+void tst_qquicktext::largeTextInDelayedLoader() // QTBUG-115687
+{
+    QQuickView view;
+    QVERIFY(QQuickTest::showView(view, testFileUrl("loaderActiveOnVisible.qml")));
+    auto flick = view.rootObject()->findChild<QQuickFlickable*>();
+    QVERIFY(flick);
+    auto textItem = view.rootObject()->findChild<QQuickText*>();
+    QVERIFY(textItem);
+    QQuickTextPrivate *textPriv = QQuickTextPrivate::get(textItem);
+    QQuickTextNode *node = static_cast<QQuickTextNode *>(textPriv->paintNode);
+    const auto initialLineRange = node->renderedLineRange();
+    qCDebug(lcTests) << "first line rendered" << initialLineRange.first
+                     << "; first line past viewport" << initialLineRange.second;
+    flick->setContentY(500);
+    QTRY_COMPARE_NE(node->renderedLineRange(), initialLineRange);
+    const auto scrolledLineRange = node->renderedLineRange();
+    qCDebug(lcTests) << "after scroll: first line rendered" << scrolledLineRange.first
+                     << "; first line past viewport" << scrolledLineRange.second;
+    // We scrolled a good bit more than one window-height, so we must render a
+    // non-overlapping range of text some distance past the initial blocks.
+    QCOMPARE_GT(scrolledLineRange.first, initialLineRange.second);
+}
+
 void tst_qquicktext::lineLaidOut()
 {
     QScopedPointer<QQuickView> window(createView(testFile("lineLayout.qml")));
@@ -3606,11 +3661,11 @@ void tst_qquicktext::fontSizeMode()
     // and text is NOT wrapped
     myText->setVAlign(QQuickText::AlignBottom);
     myText->setFontSizeMode(QQuickText::Fit);
-    QVERIFY(QQuickTest::qWaitForItemPolished(myText));
+    QVERIFY(QQuickTest::qWaitForPolish(myText));
 
     int baselineOffset = myText->baselineOffset();
     myText->setHeight(myText->height() * 2);
-    QVERIFY(QQuickTest::qWaitForItemPolished(myText));
+    QVERIFY(QQuickTest::qWaitForPolish(myText));
     QVERIFY(myText->baselineOffset() > baselineOffset);
 
     // Growing height needs to update the baselineOffset when AlignBottom is used
@@ -3619,11 +3674,11 @@ void tst_qquicktext::fontSizeMode()
     myText->setFontSizeMode(QQuickText::Fit);
     myText->setWrapMode(QQuickText::NoWrap);
     myText->resetMaximumLineCount();
-    QVERIFY(QQuickTest::qWaitForItemPolished(myText));
+    QVERIFY(QQuickTest::qWaitForPolish(myText));
 
     baselineOffset = myText->baselineOffset();
     myText->setHeight(myText->height() * 2);
-    QVERIFY(QQuickTest::qWaitForItemPolished(myText));
+    QVERIFY(QQuickTest::qWaitForPolish(myText));
     QVERIFY(myText->baselineOffset() > baselineOffset);
 
     // Check baselineOffset for the HorizontalFit case

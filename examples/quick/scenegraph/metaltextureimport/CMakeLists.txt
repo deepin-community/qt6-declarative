@@ -1,3 +1,6 @@
+# Copyright (C) 2022 The Qt Company Ltd.
+# SPDX-License-Identifier: BSD-3-Clause
+
 cmake_minimum_required(VERSION 3.16)
 project(metaltextureimport LANGUAGES CXX)
 
@@ -26,10 +29,10 @@ set_target_properties(metaltextureimport PROPERTIES
 
 target_link_libraries(metaltextureimport PUBLIC
     "-framework Metal"
-    Qt::Core
-    Qt::Gui
-    Qt::Qml
-    Qt::Quick
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Qml
+    Qt6::Quick
 )
 
 if(MACOS)
@@ -40,7 +43,6 @@ endif()
 
 qt_add_qml_module(metaltextureimport
     URI MetalTextureImport
-    VERSION 1.0
     QML_FILES
         main.qml
     RESOURCES

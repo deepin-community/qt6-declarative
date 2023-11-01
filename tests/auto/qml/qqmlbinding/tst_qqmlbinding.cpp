@@ -37,6 +37,9 @@ private slots:
     void bindNaNToInt();
     void intOverflow();
     void generalizedGroupedProperties();
+    void localSignalHandler();
+    void whenEvaluatedEarlyEnough();
+    void propertiesAttachedToBindingItself();
 
 private:
     QQmlEngine engine;
@@ -45,6 +48,9 @@ private:
 tst_qqmlbinding::tst_qqmlbinding()
     : QQmlDataTest(QT_QMLTEST_DATADIR)
 {
+#ifdef QML_DISABLE_INTERNAL_DEFERRED_PROPERTIES
+    qputenv("QML_DISABLE_INTERNAL_DEFERRED_PROPERTIES", "1");
+#endif
 }
 
 void tst_qqmlbinding::binding()
@@ -147,8 +153,11 @@ void tst_qqmlbinding::restoreBindingValue()
 {
     QQmlEngine engine;
     QQmlComponent c(&engine, testFileUrl("restoreBinding2.qml"));
-    QScopedPointer<QQuickRectangle> rect(qobject_cast<QQuickRectangle*>(c.create()));
-    QVERIFY(!rect.isNull());
+    QVERIFY2(c.isReady(), qPrintable(c.errorString()));
+    QScopedPointer<QObject> o(c.create());
+    QVERIFY(!o.isNull());
+    QQuickRectangle *rect = qobject_cast<QQuickRectangle*>(o.data());
+    QVERIFY(rect);
 
     auto myItem = qobject_cast<QQuickRectangle*>(rect->findChild<QQuickRectangle*>("myItem"));
     QVERIFY(myItem != nullptr);
@@ -171,8 +180,11 @@ void tst_qqmlbinding::restoreBindingVarValue()
 {
     QQmlEngine engine;
     QQmlComponent c(&engine, testFileUrl("restoreBinding3.qml"));
-    QScopedPointer<QQuickRectangle> rect(qobject_cast<QQuickRectangle*>(c.create()));
-    QVERIFY(!rect.isNull());
+    QVERIFY2(c.isReady(), qPrintable(c.errorString()));
+    QScopedPointer<QObject> o(c.create());
+    QVERIFY(!o.isNull());
+    QQuickRectangle *rect = qobject_cast<QQuickRectangle*>(o.data());
+    QVERIFY(rect);
 
     auto myItem = qobject_cast<QQuickRectangle*>(rect->findChild<QQuickRectangle*>("myItem"));
     QVERIFY(myItem != nullptr);
@@ -195,8 +207,11 @@ void tst_qqmlbinding::restoreBindingJSValue()
 {
     QQmlEngine engine;
     QQmlComponent c(&engine, testFileUrl("restoreBinding4.qml"));
-    QScopedPointer<QQuickRectangle> rect(qobject_cast<QQuickRectangle*>(c.create()));
-    QVERIFY(!rect.isNull());
+    QVERIFY2(c.isReady(), qPrintable(c.errorString()));
+    QScopedPointer<QObject> o(c.create());
+    QVERIFY(!o.isNull());
+    QQuickRectangle *rect = qobject_cast<QQuickRectangle*>(o.data());
+    QVERIFY(rect);
 
     auto myItem = qobject_cast<QQuickRectangle*>(rect->findChild<QQuickRectangle*>("myItem"));
     QVERIFY(myItem != nullptr);
@@ -445,9 +460,15 @@ void tst_qqmlbinding::bindingOverwriting()
     QQmlComponent c(&engine, testFileUrl("bindingOverwriting.qml"));
     QScopedPointer<QQuickItem> item {qobject_cast<QQuickItem*>(c.create())};
     QVERIFY(item);
+    QCOMPARE(messageHandler.messages().size(), 2);
+
+    QQmlComponent c2(&engine, testFileUrl("bindingOverwriting2.qml"));
+    QScopedPointer<QObject> o(c2.create());
+    QVERIFY(o);
+    QTRY_COMPARE(o->property("i").toInt(), 123);
+    QCOMPARE(messageHandler.messages().size(), 3);
 
     QLoggingCategory::setFilterRules(QString());
-    QCOMPARE(messageHandler.messages().size(), 2);
 }
 
 void tst_qqmlbinding::bindToQmlComponent()
@@ -570,6 +591,42 @@ void tst_qqmlbinding::generalizedGroupedProperties()
     QCOMPARE(root->objectName(), QStringLiteral("foo"));
     // root->property("i").toInt() is still unspecified.
     QCOMPARE(rootAttached->objectName(), QString());
+}
+
+void tst_qqmlbinding::localSignalHandler()
+{
+    QQmlEngine e;
+    QQmlComponent c(&e, testFileUrl("bindingWithHandler.qml"));
+    QVERIFY2(c.isReady(), qPrintable(c.errorString()));
+    QScopedPointer<QObject> o(c.create());
+    QVERIFY(!o.isNull());
+    o->setProperty("input", QStringLiteral("abc"));
+    QCOMPARE(o->property("output").toString(), QStringLiteral("abc"));
+}
+
+void tst_qqmlbinding::whenEvaluatedEarlyEnough()
+{
+    QQmlEngine e;
+    QQmlComponent c(&e, testFileUrl("whenEvaluatedEarlyEnough.qml"));
+    QTest::failOnWarning(QRegularExpression(".*"));
+    std::unique_ptr<QObject> root { c.create() };
+    root->setProperty("toggle", false); // should not cause warnings
+    // until "when" is actually true
+    QTest::ignoreMessage(QtMsgType::QtWarningMsg,
+                         QRegularExpression(".*QML Binding: Property 'i' does not exist on Item.*"));
+    root->setProperty("forceEnable", true);
+}
+
+void tst_qqmlbinding::propertiesAttachedToBindingItself()
+{
+    QQmlEngine e;
+    QQmlComponent c(&e, testFileUrl("propertiesAttachedToBindingItself.qml"));
+    QTest::failOnWarning(QRegularExpression(".*"));
+    std::unique_ptr<QObject> root { c.create() };
+    QVERIFY2(root, qPrintable(c.errorString()));
+    // 0 => everything broken; 1 => normal attached properties broken;
+    // 2 => Component.onCompleted broken, 3 => everything works
+    QTRY_COMPARE(root->property("check").toInt(), 3);
 }
 
 QTEST_MAIN(tst_qqmlbinding)

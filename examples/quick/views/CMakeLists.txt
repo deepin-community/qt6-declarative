@@ -1,3 +1,6 @@
+# Copyright (C) 2022 The Qt Company Ltd.
+# SPDX-License-Identifier: BSD-3-Clause
+
 cmake_minimum_required(VERSION 3.16)
 project(views LANGUAGES CXX)
 
@@ -11,29 +14,27 @@ set(INSTALL_EXAMPLEDIR "${INSTALL_EXAMPLESDIR}/quick/views")
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick)
 
+qt_standard_project_setup(REQUIRES 6.5)
+
 add_subdirectory("../shared" "shared")
 
 qt_add_executable(viewsexample
+    WIN32
+    MACOSX_BUNDLE
     main.cpp
 )
 
-set_target_properties(viewsexample PROPERTIES
-    WIN32_EXECUTABLE TRUE
-    MACOSX_BUNDLE TRUE
-)
-
 target_link_libraries(viewsexample PRIVATE
-    Qt::Core
-    Qt::Gui
-    Qt::Qml
-    Qt::Quick
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Qml
+    Qt6::Quick
 )
 
 add_dependencies(viewsexample views_shared)
 
 qt_add_qml_module(viewsexample
     URI views
-    VERSION 1.0
     QML_FILES
         "delegatemodel/dragselection.qml"
         "delegatemodel/slideshow.qml"

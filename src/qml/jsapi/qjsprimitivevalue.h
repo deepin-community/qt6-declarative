@@ -16,6 +16,8 @@
 
 QT_BEGIN_NAMESPACE
 
+namespace QV4 { struct ExecutionEngine; }
+
 struct QJSPrimitiveUndefined {};
 struct QJSPrimitiveNull {};
 
@@ -91,7 +93,11 @@ class QJSPrimitiveValue
         static constexpr double op(double lhs, double rhs) { return lhs * rhs; }
         static bool opOverflow(int lhs, int rhs, int *result)
         {
-            return qMulOverflow(lhs, rhs, result);
+            // compare mul_int32 in qv4math_p.h
+            auto hadOverflow = qMulOverflow(lhs, rhs, result);
+            if (((lhs < 0) ^ (rhs < 0)) && (*result == 0))
+                return true; // result must be negative 0, does not fit into int
+            return hadOverflow;
         }
 
         using StringNaNOperators::op;
@@ -118,6 +124,9 @@ public:
     };
 
     constexpr Type type() const { return Type(d.type()); }
+
+    // Prevent casting from Type to int
+    QJSPrimitiveValue(Type) = delete;
 
     Q_IMPLICIT constexpr QJSPrimitiveValue() noexcept = default;
     Q_IMPLICIT constexpr QJSPrimitiveValue(QJSPrimitiveUndefined undefined) noexcept : d(undefined) {}
@@ -154,9 +163,59 @@ public:
         }
     }
 
+    explicit QJSPrimitiveValue(QMetaType type) noexcept
+    {
+        switch (type.id()) {
+        case QMetaType::UnknownType:
+            d = QJSPrimitiveUndefined();
+            break;
+        case QMetaType::Nullptr:
+            d = QJSPrimitiveNull();
+            break;
+        case QMetaType::Bool:
+            d = false;
+            break;
+        case QMetaType::Int:
+            d = 0;
+            break;
+        case QMetaType::Double:
+            d = 0.0;
+            break;
+        case QMetaType::QString:
+            d = QString();
+            break;
+        default:
+            // Unsupported. Remains undefined.
+            break;
+        }
+    }
+
     explicit QJSPrimitiveValue(const QVariant &variant) noexcept
         : QJSPrimitiveValue(variant.metaType(), variant.data())
     {
+    }
+
+    constexpr QMetaType metaType() const  { return d.metaType(); }
+    constexpr void *data() { return d.data(); }
+    constexpr const void *data() const { return d.data(); }
+    constexpr const void *constData() const { return d.data(); }
+
+    template<Type type>
+    QJSPrimitiveValue to() const {
+        if constexpr (type == Undefined)
+            return QJSPrimitiveUndefined();
+        if constexpr (type == Null)
+            return QJSPrimitiveNull();
+        if constexpr (type == Boolean)
+            return toBoolean();
+        if constexpr (type == Integer)
+            return toInteger();
+        if constexpr (type == Double)
+            return toDouble();
+        if constexpr (type == String)
+            return toString();
+
+        Q_UNREACHABLE_RETURN(QJSPrimitiveUndefined());
     }
 
     constexpr bool toBoolean() const
@@ -227,8 +286,7 @@ public:
         case String: return asString();
         }
 
-        Q_UNREACHABLE();
-        return QString();
+        Q_UNREACHABLE_RETURN(QString());
     }
 
     QVariant toVariant() const
@@ -242,8 +300,7 @@ public:
         case String:    return QVariant(asString());
         }
 
-        Q_UNREACHABLE();
-        return QVariant();
+        Q_UNREACHABLE_RETURN(QVariant());
     }
 
     friend inline QJSPrimitiveValue operator+(const QJSPrimitiveValue &lhs,
@@ -521,6 +578,7 @@ public:
 private:
     friend class QJSManagedValue;
     friend class QJSValue;
+    friend struct QV4::ExecutionEngine;
 
     constexpr bool asBoolean() const { return d.getBool(); }
     constexpr int asInteger() const { return d.getInt(); }
@@ -629,8 +687,7 @@ private:
             break;
         }
 
-        Q_UNREACHABLE();
-        return QJSPrimitiveUndefined();
+        Q_UNREACHABLE_RETURN(QJSPrimitiveUndefined());
     }
 
     constexpr bool isNanOrUndefined() const
@@ -742,8 +799,82 @@ private:
             else if constexpr (std::is_same_v<T, QString>)
                 return getString();
 
+            // GCC 8.x does not treat __builtin_unreachable() as constexpr
+        #if !defined(Q_CC_GNU_ONLY) || (Q_CC_GNU >= 900)
+            // NOLINTNEXTLINE(qt-use-unreachable-return): Triggers on Clang, breaking GCC 8
             Q_UNREACHABLE();
+        #endif
             return T();
+        }
+
+        constexpr QMetaType metaType() const noexcept {
+            switch (m_type) {
+            case Undefined:
+                return QMetaType();
+            case Null:
+                return QMetaType::fromType<std::nullptr_t>();
+            case Boolean:
+                return QMetaType::fromType<bool>();
+            case Integer:
+                return QMetaType::fromType<int>();
+            case Double:
+                return QMetaType::fromType<double>();
+            case String:
+                return QMetaType::fromType<QString>();
+            }
+
+            // GCC 8.x does not treat __builtin_unreachable() as constexpr
+        #if !defined(Q_CC_GNU_ONLY) || (Q_CC_GNU >= 900)
+            // NOLINTNEXTLINE(qt-use-unreachable-return): Triggers on Clang, breaking GCC 8
+            Q_UNREACHABLE();
+        #endif
+            return QMetaType();
+        }
+
+        constexpr void *data() noexcept {
+            switch (m_type) {
+            case Undefined:
+            case Null:
+                return nullptr;
+            case Boolean:
+                return &m_bool;
+            case Integer:
+                return &m_int;
+            case Double:
+                return &m_double;
+            case String:
+                return &m_string;
+            }
+
+            // GCC 8.x does not treat __builtin_unreachable() as constexpr
+        #if !defined(Q_CC_GNU_ONLY) || (Q_CC_GNU >= 900)
+            // NOLINTNEXTLINE(qt-use-unreachable-return): Triggers on Clang, breaking GCC 8
+            Q_UNREACHABLE();
+        #endif
+            return nullptr;
+        }
+
+        constexpr const void *data() const noexcept {
+            switch (m_type) {
+            case Undefined:
+            case Null:
+                return nullptr;
+            case Boolean:
+                return &m_bool;
+            case Integer:
+                return &m_int;
+            case Double:
+                return &m_double;
+            case String:
+                return &m_string;
+            }
+
+            // GCC 8.x does not treat __builtin_unreachable() as constexpr
+        #if !defined(Q_CC_GNU_ONLY) || (Q_CC_GNU >= 900)
+            // NOLINTNEXTLINE(qt-use-unreachable-return): Triggers on Clang, breaking GCC 8
+            Q_UNREACHABLE();
+        #endif
+            return nullptr;
         }
 
     private:

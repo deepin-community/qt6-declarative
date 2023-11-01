@@ -3,13 +3,10 @@
 
 #include "qv4script_p.h"
 #include <private/qv4mm_p.h>
-#include "qv4functionobject_p.h"
 #include "qv4function_p.h"
 #include "qv4context_p.h"
 #include "qv4debugging_p.h"
-#include "qv4profiling_p.h"
 #include "qv4scopedvalue_p.h"
-#include "qv4jscall_p.h"
 
 #include <private/qqmljsengine_p.h>
 #include <private/qqmljslexer_p.h>
@@ -48,14 +45,12 @@ void Script::parse()
     if (parsed)
         return;
 
-    using namespace QV4::Compiler;
-
     parsed = true;
 
     ExecutionEngine *v4 = context->engine();
     Scope valueScope(v4);
 
-    Module module(v4->debugger() != nullptr);
+    QV4::Compiler::Module module(v4->debugger() != nullptr);
 
     if (sourceCode.startsWith(QLatin1String("function("))) {
         static const int snippetLength = 70;
@@ -191,9 +186,16 @@ Script *Script::createFromFileOrCache(ExecutionEngine *engine, QmlContext *qmlCo
         error->clear();
 
     QQmlMetaType::CachedUnitLookupError cacheError = QQmlMetaType::CachedUnitLookupError::NoError;
-    if (const QQmlPrivate::CachedQmlUnit *cachedUnit = engine->diskCacheEnabled()
-            ? QQmlMetaType::findCachedCompilationUnit(originalUrl, &cacheError)
-            : nullptr) {
+    const ExecutionEngine::DiskCacheOptions options = engine->diskCacheOptions();
+    if (const QQmlPrivate::CachedQmlUnit *cachedUnit
+            = (options & ExecutionEngine::DiskCache::Aot)
+                ? QQmlMetaType::findCachedCompilationUnit(
+                    originalUrl,
+                    (options & ExecutionEngine::DiskCache::AotByteCode)
+                        ? QQmlMetaType::AcceptUntyped
+                        : QQmlMetaType::RequireFullyTyped,
+                    &cacheError)
+                : nullptr) {
         QQmlRefPointer<QV4::ExecutableCompilationUnit> jsUnit
                 = QV4::ExecutableCompilationUnit::create(
                         QV4::CompiledData::CompilationUnit(cachedUnit->qmlData, cachedUnit->aotCompiledFunctions));

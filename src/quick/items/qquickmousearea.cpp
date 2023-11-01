@@ -19,7 +19,7 @@
 
 QT_BEGIN_NAMESPACE
 
-DEFINE_BOOL_CONFIG_OPTION(qmlVisualTouchDebugging, QML_VISUAL_TOUCH_DEBUGGING)
+DEFINE_BOOL_CONFIG_OPTION(qmlMaVisualTouchDebugging, QML_VISUAL_TOUCH_DEBUGGING)
 
 Q_DECLARE_LOGGING_CATEGORY(lcHoverTrace)
 
@@ -53,7 +53,7 @@ void QQuickMouseAreaPrivate::init()
     q->setAcceptedMouseButtons(Qt::LeftButton);
     q->setAcceptTouchEvents(false); // rely on mouse events synthesized from touch
     q->setFiltersChildMouseEvents(true);
-    if (qmlVisualTouchDebugging()) {
+    if (qmlMaVisualTouchDebugging()) {
         q->setFlag(QQuickItem::ItemHasContents);
     }
 }
@@ -743,7 +743,9 @@ void QQuickMouseArea::mouseMoveEvent(QMouseEvent *event)
 
     QQuickMouseEvent &me = d->quickMouseEvent;
     me.reset(d->lastPos.x(), d->lastPos.y(), d->lastButton, d->lastButtons, d->lastModifiers, false, d->longPress, event->flags());
+#if QT_DEPRECATED_SINCE(6, 6)
     me.setSource(event->source());
+#endif
     emit mouseXChanged(&me);
     me.setPosition(d->lastPos);
     emit mouseYChanged(&me);
@@ -788,13 +790,18 @@ void QQuickMouseArea::mouseDoubleClickEvent(QMouseEvent *event)
         QQuickMouseEvent &me = d->quickMouseEvent;
         me.reset(d->lastPos.x(), d->lastPos.y(), d->lastButton, d->lastButtons, d->lastModifiers, true,
                  false, event->flags());
+#if QT_DEPRECATED_SINCE(6, 6)
         me.setSource(event->source());
+#endif
         me.setAccepted(d->isDoubleClickConnected());
         emit this->doubleClicked(&me);
         if (!me.isAccepted())
             d->propagate(&me, QQuickMouseAreaPrivate::DoubleClick);
         if (d->pressed)
             d->doubleClick = d->isDoubleClickConnected() || me.isAccepted();
+
+        // Do not call the base implementation: we don't want to call event->ignore().
+        return;
     }
     QQuickItem::mouseDoubleClickEvent(event);
 }
@@ -902,6 +909,7 @@ void QQuickMouseArea::ungrabMouse()
         emit pressedButtonsChanged();
 
         if (d->hovered && !isUnderMouse()) {
+            qCDebug(lcHoverTrace) << "losing hover: not under the mouse";
             d->hovered = false;
             emit hoveredChanged();
         }
@@ -966,6 +974,7 @@ bool QQuickMouseArea::sendMouseEvent(QMouseEvent *event)
                 emit pressedChanged();
                 emit containsPressChanged();
                 if (d->hovered) {
+                    qCDebug(lcHoverTrace) << "losing hover: button released";
                     d->hovered = false;
                     emit hoveredChanged();
                 }
@@ -1012,7 +1021,9 @@ void QQuickMouseArea::timerEvent(QTimerEvent *event)
             d->longPress = true;
             QQuickMouseEvent &me = d->quickMouseEvent;
             me.reset(d->lastPos.x(), d->lastPos.y(), d->lastButton, d->lastButtons, d->lastModifiers, false, d->longPress, d->lastFlags);
+#if QT_DEPRECATED_SINCE(6, 6)
             me.setSource(Qt::MouseEventSynthesizedByQt);
+#endif
             me.setAccepted(d->isPressAndHoldConnected());
             emit pressAndHold(&me);
             if (!me.isAccepted())
@@ -1038,17 +1049,53 @@ void QQuickMouseArea::itemChange(ItemChange change, const ItemChangeData &value)
 {
     Q_D(QQuickMouseArea);
     switch (change) {
+    case ItemEnabledHasChanged:
+        // If MouseArea becomes effectively disabled by disabling a parent
+        // (for example, onPressed: parent.enabled = false), cancel the pressed state.
+        if (d->pressed && !d->effectiveEnable)
+            ungrabMouse();
+        break;
     case ItemVisibleHasChanged:
-        if (d->effectiveEnable && d->enabled && hoverEnabled() && d->hovered != (isVisible() && isUnderMouse())) {
-            if (!d->hovered) {
-                QPointF cursorPos = QGuiApplicationPrivate::lastCursorPosition;
-                d->lastScenePos = d->window->mapFromGlobal(cursorPos.toPoint());
-                d->lastPos = mapFromScene(d->lastScenePos);
+        if (d->effectiveEnable && d->enabled && hoverEnabled()
+            && d->hovered != (isVisible() && isUnderMouse())) {
+            if (d->hovered) {
+                // If hovered but no longer under the mouse then un-hover.
+                setHovered(false);
+            } else {
+                // If under the mouse but not hovered then hover the QQuickMouseArea if it is
+                // marked as a hovered item under the windows QQuickDeliveryAgentPrivate instance.
+                // This is required as this QQuickMouseArea may be masked by another hoverable
+                // QQuickMouseArea higher up in the scenes z-index ordering.
+                QPointF globalPos{ QGuiApplicationPrivate::lastCursorPosition.toPoint() };
+                QPointF scenePos{ d->window->mapFromGlobal(globalPos) };
+
+                QQuickWindowPrivate *wd = QQuickWindowPrivate::get(d->window);
+                QQuickDeliveryAgentPrivate *dap = wd->deliveryAgentPrivate();
+
+                // If the QQuickDeliveryAgentPrivate has not already found a hovered leaf
+                // item then attempt to find one.
+                if (!dap->hoveredLeafItemFound) {
+                    dap->deliverHoverEvent(scenePos, scenePos, Qt::NoModifier,
+                                           QDateTime::currentSecsSinceEpoch());
+                }
+
+                // Now if the QQuickDeliveryAgentPrivate has found a hovered leaf item check
+                // that this QQuickMouseArea item was one of the hovered items.
+                if (dap->hoveredLeafItemFound) {
+                    for (auto hoverItem : dap->hoverItems) {
+                        if (hoverItem.first == this) {
+                            // Found a match so update the hover state.
+                            d->lastScenePos = scenePos;
+                            d->lastPos = mapFromScene(d->lastScenePos);
+                            setHovered(true);
+                            break;
+                        }
+                    }
+                }
             }
-            setHovered(!d->hovered);
         }
         if (d->pressed && (!isVisible())) {
-            // This happens when the mouse area sets itself disabled or hidden
+            // This happens when the mouse area hides itself
             // inside the press handler. In that case we should not keep the internal
             // state as pressed, since we never became the mouse grabber.
             ungrabMouse();
@@ -1094,8 +1141,10 @@ void QQuickMouseArea::setHoverEnabled(bool h)
     \qmlproperty bool QtQuick::MouseArea::containsMouse
     This property holds whether the mouse is currently inside the mouse area.
 
-    \warning If hoverEnabled is false, containsMouse will only be valid
+    \warning If hoverEnabled is \c false, \c containsMouse will be \c true
     when the mouse is pressed while the mouse cursor is inside the MouseArea.
+    But if you set \c {mouse.accepted = false} in an \c onPressed handler,
+    \c containsMouse will remain \c false because the press was rejected.
 */
 bool QQuickMouseArea::hovered() const
 {
@@ -1107,7 +1156,7 @@ bool QQuickMouseArea::hovered() const
     \qmlproperty bool QtQuick::MouseArea::pressed
     This property holds whether any of the \l acceptedButtons are currently pressed.
 */
-bool QQuickMouseArea::pressed() const
+bool QQuickMouseArea::isPressed() const
 {
     Q_D(const QQuickMouseArea);
     return d->pressed;
@@ -1193,7 +1242,9 @@ bool QQuickMouseArea::setPressed(Qt::MouseButton button, bool p, Qt::MouseEventS
     if (wasPressed != p) {
         QQuickMouseEvent &me = d->quickMouseEvent;
         me.reset(d->lastPos.x(), d->lastPos.y(), d->lastButton, d->lastButtons, d->lastModifiers, isclick, d->longPress, d->lastFlags);
+#if QT_DEPRECATED_SINCE(6, 6)
         me.setSource(source);
+#endif
         if (p) {
             d->pressed |= button;
             if (!d->doubleClick)
@@ -1205,6 +1256,8 @@ bool QQuickMouseArea::setPressed(Qt::MouseButton button, bool p, Qt::MouseEventS
 
             if (!me.isAccepted()) {
                 d->pressed = Qt::NoButton;
+                if (!hoverEnabled())
+                    setHovered(false);
             }
 
             if (!oldPressed) {
@@ -1402,7 +1455,7 @@ QSGNode *QQuickMouseArea::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData 
     Q_UNUSED(data);
     Q_D(QQuickMouseArea);
 
-    if (!qmlVisualTouchDebugging())
+    if (!qmlMaVisualTouchDebugging())
         return nullptr;
 
     QSGInternalRectangleNode *rectangle = static_cast<QSGInternalRectangleNode *>(oldNode);

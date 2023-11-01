@@ -1,3 +1,4 @@
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/qml/QtQml/WorkerScript/libworkerscriptplugin.so
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/qml/QtQml/WorkerScript/plugins.qmltypes
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/qml/QtQml/WorkerScript/qmldir
+usr/lib/${DEB_HOST_MULTIARCH}/libQt6QmlWorkerScript.so.*

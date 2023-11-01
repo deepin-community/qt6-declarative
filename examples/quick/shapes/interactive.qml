@@ -6,6 +6,8 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Shapes
 
+pragma ComponentBehavior: Bound
+
 Rectangle {
     id: root
     width: 1024
@@ -54,12 +56,12 @@ Rectangle {
                 property Component shapeType: Component {
                     ShapePath {
                         id: quadShapePath
-                        strokeColor: root.palette.windowText
+                        strokeColor: strokeSwitch.checked ? root.palette.windowText : "transparent"
                         strokeWidth: widthSlider.value
                         fillColor: fillSwitch.checked ? "green" : "transparent"
                         PathQuad {
                             id: pathSegment
-                            x: quadShapePath.startx + 1
+                            x: quadShapePath.startX + 1
                             y: quadShapePath.startY + 1
                             controlX: quadShapePath.startX + 50
                             controlY: quadShapePath.startY + 50
@@ -81,7 +83,7 @@ Rectangle {
                 property Component shapeType: Component {
                     ShapePath {
                         id: cubicShapePath
-                        strokeColor: root.palette.windowText
+                        strokeColor: strokeSwitch.checked ? root.palette.windowText : "transparent"
                         strokeWidth: widthSlider.value
                         fillColor: fillSwitch.checked ? "green" : "transparent"
                         PathCubic {
@@ -107,6 +109,15 @@ Rectangle {
                     }
                 }
             }
+            ToolButton {
+                id: modifyButton
+                text: qsTr("Modify")
+                checkable: true
+                onCheckedChanged: {
+                    if (checked)
+                        showHandlesSwitch.checked = true;
+                }
+            }
         }
 
         Label {
@@ -128,6 +139,12 @@ Rectangle {
             id: fillSwitch
             text: qsTr("Fill")
         }
+
+        Switch {
+            id: strokeSwitch
+            text: qsTr("Stroke")
+            checked: true
+        }
     }
 
     Component {
@@ -142,18 +159,32 @@ Rectangle {
 
             width: 20
             height: width
+            radius: halfWidth
             visible: showHandlesSwitch.checked
             color: hh.hovered  ? "yellow" : idleColor
             border.color: "grey"
+            opacity: 0.75
 
             property real halfWidth: width / 2
             property bool complete: false
-            Binding { target: rect.target; property: xprop; value: x + halfWidth; when: complete }
-            Binding { target: rect.target; property: yprop; value: y + halfWidth; when: complete }
+            Binding {
+                target: rect.target
+                property: rect.xprop
+                value: rect.x + rect.halfWidth
+                when: rect.complete
+            }
+            Binding {
+                target: rect.target
+                property: rect.yprop
+                value: rect.y + rect.halfWidth
+                when: rect.complete
+            }
 
             DragHandler { }
 
-            HoverHandler { id: hh }
+            HoverHandler {
+                id: hh
+            }
 
             Component.onCompleted: {
                 x = target[xprop] - halfWidth;
@@ -189,14 +220,16 @@ Rectangle {
             property ShapePath activePath: null
             onActiveChanged: {
                 const tool = toolButtons.checkedButton;
-                if (active) {
-                    activePath = tool.shapeType.createObject(root, {
-                        startX: centroid.position.x, startY: centroid.position.y
-                    });
-                    shape.data.push(activePath);
-                } else {
-                    activePath.finishCreation();
-                    activePath = null;
+                if (tool != modifyButton) {
+                    if (active) {
+                        activePath = tool.shapeType.createObject(root, {
+                            startX: centroid.position.x, startY: centroid.position.y
+                        });
+                        shape.data.push(activePath);
+                    } else {
+                        activePath.finishCreation();
+                        activePath = null;
+                    }
                 }
             }
             onCentroidChanged: if (activePath) {

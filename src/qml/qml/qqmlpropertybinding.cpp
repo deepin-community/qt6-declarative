@@ -230,10 +230,17 @@ void QQmlPropertyBinding::handleUndefinedAssignment(QQmlEnginePrivate *ep, void 
         setIsUndefined(true);
         //suspend binding evaluation state for reset and subsequent read
         auto state = QtPrivate::suspendCurrentBindingStatus();
-        prop.reset();
+        prop.reset(); // May re-allocate the bindingData
         QVariant currentValue = QVariant(prop.propertyMetaType(), propertyDataPtr);
         QtPrivate::restoreBindingStatus(state);
         writeBackCurrentValue(std::move(currentValue));
+
+        // Re-fetch binding data
+        bindingData = storage->bindingData(propertyDataPtr);
+        if (!bindingData)
+            bindingData = bindingDataFromPropertyData(propertyDataPtr, propertyData->propType());
+        bindingDataPointer = QPropertyBindingDataPointer {bindingData};
+
         // reattach the binding (without causing a new notification)
         if (Q_UNLIKELY(bindingData->d() & QtPrivate::QPropertyBindingData::BindingBit)) {
             qCWarning(lcQQPropertyBinding) << "Resetting " << prop.name() << "due to the binding becoming undefined  caused a new binding to be installed\n"
@@ -245,7 +252,7 @@ void QQmlPropertyBinding::handleUndefinedAssignment(QQmlEnginePrivate *ep, void 
         firstObserver = bindingDataPointer.firstObserver();
         bindingData->d_ref() = reinterpret_cast<quintptr>(this) | QtPrivate::QPropertyBindingData::BindingBit;
         if (firstObserver)
-            bindingDataPointer.setObservers(firstObserver.ptr);
+            prependObserver(firstObserver);
     } else {
         QQmlError qmlError;
         auto location = jsExpression()->sourceLocation();
@@ -298,13 +305,16 @@ void QQmlPropertyBinding::bindingErrorCallback(QPropertyBindingPrivate *that)
     QQmlEnginePrivate::get(engine)->warning(qmlError);
 }
 
-QUntypedPropertyBinding QQmlTranslationPropertyBinding::create(const QQmlPropertyData *pd, const QQmlRefPointer<QV4::ExecutableCompilationUnit> &compilationUnit, const QV4::CompiledData::Binding *binding)
+template<typename TranslateWithUnit>
+auto qQmlTranslationPropertyBindingCreateBinding(
+        const QQmlRefPointer<QV4::ExecutableCompilationUnit> &compilationUnit,
+        TranslateWithUnit &&translateWithUnit)
 {
-    auto translationBinding = [compilationUnit, binding](QMetaType metaType, void *dataPtr) -> bool {
+    return [compilationUnit, translateWithUnit](QMetaType metaType, void *dataPtr) -> bool {
         // Create a dependency to the translationLanguage
         QQmlEnginePrivate::get(compilationUnit->engine)->translationLanguage.value();
 
-        QVariant resultVariant(compilationUnit->bindingValueAsString(binding));
+        QVariant resultVariant(translateWithUnit(compilationUnit));
         if (metaType != QMetaType::fromType<QString>())
             resultVariant.convert(metaType);
 
@@ -313,8 +323,38 @@ QUntypedPropertyBinding QQmlTranslationPropertyBinding::create(const QQmlPropert
         metaType.construct(dataPtr, resultVariant.constData());
         return hasChanged;
     };
+}
 
-    return QUntypedPropertyBinding(QMetaType(pd->propType()), translationBinding, QPropertyBindingSourceLocation());
+QUntypedPropertyBinding QQmlTranslationPropertyBinding::create(
+        const QQmlPropertyData *pd,
+        const QQmlRefPointer<QV4::ExecutableCompilationUnit> &compilationUnit,
+        const QV4::CompiledData::Binding *binding)
+{
+    auto translationBinding = qQmlTranslationPropertyBindingCreateBinding(
+            compilationUnit,
+            [binding](const QQmlRefPointer<QV4::ExecutableCompilationUnit> &compilationUnit) {
+                return compilationUnit->bindingValueAsString(binding);
+            });
+
+    return QUntypedPropertyBinding(QMetaType(pd->propType()), translationBinding,
+                                   QPropertyBindingSourceLocation());
+}
+
+QUntypedPropertyBinding QQmlTranslationPropertyBinding::create(
+        const QMetaType &propertyType,
+        const QQmlRefPointer<QV4::ExecutableCompilationUnit> &compilationUnit,
+        const QQmlTranslation &translationData)
+{
+    auto translationBinding = qQmlTranslationPropertyBindingCreateBinding(
+            compilationUnit,
+            [translationData](
+                    const QQmlRefPointer<QV4::ExecutableCompilationUnit> &compilationUnit) {
+                Q_UNUSED(compilationUnit);
+                return translationData.translate();
+            });
+
+    return QUntypedPropertyBinding(propertyType, translationBinding,
+                                   QPropertyBindingSourceLocation());
 }
 
 QV4::ReturnedValue QQmlPropertyBindingJSForBoundFunction::evaluate(bool *isUndefined)

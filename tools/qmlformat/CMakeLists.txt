@@ -1,3 +1,6 @@
+# Copyright (C) 2022 The Qt Company Ltd.
+# SPDX-License-Identifier: BSD-3-Clause
+
 # Generated from qmlformat.pro.
 
 #####################################################################
@@ -10,11 +13,10 @@ qt_internal_add_tool(${target_name}
     TOOLS_TARGET Qml # special case
     SOURCES
         qmlformat.cpp
-        ../shared/qqmltoolingsettings.h
-        ../shared/qqmltoolingsettings.cpp
-    PUBLIC_LIBRARIES
+    LIBRARIES
         Qt::Core
         Qt::QmlDomPrivate
+        Qt::QmlToolingSettingsPrivate
 )
 qt_internal_return_unless_building_tools()
 

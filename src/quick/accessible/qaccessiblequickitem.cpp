@@ -441,6 +441,10 @@ QAccessible::State QAccessibleQuickItem::state() const
     if (role() == QAccessible::EditableText)
         if (auto ti = qobject_cast<QQuickTextInput *>(item()))
             state.passwordEdit = ti->echoMode() != QQuickTextInput::Normal;
+    if (!item()->isEnabled()) {
+        state.focusable = false;
+        state.disabled = true;
+    }
     return state;
 }
 
@@ -452,7 +456,7 @@ QAccessible::Role QAccessibleQuickItem::role() const
 
     QAccessible::Role role = QAccessible::NoRole;
     if (item())
-        role = QQuickItemPrivate::get(item())->accessibleRole();
+        role = QQuickItemPrivate::get(item())->effectiveAccessibleRole();
     if (role == QAccessible::NoRole) {
         if (qobject_cast<QQuickText*>(const_cast<QQuickItem *>(item())))
             role = QAccessible::StaticText;

@@ -3,7 +3,6 @@
 
 #include "qv4engine_p.h"
 #include "qv4object_p.h"
-#include "qv4objectproto_p.h"
 #include "qv4mm_p.h"
 #include "qv4qobjectwrapper_p.h"
 #include "qv4identifiertable_p.h"
@@ -14,8 +13,6 @@
 #include <qqmlengine.h>
 #include "PageReservation.h"
 #include "PageAllocation.h"
-#include "PageAllocationAligned.h"
-#include "StdLibExtras.h"
 
 #include <QElapsedTimer>
 #include <QMap>
@@ -27,7 +24,6 @@
 #include "qv4profiling_p.h"
 #include "qv4mapobject_p.h"
 #include "qv4setobject_p.h"
-#include "qv4writebarrier_p.h"
 
 //#define MM_STATS
 
@@ -275,9 +271,6 @@ bool Chunk::sweep(ExecutionEngine *engine)
     HeapItem *o = realBase();
     bool lastSlotFree = false;
     for (uint i = 0; i < Chunk::EntriesInBitmap; ++i) {
-#if WRITEBARRIER(none)
-        Q_ASSERT((grayBitmap[i] | blackBitmap[i]) == blackBitmap[i]); // check that we don't have gray only objects
-#endif
         quintptr toFree = objectBitmap[i] ^ blackBitmap[i];
         Q_ASSERT((toFree & objectBitmap[i]) == toFree); // check all black objects are marked as being used
         quintptr e = extendsBitmap[i];
@@ -321,7 +314,6 @@ bool Chunk::sweep(ExecutionEngine *engine)
                                                       - (blackBitmap[i] | e)) * Chunk::SlotSize,
                              Profiling::SmallItem);
         objectBitmap[i] = blackBitmap[i];
-        grayBitmap[i] = 0;
         hasUsedSlots |= (blackBitmap[i] != 0);
         extendsBitmap[i] = e;
         lastSlotFree = !((objectBitmap[i]|extendsBitmap[i]) >> (sizeof(quintptr)*8 - 1));
@@ -371,7 +363,6 @@ void Chunk::freeAll(ExecutionEngine *engine)
         Q_V4_PROFILE_DEALLOC(engine, (qPopulationCount(objectBitmap[i]|extendsBitmap[i])
                              - qPopulationCount(e)) * Chunk::SlotSize, Profiling::SmallItem);
         objectBitmap[i] = 0;
-        grayBitmap[i] = 0;
         extendsBitmap[i] = e;
         o += Chunk::Bits;
     }
@@ -381,36 +372,6 @@ void Chunk::freeAll(ExecutionEngine *engine)
 void Chunk::resetBlackBits()
 {
     memset(blackBitmap, 0, sizeof(blackBitmap));
-}
-
-void Chunk::collectGrayItems(MarkStack *markStack)
-{
-    //    DEBUG << "sweeping chunk" << this << (*freeList);
-    HeapItem *o = realBase();
-    for (uint i = 0; i < Chunk::EntriesInBitmap; ++i) {
-#if WRITEBARRIER(none)
-        Q_ASSERT((grayBitmap[i] | blackBitmap[i]) == blackBitmap[i]); // check that we don't have gray only objects
-#endif
-        quintptr toMark = blackBitmap[i] & grayBitmap[i]; // correct for a Steele type barrier
-        Q_ASSERT((toMark & objectBitmap[i]) == toMark); // check all black objects are marked as being used
-        //        DEBUG << hex << "   index=" << i << toFree;
-        while (toMark) {
-            uint index = qCountTrailingZeroBits(toMark);
-            quintptr bit = (static_cast<quintptr>(1) << index);
-
-            toMark ^= bit; // mask out marked slot
-            //            DEBUG << "       index" << hex << index << toFree;
-
-            HeapItem *itemToFree = o + index;
-            Heap::Base *b = *itemToFree;
-            Q_ASSERT(b->inUse());
-            markStack->push(b);
-        }
-        grayBitmap[i] = 0;
-        o += Chunk::Bits;
-    }
-    //    DEBUG << "swept chunk" << this << "freed" << slotsFreed << "slots.";
-
 }
 
 void Chunk::sortIntoBins(HeapItem **bins, uint nBins)
@@ -561,6 +522,14 @@ HeapItem *BlockAllocator::allocate(size_t size, bool forceAllocation) {
     if (!m) {
         if (!forceAllocation)
             return nullptr;
+        if (nFree) {
+            // Save any remaining slots of the current chunk
+            // for later, smaller allocations.
+            size_t bin = binForSlots(nFree);
+            nextFree->freeData.next = freeBins[bin];
+            nextFree->freeData.availableSlots = nFree;
+            freeBins[bin] = nextFree;
+        }
         Chunk *newChunk = chunkAllocator->allocate();
         Q_V4_PROFILE_ALLOC(engine, Chunk::DataSize, Profiling::HeapPage);
         chunks.push_back(newChunk);
@@ -623,13 +592,6 @@ void BlockAllocator::resetBlackBits()
 {
     for (auto c : chunks)
         c->resetBlackBits();
-}
-
-void BlockAllocator::collectGrayItems(MarkStack *markStack)
-{
-    for (auto c : chunks)
-        c->collectGrayItems(markStack);
-
 }
 
 HeapItem *HugeItemAllocator::allocate(size_t size) {
@@ -699,18 +661,6 @@ void HugeItemAllocator::resetBlackBits()
 {
     for (auto c : chunks)
         Chunk::clearBit(c.chunk->blackBitmap, c.chunk->first() - c.chunk->realBase());
-}
-
-void HugeItemAllocator::collectGrayItems(MarkStack *markStack)
-{
-    for (auto c : chunks)
-        // Correct for a Steele type barrier
-        if (Chunk::testBit(c.chunk->blackBitmap, c.chunk->first() - c.chunk->realBase()) &&
-            Chunk::testBit(c.chunk->grayBitmap, c.chunk->first() - c.chunk->realBase())) {
-            HeapItem *i = c.chunk->first();
-            Heap::Base *b = *i;
-            b->mark(markStack);
-        }
 }
 
 void HugeItemAllocator::freeAll()

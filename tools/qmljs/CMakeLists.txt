@@ -1,3 +1,6 @@
+# Copyright (C) 2022 The Qt Company Ltd.
+# SPDX-License-Identifier: BSD-3-Clause
+
 # Generated from qmljs.pro.
 
 #####################################################################
@@ -32,7 +35,7 @@ qt_internal_add_app(qmljs
         ../../src/3rdparty/masm/stubs/runtime
         ../../src/3rdparty/masm/stubs/wtf
         ../../src/3rdparty/masm/wtf
-    PUBLIC_LIBRARIES
+    LIBRARIES
         Qt::CorePrivate
         Qt::QmlPrivate
 )
@@ -45,11 +48,6 @@ set_target_properties(qmljs PROPERTIES WIN32_EXECUTABLE FALSE)
 
 ## Scopes:
 #####################################################################
-
-qt_internal_extend_target(qmljs CONDITION WIN32
-    DEFINES
-        NOMINMAX
-)
 
 qt_internal_extend_target(qmljs CONDITION disassembler AND ((TEST_architecture_arch STREQUAL "i386") OR (TEST_architecture_arch STREQUAL "x86_64"))
     DEFINES

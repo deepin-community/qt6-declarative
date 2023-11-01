@@ -15,12 +15,11 @@
 // We mean it.
 //
 
-#include "qqmlerror.h"
-#include "qqmlbinding_p.h"
+#include <QtQml/qqmlerror.h>
+#include <QtQml/private/qqmlbinding_p.h>
 #include <private/qv4compileddata_p.h>
 
 #include <QtCore/qbytearray.h>
-#include <QtCore/qxmlstream.h>
 
 QT_BEGIN_NAMESPACE
 

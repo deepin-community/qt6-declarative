@@ -27,6 +27,8 @@
 #include <private/qqmlabstractbinding_p.h>
 #include <private/qqmlvaluetypeproxybinding_p.h>
 #include <QtCore/private/qproperty_p.h>
+#include <QtQuick/qquickwindow.h>
+#include <QtQuick/private/qquickitem_p.h>
 #include <QtQuickTestUtils/private/qmlutils_p.h>
 #include <QtQuickTestUtils/private/testhttpserver_p.h>
 
@@ -94,6 +96,7 @@ private slots:
     void valueTypeFunctions();
     void constantsOverrideBindings();
     void outerBindingOverridesInnerBinding();
+    void groupPropertyBindingOrder();
     void aliasPropertyAndBinding();
     void aliasPropertyReset();
     void aliasPropertyToIC();
@@ -375,6 +378,8 @@ private slots:
     void qpropertyBindingHandlesUndefinedCorrectly();
     void qpropertyBindingHandlesUndefinedWithoutResetCorrectly_data();
     void qpropertyBindingHandlesUndefinedWithoutResetCorrectly();
+    void qpropertyBindingRestoresObserverAfterReset();
+    void qpropertyBindingObserverCorrectlyLinkedAfterReset();
     void hugeRegexpQuantifiers();
     void singletonTypeWrapperLookup();
     void getThisObject();
@@ -411,6 +416,11 @@ private slots:
     void functionAsDefaultArgument();
 
     void internalClassParentGc();
+    void methodTypeMismatch();
+
+    void doNotCrashOnReadOnlyBindable();
+
+    void resetGadet();
 
 private:
 //    static void propertyVarWeakRefCallback(v8::Persistent<v8::Value> object, void* parameter);
@@ -572,11 +582,13 @@ void tst_qqmlecmascript::assignDate()
     QDateTime expectedDateTime;
     QDateTime expectedDateTime2;
     if (timeOffset == -1) {
-        expectedDateTime = QDateTime(QDate(2009, 5, 12), QTime(0, 0, 1), Qt::LocalTime);
-        expectedDateTime2 = QDateTime(QDate(2009, 5, 12), QTime(23, 59, 59), Qt::LocalTime);
+        expectedDateTime = QDateTime(QDate(2009, 5, 12), QTime(0, 0, 1));
+        expectedDateTime2 = QDateTime(QDate(2009, 5, 12), QTime(23, 59, 59));
     } else {
-        expectedDateTime = QDateTime(QDate(2009, 5, 12), QTime(0, 0, 1), Qt::OffsetFromUTC, timeOffset * 60);
-        expectedDateTime2 = QDateTime(QDate(2009, 5, 12), QTime(23, 59, 59), Qt::OffsetFromUTC, timeOffset * 60);
+        expectedDateTime = QDateTime(QDate(2009, 5, 12), QTime(0, 0, 1),
+                                     QTimeZone::fromSecondsAheadOfUtc(timeOffset * 60));
+        expectedDateTime2 = QDateTime(QDate(2009, 5, 12), QTime(23, 59, 59),
+                                      QTimeZone::fromSecondsAheadOfUtc(timeOffset * 60));
     }
 
     QCOMPARE(object->dateProperty(), expectedDate);
@@ -612,21 +624,25 @@ void tst_qqmlecmascript::exportDate_data()
     const int offset = (11 * 60 + 30) * 60;
 
     QTest::newRow("Local time early")
-        << testFileUrl("exportDate.qml") << QDateTime(date, early, Qt::LocalTime);
+        << testFileUrl("exportDate.qml") << QDateTime(date, early);
     QTest::newRow("Local time late")
-        << testFileUrl("exportDate.2.qml") << QDateTime(date, late, Qt::LocalTime);
+        << testFileUrl("exportDate.2.qml") << QDateTime(date, late);
     QTest::newRow("UTC early")
-        << testFileUrl("exportDate.3.qml") << QDateTime(date, early, Qt::UTC);
+        << testFileUrl("exportDate.3.qml") << QDateTime(date, early, QTimeZone::UTC);
     QTest::newRow("UTC late")
-        << testFileUrl("exportDate.4.qml") << QDateTime(date, late, Qt::UTC);
+        << testFileUrl("exportDate.4.qml") << QDateTime(date, late, QTimeZone::UTC);
     QTest::newRow("+11:30 early")
-        << testFileUrl("exportDate.5.qml") << QDateTime(date, early, Qt::OffsetFromUTC, offset);
+        << testFileUrl("exportDate.5.qml")
+        << QDateTime(date, early, QTimeZone::fromSecondsAheadOfUtc(offset));
     QTest::newRow("+11:30 late")
-        << testFileUrl("exportDate.6.qml") << QDateTime(date, late, Qt::OffsetFromUTC, offset);
+        << testFileUrl("exportDate.6.qml")
+        << QDateTime(date, late, QTimeZone::fromSecondsAheadOfUtc(offset));
     QTest::newRow("-11:30 early")
-        << testFileUrl("exportDate.7.qml") << QDateTime(date, early, Qt::OffsetFromUTC, -offset);
+        << testFileUrl("exportDate.7.qml")
+        << QDateTime(date, early, QTimeZone::fromSecondsAheadOfUtc(-offset));
     QTest::newRow("-11:30 late")
-        << testFileUrl("exportDate.8.qml") << QDateTime(date, late, Qt::OffsetFromUTC, -offset);
+        << testFileUrl("exportDate.8.qml")
+        << QDateTime(date, late, QTimeZone::fromSecondsAheadOfUtc(-offset));
 }
 
 void tst_qqmlecmascript::exportDate()
@@ -693,22 +709,22 @@ void tst_qqmlecmascript::checkDateTime_data()
     // NB: JavaScript month-indices are Jan = 0 to Dec = 11; QDate's are Jan = 1 to Dec = 12.
     QTest::newRow("denormal-March")
         << testFileUrl("checkDateTime-denormal-March.qml")
-        << QDateTime(QDate(2019, 3, 1), QTime(0, 0, 0, 1), Qt::LocalTime);
+        << QDateTime(QDate(2019, 3, 1), QTime(0, 0, 0, 1));
     QTest::newRow("denormal-leap")
         << testFileUrl("checkDateTime-denormal-leap.qml")
-        << QDateTime(QDate(2020, 2, 29), QTime(23, 59, 59, 999), Qt::LocalTime);
+        << QDateTime(QDate(2020, 2, 29), QTime(23, 59, 59, 999));
     QTest::newRow("denormal-hours")
         << testFileUrl("checkDateTime-denormal-hours.qml")
-        << QDateTime(QDate(2020, 2, 29), QTime(0, 0), Qt::LocalTime);
+        << QDateTime(QDate(2020, 2, 29), QTime(0, 0));
     QTest::newRow("denormal-minutes")
         << testFileUrl("checkDateTime-denormal-minutes.qml")
-        << QDateTime(QDate(2020, 2, 29), QTime(0, 0), Qt::LocalTime);
+        << QDateTime(QDate(2020, 2, 29), QTime(0, 0));
     QTest::newRow("denormal-seconds")
         << testFileUrl("checkDateTime-denormal-seconds.qml")
-        << QDateTime(QDate(2020, 2, 29), QTime(0, 0), Qt::LocalTime);
+        << QDateTime(QDate(2020, 2, 29), QTime(0, 0));
     QTest::newRow("October")
         << testFileUrl("checkDateTime-October.qml")
-        << QDateTime(QDate(2019, 10, 3), QTime(12, 0), Qt::LocalTime);
+        << QDateTime(QDate(2019, 10, 3), QTime(12, 0));
     QTest::newRow("nonstandard-format")
         << testFileUrl("checkDateTime-nonstandardFormat.qml")
         << QDateTime::fromString("1991-08-25 20:57:08 GMT+0000", "yyyy-MM-dd hh:mm:ss t");
@@ -1662,6 +1678,18 @@ void tst_qqmlecmascript::outerBindingOverridesInnerBinding()
 }
 
 /*
+ Tests that group property bindings work to objects
+ of a base element
+ */
+void tst_qqmlecmascript::groupPropertyBindingOrder()
+{
+    QQmlEngine engine;
+    QQmlComponent component(&engine, testFileUrl("groupPropertyInstantiationOrder.qml"));
+    QScopedPointer<QObject> obj(component.create());
+    QVERIFY2(obj, qPrintable(component.errorString()));
+}
+
+/*
 Access a non-existent attached object.
 
 Tests for a regression where this used to crash.
@@ -1964,11 +1992,11 @@ void tst_qqmlecmascript::componentCreation_data()
         << "null";
     QTest::newRow("invalidSecondArg")
         << "invalidSecondArg"
-        << "" // We cannot catch this case as coercing a string to a number is valid in JavaScript
+        << ":40: TypeError: Invalid arguments; did you swap mode and parent"
         << "";
     QTest::newRow("invalidThirdArg")
         << "invalidThirdArg"
-        << ":45: TypeError: Passing incompatible arguments to C++ functions from JavaScript is not allowed."
+        << ":45: TypeError: Invalid arguments; did you swap mode and parent"
         << "";
     QTest::newRow("invalidMode")
         << "invalidMode"
@@ -2918,7 +2946,7 @@ void tst_qqmlecmascript::callQtInvokables()
     {
     QV4::ScopedValue ret(scope, EVALUATE("object.method_NoArgs_QPointF()"));
     QVERIFY(!ret->isUndefined());
-    QCOMPARE(scope.engine->toVariant(ret, QMetaType {}), QVariant(QPointF(123, 4.5)));
+    QCOMPARE(QV4::ExecutionEngine::toVariant(ret, QMetaType {}), QVariant(QPointF(123, 4.5)));
     QCOMPARE(o->error(), false);
     QCOMPARE(o->invoked(), 3);
     QCOMPARE(o->actuals().size(), 0);
@@ -3105,11 +3133,14 @@ void tst_qqmlecmascript::callQtInvokables()
     QCOMPARE(o->invoked(), -1);
     QCOMPARE(o->actuals().size(), 0);
 
-    o->reset();
-    QVERIFY(EVALUATE_ERROR("object.method_QPointF(object)"));
-    QCOMPARE(o->error(), false);
-    QCOMPARE(o->invoked(), -1);
-    QCOMPARE(o->actuals().size(), 0);
+    // This fails if the QtQml module is loaded but works if it's not.
+    // If QtQml is loaded, QPointF is a structured value type that can be created from any object.
+    //
+    // o->reset();
+    // QVERIFY(EVALUATE_ERROR("object.method_QPointF(object)"));
+    // QCOMPARE(o->error(), false);
+    // QCOMPARE(o->invoked(), -1);
+    // QCOMPARE(o->actuals().size(), 0);
 
     o->reset();
     QVERIFY(EVALUATE_VALUE("object.method_QPointF(object.method_get_QPointF())", QV4::Primitive::undefinedValue()));
@@ -3162,6 +3193,17 @@ void tst_qqmlecmascript::callQtInvokables()
         QVERIFY(root);
         QCOMPARE(o->error(), false);
         QCOMPARE(o->invoked(), -1); // no function got called due to incompatible arguments
+    }
+
+    {
+        o->reset();
+        QQmlComponent comp(&qmlengine, testFileUrl("qmlTypeWrapperArgs3.qml"));
+        QScopedPointer<QObject> root {comp.createWithInitialProperties({{"invokableObject", QVariant::fromValue(o)}}) };
+        QVERIFY(root);
+        QCOMPARE(o->error(), false);
+        QCOMPARE(o->actuals().size(), 2);
+        QCOMPARE(o->actuals().at(0).metaType(), QMetaType::fromType<QQmlComponentAttached *>());
+        QCOMPARE(o->actuals().at(1).metaType(), QMetaType::fromType<SingletonWithEnum *>());
     }
 
     o->reset();
@@ -3468,6 +3510,54 @@ void tst_qqmlecmascript::callQtInvokables()
                   {QStringLiteral("two"), QStringLiteral("bar")},
                   {QStringLiteral("three"), 0.2}
               }));
+
+    o->reset();
+    QVERIFY(EVALUATE_VALUE("object.method_overload3(2.0, 'hello', new Date)",
+                QV4::Primitive::undefinedValue()));
+
+    QCOMPARE(o->error(), false);
+
+    /* Char matches in both overloads, and leads to max-match-score of 6
+       Hence, we'll need to consider the sum score
+       overload 38: string -> URL: 6; Date => DateTime: 0; total: 6
+       overload 39: string -> JSON: 5; Date => DateTime: 2: total: 7
+       ==> overload 38 should win
+    */
+    QCOMPARE(o->invoked(), 38);
+
+    o->reset();
+    QVERIFY(EVALUATE_VALUE("object.method_gadget(object.someFont)",
+                           QV4::Primitive::undefinedValue()));
+    QCOMPARE(o->error(), false);
+    QCOMPARE(o->invoked(), 40);
+    QCOMPARE(o->actuals(), QVariantList() << QVariant(o->someFont()));
+
+    o->reset();
+    QVERIFY(EVALUATE_ERROR("object.method_gadget(123)"));
+    QCOMPARE(o->error(), false);
+    QCOMPARE(o->invoked(), -1);
+    QCOMPARE(o->actuals(), QVariantList());
+
+    o->reset();
+    QVERIFY(EVALUATE_VALUE("object.method_component(object.someComponent())",
+                           QV4::Primitive::undefinedValue()));
+    QCOMPARE(o->error(), false);
+    QCOMPARE(o->invoked(), 42);
+    QCOMPARE(o->actuals(), QVariantList() << QVariant::fromValue(o->someComponent()));
+
+    o->reset();
+    QVERIFY(EVALUATE_VALUE("object.method_component(object.someTypeObject())",
+                           QV4::Primitive::undefinedValue()));
+    QCOMPARE(o->error(), false);
+    QCOMPARE(o->invoked(), 43);
+    QCOMPARE(o->actuals(), QVariantList() << QVariant::fromValue(o->someTypeObject()));
+
+    o->reset();
+    QVERIFY(EVALUATE_VALUE("object.method_component('qrc:/somewhere/else')",
+                           QV4::Primitive::undefinedValue()));
+    QCOMPARE(o->error(), false);
+    QCOMPARE(o->invoked(), 44);
+    QCOMPARE(o->actuals(), QVariantList() << QVariant::fromValue(QUrl("qrc:/somewhere/else")));
 }
 
 void tst_qqmlecmascript::resolveClashingProperties()
@@ -8176,7 +8266,7 @@ void tst_qqmlecmascript::dateParse()
     QMetaObject::invokeMethod(object.get(), "test_rfc2822_date", Q_RETURN_ARG(QVariant, q));
     QCOMPARE(q.toLongLong(), 1379512851000LL);
 
-    QDateTime val(QDate(2014, 7, 16), QTime(23, 30, 31), Qt::LocalTime);
+    QDateTime val(QDate(2014, 7, 16), QTime(23, 30, 31), QTimeZone::LocalTime);
     QMetaObject::invokeMethod(object.get(), "check_date",
                               Q_RETURN_ARG(QVariant, q), Q_ARG(QVariant, val));
     QVERIFY(q.toBool());
@@ -8191,7 +8281,7 @@ void tst_qqmlecmascript::utcDate()
     QVERIFY2(object, qPrintable(component.errorString()));
 
     QVariant q;
-    QDateTime val(QDate(2014, 7, 16), QTime(23, 30, 31), Qt::UTC);
+    QDateTime val(QDate(2014, 7, 16), QTime(23, 30, 31), QTimeZone::UTC);
     QMetaObject::invokeMethod(object.get(), "check_utc",
                               Q_RETURN_ARG(QVariant, q), Q_ARG(QVariant, val));
     QVERIFY(q.toBool());
@@ -9340,6 +9430,32 @@ void tst_qqmlecmascript::qpropertyBindingHandlesUndefinedWithoutResetCorrectly()
     QCOMPARE(root->property("value2").toInt(), 2);
 }
 
+void tst_qqmlecmascript::qpropertyBindingRestoresObserverAfterReset()
+{
+    QQmlEngine engine;
+    QQmlComponent c(&engine, testFileUrl("restoreObserverAfterReset.qml"));
+    QVERIFY2(c.isReady(), qPrintable(c.errorString()));
+    QScopedPointer<QObject> o(c.create());
+    QVERIFY(!o.isNull());
+    QTRY_COMPARE(o->property("height").toDouble(), 60.0);
+    QVERIFY(o->property("steps").toInt() > 3);
+}
+
+void tst_qqmlecmascript::qpropertyBindingObserverCorrectlyLinkedAfterReset()
+{
+    QQmlEngine engine;
+    QQmlComponent c(&engine, testFileUrl("qpropertyResetCorrectlyLinked.qml"));
+    QVERIFY2(c.isReady(), qPrintable(c.errorString()));
+    std::unique_ptr<QObject> o(c.create());
+    QVERIFY(o);
+    QCOMPARE(o->property("width"), 200);
+    auto item = qobject_cast<QQuickItem *>(o.get());
+    auto itemPriv = QQuickItemPrivate::get(item);
+    QBindingStorage *storage = qGetBindingStorage(itemPriv);
+    QPropertyBindingDataPointer ptr { storage->bindingData(&itemPriv->width) };
+    QCOMPARE(ptr.observerCount(), 1);
+}
+
 void tst_qqmlecmascript::hugeRegexpQuantifiers()
 {
     QJSEngine engine;
@@ -9978,6 +10094,9 @@ public:
 
     Q_INVOKABLE void triggerSignal() { emit fooMember2Emitted(&m_fooMember2); }
 
+    Q_INVOKABLE const FrozenFoo *getConst() { return createFloating(); }
+    Q_INVOKABLE FrozenFoo *getNonConst() { return createFloating(); }
+
     FrozenFoo *fooMember() { return &m_fooMember; }
     FrozenFoo *fooMember2() { return &m_fooMember2; }
 
@@ -9987,6 +10106,16 @@ signals:
 private:
     const FrozenFoo *fooMemberConst() const { return &m_fooMember; }
 
+    FrozenFoo *createFloating()
+    {
+        if (!m_floating) {
+            m_floating = new FrozenFoo;
+            m_floating->setObjectName(objectName());
+        }
+        return m_floating;
+    }
+
+    FrozenFoo *m_floating = nullptr;
     FrozenFoo m_fooMember;
     FrozenFoo m_fooMember2;
 };
@@ -10009,6 +10138,17 @@ void tst_qqmlecmascript::frozenQObject()
     QVERIFY(frozenObjects->property("caughtSignal").toBool());
     QCOMPARE(frozenObjects->fooMember()->name(), QStringLiteral("Jane"));
     QCOMPARE(frozenObjects->fooMember2()->name(), QStringLiteral("Jane"));
+
+    QQmlComponent component3(&engine, testFileUrl("frozenQObject3.qml"));
+    QScopedPointer<QObject> root3(component3.create());
+    QCOMPARE(root3->objectName(), QLatin1String("a/b"));
+    QVERIFY(root3->property("objConst").value<QObject *>());
+    QVERIFY(root3->property("objNonConst").value<QObject *>());
+
+    QTRY_VERIFY(root3->property("gcs").toInt() > 8);
+
+    QVERIFY(root3->property("objConst").value<QObject *>());
+    QVERIFY(root3->property("objNonConst").value<QObject *>());
 }
 
 struct ConstPointer : QObject
@@ -10243,6 +10383,99 @@ void tst_qqmlecmascript::internalClassParentGc()
     QScopedPointer root(component.create());
     QVERIFY(root);
     QCOMPARE(root->objectName(), "3");
+}
+
+void tst_qqmlecmascript::methodTypeMismatch()
+{
+    QQmlEngine engine;
+    QQmlComponent component(&engine, testFileUrl("methodTypeMismatch.qml"));
+
+    QScopedPointer<MyInvokableObject> object(new MyInvokableObject());
+
+    QScopedPointer<QObject> o(component.create());
+    QVERIFY2(o, qPrintable(component.errorString()));
+    o->setProperty("object", QVariant::fromValue(object.get()));
+
+    auto mo = o->metaObject();
+    QVERIFY(mo);
+
+    auto method = mo->method(mo->indexOfMethod("callWithFont()"));
+    QVERIFY(method.isValid());
+    QVERIFY(method.invoke(o.get()));
+    QCOMPARE(object->actuals(), QVariantList() << QVariant(object->someFont()));
+
+    QRegularExpression argumentConversionErrorMatcher("Could not convert argument 0");
+    QRegularExpression argumentConversionErrorMatcher2(".*/methodTypeMismatch.qml");
+    QRegularExpression typeErrorMatcher(
+            ".*/methodTypeMismatch\\.qml:..: TypeError: Passing incompatible arguments to C\\+\\+ "
+            "functions from JavaScript is not allowed.");
+
+    QTest::ignoreMessage(QtWarningMsg, argumentConversionErrorMatcher);
+    QTest::ignoreMessage(QtWarningMsg, argumentConversionErrorMatcher2);
+    QTest::ignoreMessage(QtWarningMsg, typeErrorMatcher);
+    object->reset();
+    method = mo->method(mo->indexOfMethod("callWithInt()"));
+    QVERIFY(method.isValid());
+    QVERIFY(method.invoke(o.get()));
+    QCOMPARE(object->actuals().size(),
+             0); // actuals() should not contain reinterpret_cast<QFont>(123) !!!
+
+    QTest::ignoreMessage(QtWarningMsg, argumentConversionErrorMatcher);
+    QTest::ignoreMessage(QtWarningMsg, argumentConversionErrorMatcher2);
+    QTest::ignoreMessage(QtWarningMsg, typeErrorMatcher);
+    object->reset();
+    method = mo->method(mo->indexOfMethod("callWithInt2()"));
+    QVERIFY(method.isValid());
+    QVERIFY(method.invoke(o.get()));
+    QCOMPARE(object->actuals().size(),
+             0); // actuals() should not contain reinterpret_cast<QFont>(0) !!!
+
+    QTest::ignoreMessage(QtWarningMsg, argumentConversionErrorMatcher);
+    QTest::ignoreMessage(QtWarningMsg, argumentConversionErrorMatcher2);
+    QTest::ignoreMessage(QtWarningMsg, typeErrorMatcher);
+    object->reset();
+    method = mo->method(mo->indexOfMethod("callWithNull()"));
+    QVERIFY(method.isValid());
+    QVERIFY(method.invoke(o.get()));
+    QCOMPARE(object->actuals().size(),
+             0); // actuals() should not contain reinterpret_cast<QFont>(nullptr) !!!
+
+    // make sure that null is still accepted by functions accepting, e.g., a QObject*!
+    object->reset();
+    method = mo->method(mo->indexOfMethod("callWithAllowedNull()"));
+    QVERIFY(method.isValid());
+    QVERIFY(method.invoke(o.get()));
+    QCOMPARE(object->actuals(), QVariantList() << QVariant::fromValue((QObject *)nullptr));
+}
+
+void tst_qqmlecmascript::doNotCrashOnReadOnlyBindable()
+{
+    QQmlEngine engine;
+    QQmlComponent c(&engine, testFileUrl("readOnlyBindable.qml"));
+    QVERIFY2(c.isReady(), qPrintable(c.errorString()));
+#ifndef QT_NO_DEBUG
+    QTest::ignoreMessage(
+                QtWarningMsg,
+                "setBinding: Could not set binding via bindable interface. "
+                "The QBindable is read-only.");
+#endif
+    QScopedPointer<QObject> o(c.create());
+    QVERIFY(o);
+    QCOMPARE(o->property("x").toInt(), 7);
+}
+
+void tst_qqmlecmascript::resetGadet()
+{
+    QQmlEngine engine;
+    QQmlComponent c(&engine, testFileUrl("resetGadget.qml"));
+    QVERIFY2(c.isReady(), qPrintable(c.errorString()));
+    QScopedPointer<QObject> o(c.create());
+    QVERIFY(o);
+    auto resettableGadgetHolder = qobject_cast<ResettableGadgetHolder *>(o.get());
+    QVERIFY(resettableGadgetHolder);
+    QCOMPARE(resettableGadgetHolder->g().value(), 0);
+    resettableGadgetHolder->setProperty("trigger", QVariant::fromValue(true));
+    QCOMPARE(resettableGadgetHolder->g().value(), 42);
 }
 
 QTEST_MAIN(tst_qqmlecmascript)

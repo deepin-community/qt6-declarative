@@ -34,12 +34,17 @@ private slots:
     void recompileAfterDirectoryChange();
     void fileSelectors();
     void localAliases();
+    void aliasToAlias();
     void cacheResources();
     void stableOrderOfDependentCompositeTypes();
     void singletonDependency();
     void cppRegisteredSingletonDependency();
     void cacheModuleScripts();
     void reuseStaticMappings();
+    void invalidateSaveLoadCache();
+
+    void inlineComponentDoesNotCauseConstantInvalidation_data();
+    void inlineComponentDoesNotCauseConstantInvalidation();
 
 private:
     QDir m_qmlCacheDirectory;
@@ -671,6 +676,55 @@ void tst_qmldiskcache::localAliases()
     }
 }
 
+void tst_qmldiskcache::aliasToAlias()
+{
+    QQmlEngine engine;
+
+    TestCompiler testCompiler(&engine);
+    QVERIFY(testCompiler.tempDir.isValid());
+
+    const QByteArray contents = QByteArrayLiteral(R"(
+        import QML
+        QtObject {
+            id: foo
+            readonly property alias myAlias: bar.prop
+
+            property QtObject o: QtObject {
+                id: bar
+
+                property QtObject o: QtObject {
+                    id: baz
+                    readonly property int value: 100
+                }
+
+                readonly property alias prop: baz.value
+            }
+        }
+    )");
+
+    {
+        testCompiler.clearCache();
+        QVERIFY2(testCompiler.compile(contents), qPrintable(testCompiler.lastErrorString));
+        QVERIFY2(testCompiler.verify(), qPrintable(testCompiler.lastErrorString));
+    }
+
+    {
+        CleanlyLoadingComponent component(&engine, testCompiler.testFilePath);
+        QScopedPointer<QObject> obj(component.create());
+        QVERIFY(!obj.isNull());
+        QCOMPARE(obj->property("myAlias").toInt(), 100);
+    }
+
+    engine.clearComponentCache();
+
+    {
+        CleanlyLoadingComponent component(&engine, testCompiler.testFilePath);
+        QScopedPointer<QObject> obj(component.create());
+        QVERIFY(!obj.isNull());
+        QCOMPARE(obj->property("myAlias").toInt(), 100);
+    }
+}
+
 static QSet<QString> entrySet(const QDir &dir)
 {
     const auto &list = dir.entryList(QDir::Files | QDir::NoDotAndDotDot);
@@ -1005,6 +1059,257 @@ void tst_qmldiskcache::reuseStaticMappings()
     QVERIFY(testCompiler.loadTestFile());
 
     QCOMPARE(testCompiler.unitData(), data1);
+}
+
+class AParent : public QObject
+{
+    Q_OBJECT
+    Q_PROPERTY(int x MEMBER x)
+public:
+    AParent(QObject *parent = nullptr) : QObject(parent) {}
+    int x = 25;
+};
+
+class BParent : public QObject
+{
+    Q_OBJECT
+
+    // Insert y before x, to change the property index of x
+    Q_PROPERTY(int y MEMBER y)
+
+    Q_PROPERTY(int x MEMBER x)
+public:
+    BParent(QObject *parent = nullptr) : QObject(parent) {}
+    int y = 13;
+    int x = 25;
+};
+
+static QString writeTempFile(
+        const QTemporaryDir &tempDir, const QString &fileName, const char *contents) {
+    QFile f(tempDir.path() + '/' + fileName);
+    const bool ok = f.open(QIODevice::WriteOnly | QIODevice::Truncate);
+    Q_ASSERT(ok);
+    f.write(contents);
+    return f.fileName();
+};
+
+void tst_qmldiskcache::invalidateSaveLoadCache()
+{
+    qmlRegisterType<AParent>("Base", 1, 0, "Parent");
+    std::unique_ptr<QQmlEngine> e = std::make_unique<QQmlEngine>();
+
+    // If you store a CU to a .qmlc file at run time, the .qmlc file will contain
+    // alias entries with the encodedMetaPropertyIndex pre-resolved. That's in
+    // contrast to .qmlc files generated ahead of time. Exploit that to cause
+    // a need to recompile the file.
+
+    QTemporaryDir tempDir;
+    writeTempFile(
+        tempDir, QLatin1String("B.qml"),
+        R"(
+            import QML
+            QtObject {
+                component C: QtObject {}
+            }
+        )");
+
+    const QString fileName = writeTempFile(
+        tempDir, QLatin1String("a.qml"),
+        R"(
+            import Base
+            Parent {
+                id: self
+                property alias z: self.x
+                component C: Parent {}
+                property C c: C {}
+                property B.C d: B.C {}
+            }
+        )");
+    const QUrl url = QUrl::fromLocalFile(fileName);
+    waitForFileSystem();
+
+    {
+        QQmlComponent a(e.get(), url);
+        QVERIFY2(a.isReady(), qPrintable(a.errorString()));
+        QScopedPointer<QObject> ao(a.create());
+        QVERIFY(!ao.isNull());
+        AParent *ap = qobject_cast<AParent *>(ao.data());
+        QCOMPARE(ap->property("z").toInt(), ap->x);
+    }
+
+    QString errorString;
+    QQmlRefPointer<QV4::ExecutableCompilationUnit> oldUnit
+            = QV4::ExecutableCompilationUnit::create();
+    QVERIFY2(oldUnit->loadFromDisk(url, QFileInfo(fileName).lastModified(), &errorString), qPrintable(errorString));
+
+    // Produce a checksum mismatch.
+    e->clearComponentCache();
+    qmlClearTypeRegistrations();
+    qmlRegisterType<BParent>("Base", 1, 0, "Parent");
+    e = std::make_unique<QQmlEngine>();
+
+    {
+        QQmlComponent b(e.get(), url);
+        QVERIFY2(b.isReady(), qPrintable(b.errorString()));
+        QScopedPointer<QObject> bo(b.create());
+        QVERIFY(!bo.isNull());
+        BParent *bp = qobject_cast<BParent *>(bo.data());
+        QCOMPARE(bp->property("z").toInt(), bp->x);
+    }
+
+    // Make it recompile again. If we ever get rid of the metaobject indices in compilation units,
+    // the above test will not test the save/load cache anymore. Therefore, in order to make really
+    // sure that we get a new CU that invalidates the save/load cache, modify the file in place.
+
+    e->clearComponentCache();
+    {
+        QFile file(fileName);
+        file.open(QIODevice::WriteOnly | QIODevice::Append);
+        file.write(" ");
+    }
+    waitForFileSystem();
+
+    {
+        QQmlComponent b(e.get(), url);
+        QVERIFY2(b.isReady(), qPrintable(b.errorString()));
+        QScopedPointer<QObject> bo(b.create());
+        QVERIFY(!bo.isNull());
+        BParent *bp = qobject_cast<BParent *>(bo.data());
+        QCOMPARE(bp->property("z").toInt(), bp->x);
+    }
+
+    // Verify that the mapped unit data is actually different now.
+    // The cache should have been invalidated after all.
+    // So, now we should be able to load a freshly written CU.
+
+    QQmlRefPointer<QV4::ExecutableCompilationUnit> unit
+            = QV4::ExecutableCompilationUnit::create();
+    QVERIFY2(unit->loadFromDisk(url, QFileInfo(fileName).lastModified(), &errorString), qPrintable(errorString));
+
+    QVERIFY(unit->unitData() != oldUnit->unitData());
+}
+
+void tst_qmldiskcache::inlineComponentDoesNotCauseConstantInvalidation_data()
+{
+    QTest::addColumn<QByteArray>("code");
+
+    QTest::addRow("simple") << QByteArray(R"(
+        import QtQml
+        QtObject {
+            component Test: QtObject {
+                property int i: 28
+            }
+            property Test test: Test {
+                objectName: "foobar"
+            }
+            property int k: test.i
+        }
+    )");
+
+    QTest::addRow("with function") << QByteArray(R"(
+        import QtQml
+        QtObject {
+            component Test : QtObject {
+                id: self
+                property int i: 2
+                property alias j: self.i
+            }
+            property Test test: Test {
+                function updateValue() {}
+                objectName: 'foobar'
+                j: 28
+            }
+            property int k: test.j
+        }
+    )");
+
+    QTest::addRow("in nested") << QByteArray(R"(
+        import QtQuick
+        Item {
+            Item {
+                component Line: Item {
+                    property alias endY: pathLine.y
+                    Item {
+                        Item {
+                            id: pathLine
+                        }
+                    }
+                }
+            }
+            Line {
+                id: primaryLine
+                endY: 28
+            }
+            property int k: primaryLine.endY
+        }
+    )");
+
+    QTest::addRow("with revision") << QByteArray(R"(
+        import QtQuick
+        ListView {
+            Item {
+                id: scrollBar
+            }
+            delegate: Image {
+                mipmap: true
+            }
+            Item {
+                id: refreshNodesIndicator
+            }
+            property int k: delegate.createObject().mipmap ? 28 : 4
+        }
+    )");
+}
+
+void tst_qmldiskcache::inlineComponentDoesNotCauseConstantInvalidation()
+{
+    QFETCH(QByteArray, code);
+
+    QQmlEngine engine;
+
+    TestCompiler testCompiler(&engine);
+    QVERIFY(testCompiler.tempDir.isValid());
+
+    auto check = [&](){
+        QQmlComponent c(&engine, QUrl::fromLocalFile(testCompiler.testFilePath));
+        QVERIFY2(c.isReady(), qPrintable(c.errorString()));
+        QScopedPointer<QObject> o(c.create());
+        QVERIFY(!o.isNull());
+        QCOMPARE(o->property("k"), QVariant::fromValue<int>(28));
+    };
+
+    testCompiler.reset();
+    QVERIFY(testCompiler.writeTestFile(code));
+
+    QVERIFY(testCompiler.loadTestFile());
+
+    const quintptr data1 = testCompiler.unitData();
+    QVERIFY(data1 != 0);
+    QCOMPARE(testCompiler.unitData(), data1);
+    check();
+
+    engine.clearComponentCache();
+
+    // inline component does not invalidate cache
+    QVERIFY(testCompiler.loadTestFile());
+    QCOMPARE(testCompiler.unitData(), data1);
+    check();
+
+    testCompiler.reset();
+    QVERIFY(testCompiler.writeTestFile(R"(
+        import QtQml
+        QtObject {
+            component Test : QtObject {
+                property double d: 2
+            }
+            property Test test: Test {
+                objectName: 'foobar'
+            }
+        })"));
+    QVERIFY(testCompiler.loadTestFile());
+    const quintptr data2 = testCompiler.unitData();
+    QVERIFY(data2);
+    QVERIFY(data1 != data2);
 }
 
 QTEST_MAIN(tst_qmldiskcache)

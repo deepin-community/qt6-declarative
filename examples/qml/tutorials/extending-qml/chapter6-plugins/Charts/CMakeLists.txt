@@ -1,5 +1,8 @@
+# Copyright (C) 2022 The Qt Company Ltd.
+# SPDX-License-Identifier: BSD-3-Clause
+
+qt6_policy(SET QTP0001 NEW)
 qt6_add_qml_module(chartsplugin
-    VERSION 1.0
     URI "Charts"
     PLUGIN_TARGET chartsplugin
     DEPENDENCIES QtQuick
@@ -11,10 +14,10 @@ target_sources(chartsplugin PRIVATE
 )
 
 target_link_libraries(chartsplugin PRIVATE
-    Qt::Core
-    Qt::Gui
-    Qt::Qml
-    Qt::Quick
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Qml
+    Qt6::Quick
 )
 
 if(QT6_IS_SHARED_LIBS_BUILD AND APPLE)

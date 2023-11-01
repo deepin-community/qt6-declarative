@@ -1,3 +1,6 @@
+# Copyright (C) 2022 The Qt Company Ltd.
+# SPDX-License-Identifier: BSD-3-Clause
+
 # Generated from qtdeclarative.pro.
 
 cmake_minimum_required(VERSION 3.16)
@@ -11,7 +14,8 @@ project(QtDeclarative # special case
 )
 
 find_package(Qt6 ${PROJECT_VERSION} CONFIG REQUIRED COMPONENTS BuildInternals Core) # special case
-find_package(Qt6 ${PROJECT_VERSION} QUIET CONFIG OPTIONAL_COMPONENTS Gui Network Widgets OpenGL OpenGLWidgets Sql Concurrent Test LanguageServerPrivate LinguistTools)
+find_package(Qt6 ${PROJECT_VERSION} QUIET CONFIG OPTIONAL_COMPONENTS Gui Network Widgets OpenGL OpenGLWidgets Sql Concurrent Test LanguageServerPrivate LinguistTools Svg)
+qt_internal_project_setup()
 
 # Set up QT_HOST_PATH as an extra root path to look for the ShaderToolsTools package
 # when cross-compiling.

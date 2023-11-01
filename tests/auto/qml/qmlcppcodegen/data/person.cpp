@@ -85,3 +85,29 @@ QByteArray Person::data() const
 {
     return m_data;
 }
+
+QList<Person *> Person::cousins() const
+{
+    return m_cousins;
+}
+
+void Person::setCousins(const QList<Person *> &newCousins)
+{
+    if (m_cousins == newCousins)
+        return;
+    m_cousins = newCousins;
+    emit cousinsChanged();
+}
+
+QRectF Person::area() const
+{
+    return m_area;
+}
+
+void Person::setArea(const QRectF &newArea)
+{
+    if (m_area == newArea)
+        return;
+    m_area = newArea;
+    emit areaChanged();
+}

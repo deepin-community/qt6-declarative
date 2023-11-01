@@ -1,3 +1,4 @@
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/qml/Qt/labs/folderlistmodel/libqmlfolderlistmodelplugin.so
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/qml/Qt/labs/folderlistmodel/plugins.qmltypes
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/qml/Qt/labs/folderlistmodel/qmldir
+usr/lib/${DEB_HOST_MULTIARCH}/libQt6LabsFolderListModel.so.*

@@ -1,3 +1,6 @@
+# Copyright (C) 2022 The Qt Company Ltd.
+# SPDX-License-Identifier: BSD-3-Clause
+
 
 
 #### Inputs
@@ -69,7 +72,7 @@ qt_feature("quick-treeview" PRIVATE
     SECTION "Qt Quick"
     LABEL "TreeView item"
     PURPOSE "Provides the TreeView item."
-    CONDITION QT_FEATURE_qml_table_model
+    CONDITION QT_FEATURE_quick_tableview
 )
 qt_feature("quick-particles" PRIVATE
     SECTION "Qt Quick"
@@ -100,7 +103,7 @@ qt_feature("quick-repeater" PRIVATE
     PURPOSE "Provides the Repeater item."
     CONDITION QT_FEATURE_qml_delegate_model
 )
-qt_feature("quick-shadereffect" PRIVATE
+qt_feature("quick-shadereffect" PUBLIC
     SECTION "Qt Quick"
     LABEL "ShaderEffect item"
     PURPOSE "Provides Shader effects."
@@ -115,6 +118,13 @@ qt_feature("quick-draganddrop" PUBLIC
     LABEL "Drag & Drop"
     PURPOSE "Drag and drop support for Qt Quick"
     CONDITION ( QT_FEATURE_draganddrop ) AND ( QT_FEATURE_regularexpression )
+)
+
+qt_feature("quick-pixmap-cache-threaded-download" PUBLIC
+    SECTION "Qt Quick"
+    LABEL "Threaded download in pixmap cache"
+    PURPOSE "Pixmap cache pixmap downloads on separate threads"
+    CONDITION ( QT_FEATURE_thread ) AND ( NOT WASM )
 )
 qt_configure_add_summary_section(NAME "Qt Quick")
 qt_configure_add_summary_entry(ARGS "quick-animatedimage")

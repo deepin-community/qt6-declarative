@@ -24,6 +24,7 @@ Module {
 
     Component {
         name: "QVariantList"
+        extension: "Array"
         valueType: "QVariant"
         accessSemantics: "sequence"
     }
@@ -154,10 +155,66 @@ Module {
     }
 
     Component {
+        file: "qqmllist.h"
+        name: "QQmlListProperty<QObject>"
+        extension: "Array"
+        accessSemantics: "sequence"
+        valueType: "QObject"
+    }
+
+    Component {
+        file: "qobject.h"
+        name: "QObjectList"
+        extension: "Array"
+        accessSemantics: "sequence"
+        valueType: "QObject"
+    }
+
+    Component {
+        name: "qint8"
+        extension: "Number"
+        accessSemantics: "value"
+    }
+
+    Component {
+        name: "quint8"
+        extension: "Number"
+        accessSemantics: "value"
+    }
+
+    Component {
+        name: "short"
+        extension: "Number"
+        accessSemantics: "value"
+    }
+
+    Component {
+        name: "ushort"
+        extension: "Number"
+        accessSemantics: "value"
+    }
+
+    Component {
         name: "int"
         extension: "Number"
         exports: ["QML/int 1.0"]
         exportMetaObjectRevisions: [256]
+        accessSemantics: "value"
+    }
+
+    Component {
+        name: "uint"
+        extension: "Number"
+        accessSemantics: "value"
+    }
+
+    Component {
+        name: "qlonglong"
+        accessSemantics: "value"
+    }
+
+    Component {
+        name: "qulonglong"
         accessSemantics: "value"
     }
 
@@ -176,6 +233,11 @@ Module {
     }
 
     Component {
+        name: "QChar"
+        accessSemantics: "value"
+    }
+
+    Component {
         name: "QString"
         extension: "String"
         exports: ["QML/string 1.0"]
@@ -185,6 +247,7 @@ Module {
 
     Component {
         name: "QStringList"
+        extension: "Array"
         valueType: "QString"
         accessSemantics: "sequence"
     }
@@ -206,8 +269,18 @@ Module {
     }
 
     Component {
+        name: "QDate"
+        accessSemantics: "value"
+    }
+
+    Component {
+        name: "QTime"
+        accessSemantics: "value"
+    }
+
+    Component {
         name: "QUrl"
-        extension: "Url"
+        extension: "URL"
         exports: ["QML/url 1.0"]
         exportMetaObjectRevisions: [256]
         accessSemantics: "value"

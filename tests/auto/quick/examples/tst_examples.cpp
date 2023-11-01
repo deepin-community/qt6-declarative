@@ -29,10 +29,10 @@ private slots:
     void init();
     void cleanup();
 
-    void sgexamples_data();
-    void sgexamples();
-    void sgsnippets_data();
-    void sgsnippets();
+    void examples_data();
+    void examples();
+    void snippets_data();
+    void snippets();
 
     void namingConvention();
 private:
@@ -54,15 +54,14 @@ tst_examples::tst_examples()
     // Add directories you want excluded here
     excludedDirs << "shared"; //Not an example
     excludedDirs << "snippets/qml/path"; //No root QQuickItem
-    excludedDirs << "examples/qml/qmlextensionplugins"; //Requires special import search path
 
     // These snippets are not expected to run on their own.
     excludedDirs << "snippets/qml/visualdatamodel_rootindex";
     excludedDirs << "snippets/qml/qtbinding";
     excludedDirs << "snippets/qml/imports";
-    excludedDirs << "examples/quickcontrols2/imagine";
-    excludedDirs << "examples/quickcontrols2/texteditor";
-    excludedDirs << "examples/quickcontrols2/ios/todolist"; // Must be run via executable.
+    excludedDirs << "examples/quickcontrols/imagine";
+    excludedDirs << "examples/quickcontrols/texteditor";
+    excludedDirs << "examples/quickcontrols/ios/todolist"; // Must be run via executable.
     excludedFiles << "snippets/qml/image-ext.qml";
     excludedFiles << "examples/quick/shapes/content/main.qml"; // relies on resources
     excludedFiles << "examples/quick/shapes/content/interactive.qml"; // relies on resources
@@ -72,8 +71,7 @@ tst_examples::tst_examples()
     excludedFiles << "examples/qml/dynamicscene/dynamicscene.qml";
     excludedFiles << "examples/quick/animation/basics/color-animation.qml";
     excludedFiles << "examples/quick/particles/affectors/content/age.qml";
-    excludedFiles << "examples/quick/touchinteraction/multipointtouch/bearwhack.qml";
-    excludedFiles << "examples/quick/touchinteraction/multipointtouch/multiflame.qml";
+    excludedFiles << "examples/quick/pointerhandlers/multiflame.qml";
     excludedDirs << "examples/quick/particles";
     // No Support for ShaderEffect
     excludedFiles << "src/quick/doc/snippets/qml/animators.qml";
@@ -87,13 +85,13 @@ tst_examples::~tst_examples()
 
 void tst_examples::init()
 {
-    if (!qstrcmp(QTest::currentTestFunction(), "sgsnippets"))
+    if (!qstrcmp(QTest::currentTestFunction(), "snippets"))
         testlibMsgHandler = qInstallMessageHandler(msgHandlerFilter);
 }
 
 void tst_examples::cleanup()
 {
-    if (!qstrcmp(QTest::currentTestFunction(), "sgsnippets"))
+    if (!qstrcmp(QTest::currentTestFunction(), "snippets"))
         qInstallMessageHandler(testlibMsgHandler);
 }
 
@@ -205,10 +203,10 @@ that they start and exit cleanly.
 Examples are any .qml files under the examples/ directory that start
 with a lower case letter.
 */
-void tst_examples::sgexamples_data()
+void tst_examples::examples_data()
 {
 #ifdef Q_OS_ANDROID
-    QSKIP("tst_examples::sgexamples_data needs adaptions for Android, QTBUG-102858.");
+    QSKIP("tst_examples::examples_data needs adaptions for Android, QTBUG-102858.");
 #endif
     QTest::addColumn<QString>("file");
 
@@ -227,7 +225,7 @@ void tst_examples::sgexamples_data()
         QTest::newRow(qPrintable(repoSourceDir.relativeFilePath(file))) << file;
 }
 
-void tst_examples::sgexamples()
+void tst_examples::examples()
 {
     QFETCH(QString, file);
     QQuickWindow window;
@@ -255,10 +253,10 @@ void tst_examples::sgexamples()
     qApp->processEvents();
 }
 
-void tst_examples::sgsnippets_data()
+void tst_examples::snippets_data()
 {
 #ifdef Q_OS_ANDROID
-    QSKIP("tst_examples::sgsnippets_data needs adaptions for Android, QTBUG-102858.");
+    QSKIP("tst_examples::snippets_data needs adaptions for Android, QTBUG-102858.");
 #endif
     QTest::addColumn<QString>("file");
 
@@ -287,7 +285,7 @@ void tst_examples::sgsnippets_data()
         QTest::newRow(qPrintable(repoSourceDir.relativeFilePath(file))) << file;
 }
 
-void tst_examples::sgsnippets()
+void tst_examples::snippets()
 {
 
     QFETCH(QString, file);

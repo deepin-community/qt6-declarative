@@ -21,23 +21,23 @@ QT_REQUIRE_CONFIG(quick_shadereffect);
 
 #include <QtQuick/qquickitem.h>
 #include <private/qtquickglobal_p.h>
+#include <private/qsgadaptationlayer_p.h>
 
 QT_BEGIN_NAMESPACE
 
-class QQuickShaderEffectImpl;
 class QQuickShaderEffectPrivate;
 
 class Q_QUICK_PRIVATE_EXPORT QQuickShaderEffect : public QQuickItem
 {
     Q_OBJECT
-    Q_PROPERTY(QUrl fragmentShader READ fragmentShader WRITE setFragmentShader NOTIFY fragmentShaderChanged)
-    Q_PROPERTY(QUrl vertexShader READ vertexShader WRITE setVertexShader NOTIFY vertexShaderChanged)
-    Q_PROPERTY(bool blending READ blending WRITE setBlending NOTIFY blendingChanged)
-    Q_PROPERTY(QVariant mesh READ mesh WRITE setMesh NOTIFY meshChanged)
-    Q_PROPERTY(CullMode cullMode READ cullMode WRITE setCullMode NOTIFY cullModeChanged)
-    Q_PROPERTY(QString log READ log NOTIFY logChanged)
-    Q_PROPERTY(Status status READ status NOTIFY statusChanged)
-    Q_PROPERTY(bool supportsAtlasTextures READ supportsAtlasTextures WRITE setSupportsAtlasTextures NOTIFY supportsAtlasTexturesChanged REVISION(2, 4))
+    Q_PROPERTY(QUrl fragmentShader READ fragmentShader WRITE setFragmentShader NOTIFY fragmentShaderChanged FINAL)
+    Q_PROPERTY(QUrl vertexShader READ vertexShader WRITE setVertexShader NOTIFY vertexShaderChanged FINAL)
+    Q_PROPERTY(bool blending READ blending WRITE setBlending NOTIFY blendingChanged FINAL)
+    Q_PROPERTY(QVariant mesh READ mesh WRITE setMesh NOTIFY meshChanged FINAL)
+    Q_PROPERTY(CullMode cullMode READ cullMode WRITE setCullMode NOTIFY cullModeChanged FINAL)
+    Q_PROPERTY(QString log READ log NOTIFY logChanged FINAL)
+    Q_PROPERTY(Status status READ status NOTIFY statusChanged FINAL)
+    Q_PROPERTY(bool supportsAtlasTextures READ supportsAtlasTextures WRITE setSupportsAtlasTextures NOTIFY supportsAtlasTexturesChanged REVISION(2, 4) FINAL)
     QML_NAMED_ELEMENT(ShaderEffect)
     QML_ADDED_IN_VERSION(2, 0)
 
@@ -81,7 +81,6 @@ public:
     Status status() const;
 
     bool isComponentComplete() const;
-    QString parseLog();
 
     bool updateUniformValue(const QByteArray &name, const QVariant &value);
 
@@ -103,8 +102,6 @@ protected:
     void itemChange(ItemChange change, const ItemChangeData &value) override;
 
 private:
-    QQuickShaderEffectImpl *m_impl;
-
     Q_DECLARE_PRIVATE(QQuickShaderEffect)
 };
 

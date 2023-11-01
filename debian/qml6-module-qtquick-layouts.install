@@ -1,3 +1,4 @@
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/qml/QtQuick/Layouts/libqquicklayoutsplugin.so
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/qml/QtQuick/Layouts/plugins.qmltypes
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/qml/QtQuick/Layouts/qmldir
+usr/lib/${DEB_HOST_MULTIARCH}/libQt6QuickLayouts.so.*

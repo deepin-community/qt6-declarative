@@ -1,6 +1,7 @@
 // Copyright (C) 2020 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
+#include "qqmldomitem_p.h"
 #include "qqmldomtop_p.h"
 #include "qqmldomexternalitems_p.h"
 #include "qqmldommock_p.h"
@@ -8,6 +9,7 @@
 #include "qqmldomastcreator_p.h"
 #include "qqmldommoduleindex_p.h"
 #include "qqmldomtypesreader_p.h"
+#include "qqmldom_utils_p.h"
 
 #include <QtQml/private/qqmljslexer_p.h>
 #include <QtQml/private/qqmljsparser_p.h>
@@ -131,13 +133,14 @@ std::shared_ptr<DomUniverse> DomUniverse::guaranteeUniverse(std::shared_ptr<DomU
     };
     if (univ)
         return univ;
-    return std::shared_ptr<DomUniverse>(
-            new DomUniverse(QLatin1String("universe") + QString::number(next())));
+
+    return std::make_shared<DomUniverse>(
+            QLatin1String("universe") + QString::number(next()));
 }
 
 DomItem DomUniverse::create(QString universeName, Options options)
 {
-    std::shared_ptr<DomUniverse> res(new DomUniverse(universeName, options));
+    auto res = std::make_shared<DomUniverse>(universeName, options);
     return DomItem(res);
 }
 
@@ -193,13 +196,13 @@ bool DomUniverse::iterateDirectSubpaths(DomItem &self, DirectVisitor visitor)
         return self.subListItem(List(
                 Path::Field(Fields::queue),
                 [q](DomItem &list, index_type i) {
-                    if (i >= 0 && i < q.length())
+                    if (i >= 0 && i < q.size())
                         return list.subDataItem(PathEls::Index(i), q.at(i).toCbor(),
                                                 ConstantData::Options::FirstMapIsFields);
                     else
                         return DomItem();
                 },
-                [q](DomItem &) { return index_type(q.length()); }, nullptr,
+                [q](DomItem &) { return index_type(q.size()); }, nullptr,
                 QLatin1String("ParsingTask")));
     });
     return cont;
@@ -214,15 +217,8 @@ std::shared_ptr<OwningItem> DomUniverse::doCopy(DomItem &) const
         newName = QStringLiteral(u"%1Copy%2").arg(m_name).arg(m.captured(1).toInt() + 1);
     else
         newName = m_name + QLatin1String("Copy");
-    auto res = std::shared_ptr<DomUniverse>(new DomUniverse(newName));
+    auto res = std::make_shared<DomUniverse>(newName);
     return res;
-}
-
-void DomUniverse::loadFile(DomItem &self, QString filePath, QString logicalPath, Callback callback,
-                           LoadOptions loadOptions, std::optional<DomType> fileType)
-{
-    loadFile(self, filePath, logicalPath, QString(), QDateTime::fromMSecsSinceEpoch(0), callback,
-             loadOptions, fileType);
 }
 
 static DomType fileTypeForPath(DomItem &self, QString canonicalFilePath)
@@ -235,12 +231,12 @@ static DomType fileTypeForPath(DomItem &self, QString canonicalFilePath)
     } else if (QStringView(u"qmldir").compare(QFileInfo(canonicalFilePath).fileName(),
                                               Qt::CaseInsensitive)
                == 0) {
-        return DomType::QmltypesFile;
+        return DomType::QmldirFile;
     } else if (QFileInfo(canonicalFilePath).isDir()) {
         return DomType::QmlDirectory;
     } else {
         self.addError(DomUniverse::myErrors()
-                              .error(QCoreApplication::translate("Dom::filteTypeForPath",
+                              .error(QCoreApplication::translate("Dom::fileTypeForPath",
                                                                  "Could not detect type of file %1")
                                              .arg(canonicalFilePath))
                               .handle());
@@ -248,11 +244,10 @@ static DomType fileTypeForPath(DomItem &self, QString canonicalFilePath)
     return DomType::Empty;
 }
 
-void DomUniverse::loadFile(DomItem &self, QString canonicalFilePath, QString logicalPath,
-                           QString code, QDateTime codeDate, Callback callback,
+void DomUniverse::loadFile(DomItem &self, const FileToLoad &file, Callback callback,
                            LoadOptions loadOptions, std::optional<DomType> fileType)
 {
-    DomType fType = (bool(fileType) ? (*fileType) : fileTypeForPath(self, canonicalFilePath));
+    DomType fType = (bool(fileType) ? (*fileType) : fileTypeForPath(self, file.canonicalPath()));
     switch (fType) {
     case DomType::QmlFile:
     case DomType::QmltypesFile:
@@ -260,16 +255,15 @@ void DomUniverse::loadFile(DomItem &self, QString canonicalFilePath, QString log
     case DomType::QmlDirectory: {
         // Protect the queue from concurrent access.
         QMutexLocker l(mutex());
-        m_queue.enqueue(ParsingTask { QDateTime::currentDateTime(), loadOptions, fType,
-                                      canonicalFilePath, logicalPath, code, codeDate,
-                                      self.ownerAs<DomUniverse>(), callback });
+        m_queue.enqueue(ParsingTask{ QDateTime::currentDateTimeUtc(), loadOptions, fType, file,
+                                     self.ownerAs<DomUniverse>(), callback });
         break;
     }
     default:
         self.addError(myErrors()
                               .error(tr("Ignoring request to load file %1 of unexpected type %2, "
                                         "calling callback immediately")
-                                             .arg(canonicalFilePath, domTypeToString(fType)))
+                                             .arg(file.canonicalPath(), domTypeToString(fType)))
                               .handle());
         Q_ASSERT(false && "loading non supported file type");
         callback(Path(), DomItem::empty, DomItem::empty);
@@ -287,7 +281,7 @@ updateEntry(DomItem &univ, std::shared_ptr<T> newItem,
     std::shared_ptr<ExternalItemPair<T>> oldValue;
     std::shared_ptr<ExternalItemPair<T>> newValue;
     QString canonicalPath = newItem->canonicalFilePath();
-    QDateTime now = QDateTime::currentDateTime();
+    QDateTime now = QDateTime::currentDateTimeUtc();
     {
         QMutexLocker l(mutex);
         auto it = map.find(canonicalPath);
@@ -313,8 +307,8 @@ updateEntry(DomItem &univ, std::shared_ptr<T> newItem,
                 it = map.insert(it, canonicalPath, newValue);
             }
         } else {
-            newValue = std::shared_ptr<ExternalItemPair<T>>(new ExternalItemPair<T>(
-                    (newItem->isValid() ? newItem : std::shared_ptr<T>()), newItem, now, now));
+            newValue = std::make_shared<ExternalItemPair<T>>(
+                    (newItem->isValid() ? newItem : std::shared_ptr<T>()), newItem, now, now);
             map.insert(canonicalPath, newValue);
         }
     }
@@ -332,17 +326,22 @@ void DomUniverse::execQueue()
         t = m_queue.dequeue();
     }
     shared_ptr<DomUniverse> topPtr = t.requestingUniverse.lock();
+    QString canonicalPath = t.file.canonicalPath();
     if (!topPtr) {
-        myErrors().error(tr("Ignoring callback for loading of %1: universe is not valid anymore").arg(t.canonicalPath)).handle();
+        myErrors()
+                .error(tr("Ignoring callback for loading of %1: universe is not valid anymore")
+                               .arg(canonicalPath))
+                .handle();
     }
-    QString canonicalPath = t.canonicalPath;
-    QString code = t.contents;
-    QDateTime contentDate = t.contentsDate;
+
+    QString code = t.file.content() ? t.file.content()->data : QString();
+    QDateTime contentDate = t.file.content() ? t.file.content()->date
+                                             : QDateTime::fromMSecsSinceEpoch(0, QTimeZone::UTC);
+
     bool skipParse = false;
     DomItem oldValue; // old ExternalItemPair (might be empty, or equal to newValue)
     DomItem newValue; // current ExternalItemPair
     DomItem univ = DomItem(topPtr);
-    QFileInfo path(canonicalPath);
     QVector<ErrorMessage> messages;
 
     if (t.kind == DomType::QmlFile || t.kind == DomType::QmltypesFile
@@ -362,25 +361,27 @@ void DomUniverse::execQueue()
         };
         if (code.isEmpty()) {
             QFile file(canonicalPath);
-            canonicalPath = path.canonicalFilePath();
+            QFileInfo path(canonicalPath);
             if (canonicalPath.isEmpty()) {
-                messages.append(myErrors().error(tr("Non existing path %1").arg(t.canonicalPath)));
-                canonicalPath = t.canonicalPath;
+                messages.append(myErrors().error(tr("Non existing path %1").arg(canonicalPath)));
+                skipParse = true; // nothing to parse from the non-existing path
             }
             {
                 QMutexLocker l(mutex());
                 auto value = getValue();
                 if (!(t.loadOptions & LoadOption::ForceLoad) && value) {
+                    // use value also when its path is non-existing
                     if (value && value->currentItem()
-                        && path.lastModified() < value->currentItem()->lastDataUpdateAt()) {
+                        && (canonicalPath.isEmpty()
+                            || path.lastModified() < value->currentItem()->lastDataUpdateAt())) {
                         oldValue = newValue = univ.copy(value);
                         skipParse = true;
                     }
                 }
             }
             if (!skipParse) {
-                contentDate = QDateTime::currentDateTime();
-                if (QFileInfo(canonicalPath).isDir()) {
+                contentDate = QDateTime::currentDateTimeUtc();
+                if (path.isDir()) {
                     code = QDir(canonicalPath)
                                    .entryList(QDir::NoDotAndDotDot | QDir::Files, QDir::Name)
                                    .join(QLatin1Char('\n'));
@@ -409,16 +410,20 @@ void DomUniverse::execQueue()
             }
         }
         if (!skipParse) {
-            QDateTime now(QDateTime::currentDateTime());
+            QDateTime now(QDateTime::currentDateTimeUtc());
             if (t.kind == DomType::QmlFile) {
-                shared_ptr<QmlFile> qmlFile(new QmlFile(canonicalPath, code, contentDate));
-                shared_ptr<DomEnvironment> envPtr(new DomEnvironment(
-                        QStringList(), DomEnvironment::Option::NoDependencies, topPtr));
+                auto qmlFile = std::make_shared<QmlFile>(canonicalPath, code, contentDate);
+                std::shared_ptr<DomEnvironment> envPtr;
+                if (auto ptr = t.file.environment().lock())
+                    envPtr = std::move(ptr);
+                else
+                    envPtr = std::make_shared<DomEnvironment>(
+                            QStringList(), DomEnvironment::Option::NoDependencies, topPtr);
                 envPtr->addQmlFile(qmlFile);
                 DomItem env(envPtr);
                 if (qmlFile->isValid()) {
                     MutableDomItem qmlFileObj(env.copy(qmlFile));
-                    createDom(qmlFileObj);
+                    createDom(qmlFileObj, t.file.options());
                 } else {
                     QString errs;
                     DomItem qmlFileObj = env.copy(qmlFile);
@@ -434,8 +439,8 @@ void DomUniverse::execQueue()
                 oldValue = univ.copy(change.first);
                 newValue = univ.copy(change.second);
             } else if (t.kind == DomType::QmltypesFile) {
-                shared_ptr<QmltypesFile> qmltypesFile(
-                        new QmltypesFile(canonicalPath, code, contentDate));
+                auto qmltypesFile = std::make_shared<QmltypesFile>(
+                        canonicalPath, code, contentDate);
                 QmltypesReader reader(univ.copy(qmltypesFile));
                 reader.parse();
                 auto change = updateEntry<QmltypesFile>(univ, qmltypesFile, m_qmltypesFileWithPath,
@@ -450,8 +455,8 @@ void DomUniverse::execQueue()
                 oldValue = univ.copy(change.first);
                 newValue = univ.copy(change.second);
             } else if (t.kind == DomType::QmlDirectory) {
-                shared_ptr<QmlDirectory> qmlDirectory(new QmlDirectory(
-                        canonicalPath, code.split(QLatin1Char('\n')), contentDate));
+                auto qmlDirectory = std::make_shared<QmlDirectory>(
+                        canonicalPath, code.split(QLatin1Char('\n')), contentDate);
                 auto change = updateEntry<QmlDirectory>(univ, qmlDirectory, m_qmlDirectoryWithPath,
                                                         mutex());
                 oldValue = univ.copy(change.first);
@@ -499,7 +504,7 @@ void DomUniverse::removePath(const QString &path)
 
 std::shared_ptr<OwningItem> LoadInfo::doCopy(DomItem &self) const
 {
-    std::shared_ptr<LoadInfo> res(new LoadInfo(*this));
+    auto res = std::make_shared<LoadInfo>(*this);
     if (res->status() != Status::Done) {
         res->addErrorLocal(DomEnvironment::myErrors().warning(
                 u"This is a copy of a LoadInfo still in progress, artificially ending it, if you "
@@ -588,9 +593,9 @@ void LoadInfo::advanceLoad(DomItem &self)
     }
     switch (myStatus) {
     case Status::NotStarted:
-        refreshedDataAt(QDateTime::currentDateTime());
+        refreshedDataAt(QDateTime::currentDateTimeUtc());
         doAddDependencies(self);
-        refreshedDataAt(QDateTime::currentDateTime());
+        refreshedDataAt(QDateTime::currentDateTimeUtc());
         {
             QMutexLocker l(mutex());
             Q_ASSERT(m_status == Status::Starting);
@@ -605,7 +610,7 @@ void LoadInfo::advanceLoad(DomItem &self)
     case Status::Starting:
     case Status::InProgress:
         if (depValid) {
-            refreshedDataAt(QDateTime::currentDateTime());
+            refreshedDataAt(QDateTime::currentDateTimeUtc());
             if (!dep.uri.isEmpty()) {
                 self.loadModuleDependency(
                         dep.uri, dep.version,
@@ -618,7 +623,7 @@ void LoadInfo::advanceLoad(DomItem &self)
                 DomItem env = self.environment();
                 if (std::shared_ptr<DomEnvironment> envPtr = env.ownerAs<DomEnvironment>())
                     envPtr->loadFile(
-                            env, dep.filePath, QString(),
+                            env, FileToLoad::fromFileSystem(envPtr, dep.filePath),
                             [this, self, dep](Path, DomItem &, DomItem &) mutable {
                                 finishedLoadingDep(self, dep);
                             },
@@ -879,11 +884,11 @@ DomTop::Callback envCallbackForFile(
                 newValue = oldValue->makeCopy(oldValueObj);
                 if (newValue->current != newItemPtr) {
                     newValue->current = newItemPtr;
-                    newValue->setCurrentExposedAt(QDateTime::currentDateTime());
+                    newValue->setCurrentExposedAt(QDateTime::currentDateTimeUtc());
                 }
             } else {
-                newValue = std::shared_ptr<ExternalItemInfo<T>>(
-                        new ExternalItemInfo<T>(newItemPtr, QDateTime::currentDateTime()));
+                newValue = std::make_shared<ExternalItemInfo<T>>(
+                        newItemPtr, QDateTime::currentDateTimeUtc());
             }
             {
                 QMutexLocker l(envPtr->mutex());
@@ -899,7 +904,7 @@ DomTop::Callback envCallbackForFile(
         {
             auto depLoad = qScopeGuard([p, &env, envPtr, allDirectDepsCallback, endCallback] {
                 if (!(envPtr->options() & DomEnvironment::Option::NoDependencies)) {
-                    std::shared_ptr<LoadInfo> loadInfo(new LoadInfo(p));
+                    auto loadInfo = std::make_shared<LoadInfo>(p);
                     if (!p)
                         Q_ASSERT(false);
                     DomItem loadInfoObj = env.copy(loadInfo);
@@ -1080,7 +1085,7 @@ bool DomEnvironment::iterateDirectSubpaths(DomItem &self, DirectVisitor visitor)
             loadedLoadInfo = true;
             loadsWithWork = m_loadsWithWork;
             inProgress = m_inProgress;
-            nAllLoadedCallbacks = m_allLoadedCallback.length();
+            nAllLoadedCallbacks = m_allLoadedCallback.size();
         }
     };
     cont = cont
@@ -1090,14 +1095,14 @@ bool DomEnvironment::iterateDirectSubpaths(DomItem &self, DirectVisitor visitor)
                         return self.subListItem(List(
                                 Path::Field(Fields::loadsWithWork),
                                 [loadsWithWork](DomItem &list, index_type i) {
-                                    if (i >= 0 && i < loadsWithWork.length())
+                                    if (i >= 0 && i < loadsWithWork.size())
                                         return list.subDataItem(PathEls::Index(i),
                                                                 loadsWithWork.at(i).toString());
                                     else
                                         return DomItem();
                                 },
                                 [loadsWithWork](DomItem &) {
-                                    return index_type(loadsWithWork.length());
+                                    return index_type(loadsWithWork.size());
                                 },
                                 nullptr, QLatin1String("Path")));
                     });
@@ -1107,13 +1112,13 @@ bool DomEnvironment::iterateDirectSubpaths(DomItem &self, DirectVisitor visitor)
                    return self.subListItem(List(
                            Path::Field(Fields::inProgress),
                            [inProgress](DomItem &list, index_type i) {
-                               if (i >= 0 && i < inProgress.length())
+                               if (i >= 0 && i < inProgress.size())
                                    return list.subDataItem(PathEls::Index(i),
                                                            inProgress.at(i).toString());
                                else
                                    return DomItem();
                            },
-                           [inProgress](DomItem &) { return index_type(inProgress.length()); },
+                           [inProgress](DomItem &) { return index_type(inProgress.size()); },
                            nullptr, QLatin1String("Path")));
                });
     cont = cont && self.dvItemField(visitor, Fields::loadInfo, [&self, this]() {
@@ -1166,37 +1171,28 @@ std::shared_ptr<DomEnvironment> DomEnvironment::makeCopy(DomItem &self) const
     return std::static_pointer_cast<DomEnvironment>(doCopy(self));
 }
 
-void DomEnvironment::loadFile(DomItem &self, QString filePath, QString logicalPath,
-                              DomTop::Callback loadCallback, DomTop::Callback directDepsCallback,
-                              DomTop::Callback endCallback, LoadOptions loadOptions,
-                              std::optional<DomType> fileType, ErrorHandler h)
-{
-    loadFile(self, filePath, logicalPath, QString(), QDateTime::fromMSecsSinceEpoch(0),
-             loadCallback, directDepsCallback, endCallback, loadOptions, fileType, h);
-}
-
 std::shared_ptr<OwningItem> DomEnvironment::doCopy(DomItem &) const
 {
     shared_ptr<DomEnvironment> res;
     if (m_base)
-        res = std::shared_ptr<DomEnvironment>(new DomEnvironment(m_base, m_loadPaths, m_options));
+        res = std::make_shared<DomEnvironment>(m_base, m_loadPaths, m_options);
     else
-        res = std::shared_ptr<DomEnvironment>(
-                new DomEnvironment(m_loadPaths, m_options, m_universe));
+        res = std::make_shared<DomEnvironment>(
+                m_loadPaths, m_options, m_universe);
     return res;
 }
 
-void DomEnvironment::loadFile(DomItem &self, QString filePath, QString logicalPath, QString code,
-                              QDateTime codeDate, Callback loadCallback,
+void DomEnvironment::loadFile(DomItem &self, FileToLoad file, Callback loadCallback,
                               Callback directDepsCallback, Callback endCallback,
                               LoadOptions loadOptions, std::optional<DomType> fileType,
                               ErrorHandler h)
 {
-    QFileInfo fileInfo(filePath);
-    QString canonicalFilePath = fileInfo.canonicalFilePath();
-    if (canonicalFilePath.isEmpty()) {
-        if (code.isNull()) {
-            myErrors().error(tr("Non existing path to load: '%1'").arg(filePath)).handle(h);
+    if (file.canonicalPath().isEmpty()) {
+        if (!file.content() || file.content()->data.isNull()) {
+            // file's content inavailable and no path to retrieve it
+            myErrors()
+                    .error(tr("Non existing path to load: '%1'").arg(file.logicalPath()))
+                    .handle(h);
             if (loadCallback)
                 loadCallback(Path(), DomItem::empty, DomItem::empty);
             if (directDepsCallback)
@@ -1207,38 +1203,41 @@ void DomEnvironment::loadFile(DomItem &self, QString filePath, QString logicalPa
                 });
             return;
         } else {
-            canonicalFilePath = filePath;
+            // fallback: path invalid but file's content is already available.
+            file.canonicalPath() = file.logicalPath();
         }
     }
+
     shared_ptr<ExternalItemInfoBase> oldValue, newValue;
-    DomType fType = (bool(fileType) ? (*fileType) : fileTypeForPath(self, canonicalFilePath));
+    const DomType fType =
+            (bool(fileType) ? (*fileType) : fileTypeForPath(self, file.canonicalPath()));
     switch (fType) {
     case DomType::QmlDirectory: {
         {
             QMutexLocker l(mutex());
-            auto it = m_qmlDirectoryWithPath.find(canonicalFilePath);
+            auto it = m_qmlDirectoryWithPath.find(file.canonicalPath());
             if (it != m_qmlDirectoryWithPath.end())
                 oldValue = newValue = *it;
         }
         if (!newValue && (options() & Option::NoReload) && m_base) {
-            if (auto v = m_base->qmlDirectoryWithPath(self, canonicalFilePath, EnvLookup::Normal)) {
+            if (auto v = m_base->qmlDirectoryWithPath(self, file.canonicalPath(),
+                                                      EnvLookup::Normal)) {
                 oldValue = v;
-                QDateTime now = QDateTime::currentDateTime();
-                std::shared_ptr<ExternalItemInfo<QmlDirectory>> newV(
-                        new ExternalItemInfo<QmlDirectory>(v->current, now, v->revision(),
-                                                           v->lastDataUpdateAt()));
+                QDateTime now = QDateTime::currentDateTimeUtc();
+                auto newV = std::make_shared<ExternalItemInfo<QmlDirectory>>(
+                        v->current, now, v->revision(), v->lastDataUpdateAt());
                 newValue = newV;
                 QMutexLocker l(mutex());
-                auto it = m_qmlDirectoryWithPath.find(canonicalFilePath);
+                auto it = m_qmlDirectoryWithPath.find(file.canonicalPath());
                 if (it != m_qmlDirectoryWithPath.end())
                     oldValue = newValue = *it;
                 else
-                    m_qmlDirectoryWithPath.insert(canonicalFilePath, newV);
+                    m_qmlDirectoryWithPath.insert(file.canonicalPath(), newV);
             }
         }
         if (!newValue) {
             self.universe().loadFile(
-                    canonicalFilePath, logicalPath, code, codeDate,
+                    file,
                     callbackForQmlDirectory(self, loadCallback, directDepsCallback, endCallback),
                     loadOptions, fType);
             return;
@@ -1247,29 +1246,28 @@ void DomEnvironment::loadFile(DomItem &self, QString filePath, QString logicalPa
     case DomType::QmlFile: {
         {
             QMutexLocker l(mutex());
-            auto it = m_qmlFileWithPath.find(canonicalFilePath);
+            auto it = m_qmlFileWithPath.find(file.canonicalPath());
             if (it != m_qmlFileWithPath.end())
                 oldValue = newValue = *it;
         }
         if (!newValue && (options() & Option::NoReload) && m_base) {
-            if (auto v = m_base->qmlFileWithPath(self, canonicalFilePath, EnvLookup::Normal)) {
+            if (auto v = m_base->qmlFileWithPath(self, file.canonicalPath(), EnvLookup::Normal)) {
                 oldValue = v;
-                QDateTime now = QDateTime::currentDateTime();
-                std::shared_ptr<ExternalItemInfo<QmlFile>> newV(new ExternalItemInfo<QmlFile>(
-                        v->current, now, v->revision(), v->lastDataUpdateAt()));
+                QDateTime now = QDateTime::currentDateTimeUtc();
+                auto newV = std::make_shared<ExternalItemInfo<QmlFile>>(
+                        v->current, now, v->revision(), v->lastDataUpdateAt());
                 newValue = newV;
                 QMutexLocker l(mutex());
-                auto it = m_qmlFileWithPath.find(canonicalFilePath);
+                auto it = m_qmlFileWithPath.find(file.canonicalPath());
                 if (it != m_qmlFileWithPath.end())
                     oldValue = newValue = *it;
                 else
-                    m_qmlFileWithPath.insert(canonicalFilePath, newV);
+                    m_qmlFileWithPath.insert(file.canonicalPath(), newV);
             }
         }
         if (!newValue) {
             self.universe().loadFile(
-                    canonicalFilePath, logicalPath, code, codeDate,
-                    callbackForQmlFile(self, loadCallback, directDepsCallback, endCallback),
+                    file, callbackForQmlFile(self, loadCallback, directDepsCallback, endCallback),
                     loadOptions, fType);
             return;
         }
@@ -1277,29 +1275,29 @@ void DomEnvironment::loadFile(DomItem &self, QString filePath, QString logicalPa
     case DomType::QmltypesFile: {
         {
             QMutexLocker l(mutex());
-            auto it = m_qmltypesFileWithPath.find(canonicalFilePath);
+            auto it = m_qmltypesFileWithPath.find(file.canonicalPath());
             if (it != m_qmltypesFileWithPath.end())
                 oldValue = newValue = *it;
         }
         if (!newValue && (options() & Option::NoReload) && m_base) {
-            if (auto v = m_base->qmltypesFileWithPath(self, canonicalFilePath, EnvLookup::Normal)) {
+            if (auto v = m_base->qmltypesFileWithPath(self, file.canonicalPath(),
+                                                      EnvLookup::Normal)) {
                 oldValue = v;
-                QDateTime now = QDateTime::currentDateTime();
-                std::shared_ptr<ExternalItemInfo<QmltypesFile>> newV(
-                        new ExternalItemInfo<QmltypesFile>(v->current, now, v->revision(),
-                                                           v->lastDataUpdateAt()));
+                QDateTime now = QDateTime::currentDateTimeUtc();
+                auto newV = std::make_shared<ExternalItemInfo<QmltypesFile>>(
+                        v->current, now, v->revision(), v->lastDataUpdateAt());
                 newValue = newV;
                 QMutexLocker l(mutex());
-                auto it = m_qmltypesFileWithPath.find(canonicalFilePath);
+                auto it = m_qmltypesFileWithPath.find(file.canonicalPath());
                 if (it != m_qmltypesFileWithPath.end())
                     oldValue = newValue = *it;
                 else
-                    m_qmltypesFileWithPath.insert(canonicalFilePath, newV);
+                    m_qmltypesFileWithPath.insert(file.canonicalPath(), newV);
             }
         }
         if (!newValue) {
             self.universe().loadFile(
-                    canonicalFilePath, logicalPath, code, codeDate,
+                    file,
                     callbackForQmltypesFile(self, loadCallback, directDepsCallback, endCallback),
                     loadOptions, fType);
             return;
@@ -1308,35 +1306,36 @@ void DomEnvironment::loadFile(DomItem &self, QString filePath, QString logicalPa
     case DomType::QmldirFile: {
         {
             QMutexLocker l(mutex());
-            auto it = m_qmldirFileWithPath.find(canonicalFilePath);
+            auto it = m_qmldirFileWithPath.find(file.canonicalPath());
             if (it != m_qmldirFileWithPath.end())
                 oldValue = newValue = *it;
         }
         if (!newValue && (options() & Option::NoReload) && m_base) {
-            if (auto v = m_base->qmldirFileWithPath(self, canonicalFilePath, EnvLookup::Normal)) {
+            if (auto v =
+                        m_base->qmldirFileWithPath(self, file.canonicalPath(), EnvLookup::Normal)) {
                 oldValue = v;
-                QDateTime now = QDateTime::currentDateTime();
-                std::shared_ptr<ExternalItemInfo<QmldirFile>> newV(new ExternalItemInfo<QmldirFile>(
-                        v->current, now, v->revision(), v->lastDataUpdateAt()));
+                QDateTime now = QDateTime::currentDateTimeUtc();
+                auto newV = std::make_shared<ExternalItemInfo<QmldirFile>>(
+                        v->current, now, v->revision(), v->lastDataUpdateAt());
                 newValue = newV;
                 QMutexLocker l(mutex());
-                auto it = m_qmldirFileWithPath.find(canonicalFilePath);
+                auto it = m_qmldirFileWithPath.find(file.canonicalPath());
                 if (it != m_qmldirFileWithPath.end())
                     oldValue = newValue = *it;
                 else
-                    m_qmldirFileWithPath.insert(canonicalFilePath, newV);
+                    m_qmldirFileWithPath.insert(file.canonicalPath(), newV);
             }
         }
         if (!newValue) {
             self.universe().loadFile(
-                    canonicalFilePath, logicalPath, code, codeDate,
+                    file,
                     callbackForQmldirFile(self, loadCallback, directDepsCallback, endCallback),
                     loadOptions, fType);
             return;
         }
     } break;
     default: {
-        myErrors().error(tr("Unexpected file to load: '%1'").arg(filePath)).handle(h);
+        myErrors().error(tr("Unexpected file to load: '%1'").arg(file.canonicalPath())).handle(h);
         if (loadCallback)
             loadCallback(self.canonicalPath(), DomItem::empty, DomItem::empty);
         if (directDepsCallback)
@@ -1463,7 +1462,9 @@ void DomEnvironment::loadBuiltins(DomItem &self, Callback callback, ErrorHandler
         QDir dir(path);
         QFileInfo fInfo(dir.filePath(builtinsName));
         if (fInfo.isFile()) {
-            self.loadFile(fInfo.canonicalFilePath(), QString(), callback, LoadOption::DefaultLoad);
+            self.loadFile(FileToLoad::fromFileSystem(self.ownerAs<DomEnvironment>(),
+                                                     fInfo.canonicalFilePath()),
+                          callback, LoadOption::DefaultLoad);
             return;
         }
     }
@@ -1624,7 +1625,7 @@ std::shared_ptr<ModuleIndex> DomEnvironment::moduleIndexWithUri(DomItem &self, Q
     std::shared_ptr<ModuleIndex> newModulePtr = [&, candidate = candidate](){
         // which is a completely new module in case we don't have candidate
         if (!candidate)
-            return std::shared_ptr<ModuleIndex>(new ModuleIndex(uri, majorVersion));
+            return std::make_shared<ModuleIndex>(uri, majorVersion);
         // or a copy of the candidate otherwise
         DomItem existingModObj = self.copy(candidate);
         return candidate->makeCopy(existingModObj);
@@ -1642,7 +1643,7 @@ std::shared_ptr<ModuleIndex> DomEnvironment::moduleIndexWithUri(DomItem &self, Q
         modsNow.insert(majorVersion, newModulePtr);
     }
     if (p) {
-        std::shared_ptr<LoadInfo> lInfo(new LoadInfo(p));
+        auto lInfo = std::make_shared<LoadInfo>(p);
         addLoadInfo(self, lInfo);
     } else {
         myErrors()
@@ -1726,7 +1727,7 @@ QSet<QString> DomEnvironment::qmlDirPaths(DomItem &self, EnvLookup options) cons
     const auto qmldirFiles = qmldirFilePaths(self, options);
     for (const QString &p : qmldirFiles) {
         if (p.endsWith(u"/qmldir")) {
-            res.insert(p.left(p.length() - 7));
+            res.insert(p.left(p.size() - 7));
         } else {
             myErrors()
                     .warning(tr("Unexpected path not ending with qmldir in qmldirFilePaths: %1")
@@ -1831,8 +1832,8 @@ DomEnvironment::ensureGlobalScopeWithName(DomItem &self, QString name, EnvLookup
             if (auto current = newVal->current) {
                 DomItem currentObj = DomItem(u).copy(current);
                 auto newScope = current->makeCopy(currentObj);
-                std::shared_ptr<ExternalItemInfo<GlobalScope>> newCopy(
-                        new ExternalItemInfo<GlobalScope>(newScope));
+                auto newCopy = std::make_shared<ExternalItemInfo<GlobalScope>>(
+                        newScope);
                 QMutexLocker l(mutex());
                 if (auto oldVal = m_globalScopeWithName.value(name))
                     return oldVal;
@@ -1965,7 +1966,7 @@ DomEnvironment::DomEnvironment(QStringList loadPaths, Options options,
 DomItem DomEnvironment::create(QStringList loadPaths, Options options, DomItem &universe)
 {
     std::shared_ptr<DomUniverse> universePtr = universe.ownerAs<DomUniverse>();
-    std::shared_ptr<DomEnvironment> envPtr(new DomEnvironment(loadPaths, options, universePtr));
+    auto envPtr = std::make_shared<DomEnvironment>(loadPaths, options, universePtr);
     return DomItem(envPtr);
 }
 
@@ -1985,8 +1986,8 @@ addExternalItem(std::shared_ptr<T> file, QString key,
 {
     if (!file)
         return {};
-    std::shared_ptr<ExternalItemInfo<T>> eInfo(
-            new ExternalItemInfo<T>(file, QDateTime::currentDateTime()));
+    auto eInfo = std::make_shared<ExternalItemInfo<T>>(
+            file, QDateTime::currentDateTimeUtc());
     {
         QMutexLocker l(mutex);
         auto it = map.find(key);
@@ -2180,7 +2181,7 @@ void DomEnvironment::loadPendingDependencies(DomItem &self)
 bool DomEnvironment::finishLoadingDependencies(DomItem &self, int waitMSec)
 {
     bool hasPendingLoads = true;
-    QDateTime endTime = QDateTime::currentDateTime().addMSecs(waitMSec);
+    QDateTime endTime = QDateTime::currentDateTimeUtc().addMSecs(waitMSec);
     for (int i = 0; i < waitMSec / 10 + 2; ++i) {
         loadPendingDependencies(self);
         auto lInfos = loadInfos();
@@ -2193,7 +2194,7 @@ bool DomEnvironment::finishLoadingDependencies(DomItem &self, int waitMSec)
         }
         if (!hasPendingLoads)
             break;
-        auto missing = QDateTime::currentDateTime().msecsTo(endTime);
+        auto missing = QDateTime::currentDateTimeUtc().msecsTo(endTime);
         if (missing < 0)
             break;
         if (missing > 100)
@@ -2231,6 +2232,12 @@ QStringList DomEnvironment::loadPaths() const
 {
     QMutexLocker l(mutex());
     return m_loadPaths;
+}
+
+QStringList DomEnvironment::qmldirFiles() const
+{
+    QMutexLocker l(mutex());
+    return m_qmldirFileWithPath.keys();
 }
 
 QString DomEnvironment::globalScopeName() const

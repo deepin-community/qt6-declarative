@@ -5,6 +5,7 @@
 // but in this type of warning, it often isn't.
 //#if defined(Q_CC_GNU) && Q_CC_GNU >= 1100
 //QT_WARNING_DISABLE_GCC("-Wmaybe-uninitialized")
+#include "qqmldompath_p.h"
 #if defined(__GNUC__) && __GNUC__ >= 11
 #  pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #endif
@@ -119,7 +120,7 @@ bool Component::iterateDirectSubpaths(DomItem &self, DirectVisitor visitor)
 
 DomItem Component::field(DomItem &self, QStringView name)
 {
-    switch (name.length()) {
+    switch (name.size()) {
     case 4:
         if (name == Fields::name)
             return self.wrapField(Fields::name, m_name);
@@ -180,7 +181,7 @@ QList<QString> QmlComponent::subComponentsNames(DomItem &self) const
     QList<QString> subNames;
     for (QString cName : cNames)
         if (cName.startsWith(myNameDot)
-            && !QStringView(cName).mid(myNameDot.length()).contains(QLatin1Char('.'))
+            && !QStringView(cName).mid(myNameDot.size()).contains(QLatin1Char('.'))
             && !cName.isEmpty())
             subNames.append(cName);
     std::sort(subNames.begin(), subNames.end());
@@ -203,13 +204,13 @@ Version Version::fromString(QStringView v)
         return Version(Latest, Latest);
     QRegularExpression r(
             QRegularExpression::anchoredPattern(QStringLiteral(uR"(([0-9]*)(?:\.([0-9]*))?)")));
-    auto m = r.match(v.toString());
+    auto m = r.matchView(v);
     if (m.hasMatch()) {
         bool ok;
-        int majorV = m.captured(1).toInt(&ok);
+        int majorV = m.capturedView(1).toInt(&ok);
         if (!ok)
             majorV = Version::Undefined;
-        int minorV = m.captured(2).toInt(&ok);
+        int minorV = m.capturedView(2).toInt(&ok);
         if (!ok)
             minorV = Version::Undefined;
         return Version(majorV, minorV);
@@ -335,6 +336,7 @@ bool Id::iterateDirectSubpaths(DomItem &self, DirectVisitor visitor)
     cont = cont && self.dvReferenceField(visitor, Fields::referredObject, referredObjectPath);
     cont = cont && self.dvWrapField(visitor, Fields::comments, comments);
     cont = cont && self.dvWrapField(visitor, Fields::annotations, annotations);
+    cont = cont && self.dvWrapField(visitor, Fields::value, value);
     return cont;
 }
 
@@ -709,7 +711,7 @@ void QmlObject::writeOut(DomItem &self, OutWriter &ow, QString onTarget) const
         code = qmlFilePtr->code();
     ow.writeRegion(u"name", name());
     if (!onTarget.isEmpty())
-        ow.space().writeRegion(u"on", u"on").space().writeRegion(u"onTarget", onTarget).space();
+        ow.space().writeRegion(u"on", u"on").space().writeRegion(u"onTarget", onTarget);
     ow.writeRegion(u"leftBrace", u" {").newline();
     int baseIndent = ow.increaseIndent();
     int spacerId = 0;
@@ -722,6 +724,10 @@ void QmlObject::writeOut(DomItem &self, OutWriter &ow, QString onTarget) const
                 .writeRegion(u"idColon", u":")
                 .space()
                 .writeRegion(u"id", idStr());
+        if (ow.lineWriter.options().attributesSequence
+            == LineWriterOptions::AttributesSequence::Normalize) {
+            ow.ensureNewline(2);
+        }
         if (myId)
             myId.writeOutPost(ow);
     }
@@ -869,7 +875,7 @@ void QmlObject::writeOut(DomItem &self, OutWriter &ow, QString onTarget) const
             const PropertyDefinition *pDefPtr = pDef.as<PropertyDefinition>();
             Q_ASSERT(pDefPtr);
             DomItem b;
-            bool uniqueDeclarationWithThisName = pDefs.length() == 1;
+            bool uniqueDeclarationWithThisName = pDefs.size() == 1;
             if (uniqueDeclarationWithThisName && !pDefPtr->isRequired)
                 bindings.key(pDef.name()).visitIndexes([&b, pDefPtr](DomItem &el) {
                     const Binding *elPtr = el.as<Binding>();
@@ -934,8 +940,13 @@ void QmlObject::writeOut(DomItem &self, OutWriter &ow, QString onTarget) const
     ow.removeTextAddCallback(spacerId);
     if (counter != ow.counter())
         spacerId = ow.addNewlinesAutospacerCallback(2);
+    bool first = true;
     for (auto &method : methodList) {
+        if (!first && ow.lineWriter.options().functionsSpacing) {
+            ow.newline();
+        }
         ow.ensureNewline();
+        first = false;
         method.writeOut(ow);
         ow.ensureNewline();
     }
@@ -977,7 +988,12 @@ void QmlObject::writeOut(DomItem &self, OutWriter &ow, QString onTarget) const
     ow.removeTextAddCallback(spacerId);
     if (counter != ow.counter())
         spacerId = ow.addNewlinesAutospacerCallback(2);
+    first = true;
     for (auto c : field(self, Fields::children).values()) {
+        if (!first && ow.lineWriter.options().objectsSpacing) {
+            ow.newline().newline();
+        }
+        first = false;
         ow.ensureNewline();
         c.writeOut(ow);
     }
@@ -1009,9 +1025,9 @@ Binding::Binding(QString name, std::shared_ptr<ScriptExpression> value, BindingT
 
 Binding::Binding(QString name, QString scriptCode, BindingType bindingType)
     : Binding(name,
-              std::make_unique<BindingValue>(std::shared_ptr<ScriptExpression>(new ScriptExpression(
+              std::make_unique<BindingValue>(std::make_shared<ScriptExpression>(
                       scriptCode, ScriptExpression::ExpressionType::BindingExpression, 0,
-                      Binding::preCodeForName(name), Binding::postCodeForName(name)))),
+                      Binding::preCodeForName(name), Binding::postCodeForName(name))),
               bindingType)
 {
 }
@@ -1214,7 +1230,7 @@ Export Export::fromString(Path source, QStringView exp, Path typePath, ErrorHand
     int slashIdx = exp.indexOf(QLatin1Char('/'));
     int spaceIdx = exp.indexOf(QLatin1Char(' '));
     if (spaceIdx == -1)
-        spaceIdx = exp.length();
+        spaceIdx = exp.size();
     else
         res.version = Version::fromString(exp.mid(spaceIdx + 1));
     if (!res.version.isValid())
@@ -1565,6 +1581,11 @@ bool ScriptExpression::iterateDirectSubpaths(DomItem &self, DirectVisitor visito
         return astRelocatableDump();
     });
     cont = cont && self.dvValueField(visitor, Fields::expressionType, int(expressionType()));
+    if (m_element) {
+        cont = cont && self.dvItemField(visitor, Fields::scriptElement, [this, &self]() {
+            return self.subScriptElementWrapperItem(m_element);
+        });
+    }
     return cont;
 }
 
@@ -1609,20 +1630,20 @@ void ScriptExpression::setCode(QString code, QString preCode, QString postCode)
     }
     if (!preCode.isEmpty() || !postCode.isEmpty())
         m_codeStr = preCode + code + postCode;
-    m_code = QStringView(m_codeStr).mid(preCode.length(), code.length());
-    m_preCode = QStringView(m_codeStr).mid(0, preCode.length());
-    m_postCode = QStringView(m_codeStr).mid(preCode.length() + code.length(), postCode.length());
+    m_code = QStringView(m_codeStr).mid(preCode.size(), code.size());
+    m_preCode = QStringView(m_codeStr).mid(0, preCode.size());
+    m_postCode = QStringView(m_codeStr).mid(preCode.size() + code.size(), postCode.size());
     m_engine = nullptr;
     m_ast = nullptr;
     m_localOffset = SourceLocation();
     if (!m_code.isEmpty()) {
         IndentInfo preChange(m_preCode, 4);
-        m_localOffset.offset = m_preCode.length();
-        m_localOffset.length = m_code.length();
-        m_localOffset.startColumn = preChange.trailingString.length();
+        m_localOffset.offset = m_preCode.size();
+        m_localOffset.length = m_code.size();
+        m_localOffset.startColumn = preChange.trailingString.size();
         m_localOffset.startLine = preChange.nNewlines;
-        m_engine = std::shared_ptr<QQmlJS::Engine>(new QQmlJS::Engine);
-        m_astComments = std::shared_ptr<AstComments>(new AstComments(m_engine));
+        m_engine = std::make_shared<QQmlJS::Engine>();
+        m_astComments = std::make_shared<AstComments>(m_engine);
         QQmlJS::Lexer lexer(m_engine.get());
         lexer.setCode(m_codeStr, /*lineno = */ 1, /*qmlMode=*/true);
         QQmlJS::Parser parser(m_engine.get());
@@ -1641,8 +1662,11 @@ void ScriptExpression::setCode(QString code, QString preCode, QString postCode)
             m_ast = programPtr->statements;
         }
         if (!m_preCode.isEmpty())
-            m_ast = firstNodeInRange(m_ast, m_preCode.length(),
-                                     m_preCode.length() + m_code.length());
+            m_ast = firstNodeInRange(m_ast, m_preCode.size(),
+                                     m_preCode.size() + m_code.size());
+        if (auto *sList = AST::cast<AST::FormalParameterList *>(m_ast)) {
+            m_ast = sList->element;
+        }
         if (m_expressionType != ExpressionType::FunctionBody) {
             if (AST::StatementList *sList = AST::cast<AST::StatementList *>(m_ast)) {
                 if (!sList->next)
@@ -1699,7 +1723,7 @@ void ScriptExpression::writeOut(DomItem &self, OutWriter &lw) const
 
 SourceLocation ScriptExpression::globalLocation(DomItem &self) const
 {
-    if (const FileLocations *fLocPtr = FileLocations::fileLocationsPtr(self)) {
+    if (const FileLocations *fLocPtr = FileLocations::fileLocationsOf(self)) {
         return fLocPtr->regions.value(QString(), fLocPtr->fullRegion);
     }
     return SourceLocation();
@@ -1738,8 +1762,14 @@ bool MethodInfo::iterateDirectSubpaths(DomItem &self, DirectVisitor visitor)
         cont = cont && self.dvValueField(visitor, Fields::postCode, postCode(self));
         cont = cont && self.dvValueField(visitor, Fields::isConstructor, isConstructor);
     }
+    if (returnType)
+        cont = cont && self.dvItemField(visitor, Fields::returnType, [this, &self]() {
+            return self.subOwnerItem(PathEls::Field(Fields::returnType), returnType);
+        });
     if (body)
-        cont = cont && self.dvWrapField(visitor, Fields::body, body);
+        cont = cont && self.dvItemField(visitor, Fields::body, [this, &self]() {
+            return self.subOwnerItem(PathEls::Field(Fields::body), body);
+        });
     return cont;
 }
 
@@ -1836,13 +1866,18 @@ bool MethodParameter::iterateDirectSubpaths(DomItem &self, DirectVisitor visitor
     cont = cont && self.dvValueField(visitor, Fields::name, name);
     if (!typeName.isEmpty()) {
         cont = cont
-                && self.dvReferenceField(visitor, Fields::type, Paths::lookupCppTypePath(typeName));
+                && self.dvReferenceField(visitor, Fields::type, Paths::lookupTypePath(typeName));
         cont = cont && self.dvValueField(visitor, Fields::typeName, typeName);
     }
     cont = cont && self.dvValueField(visitor, Fields::isPointer, isPointer);
     cont = cont && self.dvValueField(visitor, Fields::isReadonly, isReadonly);
     cont = cont && self.dvValueField(visitor, Fields::isList, isList);
     cont = cont && self.dvWrapField(visitor, Fields::defaultValue, defaultValue);
+    cont = cont && self.dvWrapField(visitor, Fields::value, value);
+
+    cont = cont && self.dvValueField(visitor, Fields::preCode, u"function f("_s);
+    cont = cont && self.dvValueField(visitor, Fields::postCode, u") {}"_s);
+
     if (!annotations.isEmpty())
         cont = cont && self.dvWrapField(visitor, Fields::annotations, annotations);
     cont = cont && self.dvWrapField(visitor, Fields::comments, comments);
@@ -1873,6 +1908,19 @@ void Pragma::writeOut(DomItem &, OutWriter &ow) const
 {
     ow.ensureNewline();
     ow.writeRegion(u"pragma").space().writeRegion(u"name", name);
+
+    bool isFirst = true;
+    for (const auto &value : values) {
+        if (isFirst) {
+            isFirst = false;
+            ow.writeRegion(u"colon", u": ");
+            ow.writeRegion(u"values", value);
+            continue;
+        }
+
+        ow.writeRegion(u"comma", u", ");
+        ow.writeRegion(u"values", value);
+    }
     ow.ensureNewline();
 }
 
@@ -1914,7 +1962,7 @@ void EnumItem::writeOut(DomItem &self, OutWriter &ow) const
 QmlUri QmlUri::fromString(const QString &str)
 {
     if (str.startsWith(u'"'))
-        return fromDirectoryString(str.mid(1, str.length() - 2)
+        return fromDirectoryString(str.mid(1, str.size() - 2)
                                            .replace(u"\\\""_s, u"\""_s)
                                            .replace(u"\\\\"_s, u"\\"_s));
     else
@@ -1930,7 +1978,7 @@ QmlUri QmlUri::fromUriString(const QString &str)
 QmlUri QmlUri::fromDirectoryString(const QString &str)
 {
     QUrl url(str);
-    if (url.isValid() && url.scheme().length() > 1)
+    if (url.isValid() && url.scheme().size() > 1)
         return QmlUri(url);
     if (!str.isEmpty()) {
         QFileInfo path(str);
@@ -2053,6 +2101,11 @@ QString QmlUri::toString() const
 QmlUri::Kind QmlUri::kind() const
 {
     return m_kind;
+}
+
+void ScriptExpression::setScriptElement(const ScriptElementVariant &p)
+{
+    m_element = p;
 }
 
 } // end namespace Dom

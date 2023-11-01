@@ -15,29 +15,38 @@
 // We mean it.
 //
 
-#include <QtQuick/private/qquickevents_p_p.h>
-#include <QtQuick/private/qquickitem_p.h>
+#include <QtCore/QObject>
+#include <QtCore/qloggingcategory.h>
+#include <QtCore/qtconfigmacros.h>
+#include <QtGui/qeventpoint.h>
+#include <QtGui/qpointingdevice.h>
+#include <QtQml/QQmlParserStatus>
+#include <QtQml/qqmlregistration.h>
+#include <QtQuick/qtquickglobal.h>
+#include <QtQuick/private/qtquickexports_p.h>
 
 QT_BEGIN_NAMESPACE
 
 Q_DECLARE_LOGGING_CATEGORY(lcPointerHandlerDispatch)
 
+class QQuickItem;
 class QQuickPointerHandlerPrivate;
+class QPointerEvent;
 
 class Q_QUICK_PRIVATE_EXPORT QQuickPointerHandler : public QObject, public QQmlParserStatus
 {
     Q_OBJECT
     Q_INTERFACES(QQmlParserStatus)
 
-    Q_PROPERTY(bool enabled READ enabled WRITE setEnabled NOTIFY enabledChanged)
-    Q_PROPERTY(bool active READ active NOTIFY activeChanged)
-    Q_PROPERTY(QQuickItem * target READ target WRITE setTarget NOTIFY targetChanged)
-    Q_PROPERTY(QQuickItem * parent READ parentItem WRITE setParentItem NOTIFY parentChanged)
-    Q_PROPERTY(GrabPermissions grabPermissions READ grabPermissions WRITE setGrabPermissions NOTIFY grabPermissionChanged)
-    Q_PROPERTY(qreal margin READ margin WRITE setMargin NOTIFY marginChanged)
-    Q_PROPERTY(int dragThreshold READ dragThreshold WRITE setDragThreshold RESET resetDragThreshold NOTIFY dragThresholdChanged REVISION(2, 15))
+    Q_PROPERTY(bool enabled READ enabled WRITE setEnabled NOTIFY enabledChanged FINAL)
+    Q_PROPERTY(bool active READ active NOTIFY activeChanged FINAL)
+    Q_PROPERTY(QQuickItem * target READ target WRITE setTarget NOTIFY targetChanged FINAL)
+    Q_PROPERTY(QQuickItem * parent READ parentItem WRITE setParentItem NOTIFY parentChanged FINAL)
+    Q_PROPERTY(GrabPermissions grabPermissions READ grabPermissions WRITE setGrabPermissions NOTIFY grabPermissionChanged FINAL)
+    Q_PROPERTY(qreal margin READ margin WRITE setMargin NOTIFY marginChanged FINAL)
+    Q_PROPERTY(int dragThreshold READ dragThreshold WRITE setDragThreshold RESET resetDragThreshold NOTIFY dragThresholdChanged REVISION(2, 15) FINAL)
 #if QT_CONFIG(cursor)
-    Q_PROPERTY(Qt::CursorShape cursorShape READ cursorShape WRITE setCursorShape RESET resetCursorShape NOTIFY cursorShapeChanged REVISION(2, 15))
+    Q_PROPERTY(Qt::CursorShape cursorShape READ cursorShape WRITE setCursorShape RESET resetCursorShape NOTIFY cursorShapeChanged REVISION(2, 15) FINAL)
 #endif
 
     Q_CLASSINFO("ParentProperty", "parent")
@@ -144,7 +153,5 @@ protected:
 Q_DECLARE_OPERATORS_FOR_FLAGS(QQuickPointerHandler::GrabPermissions)
 
 QT_END_NAMESPACE
-
-QML_DECLARE_TYPE(QQuickPointerHandler)
 
 #endif // QQUICKPOINTERHANDLER_H

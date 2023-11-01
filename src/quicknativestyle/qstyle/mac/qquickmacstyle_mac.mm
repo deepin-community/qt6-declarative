@@ -2041,8 +2041,9 @@ int QMacStyle::pixelMetric(PixelMetric metric, const QStyleOption *opt) const
         ret = 1;
         break;
     case PM_ScrollView_ScrollBarOverlap:
-        ret = [NSScroller preferredScrollerStyle] == NSScrollerStyleOverlay ?
-               pixelMetric(PM_ScrollBarExtent, opt) : 0;
+        ret = styleHint(SH_ScrollBar_Transient, opt, nullptr)
+            ? pixelMetric(PM_ScrollBarExtent, opt)
+            : 0;
         break;
     case PM_PushButtonFocusFrameRadius:
         ret = LargeSmallMini(opt, 8, 7, 5);
@@ -2771,7 +2772,7 @@ void QMacStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, QPai
         [triangleCell setState:(opt->state & State_Open) ? NSControlStateValueOn : NSControlStateValueOff];
 //        bool viewHasFocus = (w && w->hasFocus()) || (opt->state & State_HasFocus);
         bool viewHasFocus = false;
-        [triangleCell setBackgroundStyle:((opt->state & State_Selected) && viewHasFocus) ? NSBackgroundStyleDark : NSBackgroundStyleLight];
+        [triangleCell setBackgroundStyle:((opt->state & State_Selected) && viewHasFocus) ? NSBackgroundStyleEmphasized : NSBackgroundStyleNormal];
 
         d->setupNSGraphicsContext(cg, NO);
 

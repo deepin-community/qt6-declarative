@@ -17,7 +17,7 @@
 
 #include <private/qglobal_p.h>
 
-#ifdef Q_OS_OSX
+#ifdef Q_OS_MACOS
 #include <Carbon/Carbon.h>
 #endif
 
@@ -29,14 +29,26 @@ struct PlatformQuirks
     {
 #if !QT_CONFIG(clipboard)
         return false;
-#elif defined(Q_OS_OSX)
+#elif defined(Q_OS_MACOS)
         PasteboardRef pasteboard;
         OSStatus status = PasteboardCreate(0, &pasteboard);
         if (status == noErr)
             CFRelease(pasteboard);
         return status == noErr;
 #else
-        return true;
+        if (QGuiApplication::platformName() != QLatin1StringView("xcb"))
+            return true;
+
+        // On XCB a clipboard may be dysfunctional due to platform restrictions
+        QClipboard *clipBoard = QGuiApplication::clipboard();
+        if (!clipBoard)
+            return false;
+        const QString &oldText = clipBoard->text();
+        QScopeGuard guard([&](){ clipBoard->setText(oldText); });
+        const QLatin1StringView prefix("Something to prefix ");
+        const QString newText = prefix + oldText;
+        clipBoard->setText(newText);
+        return QTest::qWaitFor([&](){ return clipBoard->text() == newText; });
 #endif
     }
 };

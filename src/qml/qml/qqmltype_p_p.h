@@ -26,7 +26,7 @@
 
 QT_BEGIN_NAMESPACE
 
-class QQmlTypePrivate : public QQmlRefCount
+class QQmlTypePrivate : public QQmlRefCounted<QQmlTypePrivate>
 {
     Q_DISABLE_COPY_MOVE(QQmlTypePrivate)
 public:
@@ -92,6 +92,8 @@ public:
         int finalizerCast;
         bool registerEnumClassesUnscoped;
         bool registerEnumsFromRelatedTypes;
+        bool constructValueType;
+        bool populateValueType;
     };
 
     struct QQmlSingletonTypeData
@@ -108,14 +110,12 @@ public:
 
     struct QQmlInlineTypeData
     {
-        QUrl url = QUrl();
+        QUrl url;
         // The containing type stores a pointer to the inline component type
         // Using QQmlType here would create a reference cycle
         // As the inline component type cannot outlive the containing type
         // this should still be fine
         QQmlTypePrivate const * containingType = nullptr;
-        QString inlineComponentName = QString();
-        int objectId = -1;
     };
 
     using QQmlSequenceTypeData = QMetaSequence;
@@ -151,8 +151,6 @@ public:
     mutable QList<QStringHash<int>*> scopedEnums;
 
     void setName(const QString &uri, const QString &element);
-    mutable QHash<QString, int> namesToInlineComponentObjectIndex;
-    mutable QHash<int, QQmlType> objectIdToICType;
 
 private:
     ~QQmlTypePrivate() override;

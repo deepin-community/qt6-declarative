@@ -27,6 +27,7 @@ Window {
 
             delegate: ItemDelegate {
                 id: root
+
                 text: "Item " + (index + 1)
                 width: parent.width
 
@@ -51,7 +52,7 @@ Window {
                     function f(v) {
                         let c = 0;
                         return {
-                            "a": function () {
+                            a: function () {
                                 if (b == 0)
                                     c += 78 * 5 * v;
                             }()

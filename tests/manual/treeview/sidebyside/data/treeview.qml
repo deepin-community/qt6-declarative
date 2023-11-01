@@ -12,7 +12,6 @@ ApplicationWindow {
     visible: true
 
     property alias treeView: treeView
-    property var selectedIndex: undefined
 
     UICallback { id: callback }
 
@@ -45,7 +44,7 @@ ApplicationWindow {
             Button {
                 text: "Insert row"
                 onClicked: {
-                    let index = treeView.modelIndex(1, 0)
+                    let index = treeView.index(1, 0)
                     treeView.model.insertRows(index.row, 1, index.parent);
                 }
             }
@@ -53,18 +52,29 @@ ApplicationWindow {
             Button {
                 text: "Remove row"
                 onClicked: {
-                    let index = treeView.modelIndex(1, 0)
+                    let index = treeView.index(1, 0)
                     treeView.model.removeRows(index.row, 1, index.parent);
                 }
             }
             Button {
                 text: "Expand to"
-                enabled: selectedIndex != undefined
                 onClicked: {
-                    treeView.expandToIndex(selectedIndex);
+                    treeView.expandToIndex(treeView.selectionModel.currentIndex);
                     treeView.forceLayout()
-                    let row = treeView.rowAtIndex(selectedIndex)
+                    let row = treeView.rowAtIndex(treeView.selectionModel.currentIndex)
                     treeView.positionViewAtRow(row, Qt.AlignVCenter)
+                }
+            }
+            Button {
+                text: "Set root"
+                onClicked: {
+                    treeView.rootIndex = treeView.selectionModel.currentIndex
+                }
+            }
+            Button {
+                text: "Reset root"
+                onClicked: {
+                    treeView.rootIndex = undefined
                 }
             }
         }
@@ -79,6 +89,8 @@ ApplicationWindow {
             anchors.leftMargin: 100
             anchors.topMargin: 100
             clip: true
+
+            selectionModel: ItemSelectionModel {}
 
             model: useFileSystemModel.checked ? fileSystemModel : testModel
             delegate: useCustomDelegate.checked ? customDelegate : treeViewDelegate
@@ -101,16 +113,6 @@ ApplicationWindow {
                         treeView.expandRecursively(row)
                 }
             }
-            TapHandler {
-                acceptedModifiers: Qt.ShiftModifier
-                onTapped: selectedIndex = treeView.modelIndex(row, 0)
-            }
-            Rectangle {
-                anchors.fill: parent
-                border.color: "red"
-                border.width: 1
-                visible: treeView.modelIndex(row, column) === selectedIndex
-            }
         }
     }
 
@@ -131,10 +133,6 @@ ApplicationWindow {
             required property bool expanded
             required property int hasChildren
             required property int depth
-
-            TapHandler {
-                onTapped: treeView.toggleExpanded(row)
-            }
 
             Text {
                 id: indicator

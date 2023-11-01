@@ -24,9 +24,12 @@
 using namespace QQuickViewTestUtils;
 using namespace QQuickVisualTestUtils;
 
+using namespace Qt::StringLiterals;
+
 #define LOAD_TREEVIEW(fileName) \
     view->setSource(testFileUrl(fileName)); \
     view->show(); \
+    view->requestActivate(); \
     QVERIFY(QTest::qWaitForWindowActive(view)); \
     auto treeView = view->rootObject()->property("treeView").value<QQuickTreeView *>(); \
     QVERIFY(treeView); \
@@ -74,6 +77,7 @@ private slots:
     void updatedModifiedModel();
     void insertRows();
     void toggleExpandedUsingArrowKeys();
+    void expandAndCollapsUsingDoubleClick();
     void selectionBehaviorCells_data();
     void selectionBehaviorCells();
     void selectionBehaviorRows();
@@ -83,6 +87,8 @@ private slots:
     void sortTreeModel();
     void sortTreeModelDynamic_data();
     void sortTreeModelDynamic();
+    void setRootIndex();
+    void setRootIndexToLeaf();
 };
 
 tst_qquicktreeview::tst_qquicktreeview()
@@ -135,7 +141,7 @@ void tst_qquicktreeview::expandAndCollapseRoot()
     // Check that the view only has one row loaded so far (the root of the tree)
     QCOMPARE(treeViewPrivate->loadedRows.count(), 1);
 
-    QSignalSpy expandedSpy(treeView, SIGNAL(expanded(int, int)));
+    QSignalSpy expandedSpy(treeView, SIGNAL(expanded(int,int)));
 
     // Expand the root
     treeView->expand(0);
@@ -180,7 +186,7 @@ void tst_qquicktreeview::expandAndCollapseChildren()
     LOAD_TREEVIEW("normaltreeview.qml");
 
     const int childCount = 4;
-    QSignalSpy expandedSpy(treeView, SIGNAL(expanded(int, int)));
+    QSignalSpy expandedSpy(treeView, SIGNAL(expanded(int,int)));
 
     // Expand the last child of a parent recursively four times
     for (int level = 0; level < 4; ++level) {
@@ -301,7 +307,7 @@ void tst_qquicktreeview::requiredPropertiesChildren()
         QCOMPARE(viewProp, treeView);
         QCOMPARE(isTreeNode, true);
         QCOMPARE(expanded, row == 4);
-        QCOMPARE(hasChildren, model->hasChildren(treeView->modelIndex(0, row)));
+        QCOMPARE(hasChildren, model->hasChildren(treeView->index(row, 0)));
         QCOMPARE(depth, row <= 4 ? 1 : 2);
     }
 }
@@ -324,7 +330,7 @@ void tst_qquicktreeview::emptyModel()
 
     QCOMPARE(treeView->depth(0), -1);
     QCOMPARE(treeView->isExpanded(0), false);
-    QVERIFY(!treeView->modelIndex(10, 10).isValid());
+    QVERIFY(!treeView->index(10, 10).isValid());
     QCOMPARE(treeView->rowAtIndex(QModelIndex()), -1);
     QCOMPARE(treeView->columnAtIndex(QModelIndex()), -1);
 }
@@ -430,7 +436,7 @@ void tst_qquicktreeview::expandRecursivelyRoot()
     QFETCH(int, depth);
 
     LOAD_TREEVIEW("normaltreeview.qml");
-    QSignalSpy spy(treeView, SIGNAL(expanded(int, int)));
+    QSignalSpy spy(treeView, SIGNAL(expanded(int,int)));
 
     treeView->expandRecursively(rowToExpand, depth);
 
@@ -457,7 +463,7 @@ void tst_qquicktreeview::expandRecursivelyRoot()
     // Check that all rows after rowToExpand, that are also
     // children of that row, is expanded (down to depth)
     for (int currentRow = rowToExpand + 1; currentRow < treeView->rows(); ++currentRow) {
-        const auto modelIndex = treeView->modelIndex(0, currentRow);
+        const auto modelIndex = treeView->index(currentRow, 0);
         const int currentDepth = treeView->depth(currentRow);
         const bool isChild = currentDepth > rowToExpandDepth;
         const bool isExpandable = model->rowCount(modelIndex) > 0;
@@ -487,7 +493,7 @@ void tst_qquicktreeview::expandRecursivelyChild()
     QFETCH(int, depth);
 
     LOAD_TREEVIEW("normaltreeview.qml");
-    QSignalSpy spy(treeView, SIGNAL(expanded(int, int)));
+    QSignalSpy spy(treeView, SIGNAL(expanded(int,int)));
 
     treeView->expand(0);
 
@@ -509,7 +515,7 @@ void tst_qquicktreeview::expandRecursivelyChild()
 
     WAIT_UNTIL_POLISHED;
 
-    const bool rowToExpandDepth = treeView->depth(rowToExpand);
+    const int rowToExpandDepth = treeView->depth(rowToExpand);
     const int effectiveMaxDepth = depth != -1 ? rowToExpandDepth + depth : model->maxDepth();
 
     // Check that none of the rows before rowToExpand are expanded
@@ -528,7 +534,7 @@ void tst_qquicktreeview::expandRecursivelyChild()
     for (int currentRow = rowToExpand + 1; currentRow < treeView->rows(); ++currentRow) {
         const int currentDepth = treeView->depth(currentRow);
         const bool isChild = currentDepth > rowToExpandDepth;
-        const auto modelIndex = treeView->modelIndex(0, currentRow);
+        const auto modelIndex = treeView->index(currentRow, 0);
         const bool isExpandable = model->rowCount(modelIndex) > 0;
         const bool shouldBeExpanded = isChild && isExpandable && currentDepth < effectiveMaxDepth;
         QCOMPARE(treeView->isExpanded(currentRow), shouldBeExpanded);
@@ -539,7 +545,7 @@ void tst_qquicktreeview::expandRecursivelyWholeTree()
 {
     // Check that we expand the whole tree recursively by passing -1, -1
     LOAD_TREEVIEW("normaltreeview.qml");
-    QSignalSpy spy(treeView, SIGNAL(expanded(int, int)));
+    QSignalSpy spy(treeView, SIGNAL(expanded(int,int)));
     treeView->expandRecursively(-1, -1);
 
     QCOMPARE(spy.size(), 1);
@@ -551,7 +557,7 @@ void tst_qquicktreeview::expandRecursivelyWholeTree()
 
     // Check that all rows that have children are expanded
     for (int currentRow = 0; currentRow < treeView->rows(); ++currentRow) {
-        const auto modelIndex = treeView->modelIndex(0, currentRow);
+        const auto modelIndex = treeView->index(currentRow, 0);
         const bool isExpandable = model->rowCount(modelIndex) > 0;
         QCOMPARE(treeView->isExpanded(currentRow), isExpandable);
     }
@@ -571,7 +577,7 @@ void tst_qquicktreeview::collapseRecursivelyRoot()
     const int expectedRowCount = 1 + (model->maxDepth() * 8) - 4;
     QCOMPARE(treeView->rows(), expectedRowCount);
 
-    QSignalSpy spy(treeView, SIGNAL(collapsed(int, bool)));
+    QSignalSpy spy(treeView, SIGNAL(collapsed(int,bool)));
 
     // Collapse the whole tree again. This time, only the root should end up visible
     treeView->collapseRecursively();
@@ -591,7 +597,7 @@ void tst_qquicktreeview::collapseRecursivelyRoot()
     // We can do that by simply iterate over the rows in the view as we expand.
     int currentRow = 0;
     while (currentRow < treeView->rows()) {
-        const QModelIndex currentIndex = treeView->modelIndex(0, currentRow);
+        const QModelIndex currentIndex = treeView->index(currentRow, 0);
         if (model->hasChildren(currentIndex)) {
             QVERIFY(!treeView->isExpanded(currentRow));
             treeView->expand(currentRow);
@@ -618,11 +624,11 @@ void tst_qquicktreeview::collapseRecursivelyChild()
     const int expectedRowCount = 1 + (model->maxDepth() * 8) - 4;
     QCOMPARE(treeView->rows(), expectedRowCount);
 
-    QSignalSpy spy(treeView, SIGNAL(collapsed(int, bool)));
+    QSignalSpy spy(treeView, SIGNAL(collapsed(int,bool)));
 
     // Collapse the 8th child recursive
     const int rowToCollapse = 8;
-    const QModelIndex collapseIndex = treeView->modelIndex(0, rowToCollapse);
+    const QModelIndex collapseIndex = treeView->index(rowToCollapse, 0);
     const auto expectedLabel = model->data(collapseIndex, Qt::DisplayRole);
     QCOMPARE(expectedLabel, QStringLiteral("3, 0"));
     treeView->collapseRecursively(rowToCollapse);
@@ -642,7 +648,7 @@ void tst_qquicktreeview::collapseRecursivelyChild()
     // We can do that by simply iterate over the rows in the view as we expand.
     int currentRow = 1; // start at first child
     while (currentRow < treeView->rows()) {
-        const QModelIndex currentIndex = treeView->modelIndex(0, currentRow);
+        const QModelIndex currentIndex = treeView->index(currentRow, 0);
         if (model->hasChildren(currentIndex)) {
             if (treeView->depth(currentRow) == 1 && currentIndex.row() == 2) {
                 // We did only recursively expand the 4th child, so the
@@ -665,7 +671,7 @@ void tst_qquicktreeview::collapseRecursivelyWholeTree()
 {
     // Check that we collapse the whole tree recursively by passing -1
     LOAD_TREEVIEW("normaltreeview.qml");
-    QSignalSpy spy(treeView, SIGNAL(collapsed(int, bool)));
+    QSignalSpy spy(treeView, SIGNAL(collapsed(int,bool)));
     treeView->expandRecursively();
     treeView->collapseRecursively();
 
@@ -684,7 +690,7 @@ void tst_qquicktreeview::expandToIndex()
     // Check that expandToIndex(index) expands the tree so
     // that index becomes visible in the view
     LOAD_TREEVIEW("normaltreeview.qml");
-    QSignalSpy spy(treeView, SIGNAL(expanded(int, int)));
+    QSignalSpy spy(treeView, SIGNAL(expanded(int,int)));
 
     const QModelIndex root = model->index(0, 0);
     const QModelIndex child1 = model->index(3, 0, root);
@@ -727,7 +733,7 @@ void tst_qquicktreeview::toggleExpandedUsingArrowKeys()
     QQuickWindow *window = treeView->window();
 
     // Start by making cell 0, 0 current
-    treeView->selectionModel()->setCurrentIndex(treeView->modelIndex(0, 0), QItemSelectionModel::NoUpdate);
+    treeView->selectionModel()->setCurrentIndex(treeView->index(0, 0), QItemSelectionModel::NoUpdate);
 
     // Expand row 0
     const int row0 = 0;
@@ -743,7 +749,7 @@ void tst_qquicktreeview::toggleExpandedUsingArrowKeys()
     // Hitting Key_Right again should be a no-op
     QTest::keyPress(window, Qt::Key_Right);
     QVERIFY(treeView->isExpanded(row0));
-    QCOMPARE(treeView->selectionModel()->currentIndex(), treeView->modelIndex(0, row0));
+    QCOMPARE(treeView->selectionModel()->currentIndex(), treeView->index(row0, 0));
 
     // Move down to row 1 and try to expand it. Since Row 1
     // doesn't have children, expanding it will be a no-op.
@@ -754,7 +760,7 @@ void tst_qquicktreeview::toggleExpandedUsingArrowKeys()
     QTest::keyPress(window, Qt::Key_Down);
     QTest::keyPress(window, Qt::Key_Right);
     QVERIFY(!treeView->isExpanded(row1));
-    QCOMPARE(treeView->selectionModel()->currentIndex(), treeView->modelIndex(0, row1));
+    QCOMPARE(treeView->selectionModel()->currentIndex(), treeView->index(row1, 0));
 
     // Move down to row 4 and expand it
     const int row4 = 4;
@@ -764,7 +770,7 @@ void tst_qquicktreeview::toggleExpandedUsingArrowKeys()
     QVERIFY(!treeView->isExpanded(row4));
     QTest::keyPress(window, Qt::Key_Right);
     QVERIFY(treeView->isExpanded(row4));
-    QCOMPARE(treeView->selectionModel()->currentIndex(), treeView->modelIndex(0, row4));
+    QCOMPARE(treeView->selectionModel()->currentIndex(), treeView->index(row4, 0));
 
     // Move up again to row 0 and collapse it
     while (treeView->currentRow() != row0)
@@ -777,7 +783,38 @@ void tst_qquicktreeview::toggleExpandedUsingArrowKeys()
     // Hitting Key_Left again should be a no-op
     QTest::keyPress(window, Qt::Key_Left);
     QVERIFY(!treeView->isExpanded(row0));
-    QCOMPARE(treeView->selectionModel()->currentIndex(), treeView->modelIndex(0, row0));
+    QCOMPARE(treeView->selectionModel()->currentIndex(), treeView->index(row0, 0));
+}
+
+void tst_qquicktreeview::expandAndCollapsUsingDoubleClick()
+{
+    LOAD_TREEVIEW("normaltreeview.qml");
+    // Check that the view only has one row loaded so far (the root of the tree)
+    QCOMPARE(treeViewPrivate->loadedRows.count(), 1);
+
+    // Expand the root by double clicking on the row
+    const auto item = treeView->itemAtIndex(treeView->index(0, 0));
+    QVERIFY(item);
+    const QPoint localPos = QPoint(item->width() / 2, item->height() / 2);
+    const QPoint pos = item->window()->contentItem()->mapFromItem(item, localPos).toPoint();
+    QTest::mouseDClick(item->window(), Qt::LeftButton, Qt::NoModifier, pos);
+
+    // We now expect 5 rows, the root pluss it's 4 children. Since
+    // mouseDClick calls processEvents(), it becomes random at this
+    // point if the view has been polished or not. So use QTRY_COMPARE.
+    QTRY_COMPARE(treeViewPrivate->loadedRows.count(), 5);
+
+    // Collapse the root again
+    QTest::mouseDClick(item->window(), Qt::LeftButton, Qt::NoModifier, pos);
+    QTRY_COMPARE(treeViewPrivate->loadedRows.count(), 1);
+
+    // If edit triggers has DoubleTapped set, we should
+    // start to edit instead of expanding.
+    treeView->setEditTriggers(QQuickTableView::DoubleTapped);
+    QTest::mouseDClick(item->window(), Qt::LeftButton, Qt::NoModifier, pos);
+    if (QQuickTest::qIsPolishScheduled(treeView))
+        QVERIFY(QQuickTest::qWaitForPolish(treeView));
+    QTRY_COMPARE(treeViewPrivate->loadedRows.count(), 1);
 }
 
 void tst_qquicktreeview::selectionBehaviorCells_data()
@@ -853,7 +890,7 @@ void tst_qquicktreeview::selectionBehaviorCells()
 
     for (int x = x1; x < x2; ++x) {
         for (int y = y1; y < y2; ++y) {
-            const auto index = treeView->modelIndex(x, y);
+            const auto index = treeView->index(y, x);
             QVERIFY(selectionModel->isSelected(index));
         }
     }
@@ -906,7 +943,7 @@ void tst_qquicktreeview::selectionBehaviorRows()
 
     for (int x = 0; x < treeView->columns(); ++x) {
         for (int y = 0; y < 3; ++y) {
-            const auto index = treeView->modelIndex(x, y);
+            const auto index = treeView->index(y, x);
             QVERIFY(selectionModel->isSelected(index));
         }
     }
@@ -925,7 +962,7 @@ void tst_qquicktreeview::selectionBehaviorRows()
 
     for (int x = 0; x < treeView->columns(); ++x) {
         for (int y = 0; y < 3; ++y) {
-            const auto index = treeView->modelIndex(x, y);
+            const auto index = treeView->index(y, x);
             QVERIFY(selectionModel->isSelected(index));
         }
     }
@@ -957,7 +994,7 @@ void tst_qquicktreeview::selectionBehaviorColumns()
 
     for (int x = 0; x < 3; ++x) {
         for (int y = 0; y < treeView->rows(); ++y) {
-            const auto index = treeView->modelIndex(x, y);
+            const auto index = treeView->index(y, x);
             QVERIFY(selectionModel->isSelected(index));
         }
     }
@@ -976,7 +1013,7 @@ void tst_qquicktreeview::selectionBehaviorColumns()
 
     for (int x = 0; x < 3; ++x) {
         for (int y = 0; y < treeView->rows(); ++y) {
-            const auto index = treeView->modelIndex(x, y);
+            const auto index = treeView->index(y, x);
             QVERIFY(selectionModel->isSelected(index));
         }
     }
@@ -1033,7 +1070,7 @@ void tst_qquicktreeview::sortTreeModel()
     // is the same as in the view. That means that QQmlTreeModelToTableModel
     // and QSortFilterProxyModel are in sync.
     for (int row = 0; row < treeView->rows(); ++row) {
-        const auto index = treeView->modelIndex(0, row);
+        const auto index = treeView->index(row, 0);
         const QString modelDisplay = proxyModel.data(index, Qt::DisplayRole).toString();
         const auto childFxItem = treeViewPrivate->loadedTableItem(QPoint(0, row));
         QVERIFY(childFxItem);
@@ -1049,7 +1086,7 @@ void tst_qquicktreeview::sortTreeModel()
     WAIT_UNTIL_POLISHED;
 
     for (int row = 0; row < treeView->rows(); ++row) {
-        const auto index = treeView->modelIndex(0, row);
+        const auto index = treeView->index(row, 0);
         const QString modelDisplay = proxyModel.data(index, Qt::DisplayRole).toString();
         const auto childFxItem = treeViewPrivate->loadedTableItem(QPoint(0, row));
         QVERIFY(childFxItem);
@@ -1098,7 +1135,7 @@ void tst_qquicktreeview::sortTreeModelDynamic()
     // is the same as in the view. That means that QQmlTreeModelToTableModel
     // and QSortFilterProxyModel are in sync.
     for (int row = 0; row < treeView->rows(); ++row) {
-        const auto index = treeView->modelIndex(0, row);
+        const auto index = treeView->index(row, 0);
         const QString modelDisplay = proxyModel.data(index, Qt::DisplayRole).toString();
         const auto childFxItem = treeViewPrivate->loadedTableItem(QPoint(0, row));
         QVERIFY(childFxItem);
@@ -1111,11 +1148,105 @@ void tst_qquicktreeview::sortTreeModelDynamic()
 
     // Now change the text in one of the items. This will trigger
     // a sort for only one of the parents in the model.
-    proxyModel.setData(treeView->modelIndex(0, row), u"xxx"_qs, Qt::DisplayRole);
+    proxyModel.setData(treeView->index(row, 0), u"xxx"_s, Qt::DisplayRole);
 
     for (int row = 0; row < treeView->rows(); ++row) {
-        const auto index = treeView->modelIndex(0, row);
+        const auto index = treeView->index(row, 0);
         const QString modelDisplay = proxyModel.data(index, Qt::DisplayRole).toString();
+        const auto childFxItem = treeViewPrivate->loadedTableItem(QPoint(0, row));
+        QVERIFY(childFxItem);
+        const auto childItem = childFxItem->item;
+        QVERIFY(childItem);
+        const auto context = qmlContext(childItem.data());
+        const auto itemDisplay = context->contextProperty("display").toString();
+        QCOMPARE(itemDisplay, modelDisplay);
+    }
+}
+
+void tst_qquicktreeview::setRootIndex()
+{
+    // Check that if you can change the root index in the view to point
+    // at a child branch in the model
+    LOAD_TREEVIEW("normaltreeview.qml");
+
+    const QModelIndex rootIndex = model->index(0, 0);
+    const QModelIndex childIndex = model->index(3, 0, rootIndex);
+    QVERIFY(model->hasChildren(childIndex));
+    treeView->setRootIndex(childIndex);
+
+    // Go through all rows in the view, and check that view shows the
+    // same display text as the display role in the model (under the
+    // given root).
+    for (int row = 0; row < treeView->rows(); ++row) {
+        const auto index = model->index(row, 0, childIndex);
+        const QString modelDisplay = model->data(index, Qt::DisplayRole).toString();
+        const auto childFxItem = treeViewPrivate->loadedTableItem(QPoint(0, row));
+        QVERIFY(childFxItem);
+        const auto childItem = childFxItem->item;
+        QVERIFY(childItem);
+        const auto context = qmlContext(childItem.data());
+        const auto itemDisplay = context->contextProperty("display").toString();
+        QCOMPARE(itemDisplay, modelDisplay);
+    }
+
+    // Do the same once more, but this time choose a child that is deeper in the model
+    const QModelIndex childIndex2 = model->index(3, 0, childIndex);
+    QVERIFY(model->hasChildren(childIndex2));
+    treeView->setRootIndex(childIndex);
+
+    for (int row = 0; row < treeView->rows(); ++row) {
+        const auto index = model->index(row, 0, childIndex2);
+        const QString modelDisplay = model->data(index, Qt::DisplayRole).toString();
+        const auto childFxItem = treeViewPrivate->loadedTableItem(QPoint(0, row));
+        QVERIFY(childFxItem);
+        const auto childItem = childFxItem->item;
+        QVERIFY(childItem);
+        const auto context = qmlContext(childItem.data());
+        const auto itemDisplay = context->contextProperty("display").toString();
+        QCOMPARE(itemDisplay, modelDisplay);
+    }
+
+    // Reset rootIndex. This should show the whole model again
+    treeView->setRootIndex(QModelIndex());
+
+    for (int row = 0; row < treeView->rows(); ++row) {
+        const auto index = model->index(row, 0);
+        const QString modelDisplay = model->data(index, Qt::DisplayRole).toString();
+        const auto childFxItem = treeViewPrivate->loadedTableItem(QPoint(0, row));
+        QVERIFY(childFxItem);
+        const auto childItem = childFxItem->item;
+        QVERIFY(childItem);
+        const auto context = qmlContext(childItem.data());
+        const auto itemDisplay = context->contextProperty("display").toString();
+        QCOMPARE(itemDisplay, modelDisplay);
+    }
+}
+
+void tst_qquicktreeview::setRootIndexToLeaf()
+{
+    // When you set a custom root index, the root index itself will not
+    // be shown. Therefore, check that if you change the root index to a
+    // leaf in the model, TreeView will be empty.
+    LOAD_TREEVIEW("normaltreeview.qml");
+
+    const QModelIndex rootIndex = model->index(0, 0);
+    const QModelIndex leafIndex = model->index(1, 0, rootIndex);
+    QVERIFY(!model->hasChildren(leafIndex));
+    treeView->setRootIndex(leafIndex);
+    WAIT_UNTIL_POLISHED;
+    QCOMPARE(treeView->rows(), 0);
+
+    // According to the docs, you can set rootIndex to undefined
+    // in order to show the whole model again. This is the same
+    // as calling 'reset' on the property from c++. Verify that this works.
+    const QMetaObject *metaObject = treeView->metaObject();
+    const int propertyIndex = metaObject->indexOfProperty("rootIndex");
+    QVERIFY(propertyIndex != -1);
+    metaObject->property(propertyIndex).reset(treeView);
+
+    for (int row = 0; row < treeView->rows(); ++row) {
+        const auto index = model->index(row, 0);
+        const QString modelDisplay = model->data(index, Qt::DisplayRole).toString();
         const auto childFxItem = treeViewPrivate->loadedTableItem(QPoint(0, row));
         QVERIFY(childFxItem);
         const auto childItem = childFxItem->item;

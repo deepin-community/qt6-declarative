@@ -31,30 +31,32 @@
 
 QT_BEGIN_NAMESPACE
 
+using namespace Qt::Literals::StringLiterals;
+
 namespace QQmlJS {
 namespace Dom {
 
 class QMLDOM_EXPORT ParsingTask {
 public:
     QCborMap toCbor() const {
-        return QCborMap(
-        {{ QString::fromUtf16(Fields::requestedAt), QCborValue(requestedAt)},
-         { QString::fromUtf16(Fields::loadOptions), int(loadOptions)},
-         { QString::fromUtf16(Fields::kind), int(kind)},
-         { QString::fromUtf16(Fields::canonicalPath), canonicalPath},
-         { QString::fromUtf16(Fields::logicalPath), logicalPath},
-         { QString::fromUtf16(Fields::contents), contents},
-         { QString::fromUtf16(Fields::contentsDate), QCborValue(contentsDate)},
-         { QString::fromUtf16(Fields::hasCallback), bool(callback)}});
+        return QCborMap({ { QString::fromUtf16(Fields::requestedAt), QCborValue(requestedAt) },
+                          { QString::fromUtf16(Fields::loadOptions), int(loadOptions) },
+                          { QString::fromUtf16(Fields::kind), int(kind) },
+                          { QString::fromUtf16(Fields::canonicalPath), file.canonicalPath() },
+                          { QString::fromUtf16(Fields::logicalPath), file.logicalPath() },
+                          { QString::fromUtf16(Fields::contents),
+                            file.content() ? file.content()->data : QString() },
+                          { QString::fromUtf16(Fields::contentsDate),
+                            QCborValue(file.content() ? file.content()->date
+                                                      : QDateTime::fromMSecsSinceEpoch(
+                                                              0, QTimeZone::UTC)) },
+                          { QString::fromUtf16(Fields::hasCallback), bool(callback) } });
     }
 
     QDateTime requestedAt;
     LoadOptions loadOptions;
     DomType kind;
-    QString canonicalPath;
-    QString logicalPath;
-    QString contents;
-    QDateTime contentsDate;
+    FileToLoad file;
     std::weak_ptr<DomUniverse> requestingUniverse; // make it a shared_ptr?
     function<void(Path, DomItem &, DomItem &)> callback;
 };
@@ -64,10 +66,13 @@ class QMLDOM_EXPORT ExternalItemPairBase: public OwningItem { // all access shou
 public:
     constexpr static DomType kindValue = DomType::ExternalItemPair;
     DomType kind() const final override { return kindValue; }
-    ExternalItemPairBase(QDateTime validExposedAt = QDateTime::fromMSecsSinceEpoch(0),
-                         QDateTime currentExposedAt = QDateTime::fromMSecsSinceEpoch(0),
-                         int derivedFrom=0, QDateTime lastDataUpdateAt = QDateTime::fromMSecsSinceEpoch(0)):
-        OwningItem(derivedFrom, lastDataUpdateAt), validExposedAt(validExposedAt), currentExposedAt(currentExposedAt)
+    ExternalItemPairBase(QDateTime validExposedAt = QDateTime::fromMSecsSinceEpoch(0, QTimeZone::UTC),
+                         QDateTime currentExposedAt = QDateTime::fromMSecsSinceEpoch(0, QTimeZone::UTC),
+                         int derivedFrom = 0,
+                         QDateTime lastDataUpdateAt = QDateTime::fromMSecsSinceEpoch(0, QTimeZone::UTC))
+        : OwningItem(derivedFrom, lastDataUpdateAt),
+          validExposedAt(validExposedAt),
+          currentExposedAt(currentExposedAt)
     {}
     ExternalItemPairBase(const ExternalItemPairBase &o):
         OwningItem(o), validExposedAt(o.validExposedAt), currentExposedAt(o.currentExposedAt)
@@ -118,18 +123,20 @@ class QMLDOM_EXPORT ExternalItemPair final : public ExternalItemPairBase
 protected:
     std::shared_ptr<OwningItem> doCopy(DomItem &) const override
     {
-        return std::shared_ptr<OwningItem>(new ExternalItemPair(*this));
+        return std::make_shared<ExternalItemPair>(*this);
     }
 
 public:
     constexpr static DomType kindValue = DomType::ExternalItemPair;
     friend class DomUniverse;
     ExternalItemPair(std::shared_ptr<T> valid = {}, std::shared_ptr<T> current = {},
-                     QDateTime validExposedAt = QDateTime::fromMSecsSinceEpoch(0),
-                     QDateTime currentExposedAt = QDateTime::fromMSecsSinceEpoch(0),
-                     int derivedFrom = 0, QDateTime lastDataUpdateAt = QDateTime::fromMSecsSinceEpoch(0)):
-        ExternalItemPairBase(validExposedAt, currentExposedAt, derivedFrom, lastDataUpdateAt),
-        valid(valid), current(current)
+                     QDateTime validExposedAt = QDateTime::fromMSecsSinceEpoch(0, QTimeZone::UTC),
+                     QDateTime currentExposedAt = QDateTime::fromMSecsSinceEpoch(0, QTimeZone::UTC),
+                     int derivedFrom = 0,
+                     QDateTime lastDataUpdateAt = QDateTime::fromMSecsSinceEpoch(0, QTimeZone::UTC))
+        : ExternalItemPairBase(validExposedAt, currentExposedAt, derivedFrom, lastDataUpdateAt),
+          valid(valid),
+          current(current)
     {}
     ExternalItemPair(const ExternalItemPair &o):
         ExternalItemPairBase(o), valid(o.valid), current(o.current)
@@ -218,11 +225,7 @@ public:
         return std::static_pointer_cast<DomUniverse>(doCopy(self));
     }
 
-    void loadFile(DomItem &self, QString filePath, QString logicalPath, Callback callback,
-                  LoadOptions loadOptions,
-                  std::optional<DomType> fileType = std::optional<DomType>());
-    void loadFile(DomItem &self, QString canonicalFilePath, QString logicalPath, QString code,
-                  QDateTime codeDate, Callback callback, LoadOptions loadOptions,
+    void loadFile(DomItem &self, const FileToLoad &file, Callback callback, LoadOptions loadOptions,
                   std::optional<DomType> fileType = std::optional<DomType>());
     void execQueue();
 
@@ -238,9 +241,9 @@ public:
     {
         if (auto current = globalScopeWithName(name))
             return current;
-        std::shared_ptr<GlobalScope> newScope(new GlobalScope(name));
-        std::shared_ptr<ExternalItemPair<GlobalScope>> newValue(
-                new ExternalItemPair<GlobalScope>(newScope, newScope));
+        auto newScope = std::make_shared<GlobalScope>(name);
+        auto newValue = std::make_shared<ExternalItemPair<GlobalScope>>(
+                newScope, newScope);
         QMutexLocker l(mutex());
         if (auto current = m_globalScopeWithName.value(name))
             return current;
@@ -364,9 +367,9 @@ public:
     constexpr static DomType kindValue = DomType::ExternalItemInfo;
     DomType kind() const final override { return kindValue; }
     ExternalItemInfoBase(Path canonicalPath,
-                         QDateTime currentExposedAt = QDateTime::fromMSecsSinceEpoch(0),
+                         QDateTime currentExposedAt = QDateTime::fromMSecsSinceEpoch(0, QTimeZone::UTC),
                          int derivedFrom = 0,
-                         QDateTime lastDataUpdateAt = QDateTime::fromMSecsSinceEpoch(0))
+                         QDateTime lastDataUpdateAt = QDateTime::fromMSecsSinceEpoch(0, QTimeZone::UTC))
         : OwningItem(derivedFrom, lastDataUpdateAt),
           m_canonicalPath(canonicalPath),
           m_currentExposedAt(currentExposedAt)
@@ -443,15 +446,15 @@ class ExternalItemInfo final : public ExternalItemInfoBase
 protected:
     std::shared_ptr<OwningItem> doCopy(DomItem &) const override
     {
-        return std::shared_ptr<ExternalItemInfo>(new ExternalItemInfo(*this));
+        return std::make_shared<ExternalItemInfo>(*this);
     }
 
 public:
     constexpr static DomType kindValue = DomType::ExternalItemInfo;
     ExternalItemInfo(std::shared_ptr<T> current = std::shared_ptr<T>(),
-                     QDateTime currentExposedAt = QDateTime::fromMSecsSinceEpoch(0),
+                     QDateTime currentExposedAt = QDateTime::fromMSecsSinceEpoch(0, QTimeZone::UTC),
                      int derivedFrom = 0,
-                     QDateTime lastDataUpdateAt = QDateTime::fromMSecsSinceEpoch(0))
+                     QDateTime lastDataUpdateAt = QDateTime::fromMSecsSinceEpoch(0, QTimeZone::UTC))
         : ExternalItemInfoBase(current->canonicalPath().dropTail(), currentExposedAt, derivedFrom,
                                lastDataUpdateAt),
           current(current)
@@ -509,7 +512,8 @@ public:
     };
 
     LoadInfo(Path elPath = Path(), Status status = Status::NotStarted, int nLoaded = 0,
-             int derivedFrom = 0, QDateTime lastDataUpdateAt = QDateTime::fromMSecsSinceEpoch(0))
+             int derivedFrom = 0,
+             QDateTime lastDataUpdateAt = QDateTime::fromMSecsSinceEpoch(0, QTimeZone::UTC))
         : OwningItem(derivedFrom, lastDataUpdateAt),
           m_elementCanonicalPath(elPath),
           m_status(status),
@@ -650,13 +654,8 @@ public:
 
     std::shared_ptr<DomEnvironment> makeCopy(DomItem &self) const;
 
-    void loadFile(DomItem &self, QString filePath, QString logicalPath, Callback loadCallback,
+    void loadFile(DomItem &self, FileToLoad file, Callback loadCallback,
                   Callback directDepsCallback, Callback endCallback, LoadOptions loadOptions,
-                  std::optional<DomType> fileType = std::optional<DomType>(),
-                  ErrorHandler h = nullptr);
-    void loadFile(DomItem &self, QString canonicalFilePath, QString logicalPath, QString code,
-                  QDateTime codeDate, Callback loadCallback, Callback directDepsCallback,
-                  Callback endCallback, LoadOptions loadOptions,
                   std::optional<DomType> fileType = std::optional<DomType>(),
                   ErrorHandler h = nullptr);
     void loadModuleDependency(DomItem &self, QString uri, Version v,
@@ -735,6 +734,7 @@ public:
     std::shared_ptr<DomEnvironment> base() const;
 
     QStringList loadPaths() const;
+    QStringList qmldirFiles() const;
 
     QString globalScopeName() const;
 
