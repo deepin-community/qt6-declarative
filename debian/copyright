@@ -11,8 +11,7 @@ Files: *.qdoc
 Copyright: 2017 The Qt Company Ltd.
 License: GFDL-NIV-1.3
 
-Files: conanfile.py
-       src/qmlcompiler/*
+Files: src/qmlcompiler/*
        src/qmldebug/qqmlenginedebugclient_p.h
        src/qmldebug/qqmlenginedebugclient.cpp
        src/qmldom/qqmldomcomments_p.h
@@ -41,10 +40,7 @@ Files: examples/*
        src/quick/doc/snippets/*
        tests/auto/cmake/test_import_static_shapes_plugin_resources/app.qml
        tests/auto/cmake/test_import_static_shapes_plugin_resources/tst_main.cpp
-       tests/auto/core/data/tst_standardpaths.qml
        tests/auto/qml/qmlbasicapp/main.qml
-       tests/auto/qml/qmlbasicapp/TimeExample/timemodel.cpp
-       tests/auto/qml/qmlbasicapp/TimeExample/timemodel.h
        tests/auto/qml/qqmllanguage/data/*
        tests/auto/qml/qqmlsqldatabase/data/changeVersion.qml
        tests/auto/qmltest/animatedimage/tst_animatedimage.qml
@@ -89,7 +85,6 @@ Files: examples/*
        tests/auto/quick/qquicklistview2/data/urlListModel.qml
        tests/auto/quick/qquickpalette/data/*
        tests/auto/quick/qquickpathview/data/*
-       tests/auto/quickcontrols2/*
        tests/benchmarks/qml/holistic/data/largeTargets/*
        tests/manual/highdpi/imageprovider.cpp
        tests/manual/nodetypes_ng/*
@@ -99,10 +94,8 @@ Files: examples/*
        tests/manual/tableview/imagetiling/imageTiling.qml
        tests/manual/text/*
        tests/manual/touch/*
-       tests/manual/quickcontrols2/*
        tests/testapplications/animatedsprite/*
        tests/testapplications/listview/*
-       tools/qml/conf/*
 Copyright: 2016-2021 The Qt Company Ltd.
 License: BSD-3-clause
 
@@ -179,17 +172,11 @@ Copyright: 2020 Esri
 License: Apache-2.0
 
 Files: src/quick/doc/snippets/qml/windowconstraints.qml
-       src/quickcontrols2/doc/snippets/*
 Copyright: 2017 The Qt Company Ltd.
 License: GFDL-NIV-1.3
 
-Files: src/quickcontrols2/doc/snippets/qtquickcontrols2-headerview-simple.qml
-       src/quickcontrols2/doc/snippets/qtquickcontrols2-selectionrectangle.qml
-Copyright: 2021 The Qt Company Ltd.
-License: BSD-3-clause
-
 Files: debian/*
-Copyright: 2022 Patrick Franz <deltaone@debian.org>
+Copyright: 2022-2023 Patrick Franz <deltaone@debian.org>
 License: LGPL-3 or GPL-2
 
 # Auto-generated rules for non-3rdparty code
@@ -235,10 +222,6 @@ Files: tests/manual/tableview/storagemodel/storagemodel.cpp
        tests/manual/tableview/storagemodel/storagemodel.h
 Copyright: 2016 Ivan Komissarov <ABBAPOH@gmail.com>
            2016 The Qt Company Ltd.
-License: BSD-3-clause
-
-Files: src/quick/doc/snippets/qml/itemGrab.qml
-Copyright: 2014 Jolla Ltd, author: <gunnar.sletta@jollamobile.com>
 License: BSD-3-clause
 
 Files: tests/auto/quick/qquicktext/data/lineLayoutImplicitWidth.qml
@@ -353,7 +336,6 @@ Files: tests/auto/qmltest-blacklist/animators/tst_mixed.qml
        tests/auto/qmltest/stability/tst_unloadrepeater.qml
        tests/auto/quick/qquickimage/data/hugeImages.qml
        tests/auto/quick/qquickitem2/data/grabToImage.qml
-       tests/auto/quick/rendernode/data/matrix.qml
        tests/auto/quick/scenegraph/data/render_ImageFiltering.qml
        tests/auto/quick/scenegraph/data/render_OpacityThroughBatchRoot.qml
        tests/auto/quick/scenegraph/data/render_bug37422.qml

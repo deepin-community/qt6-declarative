@@ -29,6 +29,27 @@ using namespace Qt::StringLiterals;
 Q_DECLARE_METATYPE(QList<int>)
 Q_DECLARE_METATYPE(QObjectList)
 
+class DateTimeHolder : public QObject
+{
+    Q_OBJECT
+    Q_PROPERTY(QDateTime dateTime MEMBER m_dateTime NOTIFY dateTimeChanged)
+    Q_PROPERTY(QDate date MEMBER m_date NOTIFY dateChanged)
+    Q_PROPERTY(QTime time MEMBER m_time NOTIFY timeChanged)
+    Q_PROPERTY(QString string MEMBER m_string NOTIFY stringChanged)
+
+signals:
+    void dateTimeChanged();
+    void dateChanged();
+    void timeChanged();
+    void stringChanged();
+
+public:
+    QDateTime m_dateTime;
+    QDate m_date;
+    QTime m_time;
+    QString m_string;
+};
+
 class tst_QJSEngine : public QObject
 {
     Q_OBJECT
@@ -86,6 +107,8 @@ private slots:
     void collectGarbageNestedWrappersTwoEngines();
     void gcWithNestedDataStructure();
     void stacktrace();
+    void unshiftAndSort();
+    void unshiftAndPushAndSort();
     void numberParsing_data();
     void numberParsing();
     void automaticSemicolonInsertion();
@@ -115,7 +138,10 @@ private slots:
     void reentrancy_Array();
     void reentrancy_objectCreation();
     void jsIncDecNonObjectProperty();
-    void JSONparse();
+    void JSON_Parse();
+    void JSON_Stringify_data();
+    void JSON_Stringify();
+    void JSON_Stringify_WithReplacer_QTBUG_95324();
     void arraySort();
     void lookupOnDisappearingProperty();
     void arrayConcat();
@@ -169,6 +195,7 @@ private slots:
     void translateFromBuiltinCallback();
     void translationFilePath_data();
     void translationFilePath();
+    void translationFileName();
 
     void installConsoleFunctions();
     void logging();
@@ -224,6 +251,7 @@ private slots:
     void returnError();
     void catchError();
     void mathMinMax();
+    void mathNegativeZero();
 
     void importModule();
     void importModuleRelative();
@@ -262,8 +290,25 @@ private slots:
     void urlObject();
     void thisInConstructor();
     void forOfAndGc();
+    void jsExponentiate();
+    void arrayBuffer();
     void staticInNestedClasses();
+    void callElement();
 
+    void tdzViolations_data();
+    void tdzViolations();
+
+    void coerceValue();
+
+    void coerceDateTime_data();
+    void coerceDateTime();
+
+    void callWithSpreadOnElement();
+    void spreadNoOverflow();
+
+    void symbolToVariant();
+
+    void garbageCollectedObjectMethodBase();
 public:
     Q_INVOKABLE QJSValue throwingCppMethod1();
     Q_INVOKABLE void throwingCppMethod2();
@@ -275,6 +320,7 @@ signals:
 
 tst_QJSEngine::tst_QJSEngine()
 {
+    qmlRegisterType<DateTimeHolder>("Test", 1, 0, "DateTimeHolder");
 }
 
 tst_QJSEngine::~tst_QJSEngine()
@@ -326,22 +372,22 @@ void tst_QJSEngine::callQObjectSlot()
     {
         QSignalSpy spy(&dummy, SIGNAL(slotWithoutArgCalled()));
         eng.evaluate("dummy.slotToCall();");
-        QCOMPARE(spy.count(), 1);
+        QCOMPARE(spy.size(), 1);
     }
 
     {
         QSignalSpy spy(&dummy, SIGNAL(slotWithSingleArgCalled(QString)));
         eng.evaluate("dummy.slotToCall('arg');");
 
-        QCOMPARE(spy.count(), 1);
+        QCOMPARE(spy.size(), 1);
         const QList<QVariant> arguments = spy.takeFirst();
         QCOMPARE(arguments.at(0).toString(), QString("arg"));
     }
 
     {
-        QSignalSpy spy(&dummy, SIGNAL(slotWithArgumentsCalled(QString, QString, QString)));
+        QSignalSpy spy(&dummy, SIGNAL(slotWithArgumentsCalled(QString,QString,QString)));
         eng.evaluate("dummy.slotToCall('arg', 'arg2');");
-        QCOMPARE(spy.count(), 1);
+        QCOMPARE(spy.size(), 1);
 
         const QList<QVariant> arguments = spy.takeFirst();
         QCOMPARE(arguments.at(0).toString(), QString("arg"));
@@ -350,9 +396,9 @@ void tst_QJSEngine::callQObjectSlot()
     }
 
     {
-        QSignalSpy spy(&dummy, SIGNAL(slotWithArgumentsCalled(QString, QString, QString)));
+        QSignalSpy spy(&dummy, SIGNAL(slotWithArgumentsCalled(QString,QString,QString)));
         eng.evaluate("dummy.slotToCall('arg', 'arg2', 'arg3');");
-        QCOMPARE(spy.count(), 1);
+        QCOMPARE(spy.size(), 1);
 
         const QList<QVariant> arguments = spy.takeFirst();
         QCOMPARE(arguments.at(0).toString(), QString("arg"));
@@ -361,9 +407,9 @@ void tst_QJSEngine::callQObjectSlot()
     }
 
     {
-        QSignalSpy spy(&dummy, SIGNAL(slotWithOverloadedArgumentsCalled(QString, Qt::KeyboardModifier, Qt::KeyboardModifiers)));
+        QSignalSpy spy(&dummy, SIGNAL(slotWithOverloadedArgumentsCalled(QString,Qt::KeyboardModifier,Qt::KeyboardModifiers)));
         eng.evaluate(QStringLiteral("dummy.slotToCall('arg', %1);").arg(QString::number(Qt::ControlModifier)));
-        QCOMPARE(spy.count(), 1);
+        QCOMPARE(spy.size(), 1);
 
         const QList<QVariant> arguments = spy.first();
         QCOMPARE(arguments.at(0).toString(), QString("arg"));
@@ -373,9 +419,9 @@ void tst_QJSEngine::callQObjectSlot()
     }
 
     {
-        QSignalSpy spy(&dummy, SIGNAL(slotWithTwoOverloadedArgumentsCalled(QString, Qt::KeyboardModifiers, Qt::KeyboardModifier)));
+        QSignalSpy spy(&dummy, SIGNAL(slotWithTwoOverloadedArgumentsCalled(QString,Qt::KeyboardModifiers,Qt::KeyboardModifier)));
         QJSValue v = eng.evaluate(QStringLiteral("dummy.slotToCallTwoDefault('arg', %1);").arg(QString::number(Qt::MetaModifier | Qt::KeypadModifier)));
-        QCOMPARE(spy.count(), 1);
+        QCOMPARE(spy.size(), 1);
 
         const QList<QVariant> arguments = spy.first();
         QCOMPARE(arguments.at(0).toString(), QString("arg"));
@@ -394,9 +440,9 @@ void tst_QJSEngine::callQObjectSlot()
     eng.globalObject().setProperty(QStringLiteral("Qt"), value);
 
     {
-        QSignalSpy spy(&dummy, SIGNAL(slotWithOverloadedArgumentsCalled(QString, Qt::KeyboardModifier, Qt::KeyboardModifiers)));
+        QSignalSpy spy(&dummy, SIGNAL(slotWithOverloadedArgumentsCalled(QString,Qt::KeyboardModifier,Qt::KeyboardModifiers)));
         QJSValue v = eng.evaluate(QStringLiteral("dummy.slotToCall('arg', Qt.ControlModifier);"));
-        QCOMPARE(spy.count(), 1);
+        QCOMPARE(spy.size(), 1);
 
         const QList<QVariant> arguments = spy.first();
         QCOMPARE(arguments.at(0).toString(), QString("arg"));
@@ -405,9 +451,9 @@ void tst_QJSEngine::callQObjectSlot()
     }
 
     {
-        QSignalSpy spy(&dummy, SIGNAL(slotWithTwoOverloadedArgumentsCalled(QString, Qt::KeyboardModifiers, Qt::KeyboardModifier)));
+        QSignalSpy spy(&dummy, SIGNAL(slotWithTwoOverloadedArgumentsCalled(QString,Qt::KeyboardModifiers,Qt::KeyboardModifier)));
         QJSValue v = eng.evaluate(QStringLiteral("dummy.slotToCallTwoDefault('arg', Qt.MetaModifier | Qt.KeypadModifier);"));
-        QCOMPARE(spy.count(), 1);
+        QCOMPARE(spy.size(), 1);
 
         const QList<QVariant> arguments = spy.first();
         QCOMPARE(arguments.at(0).toString(), QString("arg"));
@@ -799,7 +845,7 @@ void tst_QJSEngine::newDate()
     }
 
     {
-        QDateTime dt = QDateTime(QDate(1, 2, 3), QTime(4, 5, 6, 7), Qt::LocalTime);
+        QDateTime dt = QDateTime(QDate(1, 2, 3), QTime(4, 5, 6, 7));
         QJSValue date = eng.toScriptValue(dt);
         QVERIFY(!date.isUndefined());
         QCOMPARE(date.isDate(), true);
@@ -809,7 +855,7 @@ void tst_QJSEngine::newDate()
     }
 
     {
-        QDateTime dt = QDateTime(QDate(1, 2, 3), QTime(4, 5, 6, 7), Qt::UTC);
+        QDateTime dt = QDateTime(QDate(1, 2, 3), QTime(4, 5, 6, 7), QTimeZone::UTC);
         QJSValue date = eng.toScriptValue(dt);
         // toDateTime() result should be in local time
         QCOMPARE(date.toDateTime(), dt.toLocalTime());
@@ -867,7 +913,7 @@ void tst_QJSEngine::newQObjectRace()
         {
             int newObjectCount = 1000;
 #if defined(Q_OS_QNX)
-            newObjectCount = 256;
+            newObjectCount = 128;
 #endif
             for (int i=0;i<newObjectCount;++i)
             {
@@ -967,7 +1013,7 @@ void tst_QJSEngine::newQObject_deletedEngine()
         object = engine.newQObject(ptr);
         engine.globalObject().setProperty("obj", object);
     }
-    QTRY_VERIFY(spy.count());
+    QTRY_VERIFY(spy.size());
 }
 
 class TestQMetaObject : public QObject {
@@ -1000,6 +1046,17 @@ private:
     int m_called = 1;
 };
 
+class TestQMetaObject2 : public QObject
+{
+    Q_OBJECT
+public:
+    Q_INVOKABLE TestQMetaObject2(int a) : m_called(a) {}
+    int called() const { return m_called; }
+
+private:
+    int m_called = 1;
+};
+
 void tst_QJSEngine::newQObjectPropertyCache()
 {
     QScopedPointer<QObject> obj(new QObject);
@@ -1026,6 +1083,7 @@ void tst_QJSEngine::newQMetaObject() {
         QCOMPARE(metaObject.toQMetaObject(), &TestQMetaObject::staticMetaObject);
 
         QVERIFY(metaObject.strictlyEquals(engine.newQMetaObject<TestQMetaObject>()));
+        QVERIFY(!metaObject.strictlyEquals(engine.newArray()));
 
 
         {
@@ -1074,6 +1132,18 @@ void tst_QJSEngine::newQMetaObject() {
         QCOMPARE(metaObject.property("C").toInt(), 2);
     }
 
+    {
+        QJSEngine engine;
+        const QJSValue metaObject = engine.newQMetaObject(&TestQMetaObject2::staticMetaObject);
+        engine.globalObject().setProperty("Example"_L1, metaObject);
+
+        const QJSValue invalid = engine.evaluate("new Example()"_L1);
+        QVERIFY(invalid.isError());
+        QCOMPARE(invalid.toString(), "Error: Insufficient arguments"_L1);
+
+        const QJSValue valid = engine.evaluate("new Example(123)"_L1);
+        QCOMPARE(qjsvalue_cast<TestQMetaObject2 *>(valid)->called(), 123);
+    }
 }
 
 void tst_QJSEngine::exceptionInSlot()
@@ -2019,6 +2089,81 @@ void tst_QJSEngine::stacktrace()
     }
 }
 
+void tst_QJSEngine::unshiftAndSort()
+{
+    QJSEngine engine;
+    QJSValue func = engine.evaluate(R"""(
+    (function (objectArr, currIdx) {
+        objectArr.unshift({"sortIndex": currIdx});
+        objectArr.sort(function(a, b) {
+            if (a.sortIndex > b.sortIndex)
+                return 1;
+            if (a.sortIndex < b.sortIndex)
+                return -1;
+            return 0;
+        });
+        return objectArr;
+    })
+    )""");
+    QVERIFY(func.isCallable());
+    QJSValue objectArr = engine.newArray();
+
+    for (int i = 0; i < 5; ++i) {
+        objectArr = func.call({objectArr, i});
+        QVERIFY2(!objectArr.isError(), qPrintable(objectArr.toString()));
+        const int length = objectArr.property("length").toInt();
+
+        // It did add one element
+        QCOMPARE(length, i + 1);
+
+        for (int x = 0; x < length; ++x) {
+            // We didn't sort cruft into the array.
+            QVERIFY(!objectArr.property(x).isUndefined());
+
+            // The array is actually sorted.
+            QCOMPARE(objectArr.property(x).property("sortIndex").toInt(), x);
+        }
+    }
+}
+
+void tst_QJSEngine::unshiftAndPushAndSort()
+{
+    QJSEngine engine;
+    QJSValue func = engine.evaluate(R"""(
+    (function (objectArr, currIdx) {
+        objectArr.unshift({"sortIndex": currIdx});
+        objectArr.push({"sortIndex": currIdx + 1});
+        objectArr.sort(function(a, b) {
+            if (a.sortIndex > b.sortIndex)
+                return 1;
+            if (a.sortIndex < b.sortIndex)
+                return -1;
+            return 0;
+        });
+        return objectArr;
+    })
+    )""");
+    QVERIFY(func.isCallable());
+    QJSValue objectArr = engine.newArray();
+
+    for (int i = 0; i < 20; i += 2) {
+        objectArr = func.call({objectArr, i});
+        QVERIFY2(!objectArr.isError(), qPrintable(objectArr.toString()));
+        const int length = objectArr.property("length").toInt();
+
+        // It did add 2 elements
+        QCOMPARE(length, i + 2);
+
+        for (int x = 0; x < length; ++x) {
+            // We didn't sort cruft into the array.
+            QVERIFY(!objectArr.property(x).isUndefined());
+
+            // The array is actually sorted.
+            QCOMPARE(objectArr.property(x).property("sortIndex").toInt(), x);
+        }
+    }
+}
+
 void tst_QJSEngine::numberParsing_data()
 {
     QTest::addColumn<QString>("string");
@@ -2666,8 +2811,8 @@ void tst_QJSEngine::stringObjects()
     // in C++
     {
         QJSValue obj = eng.evaluate(QString::fromLatin1("new String('%0')").arg(str));
-        QCOMPARE(obj.property("length").toInt(), str.length());
-        for (int i = 0; i < str.length(); ++i) {
+        QCOMPARE(obj.property("length").toInt(), str.size());
+        for (int i = 0; i < str.size(); ++i) {
             QString pname = QString::number(i);
             QVERIFY(obj.property(pname).isString());
             QCOMPARE(obj.property(pname).toString(), QString(str.at(i)));
@@ -2677,7 +2822,7 @@ void tst_QJSEngine::stringObjects()
             QCOMPARE(obj.property(pname).toString(), QString(str.at(i)));
         }
         QVERIFY(obj.property("-1").isUndefined());
-        QVERIFY(obj.property(QString::number(str.length())).isUndefined());
+        QVERIFY(obj.property(QString::number(str.size())).isUndefined());
 
         QJSValue val = eng.toScriptValue(123);
         obj.setProperty("-1", val);
@@ -2690,13 +2835,13 @@ void tst_QJSEngine::stringObjects()
         QJSValue ret = eng.evaluate("s = new String('ciao'); r = []; for (var p in s) r.push(p); r");
         QVERIFY(ret.isArray());
         QStringList lst = qjsvalue_cast<QStringList>(ret);
-        QCOMPARE(lst.size(), str.length());
-        for (int i = 0; i < str.length(); ++i)
+        QCOMPARE(lst.size(), str.size());
+        for (int i = 0; i < str.size(); ++i)
             QCOMPARE(lst.at(i), QString::number(i));
 
         QJSValue ret2 = eng.evaluate("s[0] = 123; s[0]");
         QVERIFY(ret2.isString());
-        QCOMPARE(ret2.toString().length(), 1);
+        QCOMPARE(ret2.toString().size(), 1);
         QCOMPARE(ret2.toString().at(0), str.at(0));
 
         QJSValue ret3 = eng.evaluate("s[-1] = 123; s[-1]");
@@ -3266,11 +3411,63 @@ void tst_QJSEngine::jsIncDecNonObjectProperty()
     }
 }
 
-void tst_QJSEngine::JSONparse()
+void tst_QJSEngine::JSON_Parse()
 {
     QJSEngine eng;
     QJSValue ret = eng.evaluate("var json=\"{\\\"1\\\": null}\"; JSON.parse(json);");
     QVERIFY(ret.isObject());
+}
+
+void tst_QJSEngine::JSON_Stringify_data()
+{
+    QTest::addColumn<QString>("object");
+    QTest::addColumn<QString>("json");
+
+    // Basic "smoke" test. More tests are provided by test262 suite.
+    // Don't test with multiple key-value pairs on the same level,
+    // because serialization order might not be deterministic.
+    // Note: parenthesis are required, otherwise objects will be interpretted as code blocks.
+    QTest::newRow("empty")          << "({})"               << "{}";
+    QTest::newRow("string")         << "({a: 'b'})"         << "{\"a\":\"b\"}";
+    QTest::newRow("number")         << "({c: 42})"          << "{\"c\":42}";
+    QTest::newRow("boolean")        << "({d: true})"        << "{\"d\":true}";
+    QTest::newRow("key is array")   << "({[[12, 34]]: 56})" << "{\"12,34\":56}";
+    QTest::newRow("value is date")  << "({d: new Date('2000-01-20T12:00:00.000Z')})"  << "{\"d\":\"2000-01-20T12:00:00.000Z\"}";
+}
+
+void tst_QJSEngine::JSON_Stringify()
+{
+    QFETCH(QString, object);
+    QFETCH(QString, json);
+
+    QJSEngine eng;
+
+    QJSValue obj = eng.evaluate(object);
+    QVERIFY(obj.isObject());
+
+    QJSValue func = eng.evaluate("(function(obj) { return JSON.stringify(obj); })");
+    QVERIFY(func.isCallable());
+
+    QJSValue ret = func.call(QJSValueList{obj});
+    QVERIFY(ret.isString());
+    QCOMPARE(ret.toString(), json);
+}
+
+void tst_QJSEngine::JSON_Stringify_WithReplacer_QTBUG_95324()
+{
+    QJSEngine eng;
+    QJSValue json = eng.evaluate(R"(
+        function replacer(k, v) {
+          if (this[k] instanceof Date) {
+            return Math.floor(this[k].getTime() / 1000.0);
+          }
+          return v;
+        }
+        const obj = {d: new Date('2000-01-20T12:00:00.000Z')};
+        JSON.stringify(obj, replacer);
+    )");
+    QVERIFY(json.isString());
+    QCOMPARE(json.toString(), QString::fromLatin1("{\"d\":948369600}"));
 }
 
 void tst_QJSEngine::arraySort()
@@ -3444,7 +3641,7 @@ void tst_QJSEngine::dateRoundtripJSQtJS()
 #ifdef Q_OS_WIN
     QSKIP("This test fails on Windows due to a bug in QDateTime.");
 #endif
-    qint64 secs = QDate(2009, 1, 1).startOfDay(Qt::UTC).toSecsSinceEpoch();
+    qint64 secs = QDate(2009, 1, 1).startOfDay(QTimeZone::UTC).toSecsSinceEpoch();
     QJSEngine eng;
     for (int i = 0; i < 8000; ++i) {
         QJSValue jsDate = eng.evaluate(QString::fromLatin1("new Date(%0)").arg(secs * 1000.0));
@@ -3477,14 +3674,14 @@ void tst_QJSEngine::dateConversionJSQt()
 #ifdef Q_OS_WIN
     QSKIP("This test fails on Windows due to a bug in QDateTime.");
 #endif
-    qint64 secs = QDate(2009, 1, 1).startOfDay(Qt::UTC).toSecsSinceEpoch();
+    qint64 secs = QDate(2009, 1, 1).startOfDay(QTimeZone::UTC).toSecsSinceEpoch();
     QJSEngine eng;
     for (int i = 0; i < 8000; ++i) {
         QJSValue jsDate = eng.evaluate(QString::fromLatin1("new Date(%0)").arg(secs * 1000.0));
         QDateTime qtDate = jsDate.toDateTime();
         QString qtUTCDateStr = qtDate.toUTC().toString(Qt::ISODate);
         QString jsUTCDateStr = jsDate.property("toISOString").callWithInstance(jsDate).toString();
-        jsUTCDateStr.remove(jsUTCDateStr.length() - 5, 4); // get rid of milliseconds (".000")
+        jsUTCDateStr.remove(jsUTCDateStr.size() - 5, 4); // get rid of milliseconds (".000")
         if (qtUTCDateStr != jsUTCDateStr)
             QFAIL(qPrintable(jsDate.toString()));
         secs += 2*60*60;
@@ -3499,7 +3696,7 @@ void tst_QJSEngine::dateConversionQtJS()
         QJSValue jsDate = eng.toScriptValue(qtDate);
         QString jsUTCDateStr = jsDate.property("toISOString").callWithInstance(jsDate).toString();
         QString qtUTCDateStr = qtDate.toUTC().toString(Qt::ISODate);
-        jsUTCDateStr.remove(jsUTCDateStr.length() - 5, 4); // get rid of milliseconds (".000")
+        jsUTCDateStr.remove(jsUTCDateStr.size() - 5, 4); // get rid of milliseconds (".000")
         if (jsUTCDateStr != qtUTCDateStr)
             QFAIL(qPrintable(qtDate.toString()));
         qtDate = qtDate.addSecs(2*60*60);
@@ -4068,7 +4265,7 @@ void tst_QJSEngine::translationContext_data()
     QTest::newRow("foo/translatable.js")  << "foo/translatable.js" << "One" << "En";
     QTest::newRow("file:///home/qt/translatable.js")  << "file:///home/qt/translatable.js" << "One" << "En";
     QTest::newRow(":/resources/translatable.js")  << ":/resources/translatable.js" << "One" << "En";
-    QTest::newRow("/translatable.js.foo")  << "/translatable.js.foo" << "One" << "En";
+    QTest::newRow("/translatable.1.0.js")  << "/translatable.1.0.js" << "One" << "En";
     QTest::newRow("/translatable.txt")  << "/translatable.txt" << "One" << "En";
     QTest::newRow("translatable")  << "translatable" << "One" << "En";
     QTest::newRow("foo/translatable")  << "foo/translatable" << "One" << "En";
@@ -4297,6 +4494,22 @@ void tst_QJSEngine::translationFilePath()
     QCoreApplication::removeTranslator(&translator);
 }
 
+void tst_QJSEngine::translationFileName()
+{
+    const auto filename = QStringLiteral("multiple.dots.1.0.qml");
+
+    DummyTranslator translator("some text");
+    QCoreApplication::installTranslator(&translator);
+    QByteArray scriptContent = QByteArray("qsTr('%1')").replace("%1", translator.sourceText());
+
+    QJSEngine engine;
+    engine.installExtensions(QJSEngine::TranslationExtension);
+    QJSValue result = engine.evaluate(scriptContent, filename);
+    QCOMPARE(translator.context(), QByteArray("multiple.dots.1.0"));
+
+    QCoreApplication::removeTranslator(&translator);
+}
+
 void tst_QJSEngine::installConsoleFunctions()
 {
     QJSEngine engine;
@@ -4380,7 +4593,7 @@ void tst_QJSEngine::exceptionReporting()
     function g() {f()}
     g() )", QString("tesfile.js"), 1, &stackTrace);
     QVERIFY2(!result.isError(), qPrintable(result.toString()));
-    QCOMPARE(stackTrace.count(), 3);
+    QCOMPARE(stackTrace.size(), 3);
     QCOMPARE(stackTrace.at(0), "f:2:-1:file:tesfile.js");
     QCOMPARE(stackTrace.at(1), "g:3:-1:file:tesfile.js");
     QCOMPARE(stackTrace.at(2), "%entry:4:-1:file:tesfile.js");
@@ -4904,6 +5117,18 @@ void tst_QJSEngine::mathMinMax()
     QVERIFY(QV4::Value(QJSValuePrivate::asReturnedValue(&result)).isInteger());
 }
 
+void tst_QJSEngine::mathNegativeZero()
+{
+    QJSEngine engine;
+    QJSValue result = engine.evaluate("var a = 0; Object.is(-1*a, -0)");
+    QVERIFY(result.isBool());
+    QVERIFY(result.toBool());
+
+    result = engine.evaluate("var a = 0; Object.is(1*a, 0)");
+    QVERIFY(result.isBool());
+    QVERIFY(result.toBool());
+}
+
 void tst_QJSEngine::importModule()
 {
     // This is just a basic test for the API. Primary test coverage is via the ES test suite.
@@ -5067,19 +5292,29 @@ void tst_QJSEngine::aggressiveGc()
 
 void tst_QJSEngine::noAccumulatorInTemplateLiteral()
 {
+    // Use aggressive GC to increase our chances of triggering the problem.
     const QByteArray origAggressiveGc = qgetenv("QV4_MM_AGGRESSIVE_GC");
     qputenv("QV4_MM_AGGRESSIVE_GC", "true");
-    {
-        QJSEngine engine;
 
-        // getTemplateLiteral should not save the accumulator as it's garbage and trashes
-        // the next GC run. Instead, we want to see the stack overflow error.
-        QJSValue value = engine.evaluate("function a(){\nS=o=>s\nFunction``\na()}a()");
+    QJSEngine engine;
+    const int maxCallDepth = QV4::ExecutionEngine::maxCallDepth();
 
-        QVERIFY(value.isError());
-        QCOMPARE(value.toString(), "RangeError: Maximum call stack size exceeded.");
-    }
-    qputenv("QV4_MM_AGGRESSIVE_GC", origAggressiveGc);
+    const auto guard = qScopeGuard([&]() {
+        QV4::ExecutionEngine::setMaxCallDepth(maxCallDepth);
+        qputenv("QV4_MM_AGGRESSIVE_GC", origAggressiveGc);
+    });
+
+    // Since it takes too long to get a real stack overflow with the function below,
+    // let's switch to call depth tracking.
+    QV4::ExecutionEngine::setMaxCallDepth(64);
+    engine.handle()->callDepth = 0;
+
+    // getTemplateLiteral should not save the accumulator as it's garbage and trashes
+    // the next GC run. Instead, we want to see the stack overflow error.
+    QJSValue value = engine.evaluate("function a(){\nS=o=>s\nFunction``\na()}a()");
+
+    QVERIFY(value.isError());
+    QCOMPARE(value.toString(), "RangeError: Maximum call stack size exceeded.");
 }
 
 void tst_QJSEngine::interrupt_data()
@@ -5503,13 +5738,15 @@ void tst_QJSEngine::urlObject()
     QVERIFY(urlValue->isObject());
 
     QUrl result1;
-    QVERIFY(scope.engine->metaTypeFromJS(urlValue, QMetaType::fromType<QUrl>(), &result1));
+    QVERIFY(QV4::ExecutionEngine::metaTypeFromJS(urlValue, QMetaType::fromType<QUrl>(), &result1));
     QCOMPARE(result1, url);
 
-    QV4::ScopedValue urlVariantValue(scope, scope.engine->newVariantObject(urlVariant));
+    QV4::ScopedValue urlVariantValue(scope, scope.engine->newVariantObject(
+                                         QMetaType::fromType<QUrl>(), &url));
     QVERIFY(urlVariantValue->isObject());
     QUrl result2;
-    QVERIFY(scope.engine->metaTypeFromJS(urlVariantValue, QMetaType::fromType<QUrl>(), &result2));
+    QVERIFY(QV4::ExecutionEngine::metaTypeFromJS(urlVariantValue, QMetaType::fromType<QUrl>(),
+                                                 &result2));
     QCOMPARE(result2, url);
 }
 
@@ -5604,6 +5841,45 @@ void tst_QJSEngine::forOfAndGc()
     QTRY_VERIFY(o->property("count").toInt() > 32768);
 }
 
+void tst_QJSEngine::jsExponentiate()
+{
+    const double numbers[] = {
+        std::numeric_limits<int>::min(), -10, -1, 0, 1, 10, std::numeric_limits<int>::max(),
+        -std::numeric_limits<double>::infinity(), -100.1, -1.2, -0.0, 0.0, 1.2, 100.1,
+        std::numeric_limits<double>::infinity(), std::numeric_limits<double>::quiet_NaN()
+    };
+
+    QJSEngine engine;
+
+    const QJSManagedValue exp(engine.evaluate("(function(a, b) { return a ** b })"), &engine);
+    const QJSManagedValue pow(engine.evaluate("Math.pow"), &engine);
+    QVERIFY(exp.isFunction());
+    QVERIFY(pow.isFunction());
+
+    for (double a : numbers) {
+        for (double b : numbers)
+            QCOMPARE(exp.call({a, b}).toNumber(), pow.call({a, b}).toNumber());
+    }
+}
+
+void tst_QJSEngine::arrayBuffer()
+{
+
+    QJSEngine engine;
+    auto test = [&engine](const QByteArray &ba) {
+        QJSValue value = engine.toScriptValue(ba);
+        engine.globalObject().setProperty("array", value);
+
+        const auto result = engine.evaluate("(function(){ return array.byteLength; })()");
+
+        QVERIFY(result.isNumber());
+        QCOMPARE(result.toInt(), ba.size());
+    };
+
+    test({});
+    test("Hello");
+}
+
 void tst_QJSEngine::staticInNestedClasses()
 {
     QJSEngine engine;
@@ -5618,6 +5894,400 @@ void tst_QJSEngine::staticInNestedClasses()
     )"_s;
 
     QCOMPARE(engine.evaluate(program).toString(), u"a"_s);
+}
+
+void tst_QJSEngine::callElement()
+{
+    QJSEngine engine;
+    const QString program = uR"(
+        function myFunc(arg) { return arg === this; };
+        let array = [myFunc, "string"];
+        array[0](array.reverse()) ? "a" : "b";
+    )"_s;
+    QCOMPARE(engine.evaluate(program).toString(), u"a"_s);
+}
+
+void tst_QJSEngine::tdzViolations_data()
+{
+    QTest::addColumn<QString>("type");
+    QTest::addRow("let") << u"let"_s;
+    QTest::addRow("const") << u"const"_s;
+}
+
+void tst_QJSEngine::tdzViolations()
+{
+    QFETCH(QString, type);
+    type.resize(8, u' '); // pad with some spaces, so that the columns match.
+
+    QJSEngine engine;
+    engine.installExtensions(QJSEngine::ConsoleExtension);
+
+    const QString program1 = uR"(
+        (function() {
+            a = 5;
+            %1 a = 1;
+            return a;
+        })();
+    )"_s.arg(type);
+
+    QTest::ignoreMessage(
+                QtWarningMsg,
+                ":3:13 Variable \"a\" is used before its declaration at 4:22.");
+
+    const QJSValue result1 = engine.evaluate(program1);
+    QVERIFY(result1.isError());
+    QCOMPARE(result1.toString(), u"ReferenceError: a is not defined"_s);
+
+    const QString program2 = uR"(
+        (function() {
+            function stringify(x) { return x + "" }
+            var c = "";
+            for (var a = 0; a < 10; ++a) {
+                if (a > 0) {
+                    c += stringify(b);
+                }
+                %1 b = 10;
+            }
+            return c;
+        })();
+    )"_s.arg(type);
+
+    QTest::ignoreMessage(
+                QtWarningMsg,
+                ":7:36 Variable \"b\" is used before its declaration at 9:26.");
+
+    const QJSValue result2 = engine.evaluate(program2);
+    QVERIFY(result2.isError());
+    QCOMPARE(result2.toString(), u"ReferenceError: b is not defined"_s);
+
+    const QString program3 = uR"(
+        (function() {
+            var a = 10;
+            switch (a) {
+            case 1:
+                %1 b = 5;
+            case 10:
+                console.log(b);
+            }
+        })();
+    )"_s.arg(type);
+
+    const QJSValue result3 = engine.evaluate(program3);
+    QVERIFY(result3.isError());
+    QCOMPARE(result3.toString(), u"ReferenceError: b is not defined"_s);
+}
+
+class WithToString : public QObject
+{
+    Q_OBJECT
+public:
+    Q_INVOKABLE int toString() const { return 29; }
+};
+
+struct UnknownToJS
+{
+    int thing = 13;
+};
+
+void tst_QJSEngine::coerceValue()
+{
+    const UnknownToJS u;
+    QMetaType::registerConverter<UnknownToJS, int>([](const UnknownToJS &u) {
+        return u.thing;
+    });
+    int v = 0;
+    QVERIFY(QMetaType::convert(QMetaType::fromType<UnknownToJS>(), &u,
+                               QMetaType::fromType<int>(), &v));
+    QCOMPARE(v, 13);
+
+    QMetaType::registerConverter<UnknownToJS, QTypeRevision>([](const UnknownToJS &u) {
+        return QTypeRevision::fromMinorVersion(u.thing);
+    });
+    QTypeRevision w;
+    QVERIFY(QMetaType::convert(QMetaType::fromType<UnknownToJS>(),
+                               &u, QMetaType::fromType<QTypeRevision>(), &w));
+    QCOMPARE(w, QTypeRevision::fromMinorVersion(13));
+
+
+    QJSEngine engine;
+    WithToString withToString;
+    const int i = 7;
+    const QString a = QStringLiteral("5.25");
+
+    QCOMPARE((engine.coerceValue<int, int>(i)), i);
+    QVERIFY((engine.coerceValue<int, QJSValue>(i)).strictlyEquals(QJSValue(i)));
+    QVERIFY((engine.coerceValue<int, QJSManagedValue>(i)).strictlyEquals(
+             QJSManagedValue(QJSPrimitiveValue(i), &engine)));
+    QCOMPARE((engine.coerceValue<QVariant, int>(QVariant(i))), i);
+    QCOMPARE((engine.coerceValue<int, QVariant>(i)), QVariant(i));
+    QCOMPARE((engine.coerceValue<WithToString *, QString>(&withToString)), QStringLiteral("29"));
+    QCOMPARE((engine.coerceValue<WithToString *, const WithToString *>(&withToString)), &withToString);
+    QCOMPARE((engine.coerceValue<QString, double>(a)), 5.25);
+    QCOMPARE((engine.coerceValue<double, QString>(5.25)), a);
+    QCOMPARE((engine.coerceValue<UnknownToJS, int>(u)), v); // triggers valueOf on a VariantObject
+    QCOMPARE((engine.coerceValue<UnknownToJS, QTypeRevision>(u)), w);
+}
+
+void tst_QJSEngine::coerceDateTime_data()
+{
+    QTest::addColumn<QDateTime>("dateTime");
+
+    QTest::newRow("invalid") << QDateTime();
+    QTest::newRow("now")     << QDateTime::currentDateTime();
+
+    QTest::newRow("denormal-March")      << QDateTime(QDate(2019, 3, 1), QTime(0, 0, 0, 1));
+    QTest::newRow("denormal-leap")       << QDateTime(QDate(2020, 2, 29), QTime(23, 59, 59, 999));
+    QTest::newRow("denormal-time")       << QDateTime(QDate(2020, 2, 29), QTime(0, 0));
+    QTest::newRow("October")             << QDateTime(QDate(2019, 10, 3), QTime(12, 0));
+    QTest::newRow("nonstandard-format")  << QDateTime::fromString("1991-08-25 20:57:08 GMT+0000", "yyyy-MM-dd hh:mm:ss t");
+    QTest::newRow("nonstandard-format2") << QDateTime::fromString("Sun, 25 Mar 2018 11:10:49 GMT", "ddd, d MMM yyyy hh:mm:ss t");
+
+    const QDate date(2009, 5, 12);
+    const QTime early(0, 0, 1);
+    const QTime late(23, 59, 59);
+    const int offset = (11 * 60 + 30) * 60;
+
+    QTest::newRow("Local time early") << QDateTime(date, early);
+    QTest::newRow("Local time late")  << QDateTime(date, late);
+    QTest::newRow("UTC early")        << QDateTime(date, early, QTimeZone::UTC);
+    QTest::newRow("UTC late")         << QDateTime(date, late, QTimeZone::UTC);
+    QTest::newRow("+11:30 early")     << QDateTime(date, early, QTimeZone::fromSecondsAheadOfUtc(offset));
+    QTest::newRow("+11:30 late")      << QDateTime(date, late, QTimeZone::fromSecondsAheadOfUtc(offset));
+    QTest::newRow("-11:30 early")     << QDateTime(date, early, QTimeZone::fromSecondsAheadOfUtc(-offset));
+    QTest::newRow("-11:30 late")      << QDateTime(date, late, QTimeZone::fromSecondsAheadOfUtc(-offset));
+
+    QTest::newRow("dt0") << QDateTime(QDate(1900,  1,  2), QTime( 8, 14));
+    QTest::newRow("dt1") << QDateTime(QDate(2000, 11, 22), QTime(10, 45));
+}
+
+void tst_QJSEngine::coerceDateTime()
+{
+    QFETCH(QDateTime, dateTime);
+    const QDate date = dateTime.date();
+    const QTime time = dateTime.time();
+
+
+    QQmlEngine engine;
+
+    {
+        QQmlComponent c(&engine);
+        c.setData(R"(
+            import Test
+            DateTimeHolder {
+                string: dateTime
+                date: dateTime
+                time: dateTime
+            }
+        )", QUrl(u"fromDateTime.qml"_s));
+
+        QVERIFY2(c.isReady(), qPrintable(c.errorString()));
+        QScopedPointer<QObject> o(c.create());
+        QVERIFY(!o.isNull());
+
+        DateTimeHolder *holder = qobject_cast<DateTimeHolder *>(o.data());
+        QVERIFY(holder);
+
+        const QJSValue jsDateTime = engine.toScriptValue(dateTime);
+        holder->m_dateTime = dateTime;
+        emit holder->dateTimeChanged();
+
+        QCOMPARE((engine.coerceValue<QDateTime, QString>(dateTime)), holder->m_string);
+        QCOMPARE(qjsvalue_cast<QString>(jsDateTime), holder->m_string);
+        QCOMPARE((engine.coerceValue<QDateTime, QDate>(dateTime)), holder->m_date);
+        QCOMPARE(qjsvalue_cast<QDate>(jsDateTime), holder->m_date);
+        QCOMPARE((engine.coerceValue<QDateTime, QTime>(dateTime)), holder->m_time);
+        QCOMPARE(qjsvalue_cast<QTime>(jsDateTime), holder->m_time);
+    }
+
+    {
+        QQmlComponent c(&engine);
+        c.setData(R"(
+            import Test
+            DateTimeHolder {
+                dateTime: date
+                time: date
+                string: date
+            }
+        )", QUrl(u"fromDate.qml"_s));
+
+        QVERIFY2(c.isReady(), qPrintable(c.errorString()));
+        QScopedPointer<QObject> o(c.create());
+        QVERIFY(!o.isNull());
+
+        DateTimeHolder *holder = qobject_cast<DateTimeHolder *>(o.data());
+        QVERIFY(holder);
+
+        const QJSValue jsDate = engine.toScriptValue(date);
+        holder->m_date = date;
+        emit holder->dateChanged();
+
+        QCOMPARE((engine.coerceValue<QDate, QDateTime>(date)), holder->m_dateTime);
+        QCOMPARE(qjsvalue_cast<QDateTime>(jsDate), holder->m_dateTime);
+        QCOMPARE((engine.coerceValue<QDate, QString>(date)), holder->m_string);
+        QCOMPARE(qjsvalue_cast<QString>(jsDate), holder->m_string);
+        QCOMPARE((engine.coerceValue<QDate, QTime>(date)), holder->m_time);
+        QCOMPARE(qjsvalue_cast<QTime>(jsDate), holder->m_time);
+    }
+
+    {
+        QQmlComponent c(&engine);
+        c.setData(R"(
+            import Test
+            DateTimeHolder {
+                dateTime: time
+                date: time
+                string: time
+            }
+        )", QUrl(u"fromTime.qml"_s));
+
+        QVERIFY2(c.isReady(), qPrintable(c.errorString()));
+        QScopedPointer<QObject> o(c.create());
+        QVERIFY(!o.isNull());
+
+        DateTimeHolder *holder = qobject_cast<DateTimeHolder *>(o.data());
+        QVERIFY(holder);
+
+        const QJSValue jsTime = engine.toScriptValue(time);
+        holder->m_time = time;
+        emit holder->timeChanged();
+
+        QCOMPARE((engine.coerceValue<QTime, QDateTime>(time)), holder->m_dateTime);
+        QCOMPARE(qjsvalue_cast<QDateTime>(jsTime), holder->m_dateTime);
+        QCOMPARE((engine.coerceValue<QTime, QString>(time)), holder->m_string);
+        QCOMPARE(qjsvalue_cast<QString>(jsTime), holder->m_string);
+        QCOMPARE((engine.coerceValue<QTime, QDate>(time)), holder->m_date);
+        QCOMPARE(qjsvalue_cast<QDate>(jsTime), holder->m_date);
+    }
+}
+
+void tst_QJSEngine::callWithSpreadOnElement()
+{
+    QJSEngine engine;
+    engine.installExtensions(QJSEngine::ConsoleExtension);
+
+    const QString program = uR"(
+        let f = console.error;
+        const data = [f, ["That is great!"]]
+        data[0](...data[1]);
+    )"_s;
+
+    QTest::ignoreMessage(QtCriticalMsg, "That is great!");
+    const QJSValue result = engine.evaluate(program);
+    QVERIFY(!result.isError());
+}
+
+void tst_QJSEngine::spreadNoOverflow()
+{
+    QJSEngine engine;
+
+    const QString program = QString::fromLatin1("var a = [] ;a.length =  555840;Math.max(...a)");
+    const QJSValue result = engine.evaluate(program);
+    QVERIFY(result.isError());
+    QCOMPARE(result.errorType(), QJSValue::RangeError);
+}
+
+void tst_QJSEngine::symbolToVariant()
+{
+    QJSEngine engine;
+    const QJSValue val = engine.newSymbol("asymbol");
+    QCOMPARE(val.toVariant(), QStringLiteral("Symbol(asymbol)"));
+
+    const QVariant retained = val.toVariant(QJSValue::RetainJSObjects);
+    QCOMPARE(retained.metaType(), QMetaType::fromType<QJSValue>());
+    QVERIFY(retained.value<QJSValue>().strictlyEquals(val));
+
+    QCOMPARE(val.toVariant(QJSValue::ConvertJSObjects), QStringLiteral("Symbol(asymbol)"));
+}
+
+class PACHelper : public QObject {
+    Q_OBJECT
+public:
+    Q_INVOKABLE bool shExpMatch(const QString &, const QString &) { return false; }
+    Q_INVOKABLE QString dnsResolve(const QString &) { return QString{}; }
+};
+
+class ProxyAutoConf {
+public:
+    void exposeQObjectMethodsAsGlobal(QJSEngine *engine, QObject *object)
+    {
+        QJSValue helper = engine->newQObject(object);
+        QJSValue g = engine->globalObject();
+        QJSValueIterator it(helper);
+        while (it.hasNext()) {
+            it.next();
+            if (!it.value().isCallable())
+                continue;
+            g.setProperty(it.name(), it.value());
+        }
+    }
+
+    bool parse(const QString & pacBytes)
+    {
+        jsFindProxyForURL = QJSValue();
+        engine = std::make_unique<QJSEngine>();
+        exposeQObjectMethodsAsGlobal(engine.get(), new PACHelper);
+        engine->evaluate(pacBytes);
+        jsFindProxyForURL = engine->globalObject().property(QStringLiteral("FindProxyForURL"));
+        return true;
+    }
+
+    QString findProxyForUrl(const QString &url, const QString &host)
+    {
+        QJSValueList args;
+        args << url << host;
+        engine->collectGarbage();
+        QJSValue callResult = jsFindProxyForURL.call(args);
+        return callResult.toString().trimmed();
+    }
+
+private:
+    std::unique_ptr<QJSEngine> engine;
+    QJSValue jsFindProxyForURL;
+};
+
+QString const pacstring = R"js(
+function FindProxyForURL(host) {
+    list_split_all = Array(
+        "oneoneoneoneo.oneo.oneo.oneoneo.one",
+        "twotwotwotwotw.otwo.twot.wotwotw.otw",
+        "threethreethr.eeth.reet.hreethr.eet",
+        "fourfourfourfo.urfo.urfo.urfourf.our",
+        "fivefivefivef.ivef.ivef.ivefive.fiv",
+        "sixsixsixsixsi.xsix.sixs.ixsixsi.xsi",
+        "sevensevenseve.nsev.ense.venseve.nse",
+        "eight.eighteigh.tei",
+        "*.nin.eninen.ine"
+    )
+    list_myip_direct =
+        "10.254.0.0/255.255.0.0"
+    for (i = 0; i < list_split_all.length; ++i)
+        for (j = 0; j < list_myip_direct.length; ++j)
+            shExpMatch(host, list_split_all)
+        shExpMatch()
+    dnsResolve()}
+)js";
+
+void tst_QJSEngine::garbageCollectedObjectMethodBase()
+{
+    ProxyAutoConf proxyConf;
+    bool pac_read = false;
+
+    const auto processUrl = [&](QString const &url, QString const &host)
+    {
+        if (!pac_read) {
+            proxyConf.parse(pacstring);
+            pac_read = true;
+        }
+        return proxyConf.findProxyForUrl(url, host);
+    };
+
+    const QString url = QStringLiteral("https://servername.domain.test");
+    const QString host = QStringLiteral("servername.domain.test");
+
+    for (size_t i = 0; i < 5; ++i) {
+        auto future = std::async(processUrl, url, host);
+        QCOMPARE(future.get(), QLatin1String("Error: Insufficient arguments"));
+    }
 }
 
 QTEST_MAIN(tst_QJSEngine)

@@ -60,7 +60,7 @@ public:
 
         // Uppermost 8 bits are reserved for internal use.
         IsVisitableNode             = 0x01000000
-#ifdef Q_CLANG_QDOC
+#ifdef Q_QDOC
         , InternalReserved            = 0x01000000
 #endif
     };
@@ -175,8 +175,8 @@ private:
 
     QSGGeometry *m_geometry;
 
-    int m_reserved_start_index;
-    int m_reserved_end_index;
+    Q_DECL_UNUSED_MEMBER int m_reserved_start_index;
+    Q_DECL_UNUSED_MEMBER int m_reserved_end_index;
 
     const QMatrix4x4 *m_matrix;
     const QSGClipNode *m_clip_list;

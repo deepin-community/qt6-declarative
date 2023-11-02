@@ -94,6 +94,8 @@ private slots:
     void validators();
     void inputMethods();
 
+    void inputMethodQueryEnterKeyType();
+
     void signal_accepted();
     void signal_editingfinished();
     void signal_textEdited();
@@ -2302,6 +2304,36 @@ void tst_qquicktextinput::inputMethods()
     QCOMPARE(enabledQueryEvent.value(Qt::ImEnabled).toBool(), false);
 }
 
+void tst_qquicktextinput::inputMethodQueryEnterKeyType()
+{
+    QQuickView view(testFileUrl("focusReason.qml"));
+
+    QQuickTextInput *first = view.rootObject()->findChild<QQuickTextInput *>("first");
+    QQuickTextInput *second = view.rootObject()->findChild<QQuickTextInput *>("second");
+    QQuickTextInput *third = view.rootObject()->findChild<QQuickTextInput *>("third");
+    QVERIFY(first && second && third);
+
+    first->setActiveFocusOnTab(true);
+    second->setActiveFocusOnTab(true);
+    third->setActiveFocusOnTab(true);
+
+    view.show();
+
+    QVariant enterTypeFirst = first->inputMethodQuery(Qt::ImEnterKeyType);
+    QVariant enterTypeSecond = second->inputMethodQuery(Qt::ImEnterKeyType);
+    QVariant enterTypeThird = third->inputMethodQuery(Qt::ImEnterKeyType);
+#ifdef Q_OS_ANDROID
+    // QTBUG-61652
+    // EnterKey is changed to EnterKeyNext if the focus can be moved to item below
+    QCOMPARE(enterTypeFirst.value<Qt::EnterKeyType>(), Qt::EnterKeyNext);
+    QCOMPARE(enterTypeSecond.value<Qt::EnterKeyType>(), Qt::EnterKeyNext);
+#else
+    QCOMPARE(enterTypeFirst.value<Qt::EnterKeyType>(), Qt::EnterKeyDefault);
+    QCOMPARE(enterTypeSecond.value<Qt::EnterKeyType>(), Qt::EnterKeyDefault);
+#endif
+    QCOMPARE(enterTypeThird.value<Qt::EnterKeyType>(), Qt::EnterKeyDefault);
+}
+
 void tst_qquicktextinput::signal_accepted()
 {
     QQuickView window(testFileUrl("signal_accepted.qml"));
@@ -2725,15 +2757,18 @@ void tst_qquicktextinput::copyAndPasteKeySequence()
 #if QT_CONFIG(clipboard) && QT_CONFIG(shortcut)
 void tst_qquicktextinput::canPasteEmpty()
 {
+    if (!PlatformQuirks::isClipboardAvailable())
+        QSKIP("This machine has no clipboard support.");
+
     QGuiApplication::clipboard()->clear();
 
-    QString componentStr = "import QtQuick 2.0\nTextInput { text: \"Hello world!\" }";
+    const QString componentStr = "import QtQuick 2.0\nTextInput { text: \"Hello world!\" }";
     QQmlComponent textInputComponent(&engine);
     textInputComponent.setData(componentStr.toLatin1(), QUrl());
     QQuickTextInput *textInput = qobject_cast<QQuickTextInput*>(textInputComponent.create());
     QVERIFY(textInput != nullptr);
 
-    bool cp = !textInput->isReadOnly() && QGuiApplication::clipboard()->text().size() != 0;
+    const bool cp = !textInput->isReadOnly() && QGuiApplication::clipboard()->text().size() != 0;
     QCOMPARE(textInput->canPaste(), cp);
 }
 #endif
@@ -2741,15 +2776,18 @@ void tst_qquicktextinput::canPasteEmpty()
 #if QT_CONFIG(clipboard) && QT_CONFIG(shortcut)
 void tst_qquicktextinput::canPaste()
 {
+    if (!PlatformQuirks::isClipboardAvailable())
+        QSKIP("This machine has no clipboard support.");
+
     QGuiApplication::clipboard()->setText("Some text");
 
-    QString componentStr = "import QtQuick 2.0\nTextInput { text: \"Hello world!\" }";
+    const QString componentStr = "import QtQuick 2.0\nTextInput { text: \"Hello world!\" }";
     QQmlComponent textInputComponent(&engine);
     textInputComponent.setData(componentStr.toLatin1(), QUrl());
     QQuickTextInput *textInput = qobject_cast<QQuickTextInput*>(textInputComponent.create());
     QVERIFY(textInput != nullptr);
 
-    bool cp = !textInput->isReadOnly() && QGuiApplication::clipboard()->text().size() != 0;
+    const bool cp = !textInput->isReadOnly() && QGuiApplication::clipboard()->text().size() != 0;
     QCOMPARE(textInput->canPaste(), cp);
 }
 #endif
@@ -2758,7 +2796,7 @@ void tst_qquicktextinput::canPaste()
 void tst_qquicktextinput::middleClickPaste()
 {
     if (!PlatformQuirks::isClipboardAvailable())
-        QSKIP("This machine doesn't support the clipboard");
+        QSKIP("This machine has no clipboard support.");
 
     QQuickView window(testFileUrl("mouseselectionmode_default.qml"));
 
@@ -2773,8 +2811,8 @@ void tst_qquicktextinput::middleClickPaste()
 
     textInputObject->setFocus(true);
 
-    QString originalText = textInputObject->text();
-    QString selectedText = "234567";
+    const QString originalText = textInputObject->text();
+    const QString selectedText = "234567";
 
     // press-and-drag-and-release from x1 to x2
     const QPoint p1 = textInputObject->positionToRectangle(2).center().toPoint();
@@ -6395,7 +6433,7 @@ void tst_qquicktextinput::setInputMask()
     // inputMaskChanged signal
     QString unescapedMask = mask;   // mask is escaped, because '\' is also escape in a JS string
     unescapedMask.replace(QLatin1String("\\\\"), QLatin1String("\\"));  // simple unescape
-    QSignalSpy spy(textInput, SIGNAL(inputMaskChanged(const QString &)));
+    QSignalSpy spy(textInput, SIGNAL(inputMaskChanged(QString)));
     textInput->setInputMask(unescapedMask);
     QCOMPARE(spy.size(), 0);
 

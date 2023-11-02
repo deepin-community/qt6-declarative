@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
 
 //! [import]
-import QtQuick 2.0
+import QtQuick
 //! [import]
 
 Row {
@@ -24,7 +24,10 @@ Row {
 Column {
     Repeater {
         model: 10
-        Text { text: "I'm item " + index }
+        Text {
+            required property int index
+            text: "I'm item " + index
+        }
     }
 }
 //! [index]
@@ -33,7 +36,10 @@ Column {
 Column {
     Repeater {
         model: ["apples", "oranges", "pears"]
-        Text { text: "Data: " + modelData }
+        Text {
+            required property string modelData
+            text: "Data: " + modelData
+        }
     }
 }
 //! [modeldata]

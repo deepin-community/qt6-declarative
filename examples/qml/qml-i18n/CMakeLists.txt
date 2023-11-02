@@ -1,3 +1,6 @@
+# Copyright (C) 2022 The Qt Company Ltd.
+# SPDX-License-Identifier: BSD-3-Clause
+
 cmake_minimum_required(VERSION 3.16)
 project(qml-i18n LANGUAGES CXX)
 
@@ -15,15 +18,14 @@ find_package(Qt6 REQUIRED COMPONENTS Core Gui Quick Qml LinguistTools)
 qt_add_executable(qmli18n WIN32 MACOSX_BUNDLE main.cpp)
 
 target_link_libraries(qmli18n PRIVATE
-    Qt::Core
-    Qt::Gui
-    Qt::Qml
-    Qt::Quick
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Qml
+    Qt6::Quick
 )
 
 qt_add_qml_module(qmli18n
     URI i18n
-    VERSION 1.0
     QML_FILES
         qml-i18n.qml
     NO_RESOURCE_TARGET_PATH

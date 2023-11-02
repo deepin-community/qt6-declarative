@@ -3,7 +3,6 @@
 
 #include "qquickpathview_p.h"
 #include "qquickpathview_p_p.h"
-#include "qquickwindow.h"
 #include "qquickflickablebehavior_p.h" //Contains flicking behavior defines
 #include "qquicktext_p.h"
 
@@ -11,12 +10,14 @@
 #include <private/qqmlglobal_p.h>
 #include <private/qqmlopenmetaobject_p.h>
 #include <private/qqmlchangeset_p.h>
+#include <qpa/qplatformintegration.h>
 
 #include <QtQml/qqmlinfo.h>
 
 #include <QtGui/private/qeventpoint_p.h>
 #include <QtGui/qevent.h>
 #include <QtGui/qguiapplication.h>
+#include <QtGui/private/qguiapplication_p.h>
 #include <QtGui/qstylehints.h>
 #include <QtCore/qmath.h>
 
@@ -25,9 +26,10 @@
 QT_BEGIN_NAMESPACE
 
 Q_DECLARE_LOGGING_CATEGORY(lcItemViewDelegateLifecycle)
+#if !QT_CONFIG(quick_itemview)
+Q_LOGGING_CATEGORY(lcItemViewDelegateLifecycle, "qt.quick.itemview.lifecycle")
+#endif
 Q_LOGGING_CATEGORY(lcPathView, "qt.quick.pathview")
-
-static const qreal MinimumFlickVelocity = 75;
 
 static QQmlOpenMetaObjectType *qPathViewAttachedType = nullptr;
 
@@ -62,7 +64,8 @@ QQuickPathViewPrivate::QQuickPathViewPrivate()
     , autoHighlight(true), highlightUp(false), layoutScheduled(false)
     , moving(false), flicking(false), dragging(false), inRequest(false), delegateValidated(false)
     , inRefill(false)
-    , dragMargin(0), deceleration(100), maximumFlickVelocity(QML_FLICK_DEFAULTMAXVELOCITY)
+    , dragMargin(0), deceleration(100)
+    , maximumFlickVelocity(QGuiApplicationPrivate::platformIntegration()->styleHint(QPlatformIntegration::FlickMaximumVelocity).toReal())
     , moveOffset(this, &QQuickPathViewPrivate::setAdjustedOffset), flickDuration(0)
     , pathItems(-1), requestedIndex(-1), cacheSize(0), requestedZ(0)
     , moveReason(Other), movementDirection(QQuickPathView::Shortest), moveDirection(QQuickPathView::Shortest)
@@ -892,18 +895,16 @@ QQuickItem *QQuickPathView::highlightItem() const
 
     Valid values for \c highlightRangeMode are:
 
-    \list
-        \li \e PathView.NoHighlightRange - no range is applied and the
-            highlight will move freely within the view.
-        \li \e PathView.ApplyRange - the view will attempt to maintain
-            the highlight within the range, however the highlight can
-            move outside of the range at the ends of the path or due to
-            a mouse interaction.
-        \li \e PathView.StrictlyEnforceRange - the highlight will never
-            move outside of the range. This means that the current item
-            will change if a keyboard or mouse action would cause the
-            highlight to move outside of the range.
-    \endlist
+    \value PathView.NoHighlightRange    no range is applied: the highlight
+                                        will move freely within the view.
+    \value PathView.ApplyRange          the view will attempt to maintain the highlight
+                                        within the range,  however the highlight can move
+                                        outside of the range at the ends of the path or
+                                        due to a mouse interaction.
+    \value PathView.StrictlyEnforceRange the highlight will never move outside of the range.
+                                        This means that the current item will change if a
+                                        keyboard or mouse action would cause the highlight
+                                        to move outside of the range.
 
     The default value is \e PathView.StrictlyEnforceRange.
 
@@ -1310,13 +1311,11 @@ void QQuickPathView::setCacheItemCount(int i)
     This property determines how the items will settle following a drag or flick.
     The possible values are:
 
-    \list
-    \li PathView.NoSnap (default) - the items stop anywhere along the path.
-    \li PathView.SnapToItem - the items settle with an item aligned with the \l preferredHighlightBegin.
-    \li PathView.SnapOneItem - the items settle no more than one item away from the item nearest
+    \value PathView.NoSnap     (default) the items stop anywhere along the path.
+    \value PathView.SnapToItem the items settle with an item aligned with the \l preferredHighlightBegin.
+    \value PathView.SnapOneItem the items settle no more than one item away from the item nearest
         \l preferredHighlightBegin at the time the press is released.  This mode is particularly
         useful for moving one page at a time.
-    \endlist
 
     \c snapMode does not affect the \l currentIndex.  To update the
     \l currentIndex as the view is moved, set \l highlightRangeMode
@@ -1346,12 +1345,10 @@ void QQuickPathView::setSnapMode(SnapMode mode)
     This property determines the direction in which items move when setting the current index.
     The possible values are:
 
-    \list
-    \li PathView.Shortest (default) - the items move in the direction that requires the least
-        movement, which could be either \c Negative or \c Positive.
-    \li PathView.Negative - the items move backwards towards their destination.
-    \li PathView.Positive - the items move forwards towards their destination.
-    \endlist
+    \value PathView.Shortest    (default) the items move in the direction that requires the least
+                                movement, which could be either \c Negative or \c Positive.
+    \value PathView.Negative    the items move backwards towards their destination.
+    \value PathView.Positive    the items move forwards towards their destination.
 
     For example, suppose that there are 5 items in the model, and \l currentIndex is \c 0.
     If currentIndex is set to \c 2,
@@ -1387,15 +1384,13 @@ void QQuickPathView::setMovementDirection(QQuickPathView::MovementDirection dir)
     Positions the view such that the \a index is at the position specified by
     \a mode:
 
-    \list
-    \li PathView.Beginning - position item at the beginning of the path.
-    \li PathView.Center - position item in the center of the path.
-    \li PathView.End - position item at the end of the path.
-    \li PathView.Contain - ensure the item is positioned on the path.
-    \li PathView.SnapPosition - position the item at \l preferredHighlightBegin.  This mode
-    is only valid if \l highlightRangeMode is StrictlyEnforceRange or snapping is enabled
-    via \l snapMode.
-    \endlist
+    \value PathView.Beginning   position item at the beginning of the path.
+    \value PathView.Center      position item in the center of the path.
+    \value PathView.End         position item at the end of the path.
+    \value PathView.Contain     ensure the item is positioned on the path.
+    \value PathView.SnapPosition position the item at \l preferredHighlightBegin.  This mode
+        is only valid if \l highlightRangeMode is StrictlyEnforceRange or snapping is enabled
+        via \l snapMode.
 
     \b Note: methods should only be called after the Component has completed.  To position
     the view at startup, this method should be called by Component.onCompleted.  For
@@ -1508,7 +1503,7 @@ QQuickItem *QQuickPathView::itemAt(qreal x, qreal y) const
 }
 
 /*!
-    \qmlmethod Item QtQuick::QQuickPathView::itemAtIndex(int index)
+    \qmlmethod Item QtQuick::PathView::itemAtIndex(int index)
 
     Returns the item for \a index. If there is no item for that index, for example
     because it has not been created yet, or because it has been panned out of
@@ -1749,7 +1744,7 @@ void QQuickPathViewPrivate::handleMouseReleaseEvent(QMouseEvent *event)
     qreal count = pathItems == -1 ? modelCount : qMin(pathItems, modelCount);
     const auto averageItemLength = path->path().length() / count;
     qreal pixelVelocity = averageItemLength * velocity;
-    if (qAbs(pixelVelocity) > MinimumFlickVelocity) {
+    if (qAbs(pixelVelocity) > _q_MinimumFlickVelocity) {
         if (qAbs(pixelVelocity) > maximumFlickVelocity || snapMode == QQuickPathView::SnapOneItem) {
             // limit velocity
             qreal maxVel = velocity < 0 ? -maximumFlickVelocity : maximumFlickVelocity;

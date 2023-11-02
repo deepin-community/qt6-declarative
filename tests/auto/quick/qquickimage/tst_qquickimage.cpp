@@ -145,10 +145,11 @@ void tst_qquickimage::imageSource_data()
         QTest::newRow("remote svg") << "/heart.svg" << 595.0 << 841.0 << true << false << false << "";
     if (QImageReader::supportedImageFormats().contains("svgz"))
         QTest::newRow("remote svgz") << "/heart.svgz" << 595.0 << 841.0 << true << false << false << "";
-    if (graphicsApi == QSGRendererInterface::OpenGLRhi) {
+    if (graphicsApi != QSGRendererInterface::Software) {
         QTest::newRow("texturefile pkm format") << testFileUrl("logo.pkm").toString() << 256.0 << 256.0 << false << false << true << "";
         QTest::newRow("texturefile ktx format") << testFileUrl("car.ktx").toString() << 146.0 << 80.0 << false << false << true << "";
         QTest::newRow("texturefile async") << testFileUrl("logo.pkm").toString() << 256.0 << 256.0 << false << true << true << "";
+        QTest::newRow("texturefile remote") << "/logo.pkm" << 256.0 << 256.0 << true << false << true << "";
     }
     QTest::newRow("remote not found") << "/no-such-file.png" << 0.0 << 0.0 << true
         << false << true << "<Unknown File>:2:1: QML Image: Error transferring {{ServerBaseUrl}}/no-such-file.png - server replied: Not found";
@@ -178,18 +179,6 @@ void tst_qquickimage::imageSource()
     QFETCH(bool, async);
     QFETCH(bool, cache);
     QFETCH(QString, error);
-
-
-#if defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)
-    if (qstrcmp(QTest::currentDataTag(), "remote") == 0
-        || qstrcmp(QTest::currentDataTag(), "remote redirected") == 0
-        || qstrcmp(QTest::currentDataTag(), "remote svg") == 0
-        || qstrcmp(QTest::currentDataTag(), "remote svgz") == 0
-        || qstrcmp(QTest::currentDataTag(), "remote not found") == 0
-       ) {
-        QSKIP("Remote tests cause occasional hangs in the CI system -- QTBUG-45655");
-    }
-#endif
 
     TestHTTPServer server;
     if (remote) {
@@ -319,15 +308,19 @@ void tst_qquickimage::mirror()
         QSKIP("Skipping due to grabWindow not functional on minimal platforms");
 
     QMap<QQuickImage::FillMode, QImage> screenshots;
-    QList<QQuickImage::FillMode> fillModes;
-    fillModes << QQuickImage::Stretch << QQuickImage::PreserveAspectFit << QQuickImage::PreserveAspectCrop
-              << QQuickImage::Tile << QQuickImage::TileVertically << QQuickImage::TileHorizontally << QQuickImage::Pad;
+    const QList<QQuickImage::FillMode> fillModes{QQuickImage::Stretch,
+                                                 QQuickImage::PreserveAspectFit,
+                                                 QQuickImage::PreserveAspectCrop,
+                                                 QQuickImage::Tile,
+                                                 QQuickImage::TileVertically,
+                                                 QQuickImage::TileHorizontally,
+                                                 QQuickImage::Pad};
 
     qreal width = 300;
     qreal height = 250;
     qreal devicePixelRatio = 1.0;
 
-    foreach (QQuickImage::FillMode fillMode, fillModes) {
+    for (QQuickImage::FillMode fillMode : fillModes) {
         QScopedPointer<QQuickView> window(new QQuickView);
         window->setSource(testFileUrl("mirror.qml"));
 
@@ -344,7 +337,7 @@ void tst_qquickimage::mirror()
         devicePixelRatio = window->devicePixelRatio();
     }
 
-    foreach (QQuickImage::FillMode fillMode, fillModes) {
+    for (QQuickImage::FillMode fillMode : fillModes) {
         QPixmap srcPixmap;
         QVERIFY(srcPixmap.load(testFile("pattern.png")));
 
@@ -464,9 +457,8 @@ void tst_qquickimage::geometry_data()
     QTest::newRow("PreserveAspectCrop explicit width 300, height 400") << "PreserveAspectCrop" << true << true << 300.0 << 800.0 << 800.0 << 400.0 << 400.0 << 400.0;
 
     // bounding rect, painted rect and item rect are equal in stretching and tiling images
-    QStringList fillModes;
-    fillModes << "Stretch" << "Tile" << "TileVertically" << "TileHorizontally";
-    foreach (QString fillMode, fillModes) {
+    QStringList fillModes{"Stretch", "Tile", "TileVertically", "TileHorizontally"};
+    for (const auto &fillMode : fillModes) {
         QTest::newRow(fillMode.toLatin1()) << fillMode << false << false << 200.0 << 200.0 << 200.0 << 100.0 << 100.0 << 100.0;
         QTest::newRow(QString(fillMode + " explicit width 300").toLatin1()) << fillMode << true << false << 300.0 << 300.0 << 300.0 << 100.0 << 100.0 << 100.0;
         QTest::newRow(QString(fillMode + " explicit height 400").toLatin1()) << fillMode << false << true << 200.0 << 200.0 << 200.0 << 400.0 << 400.0 << 400.0;

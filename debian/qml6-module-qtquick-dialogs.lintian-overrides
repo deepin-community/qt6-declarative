@@ -1,0 +1,5 @@
+# libQt6QuickDialogs2-6, libQt6QuickDialogs2QuickImpl6 & libQt6QuickDialogs2Utils6 are private libs in a public path
+qml6-module-qtquick-dialogs: package-name-doesnt-match-sonames libQt6QuickDialogs2-6 libQt6QuickDialogs2QuickImpl6 libQt6QuickDialogs2Utils6
+qml6-module-qtquick-dialogs: no-symbols-control-file usr/lib/*/libQt6QuickDialogs2.so.6.*
+qml6-module-qtquick-dialogs: no-symbols-control-file usr/lib/*/libQt6QuickDialogs2QuickImpl.so.6.*
+qml6-module-qtquick-dialogs: no-symbols-control-file usr/lib/*/libQt6QuickDialogs2Utils.so.6.*

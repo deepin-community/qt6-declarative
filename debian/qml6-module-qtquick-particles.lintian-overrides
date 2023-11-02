@@ -1,0 +1,3 @@
+# libQt6QuickParticles6 is a private library installed in a public path
+qml6-module-qtquick-particles: package-name-doesnt-match-sonames libQt6QuickParticles6
+qml6-module-qtquick-particles: no-symbols-control-file usr/lib/*/libQt6QuickParticles.so.6.*

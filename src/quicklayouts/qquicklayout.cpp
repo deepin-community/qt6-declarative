@@ -85,10 +85,14 @@ QQuickLayoutAttached::QQuickLayoutAttached(QObject *parent)
       m_isMaximumWidthSet(false),
       m_isMaximumHeightSet(false),
       m_changesNotificationEnabled(true),
+      m_isMarginsSet(false),
       m_isLeftMarginSet(false),
       m_isTopMarginSet(false),
       m_isRightMarginSet(false),
-      m_isBottomMarginSet(false)
+      m_isBottomMarginSet(false),
+      m_isAlignmentSet(false),
+      m_horizontalStretch(-1),
+      m_verticalStretch(-1)
 {
 
 }
@@ -401,6 +405,7 @@ void QQuickLayoutAttached::setColumn(int column)
 */
 void QQuickLayoutAttached::setAlignment(Qt::Alignment align)
 {
+    m_isAlignmentSet = true;
     if (align != m_alignment) {
         m_alignment = align;
         if (QQuickLayout *layout = parentLayout()) {
@@ -408,6 +413,80 @@ void QQuickLayoutAttached::setAlignment(Qt::Alignment align)
             invalidateItem();
         }
         emit alignmentChanged();
+    }
+}
+
+/*!
+    \qmlattachedproperty int Layout::horizontalStretchFactor
+
+    This property allows you to specify the horizontal stretch factor. By default, two identical
+    items arranged in a linear layout will have the same size, but if the first item has a
+    stretch factor of 1 and the second item has a stretch factor of 2, the first item will \e
+    aim to get 1/3 of the available space, and the second will \e aim to get 2/3 of the available
+    space. Note that, whether they become exactly 1/3 and 2/3 of the available space depends on
+    their size hints. This is because when e.g a horizontal layout is shown in its minimum width
+    all its child items will consequently also have their minimum width.
+
+    Likewise, when a horizontal layout has its preferred width, all child items will have their
+    preferred widths, and when a horizontal layout has its maximum width, all child items will have
+    their maximum widths. This strategy is applied regardless of what the individual stretch
+    factors are. As a consequence of this, stretch factors will only determine the growth rate of
+    child items \e between the preferredWidth and maximumWidth range.
+
+    The default value is \c -1, which means that no stretch factor is applied.
+
+    \note This requires that Layout::fillWidth is set to true
+
+    \since Qt 6.5
+
+    \sa verticalStretchFactor
+*/
+void QQuickLayoutAttached::setHorizontalStretchFactor(int factor)
+{
+    if (factor != m_horizontalStretch) {
+        m_horizontalStretch = factor;
+        if (QQuickLayout *layout = parentLayout()) {
+            layout->setStretchFactor(item(), factor, Qt::Horizontal);
+            invalidateItem();
+        }
+        emit horizontalStretchFactorChanged();
+    }
+}
+
+/*!
+    \qmlattachedproperty int Layout::verticalStretchFactor
+
+    This property allows you to specify the vertical stretch factor. By default, two identical
+    items arranged in a linear layout will have the same size, but if the first item has a
+    stretch factor of 1 and the second item has a stretch factor of 2, the first item will \e
+    aim to get 1/3 of the available space, and the second will \e aim to get 2/3 of the available
+    space. Note that, whether they become exactly 1/3 and 2/3 of the available space depends on
+    their size hints. This is because when e.g a vertical layout is shown in its minimum height
+    all its child items will consequently also have their minimum height.
+
+    Likewise, when a vertical layout has its preferred height, all child items will have their
+    preferred heights, and when a vertical layout has its maximum height, all child items will have
+    their maximum heights. This strategy is applied regardless of what the individual stretch
+    factors are. As a consequence of this, stretch factors will only determine the growth rate of
+    child items \e between the preferredHeight and maximumHeight range.
+
+    The default value is \c -1, which means that no stretch factor is applied.
+
+    \note This requires that Layout::fillHeight is set to true
+
+    \since Qt 6.5
+
+    \sa horizontalStretchFactor
+*/
+void QQuickLayoutAttached::setVerticalStretchFactor(int factor)
+{
+    if (factor != m_verticalStretch) {
+        m_verticalStretch = factor;
+        if (QQuickLayout *layout = parentLayout()) {
+            layout->setStretchFactor(item(), factor, Qt::Vertical);
+            invalidateItem();
+        }
+        emit verticalStretchFactorChanged();
     }
 }
 
@@ -442,6 +521,7 @@ void QQuickLayoutAttached::setAlignment(Qt::Alignment align)
 */
 void QQuickLayoutAttached::setMargins(qreal m)
 {
+    m_isMarginsSet = true;
     if (m == m_defaultMargins)
         return;
 
@@ -765,7 +845,8 @@ void QQuickLayout::invalidate(QQuickItem * /*childItem*/)
             qCDebug(lcQuickLayouts) << "QQuickLayout::invalidate(), polish()";
             polish();
         } else {
-            qmlWarning(this) << "Qt Quick Layouts: Polish loop detected. Aborting after two iterations.";
+            qmlWarning(this).nospace() << "Layout polish loop detected for " << this
+                << ". Aborting after two iterations.";
         }
     }
 }
@@ -844,7 +925,7 @@ void QQuickLayout::geometryChange(const QRectF &newGeometry, const QRectF &oldGe
 {
     Q_D(QQuickLayout);
     QQuickItem::geometryChange(newGeometry, oldGeometry);
-    if (d->m_disableRearrange || !isReady() || !newGeometry.isValid())
+    if (d->m_disableRearrange || !isReady())
         return;
 
     qCDebug(lcQuickLayouts) << "QQuickLayout::geometryChange" << newGeometry << oldGeometry;

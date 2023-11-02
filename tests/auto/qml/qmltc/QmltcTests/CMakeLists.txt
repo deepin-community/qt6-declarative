@@ -1,3 +1,6 @@
+# Copyright (C) 2022 The Qt Company Ltd.
+# SPDX-License-Identifier: BSD-3-Clause
+
 set(cpp_sources
     # attached types:
     cpptypes/testattachedtype.h cpptypes/testattachedtype.cpp
@@ -13,7 +16,12 @@ set(cpp_sources
     # extension types:
     cpptypes/extensiontypes.h cpptypes/extensiontypes.cpp
 
-    cpptypes/typewithmemberproperties.h
+    cpptypes/typewithspecialproperties.h
+
+    cpptypes/typewithmanyproperties.h
+    cpptypes/singletontype.h cpptypes/singletontype.cpp
+    cpptypes/typewithnamespace.h cpptypes/typewithnamespace.cpp
+    cpptypes/typewithsignal.h
 )
 
 set(qml_sources
@@ -26,18 +34,17 @@ set(qml_sources
     ObjectWithId.qml
     documentWithIds.qml
     importNamespace.qml
-    ComponentType.qml
-    componentTypes.qml
     gradients.qml
     qjsvalueAssignments.qml
     QmlTypeWithExtension.qml
     QmlTypeWithBaseTypeExtension.qml
     extensionTypeBindings.qml
     nonStandardInclude.qml
-    memberProperties.qml
+    specialProperties.qml
     regexpBindings.qml
     AliasBase.qml
     aliasAssignments.qml
+    Connections.qml
 
     qtbug103956/SubComponent.qml
     qtbug103956/MainComponent.qml
@@ -47,6 +54,7 @@ set(qml_sources
     javaScriptFunctions.qml
     changingBindings.qml
     propertyAlias.qml
+    propertyAliasAttributes.qml
     propertyAlias_external.qml
     propertyChangeHandler.qml
     NestedHelloWorld.qml
@@ -55,7 +63,7 @@ set(qml_sources
     listPropertySameName.qml
     defaultProperty.qml
     defaultPropertyCorrectSelection.qml
-    # defaultAlias.qml
+    defaultAlias.qml
     propertyReturningFunction.qml
     AttachedProperty.qml
     attachedPropertyDerived.qml
@@ -90,19 +98,32 @@ set(qml_sources
     deferredProperties_group.qml
     deferredProperties_attached.qml
     deferredProperties_complex.qml
+    valueTypeListProperty.qml
+    translations.qml
+    translationsById.qml
+    generalizedGroupedProperty.qml
+    appendToQQmlListProperty.qml
+    inlineComponents.qml
     repeaterCrash.qml
     aliases.qml
+    inlineComponentsFromDifferentFiles.qml
+    singletons.qml
+    mySignals.qml
 
     # support types:
     DefaultPropertySingleChild.qml
+    DefaultPropertyAliasChild.qml
     DefaultPropertyManyChildren.qml
     LocallyImported.qml
     LocalWithOnCompleted.qml
     LocallyImported_context.qml
-#   SingletonThing.qml
     ComponentWithAlias1.qml
     ComponentWithAlias2.qml
     ComponentWithAlias3.qml
+    SingletonThing.qml
+    InlineComponentProvider.qml
+    InlineComponentReexporter.qml
+    NamespacedTypes.qml
 
     badFile.qml
 )
@@ -124,8 +145,8 @@ set_source_files_properties(NameConflict.qml PROPERTIES
 
 set_source_files_properties(badFile.qml PROPERTIES QT_QML_SKIP_TYPE_COMPILER TRUE)
 
-# set_source_files_properties(SingletonThing.qml PROPERTIES
-#    QT_QML_SINGLETON_TYPE true)
+set_source_files_properties(SingletonThing.qml PROPERTIES
+   QT_QML_SINGLETON_TYPE true)
 
 qt_add_library(qmltc_test_module STATIC)
 qt_autogen_tools_initial_setup(qmltc_test_module)
@@ -133,6 +154,20 @@ qt_autogen_tools_initial_setup(qmltc_test_module)
 # use PUBLIC everywhere to simplify the build of the test binary
 target_include_directories(qmltc_test_module PUBLIC cpptypes/)
 target_link_libraries(qmltc_test_module PUBLIC ${common_libraries})
+
+# Resources:
+set(qmake_immediate_resource_files
+    "translations_ge.qm"
+    "translationsById_ge.qm"
+)
+qt_internal_add_resource(qmltc_test_module "qmake_immediate"
+    PREFIX
+        "/i18n"
+    FILES
+        ${qmake_immediate_resource_files}
+)
+
+qt_policy(SET QTP0001 NEW)
 
 qt6_add_qml_module(qmltc_test_module
     VERSION 1.0
@@ -144,8 +179,9 @@ qt6_add_qml_module(qmltc_test_module
         ${js_sources}
     DEPENDENCIES
         QtQuick
+    LIBRARIES
+        qmltc_test_module_translation_by_id
     ENABLE_TYPE_COMPILER
-    TYPE_COMPILER_NAMESPACE QmltcTest
 )
 
 qt_autogen_tools_initial_setup(qmltc_test_moduleplugin)

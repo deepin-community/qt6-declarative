@@ -29,22 +29,23 @@ private slots:
     void properties();
     void ids();
     void importNamespace();
-    void componentTypes();
     void deferredProperties();
     void gradients(); // QTBUG-102560
     void jsvalueAssignments();
     void extensionTypeBindings();
     void visibleAliasMethods(); // QTBUG-103956
     void nonStandardIncludesInsideModule(); // QTBUG-104094
-    void memberProperties();
+    void specialProperties();
     void regexpBindings();
     void aliasAssignments();
+    void connections();
 
     void signalHandlers();
     void jsFunctions();
     void changingBindings();
     void propertyAlias();
     void propertyAlias_external();
+    void propertyAliasAttribute();
     void complexAliases();
     void propertyChangeHandler();
     void nestedHelloWorld();
@@ -69,7 +70,6 @@ private slots:
     void justAnimationOnAlias();
     void behaviorAndAnimation();
     void behaviorAndAnimationOnAlias();
-    void singletonUser();
     void bindingsThroughIds();
     void contextHierarchy_rootBaseIsQml();
     void contextHierarchy_childBaseIsQml();
@@ -82,6 +82,17 @@ private slots:
     void privateProperties();
     void calqlatrBits(); // corner cases from calqlatr demo
     void trickyPropertyChangeAndSignalHandlers();
+    void valueTypeListProperty();
+    void translations();
     void repeaterCrash();
+    void generalizedGroupedProperty();
+    void appendToQQmlListProperty();
+    void inlineComponents();
     void aliases();
+    void inlineComponentsFromDifferentFiles();
+    void singletons();
+    void constSignalParameters();
+    void cppNamespaces();
+    void namespacedName();
+    void checkExportsAreCompiling();
 };

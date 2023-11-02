@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qqmlpluginimporter_p.h"
+#include "qqmlimport_p.h"
 
 #include <private/qqmlextensionplugin_p.h>
 #include <private/qqmltypeloader_p.h>
@@ -59,12 +60,6 @@ private:
 
 Q_GLOBAL_STATIC(PluginMap, qmlPluginsById); // stores the uri and the PluginLoaders
 
-static QTypeRevision validVersion(QTypeRevision version = QTypeRevision())
-{
-    // If the given version is invalid, return a valid but useless version to signal "It's OK".
-    return version.isValid() ? version : QTypeRevision::fromMinorVersion(0);
-}
-
 static QVector<QStaticPlugin> makePlugins()
 {
     QVector<QStaticPlugin> plugins;
@@ -76,6 +71,11 @@ static QVector<QStaticPlugin> makePlugins()
         if (iid == QLatin1String(QQmlEngineExtensionInterface_iid)
                 || iid == QLatin1String(QQmlExtensionInterface_iid)
                 || iid == QLatin1String(QQmlExtensionInterface_iid_old)) {
+            if (Q_UNLIKELY(iid == QLatin1String(QQmlExtensionInterface_iid_old))) {
+                qWarning()
+                        << "Found plugin with old IID, this will be unsupported in upcoming Qt releases:"
+                        << plugin.metaData();
+            }
             plugins.append(plugin);
         }
     }
@@ -212,7 +212,7 @@ QTypeRevision QQmlPluginImporter::importStaticPlugin(QObject *instance, const QS
     if (!database->initializedPlugins.contains(pluginId))
         finalizePlugin(instance, pluginId);
 
-    return validVersion(importVersion);
+    return QQmlImports::validVersion(importVersion);
 }
 
 QTypeRevision QQmlPluginImporter::importDynamicPlugin(
@@ -321,7 +321,7 @@ QTypeRevision QQmlPluginImporter::importDynamicPlugin(
     if (!engineInitialized)
         finalizePlugin(instance, pluginId);
 
-    return validVersion(importVersion);
+    return QQmlImports::validVersion(importVersion);
 }
 
 /*!
@@ -425,8 +425,7 @@ QString QQmlPluginImporter::resolvePlugin(const QString &qmldirPluginPath, const
                 return absolutePath;
         }
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 4, 0)
-#    if defined(Q_OS_ANDROID)
+#if defined(Q_OS_ANDROID)
         if (qmldirPath.size() > 25 && qmldirPath.at(0) == QLatin1Char(':')
             && qmldirPath.at(1) == QLatin1Char('/')
             && qmldirPath.startsWith(QStringLiteral(":/android_rcc_bundle/qml/"),
@@ -447,7 +446,6 @@ QString QQmlPluginImporter::resolvePlugin(const QString &qmldirPluginPath, const
                 }
             }
         }
-#    endif
 #endif
     }
 
@@ -608,7 +606,7 @@ QTypeRevision QQmlPluginImporter::importPlugins() {
 
         database->modulesForWhichPluginsHaveBeenLoaded.insert(moduleId);
     }
-    return validVersion(importVersion);
+    return QQmlImports::validVersion(importVersion);
 }
 
 QT_END_NAMESPACE

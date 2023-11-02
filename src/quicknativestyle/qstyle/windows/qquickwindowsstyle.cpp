@@ -15,6 +15,9 @@
 #include <QtCore/qfile.h>
 #include <QtCore/qtextstream.h>
 #include <QtGui/qpixmapcache.h>
+#include <QtGui/qpa/qplatformintegration.h>
+#include <QtGui/private/qguiapplication_p.h>
+#include <QtGui/qstylehints.h>
 #include <private/qmath_p.h>
 #include <qmath.h>
 #include <QtGui/qpainterpath.h>
@@ -25,6 +28,7 @@
 #include <private/qguiapplication_p.h>
 #include <private/qhighdpiscaling_p.h>
 #include <qpa/qplatformnativeinterface.h>
+#include <QtQuickTemplates2/private/qquicktheme_p.h>
 
 #if 0 && QT_CONFIG(animation)
 //#include <private/qstyleanimation_p.h>
@@ -179,78 +183,20 @@ QWindowsStyle::QWindowsStyle(QWindowsStylePrivate &dd) : QCommonStyle(dd)
 {
 }
 
+void QWindowsStyle::timerEvent(QTimerEvent* event)
+{
+    // Update palette in style object through palette timer timeout and this timer
+    // will be triggered during ApplicationPaletteChange event
+    if (event->timerId() == paletteTimer.timerId()) {
+        paletteTimer.stop();
+        refreshPalette();
+    }
+}
 
 /*! Destroys the QWindowsStyle object. */
 QWindowsStyle::~QWindowsStyle()
 {
 }
-
-#ifdef Q_OS_WIN
-static inline QRgb colorref2qrgb(COLORREF col)
-{
-    return qRgb(GetRValue(col), GetGValue(col), GetBValue(col));
-}
-#endif
-#if 0
-/*! \reimp */
-void QWindowsStyle::polish(QApplication *app)
-{
-    QCommonStyle::polish(app);
-    QWindowsStylePrivate *d = const_cast<QWindowsStylePrivate*>(d_func());
-    // We only need the overhead when shortcuts are sometimes hidden
-    if (!proxy()->styleHint(SH_UnderlineShortcut, nullptr) && app)
-        app->installEventFilter(this);
-
-    const auto &palette = QGuiApplication::palette();
-    d->activeGradientCaptionColor = palette.highlight().color();
-    d->activeCaptionColor = d->activeGradientCaptionColor;
-    d->inactiveGradientCaptionColor = palette.dark().color();
-    d->inactiveCaptionColor = d->inactiveGradientCaptionColor;
-    d->inactiveCaptionText = palette.window().color();
-
-#if defined(Q_OS_WIN) && !defined(Q_OS_WINRT) //fetch native title bar colors
-    if (app->desktopSettingsAware()){
-        DWORD activeCaption = GetSysColor(COLOR_ACTIVECAPTION);
-        DWORD gradientActiveCaption = GetSysColor(COLOR_GRADIENTACTIVECAPTION);
-        DWORD inactiveCaption = GetSysColor(COLOR_INACTIVECAPTION);
-        DWORD gradientInactiveCaption = GetSysColor(COLOR_GRADIENTINACTIVECAPTION);
-        DWORD inactiveCaptionText = GetSysColor(COLOR_INACTIVECAPTIONTEXT);
-        d->activeCaptionColor = colorref2qrgb(activeCaption);
-        d->activeGradientCaptionColor = colorref2qrgb(gradientActiveCaption);
-        d->inactiveCaptionColor = colorref2qrgb(inactiveCaption);
-        d->inactiveGradientCaptionColor = colorref2qrgb(gradientInactiveCaption);
-        d->inactiveCaptionText = colorref2qrgb(inactiveCaptionText);
-    }
-#endif
-}
-
-/*! \reimp */
-void QWindowsStyle::unpolish(QApplication *app)
-{
-    QCommonStyle::unpolish(app);
-    app->removeEventFilter(this);
-}
-
-/*! \reimp */
-void QWindowsStyle::polish(QWidget *widget)
-{
-    QCommonStyle::polish(widget);
-}
-
-/*! \reimp */
-void QWindowsStyle::unpolish(QWidget *widget)
-{
-    QCommonStyle::unpolish(widget);
-}
-
-/*!
-  \reimp
-*/
-void QWindowsStyle::polish(QPalette &pal)
-{
-    QCommonStyle::polish(pal);
-}
-#endif
 
 int QWindowsStylePrivate::pixelMetricFromSystemDp(QStyle::PixelMetric pm, const QStyleOption *opt)
 {
@@ -2336,6 +2282,26 @@ QSize QWindowsStyle::sizeFromContents(ContentsType ct, const QStyleOption *opt, 
         sz = QCommonStyle::sizeFromContents(ct, opt, csz);
     }
     return sz;
+}
+
+void QWindowsStyle::refreshPalette()
+{
+    // Update system palette in the theme (quick)
+    // Since windows style doesn't support dark appearance,
+    // light palette will always be set in the quick theme
+    QPalette pal;
+    using QWindowsApplication = QNativeInterface::Private::QWindowsApplication;
+    if (auto nativeWindowsApp = dynamic_cast<QWindowsApplication *>(QGuiApplicationPrivate::platformIntegration()))
+        nativeWindowsApp->populateLightSystemPalette(pal);
+    QQuickTheme::instance()->setPalette(QQuickTheme::System, pal);
+}
+
+void QWindowsStyle::polish()
+{
+    // The timer used here compresses ApplicationPaletteChange event and get triggered once
+    // this event has been propagated for all items.
+    if (!paletteTimer.isActive())
+        paletteTimer.start(0, this);
 }
 
 /*!

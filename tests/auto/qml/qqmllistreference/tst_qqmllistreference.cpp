@@ -11,6 +11,7 @@
 #include <QtQml/qqmlprivate.h>
 #include <QtQml/qqmlproperty.h>
 #include <QDebug>
+#include <QtCore/qrandom.h>
 #include <private/qquickstate_p.h>
 #include <QtQuickTestUtils/private/qmlutils_p.h>
 
@@ -54,6 +55,11 @@ private slots:
     void listProperty();
     void compositeListProperty();
     void nullItems();
+    void jsArrayMethods();
+    void jsArrayMethodsWithParams_data();
+    void jsArrayMethodsWithParams();
+    void listIgnoresNull_data() { modeData(); }
+    void listIgnoresNull();
 };
 
 class TestType : public QObject
@@ -69,14 +75,20 @@ public:
         SyntheticClearAndReplace,
         SyntheticRemoveLast,
         SyntheticRemoveLastAndReplace,
-        AutomaticPointer
+        AutomaticPointer,
+        IgnoreNullValues,
     };
 
     static void append(QQmlListProperty<TestType> *p, TestType *v) {
         reinterpret_cast<QList<TestType *> *>(p->data)->append(v);
     }
+    static void appendNoNullValues(QQmlListProperty<TestType> *p, TestType *v) {
+        if (!v)
+            return;
+        reinterpret_cast<QList<TestType *> *>(p->data)->append(v);
+    }
     static qsizetype count(QQmlListProperty<TestType> *p) {
-        return reinterpret_cast<QList<TestType *> *>(p->data)->count();
+        return reinterpret_cast<QList<TestType *> *>(p->data)->size();
     }
     static TestType *at(QQmlListProperty<TestType> *p, qsizetype idx) {
         return reinterpret_cast<QList<TestType *> *>(p->data)->at(idx);
@@ -117,6 +129,10 @@ public:
         case AutomaticPointer:
             property = QQmlListProperty<TestType>(this, &data);
             break;
+        case IgnoreNullValues:
+            property = QQmlListProperty<TestType>(this, &data, appendNoNullValues, count, at, clear,
+                                                  replace, removeLast);
+            break;
         }
     }
 
@@ -138,6 +154,7 @@ void tst_qqmllistreference::modeData()
     QTest::addRow("SyntheticClearAndReplace") << TestType::SyntheticClearAndReplace;
     QTest::addRow("SyntheticRemoveLast") << TestType::SyntheticRemoveLast;
     QTest::addRow("SyntheticRemoveLastAndReplace") << TestType::SyntheticRemoveLastAndReplace;
+    QTest::addRow("IgnoreNullValues") << TestType::IgnoreNullValues;
 }
 
 void tst_qqmllistreference::initTestCase()
@@ -166,7 +183,7 @@ void tst_qqmllistreference::qmllistreference()
     QVERIFY(fromVar.isValid());
     QCOMPARE(fromVar.count(), 1);
     fromVar.append(&tt);
-    QCOMPARE(tt.data.count(), 2);
+    QCOMPARE(tt.data.size(), 2);
 }
 
 void tst_qqmllistreference::qmllistreference_invalid()
@@ -541,13 +558,13 @@ void tst_qqmllistreference::append()
     {
     QQmlListReference ref(tt, "data");
     QVERIFY(ref.append(tt));
-    QCOMPARE(tt->data.count(), 1);
+    QCOMPARE(tt->data.size(), 1);
     QCOMPARE(tt->data.at(0), tt);
     QVERIFY(!ref.append(&object));
-    QCOMPARE(tt->data.count(), 1);
+    QCOMPARE(tt->data.size(), 1);
     QCOMPARE(tt->data.at(0), tt);
     QVERIFY(ref.append(nullptr));
-    QCOMPARE(tt->data.count(), 2);
+    QCOMPARE(tt->data.size(), 2);
     QCOMPARE(tt->data.at(0), tt);
     QVERIFY(!tt->data.at(1));
     delete tt;
@@ -618,7 +635,7 @@ void tst_qqmllistreference::clear()
     {
     QQmlListReference ref(tt, "data");
     QVERIFY(ref.clear());
-    QCOMPARE(tt->data.count(), 0);
+    QCOMPARE(tt->data.size(), 0);
     delete tt;
     QVERIFY(!ref.clear());
     }
@@ -714,9 +731,9 @@ void tst_qqmllistreference::removeLast()
 
     {
         QQmlListReference ref(tt.get(), "data");
-        QCOMPARE(tt->data.count(), 3);
+        QCOMPARE(tt->data.size(), 3);
         QVERIFY(ref.removeLast());
-        QCOMPARE(tt->data.count(), 2);
+        QCOMPARE(tt->data.size(), 2);
         tt.reset();
         QVERIFY(!ref.removeLast());
     }
@@ -813,13 +830,11 @@ void tst_qqmllistreference::variantToList()
     QQmlEngine engine;
     QQmlComponent component(&engine, testFileUrl("variantToList.qml"));
 
-    QObject *o = component.create();
+    QScopedPointer<QObject> o(component.create());
     QVERIFY(o);
 
     QCOMPARE(o->property("value").userType(), qMetaTypeId<QQmlListReference>());
     QCOMPARE(o->property("test").toInt(), 1);
-
-    delete o;
 }
 
 void tst_qqmllistreference::listProperty()
@@ -875,6 +890,196 @@ void tst_qqmllistreference::nullItems()
     QCOMPARE(list.at(0), nullptr);
     QCOMPARE(list.at(1), nullptr);
     QVERIFY(list.at(2) != nullptr);
+}
+
+static void listsEqual(QObject *object, const char *method)
+{
+    const QByteArray listPropertyPropertyName = QByteArray("listProperty") + method;
+    const QByteArray jsArrayPropertyName = QByteArray("jsArray") + method;
+
+    const QQmlListReference listPropertyProperty(object, listPropertyPropertyName.constData());
+    const QQmlListReference jsArrayProperty(object, jsArrayPropertyName.constData());
+
+    const qsizetype listPropertyCount = listPropertyProperty.count();
+    QCOMPARE(listPropertyCount, jsArrayProperty.count());
+
+    for (qsizetype i = 0; i < listPropertyCount; ++i)
+        QCOMPARE(listPropertyProperty.at(i), jsArrayProperty.at(i));
+}
+
+void tst_qqmllistreference::jsArrayMethods()
+{
+    QQmlEngine engine;
+    QQmlComponent component(&engine, testFileUrl("jsArrayMethods.qml"));
+    QVERIFY2(component.isReady(), qPrintable(component.errorString()));
+    QScopedPointer<QObject> object(component.create());
+    QVERIFY(!object.isNull());
+
+    QCOMPARE(object->property("listPropertyToString"), object->property("jsArrayToString"));
+    QCOMPARE(object->property("listPropertyToLocaleString"), object->property("jsArrayToLocaleString"));
+
+    QVERIFY(object->property("entriesMatch").toBool());
+    QVERIFY(object->property("keysMatch").toBool());
+    QVERIFY(object->property("valuesMatch").toBool());
+
+    listsEqual(object.data(), "Concat");
+    listsEqual(object.data(), "Pop");
+    listsEqual(object.data(), "Push");
+    listsEqual(object.data(), "Reverse");
+    listsEqual(object.data(), "Shift");
+    listsEqual(object.data(), "Unshift");
+    listsEqual(object.data(), "Filter");
+    listsEqual(object.data(), "Sort1");
+    listsEqual(object.data(), "Sort2");
+
+    QCOMPARE(object->property("listPropertyFind"), object->property("jsArrayFind"));
+    QCOMPARE(object->property("listPropertyFind").value<QObject *>()->objectName(), QStringLiteral("klaus"));
+
+    QCOMPARE(object->property("listPropertyFindIndex"), object->property("jsArrayFindIndex"));
+    QCOMPARE(object->property("listPropertyFindIndex").toInt(), 1);
+
+    QCOMPARE(object->property("listPropertyIncludes"), object->property("jsArrayIncludes"));
+    QVERIFY(object->property("listPropertyIncludes").toBool());
+
+    QCOMPARE(object->property("listPropertyJoin"), object->property("jsArrayJoin"));
+    QVERIFY(object->property("listPropertyJoin").toString().contains(QStringLiteral("klaus")));
+
+    QCOMPARE(object->property("listPropertyPopped"), object->property("jsArrayPopped"));
+    QVERIFY(object->property("listPropertyPopped").value<QObject *>()->objectName().isEmpty());
+
+    QCOMPARE(object->property("listPropertyPushed"), object->property("jsArrayPushed"));
+    QCOMPARE(object->property("listPropertyPushed").toInt(), 4);
+
+    QCOMPARE(object->property("listPropertyShifted"), object->property("jsArrayShifted"));
+    QCOMPARE(object->property("listPropertyShifted").value<QObject *>()->objectName(), QStringLiteral("klaus"));
+
+    QCOMPARE(object->property("listPropertyUnshifted"), object->property("jsArrayUnshifted"));
+    QCOMPARE(object->property("listPropertyUnshifted").toInt(), 4);
+
+    QCOMPARE(object->property("listPropertyIndexOf"), object->property("jsArrayIndexOf"));
+    QCOMPARE(object->property("listPropertyIndexOf").toInt(), 1);
+
+    QCOMPARE(object->property("listPropertyLastIndexOf"), object->property("jsArrayLastIndexOf"));
+    QCOMPARE(object->property("listPropertyLastIndexOf").toInt(), 2);
+
+    QCOMPARE(object->property("listPropertyEvery"), object->property("jsArrayEvery"));
+    QVERIFY(object->property("listPropertyEvery").toBool());
+
+    QCOMPARE(object->property("listPropertySome"), object->property("jsArrayEvery"));
+    QVERIFY(object->property("listPropertySome").toBool());
+
+    QCOMPARE(object->property("listPropertyForEach"), object->property("jsArrayForEach"));
+    QCOMPARE(object->property("listPropertyForEach").toString(), QStringLiteral("-klaus-----"));
+
+    QCOMPARE(object->property("listPropertyMap").toStringList(), object->property("jsArrayMap").toStringList());
+    QCOMPARE(object->property("listPropertyReduce").toString(), object->property("jsArrayReduce").toString());
+
+    QCOMPARE(object->property("listPropertyOwnPropertyNames").toStringList(),
+             object->property("jsArrayOwnPropertyNames").toStringList());
+}
+
+void tst_qqmllistreference::jsArrayMethodsWithParams_data()
+{
+    QTest::addColumn<double>("i");
+    QTest::addColumn<double>("j");
+    QTest::addColumn<double>("k");
+
+    const double indices[] = {
+        double(std::numeric_limits<qsizetype>::min()),
+        double(std::numeric_limits<qsizetype>::min()) + 1,
+        double(std::numeric_limits<uint>::min()) - 1,
+        double(std::numeric_limits<uint>::min()),
+        double(std::numeric_limits<uint>::min()) + 1,
+        double(std::numeric_limits<int>::min()),
+        -10, -3, -2, -1, 0, 1, 2, 3, 10,
+        double(std::numeric_limits<int>::max()),
+        double(std::numeric_limits<uint>::max()) - 1,
+        double(std::numeric_limits<uint>::max()),
+        double(std::numeric_limits<uint>::max()) + 1,
+        double(std::numeric_limits<qsizetype>::max() - 1),
+        double(std::numeric_limits<qsizetype>::max()),
+    };
+
+    // We cannot test the full cross product. So, take a random sample instead.
+    const qsizetype numIndices = sizeof(indices) / sizeof(double);
+    qsizetype seed = QRandomGenerator::global()->generate();
+    const int numSamples = 4;
+    for (int i = 0; i < numSamples; ++i) {
+        seed = qHash(i, seed);
+        const double vi = indices[qAbs(seed) % numIndices];
+        for (int j = 0; j < numSamples; ++j) {
+            seed = qHash(j, seed);
+            const double vj = indices[qAbs(seed) % numIndices];
+            for (int k = 0; k < numSamples; ++k) {
+                seed = qHash(k, seed);
+                const double vk = indices[qAbs(seed) % numIndices];
+                const QString tag = QLatin1String("%1/%2/%3")
+                        .arg(QString::number(vi), QString::number(vj), QString::number(vk));
+                QTest::newRow(qPrintable(tag)) << vi << vj << vk;
+
+                // output all the tags so that we can find out what combination caused a test to hang.
+                qDebug().noquote() << "scheduling" << tag;
+            }
+        }
+    }
+}
+
+void tst_qqmllistreference::jsArrayMethodsWithParams()
+{
+    QFETCH(double, i);
+    QFETCH(double, j);
+    QFETCH(double, k);
+    QQmlEngine engine;
+    QQmlComponent component(&engine, testFileUrl("jsArrayMethodsWithParams.qml"));
+    QVERIFY2(component.isReady(), qPrintable(component.errorString()));
+    QScopedPointer<QObject> object(component.createWithInitialProperties({
+            {QStringLiteral("i"), i},
+            {QStringLiteral("j"), j},
+            {QStringLiteral("k"), k}
+    }));
+    QVERIFY(!object.isNull());
+
+    listsEqual(object.data(), "CopyWithin");
+    listsEqual(object.data(), "Fill");
+    listsEqual(object.data(), "Slice");
+    listsEqual(object.data(), "Splice");
+    listsEqual(object.data(), "Spliced");
+
+    QCOMPARE(object->property("listPropertyIndexOf"), object->property("jsArrayIndexOf"));
+    QCOMPARE(object->property("listPropertyLastIndexOf"), object->property("jsArrayLastIndexOf"));
+}
+
+/*!
+    Some of our list implementations ignore attempts to append a null object.
+    This should result in warnings or type errors, and not crash our wrapper
+    code.
+*/
+void tst_qqmllistreference::listIgnoresNull()
+{
+    QFETCH(const TestType::Mode, mode);
+    static TestType::Mode globalMode;
+    globalMode = mode;
+    struct TestItem : public TestType
+    {
+        TestItem() : TestType(globalMode) {}
+    };
+
+    const auto id = qmlRegisterType<TestItem>("Test", 1, 0, "TestItem");
+    const auto unregister = qScopeGuard([id]{
+        QQmlPrivate::qmlunregister(QQmlPrivate::TypeRegistration, id);
+    });
+
+    QQmlEngine engine;
+    QQmlComponent component(&engine, testFileUrl("listIgnoresNull.qml"));
+
+    // For lists that don't append null values, creating the component shouldn't crash
+    // in the onCompleted handler, but generate type errors and warnings.
+    if (mode == TestType::IgnoreNullValues) {
+        QTest::ignoreMessage(QtWarningMsg, QRegularExpression(".* QML TestItem: List didn't append all objects$"));
+        QTest::ignoreMessage(QtWarningMsg, QRegularExpression(".* TypeError: List doesn't append null objects$"));
+    }
+    QScopedPointer<QObject> object( component.create() );
+    QVERIFY(object != nullptr);
 }
 
 QTEST_MAIN(tst_qqmllistreference)

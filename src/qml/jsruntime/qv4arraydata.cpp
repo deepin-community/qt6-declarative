@@ -587,21 +587,6 @@ void ArrayData::insert(Object *o, uint index, const Value *v, bool isAccessor)
         s->setArrayData(o->engine(), n->value + Object::SetterOffset, v[Object::SetterOffset]);
 }
 
-
-class ArrayElementLessThan
-{
-public:
-    inline ArrayElementLessThan(ExecutionEngine *engine, const Value &comparefn)
-        : m_engine(engine), m_comparefn(comparefn) {}
-
-    bool operator()(Value v1, Value v2) const;
-
-private:
-    ExecutionEngine *m_engine;
-    const Value &m_comparefn;
-};
-
-
 bool ArrayElementLessThan::operator()(Value v1, Value v2) const
 {
     Scope scope(m_engine);
@@ -633,60 +618,6 @@ bool ArrayElementLessThan::operator()(Value v1, Value v2) const
 
     return p1s->toQString() < p2s->toQString();
 }
-
-template <typename RandomAccessIterator, typename T, typename LessThan>
-void sortHelper(RandomAccessIterator start, RandomAccessIterator end, const T &t, LessThan lessThan)
-{
-top:
-    int span = int(end - start);
-    if (span < 2)
-        return;
-
-    --end;
-    RandomAccessIterator low = start, high = end - 1;
-    RandomAccessIterator pivot = start + span / 2;
-
-    if (lessThan(*end, *start))
-        qSwap(*end, *start);
-    if (span == 2)
-        return;
-
-    if (lessThan(*pivot, *start))
-        qSwap(*pivot, *start);
-    if (lessThan(*end, *pivot))
-        qSwap(*end, *pivot);
-    if (span == 3)
-        return;
-
-    qSwap(*pivot, *end);
-
-    while (low < high) {
-        while (low < high && lessThan(*low, *end))
-            ++low;
-
-        while (high > low && lessThan(*end, *high))
-            --high;
-
-        if (low < high) {
-            qSwap(*low, *high);
-            ++low;
-            --high;
-        } else {
-            break;
-        }
-    }
-
-    if (lessThan(*low, *end))
-        ++low;
-
-    qSwap(*end, *low);
-    sortHelper(start, low, t, lessThan);
-
-    start = low + 1;
-    ++end;
-    goto top;
-}
-
 
 void ArrayData::sort(ExecutionEngine *engine, Object *thisObject, const Value &comparefn, uint len)
 {
@@ -778,10 +709,38 @@ void ArrayData::sort(ExecutionEngine *engine, Object *thisObject, const Value &c
     }
 
 
-    ArrayElementLessThan lessThan(engine, static_cast<const FunctionObject &>(comparefn));
+    ArrayElementLessThan lessThan(engine, comparefn);
 
-    Value *begin = thisObject->arrayData()->values.values;
-    sortHelper(begin, begin + len, *begin, lessThan);
+    const auto thisArrayData = thisObject->arrayData();
+    uint startIndex = thisArrayData->mappedIndex(0);
+    uint endIndex = thisArrayData->mappedIndex(len - 1) + 1;
+    if (startIndex < endIndex) {
+        // Values are contiguous. Sort right away.
+        sortHelper(
+                thisArrayData->values.values + startIndex,
+                thisArrayData->values.values + endIndex,
+                lessThan);
+    } else {
+        // Values wrap around the end of the allocation. Close the gap to form a contiguous array.
+        // We're going to sort anyway. So we don't need to care about order.
+
+        // ArrayElementLessThan sorts empty and undefined to the end of the array anyway, but we
+        // probably shouldn't rely on the unused slots to be actually undefined or empty.
+
+        const uint gap = startIndex - endIndex;
+        const uint allocEnd = thisArrayData->values.alloc - 1;
+        for (uint i = 0; i < gap; ++i) {
+            const uint from = allocEnd - i;
+            const uint to = endIndex + i;
+            if (from < startIndex)
+                break;
+
+            std::swap(thisArrayData->values.values[from], thisArrayData->values.values[to]);
+        }
+
+        thisArrayData->offset = 0;
+        sortHelper(thisArrayData->values.values, thisArrayData->values.values + len, lessThan);
+    }
 
 #ifdef CHECK_SPARSE_ARRAYS
     thisObject->initSparseArray();

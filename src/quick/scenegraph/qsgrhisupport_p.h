@@ -18,30 +18,13 @@
 #include "qsgrenderloop_p.h"
 #include "qsgrendererinterface.h"
 
-#include <QtGui/private/qrhi_p.h>
-
-#include <QtGui/private/qrhinull_p.h>
-
-#if QT_CONFIG(opengl)
-#include <QtGui/private/qrhigles2_p.h>
-#endif
-
-#if QT_CONFIG(vulkan)
-#include <QtGui/private/qrhivulkan_p.h>
-#endif
-
-#ifdef Q_OS_WIN
-#include <QtGui/private/qrhid3d11_p.h>
-#endif
-
-#if defined(Q_OS_MACOS) || defined(Q_OS_IOS)
-#include <QtGui/private/qrhimetal_p.h>
-#endif
+#include <rhi/qrhi.h>
 
 QT_BEGIN_NAMESPACE
 
 class QSGDefaultRenderContext;
 class QOffscreenSurface;
+class QQuickGraphicsConfiguration;
 
 // Opting in/out of QRhi and choosing the default/requested backend is managed
 // by this singleton. This is because this information may be needed before
@@ -70,7 +53,7 @@ public:
 #endif
 
 #if defined(Q_OS_WIN)
-    static QRhiTexture::Format toRhiTextureFormatFromD3D11(uint format, QRhiTexture::Flags *flags);
+    static QRhiTexture::Format toRhiTextureFormatFromDXGI(uint format, QRhiTexture::Flags *flags);
 #endif
 
 #if defined(Q_OS_MACOS) || defined(Q_OS_IOS)
@@ -82,11 +65,6 @@ public:
     QRhi::Implementation rhiBackend() const { return m_rhiBackend; }
     QString rhiBackendName() const;
     QSGRendererInterface::GraphicsApi graphicsApi() const;
-
-    bool isDebugLayerRequested() const { return m_debugLayer; }
-    bool isProfilingRequested() const { return m_profile; }
-    bool isShaderEffectDebuggingRequested() const { return m_shaderEffectDebug; }
-    bool isSoftwareRendererRequested() const { return m_preferSoftwareRenderer; }
 
     QSurface::SurfaceType windowSurfaceType() const;
 
@@ -100,7 +78,7 @@ public:
         bool own;
     };
     RhiCreateResult createRhi(QQuickWindow *window, QSurface *offscreenSurface);
-    void destroyRhi(QRhi *rhi);
+    void destroyRhi(QRhi *rhi, const QQuickGraphicsConfiguration &config);
     void prepareWindowForRhi(QQuickWindow *window);
 
     QImage grabOffscreen(QQuickWindow *window);
@@ -108,8 +86,7 @@ public:
     QImage grabOffscreenForProtectedContent(QQuickWindow *window);
 #endif
 
-    QRhiSwapChain::Format swapChainFormat() const { return m_swapChainFormat; }
-    void applySwapChainFormat(QRhiSwapChain *scWithWindowSet);
+    void applySwapChainFormat(QRhiSwapChain *scWithWindowSet, QQuickWindow *window);
 
     QRhiTexture::Format toRhiTextureFormat(uint nativeFormat, QRhiTexture::Flags *flags) const;
 
@@ -117,21 +94,14 @@ private:
     QSGRhiSupport();
     void applySettings();
     void adjustToPlatformQuirks();
-    void preparePipelineCache(QRhi *rhi);
+    void preparePipelineCache(QRhi *rhi, QQuickWindow *window);
+    void finalizePipelineCache(QRhi *rhi, const QQuickGraphicsConfiguration &config);
     struct {
         bool valid = false;
         QSGRendererInterface::GraphicsApi api;
     } m_requested;
+    bool m_settingsApplied = false;
     QRhi::Implementation m_rhiBackend = QRhi::Null;
-    int m_killDeviceFrameCount;
-    QString m_pipelineCacheSave;
-    QString m_pipelineCacheLoad;
-    QRhiSwapChain::Format m_swapChainFormat = QRhiSwapChain::SDR;
-    uint m_settingsApplied : 1;
-    uint m_debugLayer : 1;
-    uint m_profile : 1;
-    uint m_shaderEffectDebug : 1;
-    uint m_preferSoftwareRenderer : 1;
 };
 
 QT_END_NAMESPACE

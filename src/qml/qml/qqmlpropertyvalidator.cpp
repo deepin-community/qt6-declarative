@@ -568,10 +568,10 @@ QQmlError QQmlPropertyValidator::validateLiteralBinding(
             default: return QString();
             }
         };
-        QVariant result;
-        if (!QQml_valueTypeProvider()->createValueType(
-                    property->propType(),
-                    compilationUnit->bindingValueAsString(binding), result)) {
+        const QVariant result = QQmlValueTypeProvider::createValueType(
+                    compilationUnit->bindingValueAsString(binding),
+                    property->propType());
+        if (!result.isValid()) {
             return warnOrError(tr("Invalid property assignment: %1 expected")
                                .arg(typeName()));
         }
@@ -617,6 +617,8 @@ QQmlError QQmlPropertyValidator::validateLiteralBinding(
             break;
         } else if (property->isQObject()
                    && bindingType == QV4::CompiledData::Binding::Type_Null) {
+            break;
+        } else if (QQmlMetaType::qmlType(property->propType()).canConstructValueType()) {
             break;
         }
 
@@ -683,13 +685,12 @@ QQmlError QQmlPropertyValidator::validateObjectBinding(const QQmlPropertyData *p
         const QV4::CompiledData::Object *targetObject = compilationUnit->objectAt(binding->value.objectIndex);
         if (auto *typeRef = resolvedType(targetObject->inheritedTypeNameIndex)) {
             QQmlPropertyCache::ConstPtr cache = typeRef->createPropertyCache();
-            const QMetaObject *mo = cache->firstCppMetaObject();
+            const QMetaObject *mo = cache ? cache->firstCppMetaObject() : nullptr;
             QQmlType qmlType;
             while (mo && !qmlType.isValid()) {
                 qmlType = QQmlMetaType::qmlType(mo);
                 mo = mo->superClass();
             }
-            Q_ASSERT(qmlType.isValid());
 
             isValueSource = qmlType.propertyValueSourceCast() != -1;
             isPropertyInterceptor = qmlType.propertyValueInterceptorCast() != -1;

@@ -28,11 +28,8 @@
 #include <QtCore/QMutexLocker>
 #include <QtCore/QPair>
 
-#ifdef QMLDOM_STANDALONE
-#    include "qmlcompiler/qqmljsscope_p.h"
-#else
-#    include <private/qqmljsscope_p.h>
-#endif
+#include <memory>
+#include <private/qqmljsscope_p.h>
 
 #include <functional>
 #include <limits>
@@ -340,11 +337,15 @@ class QMLDOM_EXPORT Pragma
 public:
     constexpr static DomType kindValue = DomType::Pragma;
 
-    Pragma(QString pragmaName = QString()) : name(pragmaName) { }
+    Pragma(QString pragmaName = QString(), const QStringList &pragmaValues = {})
+        : name(pragmaName), values{ pragmaValues }
+    {
+    }
 
     bool iterateDirectSubpaths(DomItem &self, DirectVisitor visitor)
     {
         bool cont = self.dvValueField(visitor, Fields::name, name);
+        cont = cont && self.dvValueField(visitor, Fields::values, values);
         cont = cont && self.dvWrapField(visitor, Fields::comments, comments);
         return cont;
     }
@@ -352,6 +353,7 @@ public:
     void writeOut(DomItem &self, OutWriter &ow) const;
 
     QString name;
+    QStringList values;
     RegionComments comments;
 };
 
@@ -370,14 +372,22 @@ public:
     Path referredObjectPath;
     RegionComments comments;
     QList<QmlObject> annotations;
+    std::shared_ptr<ScriptExpression> value;
 };
 
+// TODO: rename? it may contain statements and stuff, not only expressions
 class QMLDOM_EXPORT ScriptExpression final : public OwningItem
 {
     Q_GADGET
     Q_DECLARE_TR_FUNCTIONS(ScriptExpression)
 public:
-    enum class ExpressionType { BindingExpression, FunctionBody, ArgInitializer };
+    enum class ExpressionType {
+        BindingExpression,
+        FunctionBody,
+        ArgInitializer,
+        ArgumentStructure,
+        ReturnType
+    };
     Q_ENUM(ExpressionType);
     constexpr static DomType kindValue = DomType::ScriptExpression;
     DomType kind() const override { return kindValue; }
@@ -451,11 +461,13 @@ public:
     SourceLocation localOffset() const { return m_localOffset; }
     QStringView preCode() const { return m_preCode; }
     QStringView postCode() const { return m_postCode; }
+    void setScriptElement(const ScriptElementVariant &p);
+    ScriptElementVariant scriptElement() { return m_element; }
 
 protected:
     std::shared_ptr<OwningItem> doCopy(DomItem &) const override
     {
-        return std::shared_ptr<OwningItem>(new ScriptExpression(*this));
+        return std::make_shared<ScriptExpression>(*this);
     }
 
     std::function<SourceLocation(SourceLocation)> locationToGlobalF(DomItem &self) const
@@ -495,6 +507,7 @@ private:
     mutable AST::Node *m_ast;
     std::shared_ptr<AstComments> m_astComments;
     SourceLocation m_localOffset;
+    ScriptElementVariant m_element;
 };
 
 class BindingValue;
@@ -519,7 +532,7 @@ public:
     Binding &operator=(Binding &&) = default;
 
     bool iterateDirectSubpaths(DomItem &self, DirectVisitor);
-    DomItem valueItem(DomItem &self) const;
+    DomItem valueItem(DomItem &self) const; //  ### REVISIT: consider replacing return value with variant
     BindingValueKind valueKind() const;
     QString name() const { return m_name; }
     BindingType bindingType() const { return m_bindingType; }
@@ -554,7 +567,7 @@ public:
     QString postCode() const { return postCodeForName(m_name); }
 
 private:
-    friend class QmlDomAstCreator;
+    friend class QQmlDomAstCreator;
     BindingType m_bindingType;
     QString m_name;
     std::unique_ptr<BindingValue> m_value;
@@ -638,12 +651,13 @@ public:
     bool isPointer = false;
     bool isDefaultMember = false;
     bool isRequired = false;
+    std::optional<QQmlJSScope::Ptr> scope;
 };
 
 class QMLDOM_EXPORT PropertyInfo
 {
 public:
-    constexpr static DomType kindValue = DomType::PropertyInfo;
+    constexpr static DomType kindValue = DomType::PropertyInfo; // used to get the correct kind in ObjectWrapper
 
     bool iterateDirectSubpaths(DomItem &self, DirectVisitor visitor);
 
@@ -667,6 +681,12 @@ public:
     bool isReadonly = false;
     bool isList = false;
     std::shared_ptr<ScriptExpression> defaultValue;
+    /*!
+        \internal
+        Contains the scriptElement representing this argument, inclusive default value,
+        deconstruction, etc.
+     */
+    std::shared_ptr<ScriptExpression> value;
     QList<QmlObject> annotations;
     RegionComments comments;
 };
@@ -686,23 +706,27 @@ public:
     }
 
     bool iterateDirectSubpaths(DomItem &self, DirectVisitor visitor);
-    QString preCode(DomItem &) const;
+    QString preCode(DomItem &) const; // ### REVISIT, might be simplified by using different toplevel production rules at usage site
     QString postCode(DomItem &) const;
     void writePre(DomItem &self, OutWriter &ow) const;
     void writeOut(DomItem &self, OutWriter &ow) const;
     void setCode(QString code)
     {
-        body = std::shared_ptr<ScriptExpression>(
-                new ScriptExpression(code, ScriptExpression::ExpressionType::FunctionBody, 0,
-                                     QLatin1String("function foo(){\n"), QLatin1String("\n}\n")));
+        body = std::make_shared<ScriptExpression>(
+                code, ScriptExpression::ExpressionType::FunctionBody, 0,
+                                     QLatin1String("function foo(){\n"), QLatin1String("\n}\n"));
     }
-
     MethodInfo() = default;
+    std::optional<QQmlJSScope::Ptr> semanticScope() { return m_semanticScope; }
+    void setSemanticScope(QQmlJSScope::Ptr scope) { m_semanticScope = scope; }
 
+    // TODO: make private + add getters/setters
     QList<MethodParameter> parameters;
     MethodType methodType = Method;
     std::shared_ptr<ScriptExpression> body;
+    std::shared_ptr<ScriptExpression> returnType;
     bool isConstructor = false;
+    std::optional<QQmlJSScope::Ptr> m_semanticScope;
 };
 
 class QMLDOM_EXPORT EnumItem
@@ -876,8 +900,11 @@ public:
                                       std::shared_ptr<ScriptExpression> accessSequence) const;
     LocallyResolvedAlias resolveAlias(DomItem &self, const QStringList &accessSequence) const;
 
+    std::optional<QQmlJSScope::Ptr> semanticScope() const { return m_scope; }
+    void setSemanticScope(const QQmlJSScope::Ptr &scope) { m_scope = scope; }
+
 private:
-    friend class QmlDomAstCreator;
+    friend class QQmlDomAstCreator;
     QString m_idStr;
     QString m_name;
     QList<Path> m_prototypePaths;
@@ -888,6 +915,7 @@ private:
     QMultiMap<QString, MethodInfo> m_methods;
     QList<QmlObject> m_children;
     QList<QmlObject> m_annotations;
+    std::optional<QQmlJSScope::Ptr> m_scope;
 };
 
 class Export
@@ -966,7 +994,7 @@ public:
     void setAttachedTypePath(Path p) { m_attachedTypePath = p; }
 
 private:
-    friend class QmlDomAstCreator;
+    friend class QQmlDomAstCreator;
     QString m_name;
     QMultiMap<QString, EnumDecl> m_enumerations;
     QList<QmlObject> m_objects;
@@ -1065,10 +1093,14 @@ public:
     QList<QString> subComponentsNames(DomItem &self) const;
     QList<DomItem> subComponents(DomItem &self) const;
 
+    void setSemanticScope(const QQmlJSScope::Ptr &scope) { m_semanticScope = scope; }
+    std::optional<QQmlJSScope::Ptr> semanticScope() { return m_semanticScope; }
+
 private:
-    friend class QmlDomAstCreator;
+    friend class QQmlDomAstCreator;
     Path m_nextComponentPath;
     QMultiMap<QString, Id> m_ids;
+    std::optional<QQmlJSScope::Ptr> m_semanticScope;
 };
 
 class QMLDOM_EXPORT GlobalComponent final : public Component

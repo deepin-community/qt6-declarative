@@ -31,7 +31,7 @@
 #include <QtGui/private/qdatabuffer_p.h>
 #include <private/qdistancefield_p.h>
 #include <private/qintrusivelist_p.h>
-#include <QtGui/private/qshader_p.h>
+#include <rhi/qshader.h>
 
 // ### remove
 #include <QtQuick/private/qquicktext_p.h>
@@ -180,8 +180,8 @@ public:
         RGBA32F
     };
     virtual void setItem(QSGNode *item) = 0;
-    virtual void setRect(const QRectF &rect) = 0;
-    virtual void setSize(const QSize &size) = 0;
+    virtual void setRect(const QRectF &logicalRect) = 0;
+    virtual void setSize(const QSize &pixelSize) = 0;
     virtual void scheduleUpdate() = 0;
     virtual QImage toImage() const = 0;
     virtual void setLive(bool live) = 0;

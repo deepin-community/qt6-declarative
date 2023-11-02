@@ -17,6 +17,7 @@
 
 #include "qquickcommonstyle.h"
 #include "private/qglobal_p.h"
+#include <QBasicTimer>
 
 QT_BEGIN_NAMESPACE
 
@@ -35,15 +36,7 @@ class QWindowsStyle : public QCommonStyle
 public:
     QWindowsStyle();
     ~QWindowsStyle() override;
-/*
-    void polish(QApplication*) override;
-    void unpolish(QApplication*) override;
 
-    void polish(QWidget*) override;
-    void unpolish(QWidget*) override;
-
-    void polish(QPalette &) override;
-*/
     void drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, QPainter *p) const override;
     void drawControl(ControlElement element, const QStyleOption *opt, QPainter *p) const override;
     void drawComplexControl(ComplexControl cc, const QStyleOptionComplex *opt, QPainter *p) const override;
@@ -59,14 +52,20 @@ public:
     QPixmap standardPixmap(StandardPixmap standardPixmap, const QStyleOption *opt) const override;
 
     QIcon standardIcon(StandardPixmap standardIcon, const QStyleOption *option = nullptr) const override;
+    void polish() override;
 
 protected:
 //    bool eventFilter(QObject *o, QEvent *e) override;
     QWindowsStyle(QWindowsStylePrivate &dd);
+    void timerEvent(QTimerEvent * event) override;
 
 private:
     Q_DISABLE_COPY_MOVE(QWindowsStyle)
     Q_DECLARE_PRIVATE(QWindowsStyle)
+    QBasicTimer paletteTimer;
+
+public Q_SLOTS:
+    void refreshPalette();
 };
 
 } // namespace QQC2

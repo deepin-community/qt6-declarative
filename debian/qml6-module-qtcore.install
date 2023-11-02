@@ -1,3 +1,4 @@
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/qml/QtCore/libqtqmlcoreplugin.so
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/qml/QtCore/plugins.qmltypes
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/qml/QtCore/qmldir
+usr/lib/${DEB_HOST_MULTIARCH}/libQt6QmlCore.so.*

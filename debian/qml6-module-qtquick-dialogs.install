@@ -1,1 +1,4 @@
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/qml/QtQuick/Dialogs/
+usr/lib/${DEB_HOST_MULTIARCH}/libQt6QuickDialogs2Utils.so.*
+usr/lib/${DEB_HOST_MULTIARCH}/libQt6QuickDialogs2QuickImpl.so.*
+usr/lib/${DEB_HOST_MULTIARCH}/libQt6QuickDialogs2.so.*

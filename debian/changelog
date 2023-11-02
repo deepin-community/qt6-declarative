@@ -1,8 +1,41 @@
-qt6-declarative (6.4.2+dfsg-3deepin) unstable; urgency=medium
+qt6-declarative (6.6.0+dfsg-2) UNRELEASED; urgency=medium
 
-  * Update d/libqt6qml6.symbols, d/libqt6quick6.symbols
+  [ Patrick Franz ]
+  * Update symbols from buildlogs.
+  * Update list of installed files.
 
- -- Tianyu Chen <sweetyfish@deepin.org>  Mon, 07 Aug 2023 13:05:11 +0800
+ -- Debian Qt/KDE Maintainers <debian-qt-kde@lists.debian.org>  Wed, 01 Nov 2023 18:15:57 +0100
+
+qt6-declarative (6.6.0+dfsg-1) experimental; urgency=medium
+
+  [ Patrick Franz ]
+  * New upstream release (6.6.0).
+  * Bump Qt B-Ds to 6.6.0.
+  * Update ABI to 6.6.0.
+  * Rename the virtual ABI package to qt6-declarative-private-abi.
+  * Add qt6-svg-dev as a build dependency.
+  * New binary packages qml6-module-qmltime, qml6-module-qtqml-base and
+    qml6-module-qtquick-effects as well as updating the list of
+    installed files.
+  * Update symbols from buildlogs.
+  * Use the (symver) directive to catch all private symbols.
+  * Update d/copyright.
+  * Update lintian-overrides.
+  * Remove many binary packages as the libraries are private libraries
+    used by QML modules.
+
+ -- Patrick Franz <deltaone@debian.org>  Thu, 26 Oct 2023 19:01:11 +0200
+
+qt6-declarative (6.4.2+dfsg-4) unstable; urgency=medium
+
+  [ Pino Toscano ]
+  * Fix build on non-Linux architectures:
+    - add the dh-exec build dependency, needed for architecture filters in
+      .install files
+    - make qt6-declarative-examples.install use dh-exec, and limit installation
+      of Linux-only files
+
+ -- Patrick Franz <deltaone@debian.org>  Sat, 14 Oct 2023 11:49:53 +0200
 
 qt6-declarative (6.4.2+dfsg-3) unstable; urgency=medium
 

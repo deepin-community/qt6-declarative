@@ -32,6 +32,8 @@
 #include <algorithm>
 #include <functional>
 
+using namespace Qt::Literals::StringLiterals;
+
 QT_BEGIN_NAMESPACE
 
 DEFINE_BOOL_CONFIG_OPTION(qmlImportTrace, QML_IMPORT_TRACE)
@@ -81,12 +83,6 @@ namespace {
 QTypeRevision relevantVersion(const QString &uri, QTypeRevision version)
 {
     return QQmlMetaType::latestModuleVersion(uri).isValid() ? version : QTypeRevision();
-}
-
-QTypeRevision validVersion(QTypeRevision version = QTypeRevision())
-{
-    // If the given version is invalid, return a valid but useless version to signal "It's OK".
-    return version.isValid() ? version : QTypeRevision::fromMinorVersion(0);
 }
 
 QQmlError moduleNotFoundError(const QString &uri, QTypeRevision version)
@@ -200,6 +196,12 @@ bool isPathAbsolute(const QString &path)
 \brief The QQmlImports class encapsulates one QML document's import statements.
 \internal
 */
+
+QTypeRevision QQmlImports::validVersion(QTypeRevision version)
+{
+    // If the given version is invalid, return a valid but useless version to signal "It's OK".
+    return version.isValid() ? version : QTypeRevision::fromMinorVersion(0);
+}
 
 /*!
   Sets the base URL to be used for all relative file imports added.
@@ -582,10 +584,10 @@ bool QQmlImportInstance::resolveType(QQmlTypeLoader *typeLoader, const QHashedSt
             Q_ASSERT(!type_return->isValid());
             auto createICType = [&]() {
                 auto typePriv = new QQmlTypePrivate {QQmlType::RegistrationType::InlineComponentType};
-                bool ok = false;
-                typePriv->extraData.id->objectId = QUrl(this->url).fragment().toInt(&ok);
-                Q_ASSERT(ok);
-                typePriv->extraData.id->url = QUrl(this->url);
+                const QUrl ownUrl = QUrl(url);
+                typePriv->elementName = ownUrl.fragment();
+                Q_ASSERT(!typePriv->elementName.isEmpty());
+                typePriv->extraData.id->url = ownUrl;
                 auto icType = QQmlType(typePriv);
                 typePriv->release();
                 return icType;
@@ -593,12 +595,13 @@ bool QQmlImportInstance::resolveType(QQmlTypeLoader *typeLoader, const QHashedSt
             if (containingType.isValid()) {
                 // we currently cannot reference a Singleton inside itself
                 // in that case, containingType is still invalid
-                if (int icID = containingType.lookupInlineComponentIdByName(typeStr); icID != -1) {
-                    *type_return = containingType.lookupInlineComponentById(icID);
+                if (QQmlType ic = QQmlMetaType::inlineComponentType(containingType, typeStr);
+                        ic.isValid()) {
+                    *type_return = ic;
                 } else {
                     auto icType = createICType();
-                    int placeholderId = containingType.generatePlaceHolderICId();
-                    const_cast<QQmlImportInstance*>(this)->containingType.associateInlineComponent(typeStr, placeholderId, CompositeMetaTypeIds {}, icType);
+                    QQmlMetaType::associateInlineComponent(
+                        containingType, typeStr, CompositeMetaTypeIds {}, icType);
                     *type_return = QQmlType(icType);
                 }
             } else  {
@@ -763,23 +766,22 @@ bool QQmlImports::resolveType(
         } else {
             if (resolveTypeInNamespace(splitName.at(0), &m_unqualifiedset, nullptr)) {
                 // either simple type + inline component
-                auto const icName = splitName.at(1).toString();
-                auto objectIndex = type_return->lookupInlineComponentIdByName(icName);
-                if (objectIndex != -1) {
-                    *type_return = type_return->lookupInlineComponentById(objectIndex);
+                const QString icName = splitName.at(1).toString();
+                const QQmlType ic = QQmlMetaType::inlineComponentType(*type_return, icName);
+                if (ic.isValid()) {
+                    *type_return = ic;
                 } else {
                     auto icTypePriv = new QQmlTypePrivate(QQmlType::RegistrationType::InlineComponentType);
                     icTypePriv->setContainingType(type_return);
                     icTypePriv->extraData.id->url = type_return->sourceUrl();
-                    int placeholderId = type_return->generatePlaceHolderICId();
-                    icTypePriv->extraData.id->url.setFragment(QString::number(placeholderId));
+                    icTypePriv->extraData.id->url.setFragment(icName);
                     auto icType = QQmlType(icTypePriv);
                     icTypePriv->release();
-                    type_return->associateInlineComponent(icName, placeholderId, CompositeMetaTypeIds {}, icType);
+                    QQmlMetaType::associateInlineComponent(
+                        *type_return, icName, CompositeMetaTypeIds {}, icType);
                     *type_return = icType;
                 }
                 Q_ASSERT(type_return->containingType().isValid());
-                type_return->setPendingResolutionName(icName);
                 return true;
             } else {
                 // or a failure
@@ -801,21 +803,20 @@ bool QQmlImports::resolveType(
         } else {
             if (resolveTypeInNamespace(splitName.at(1), s, nullptr)) {
                 auto const icName = splitName.at(2).toString();
-                auto objectIndex = type_return->lookupInlineComponentIdByName(icName);
-                if (objectIndex != -1)
-                    *type_return = type_return->lookupInlineComponentById(objectIndex);
+                QQmlType ic = QQmlMetaType::inlineComponentType(*type_return, icName);
+                if (ic.isValid())
+                    *type_return = ic;
                 else {
                     auto icTypePriv = new QQmlTypePrivate(QQmlType::RegistrationType::InlineComponentType);
                     icTypePriv->setContainingType(type_return);
                     icTypePriv->extraData.id->url = type_return->sourceUrl();
-                    int placeholderId = type_return->generatePlaceHolderICId();
-                    icTypePriv->extraData.id->url.setFragment(QString::number(placeholderId));
+                    icTypePriv->extraData.id->url.setFragment(icName);
                     auto icType = QQmlType(icTypePriv);
                     icTypePriv->release();
-                    type_return->associateInlineComponent(icName, placeholderId, CompositeMetaTypeIds {}, icType);
+                    QQmlMetaType::associateInlineComponent(
+                        *type_return, icName, CompositeMetaTypeIds {}, icType);
                     *type_return = icType;
                 }
-                type_return->setPendingResolutionName(icName);
                 return true;
             } else {
                 error.setDescription(QQmlImportDatabase::tr("- %1 is not a type").arg(splitName.at(1).toString()));
@@ -1086,9 +1087,11 @@ QTypeRevision QQmlImports::matchingQmldirVersion(
             if (cit2->typeName == cit->typeName && cit2->version == cit->version) {
                 // This entry clashes with a predecessor
                 QQmlError error;
-                error.setDescription(QQmlImportDatabase::tr("\"%1\" version %2.%3 is defined more than once in module \"%4\"")
-                                     .arg(cit->typeName).arg(cit->version.majorVersion())
-                                     .arg(cit->version.minorVersion()).arg(uri));
+                error.setDescription(
+                        QQmlImportDatabase::tr(
+                                "\"%1\" version %2.%3 is defined more than once in module \"%4\"")
+                                .arg(cit->typeName).arg(cit->version.majorVersion())
+                                .arg(cit->version.minorVersion()).arg(uri));
                 errors->prepend(error);
                 return QTypeRevision();
             }
@@ -1159,7 +1162,7 @@ QQmlImportNamespace *QQmlImports::importNamespace(const QString &prefix)
 
 QQmlImportInstance *QQmlImports::addImportToNamespace(
         QQmlImportNamespace *nameSpace, const QString &uri, const QString &url, QTypeRevision version,
-        QV4::CompiledData::Import::ImportType type, QList<QQmlError> *errors, ImportFlags flags)
+        QV4::CompiledData::Import::ImportType type, QList<QQmlError> *errors, quint16 precedence)
 {
     Q_ASSERT(nameSpace);
     Q_ASSERT(errors);
@@ -1171,38 +1174,25 @@ QQmlImportInstance *QQmlImports::addImportToNamespace(
     import->url = url;
     import->version = version;
     import->isLibrary = (type == QV4::CompiledData::Import::ImportLibrary);
+    import->precedence = precedence;
+    import->implicitlyImported = precedence >= QQmlImportInstance::Implicit;
 
-    if (flags & QQmlImports::ImportImplicit) {
-        import->implicitlyImported = true;
-        nameSpace->imports.append(import);
+    for (auto it = nameSpace->imports.cbegin(), end = nameSpace->imports.cend();
+         it != end; ++it) {
+        if ((*it)->precedence < precedence)
+            continue;
+
+        nameSpace->imports.insert(it, import);
         return import;
     }
-
-    if (flags & QQmlImports::ImportLowPrecedence) {
-        for (auto it = nameSpace->imports.rbegin(), end = nameSpace->imports.rend();
-             it != end; ++it) {
-            if (!(*it)->implicitlyImported) {
-                nameSpace->imports.insert(it.base(), import);
-                return import;
-            }
-        }
-    }
-
-    // This is one of 3 cases:
-    //
-    // 1. existing imports are empty
-    // 2. new import is low precedence and all existing ones are implicit
-    // 3. new import is normal precedence
-    //
-    // In those cases the new import overrides all existing ones and has to be prepended.
-    nameSpace->imports.prepend(import);
+    nameSpace->imports.append(import);
     return import;
 }
 
 QTypeRevision QQmlImports::addLibraryImport(
         QQmlImportDatabase *database, const QString &uri, const QString &prefix,
         QTypeRevision version, const QString &qmldirIdentifier, const QString &qmldirUrl,
-        ImportFlags flags, QList<QQmlError> *errors)
+        ImportFlags flags, quint16 precedence, QList<QQmlError> *errors)
 {
     Q_ASSERT(database);
     Q_ASSERT(errors);
@@ -1217,7 +1207,7 @@ QTypeRevision QQmlImports::addLibraryImport(
     QQmlImportInstance *inserted = addImportToNamespace(
                 nameSpace, uri, qmldirUrl, version,
                 QV4::CompiledData::Import::ImportLibrary, errors,
-                flags);
+                precedence);
     Q_ASSERT(inserted);
 
     if (!(flags & QQmlImports::ImportIncomplete)) {
@@ -1285,7 +1275,8 @@ QTypeRevision QQmlImports::addLibraryImport(
 */
 QTypeRevision QQmlImports::addFileImport(
         QQmlImportDatabase *database, const QString &uri, const QString &prefix,
-        QTypeRevision version, ImportFlags flags, QString *localQmldir, QList<QQmlError> *errors)
+        QTypeRevision version, ImportFlags flags, quint16 precedence,
+        QString *localQmldir, QList<QQmlError> *errors)
 {
     Q_ASSERT(database);
     Q_ASSERT(errors);
@@ -1328,7 +1319,7 @@ QTypeRevision QQmlImports::addFileImport(
 
         const QString dir = localFileOrQrc.left(localFileOrQrc.lastIndexOf(Slash) + 1);
         if (!m_typeLoader->directoryExists(dir)) {
-            if (!(flags & QQmlImports::ImportImplicit)) {
+            if (precedence < QQmlImportInstance::Implicit) {
                 QQmlError error;
                 error.setDescription(QQmlImportDatabase::tr("\"%1\": no such directory").arg(uri));
                 error.setUrl(QUrl(qmldirUrl));
@@ -1351,7 +1342,7 @@ QTypeRevision QQmlImports::addFileImport(
 
     } else if (nameSpace->prefix.isEmpty() && !(flags & QQmlImports::ImportIncomplete)) {
 
-        if (!(flags & QQmlImports::ImportImplicit)) {
+        if (precedence < QQmlImportInstance::Implicit) {
             QQmlError error;
             error.setDescription(QQmlImportDatabase::tr("import \"%1\" has no qmldir and no namespace").arg(importUri));
             error.setUrl(QUrl(qmldirUrl));
@@ -1364,6 +1355,15 @@ QTypeRevision QQmlImports::addFileImport(
 
     // The url for the path containing files for this import
     QString url = resolveLocalUrl(m_base, uri);
+    if (url.isEmpty()) {
+        QQmlError error;
+        error.setDescription(
+                QQmlImportDatabase::tr("Cannot resolve URL for import \"%1\"").arg(uri));
+        error.setUrl(m_baseUrl);
+        errors->prepend(error);
+        return QTypeRevision();
+    }
+
     if (!url.endsWith(Slash) && !url.endsWith(Backslash))
         url += Slash;
 
@@ -1371,7 +1371,7 @@ QTypeRevision QQmlImports::addFileImport(
     //     if the implicit import has already been explicitly added, otherwise we can run into issues
     //     with duplicate imports. However remember that we attempted to add this as implicit import, to
     //     allow for the loading of internal types.
-    if (flags & QQmlImports::ImportImplicit) {
+    if (precedence >= QQmlImportInstance::Implicit) {
         for (QList<QQmlImportInstance *>::const_iterator it = nameSpace->imports.constBegin();
              it != nameSpace->imports.constEnd(); ++it) {
             if ((*it)->url == url) {
@@ -1381,25 +1381,21 @@ QTypeRevision QQmlImports::addFileImport(
         }
     }
 
-    QQmlImportInstance *inserted = addImportToNamespace(
-                nameSpace, importUri, url, version, QV4::CompiledData::Import::ImportFile,
-                errors, flags);
-    Q_ASSERT(inserted);
-    if (flags & QQmlImports::ImportImplicit)
-        inserted->implicitlyImported = true;
-
     if (!(flags & QQmlImports::ImportIncomplete) && !qmldirIdentifier.isEmpty()) {
         QQmlTypeLoaderQmldirContent qmldir;
         if (!getQmldirContent(qmldirIdentifier, importUri, &qmldir, errors))
             return QTypeRevision();
 
         if (qmldir.hasContent()) {
-            if (uri == QStringLiteral(".")) {
-                // If this is an implicit import, prefer the qmldir URI. Unless it doesn't exist.
-                const QString qmldirUri = qmldir.typeNamespace();
-                if (!qmldirUri.isEmpty())
-                    importUri = qmldirUri;
-            }
+            // Prefer the qmldir URI. Unless it doesn't exist.
+            const QString qmldirUri = qmldir.typeNamespace();
+            if (!qmldirUri.isEmpty())
+                importUri = qmldirUri;
+
+            QQmlImportInstance *inserted = addImportToNamespace(
+                        nameSpace, importUri, url, version, QV4::CompiledData::Import::ImportFile,
+                        errors, precedence);
+            Q_ASSERT(inserted);
 
             version = importExtension(importUri, version, database, &qmldir, errors);
             if (!version.isValid())
@@ -1407,9 +1403,15 @@ QTypeRevision QQmlImports::addFileImport(
 
             if (!inserted->setQmldirContent(url, qmldir, nameSpace, errors))
                 return QTypeRevision();
+
+            return validVersion(version);
         }
     }
 
+    QQmlImportInstance *inserted = addImportToNamespace(
+                nameSpace, importUri, url, version, QV4::CompiledData::Import::ImportFile,
+                errors, precedence);
+    Q_ASSERT(inserted);
     return validVersion(version);
 }
 
@@ -1539,7 +1541,14 @@ QQmlImportDatabase::QQmlImportDatabase(QQmlEngine *e)
 : engine(e)
 {
     filePluginPath << QLatin1String(".");
-    // Search order is applicationDirPath(), qrc:/qt-project.org/imports, $QML_IMPORT_PATH, $QML2_IMPORT_PATH, QLibraryInfo::QmlImportsPath
+    // Search order is:
+    // 1. android or macos specific bundle paths.
+    // 2. applicationDirPath()
+    // 3. qrc:/qt-project.org/imports
+    // 4. qrc:/qt/qml
+    // 5. $QML2_IMPORT_PATH
+    // 6. $QML_IMPORT_PATH
+    // 7. QLibraryInfo::QmlImportsPath
 
     QString installImportsPath = QLibraryInfo::path(QLibraryInfo::QmlImportsPath);
     addImportPath(installImportsPath);
@@ -1556,6 +1565,7 @@ QQmlImportDatabase::QQmlImportDatabase(QQmlEngine *e)
     addEnvImportPath("QML_IMPORT_PATH");
     addEnvImportPath("QML2_IMPORT_PATH");
 
+    addImportPath(QStringLiteral("qrc:/qt/qml"));
     addImportPath(QStringLiteral("qrc:/qt-project.org/imports"));
     addImportPath(QCoreApplication::applicationDirPath());
 

@@ -15,21 +15,24 @@
 // We mean it.
 //
 
-#include "qquickitem.h"
-#include "qevent.h"
-#include "qquicksinglepointhandler_p.h"
 #include <QtCore/qbasictimer.h>
+#include <QtCore/qelapsedtimer.h>
+#include <QtGui/qevent.h>
+#include <QtQuick/qquickitem.h>
+
+#include "qquicksinglepointhandler_p.h"
 
 QT_BEGIN_NAMESPACE
 
 class Q_QUICK_PRIVATE_EXPORT QQuickTapHandler : public QQuickSinglePointHandler
 {
     Q_OBJECT
-    Q_PROPERTY(bool pressed READ isPressed NOTIFY pressedChanged)
-    Q_PROPERTY(int tapCount READ tapCount NOTIFY tapCountChanged)
-    Q_PROPERTY(qreal timeHeld READ timeHeld NOTIFY timeHeldChanged)
-    Q_PROPERTY(qreal longPressThreshold READ longPressThreshold WRITE setLongPressThreshold NOTIFY longPressThresholdChanged)
-    Q_PROPERTY(GesturePolicy gesturePolicy READ gesturePolicy WRITE setGesturePolicy NOTIFY gesturePolicyChanged)
+    Q_PROPERTY(bool pressed READ isPressed NOTIFY pressedChanged FINAL)
+    Q_PROPERTY(int tapCount READ tapCount NOTIFY tapCountChanged FINAL)
+    Q_PROPERTY(qreal timeHeld READ timeHeld NOTIFY timeHeldChanged FINAL)
+    Q_PROPERTY(qreal longPressThreshold READ longPressThreshold WRITE setLongPressThreshold NOTIFY longPressThresholdChanged FINAL)
+    Q_PROPERTY(GesturePolicy gesturePolicy READ gesturePolicy WRITE setGesturePolicy NOTIFY gesturePolicyChanged FINAL)
+    Q_PROPERTY(QQuickTapHandler::ExclusiveSignals exclusiveSignals READ exclusiveSignals WRITE setExclusiveSignals NOTIFY exclusiveSignalsChanged REVISION(6, 5) FINAL)
 
     QML_NAMED_ELEMENT(TapHandler)
     QML_ADDED_IN_VERSION(2, 12)
@@ -42,6 +45,14 @@ public:
         DragWithinBounds
     };
     Q_ENUM(GesturePolicy)
+
+    enum ExclusiveSignal {
+        NotExclusive = 0,
+        SingleTap = 1 << 0,
+        DoubleTap = 1 << 1
+    };
+    Q_DECLARE_FLAGS(ExclusiveSignals, ExclusiveSignal)
+    Q_FLAG(ExclusiveSignals)
 
     explicit QQuickTapHandler(QQuickItem *parent = nullptr);
 
@@ -56,12 +67,16 @@ public:
     GesturePolicy gesturePolicy() const { return m_gesturePolicy; }
     void setGesturePolicy(GesturePolicy gesturePolicy);
 
+    QQuickTapHandler::ExclusiveSignals exclusiveSignals() const { return m_exclusiveSignals; }
+    void setExclusiveSignals(QQuickTapHandler::ExclusiveSignals newexclusiveSignals);
+
 Q_SIGNALS:
     void pressedChanged();
     void tapCountChanged();
     void timeHeldChanged();
     void longPressThresholdChanged();
     void gesturePolicyChanged();
+    Q_REVISION(6, 5) void exclusiveSignalsChanged();
     // the second argument (Qt::MouseButton) was added in 6.2: avoid name clashes with IDs by not naming it for now
     void tapped(QEventPoint eventPoint, Qt::MouseButton /* button */);
     void singleTapped(QEventPoint eventPoint, Qt::MouseButton /* button */);
@@ -83,21 +98,25 @@ private:
 
 private:
     QPointF m_lastTapPos;
-    qreal m_lastTapTimestamp = 0;
+    quint64 m_lastTapTimestamp = 0;
     QElapsedTimer m_holdTimer;
     QBasicTimer m_longPressTimer;
+    QBasicTimer m_doubleTapTimer;
+    QEventPoint m_singleTapReleasedPoint;
+    Qt::MouseButton m_singleTapReleasedButton;
     int m_tapCount = 0;
     int m_longPressThreshold = -1;
     GesturePolicy m_gesturePolicy = GesturePolicy::DragThreshold;
+    ExclusiveSignals m_exclusiveSignals = NotExclusive;
     bool m_pressed = false;
 
-    static qreal m_multiTapInterval;
+    static quint64 m_multiTapInterval;
     static int m_mouseMultiClickDistanceSquared;
     static int m_touchMultiTapDistanceSquared;
 };
 
-QT_END_NAMESPACE
+Q_DECLARE_OPERATORS_FOR_FLAGS(QQuickTapHandler::ExclusiveSignals)
 
-QML_DECLARE_TYPE(QQuickTapHandler)
+QT_END_NAMESPACE
 
 #endif // QQUICKTAPHANDLER_H

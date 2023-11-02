@@ -27,8 +27,8 @@ public:
     The SystemPalette type provides access to the Qt application
     palettes. This provides information about the standard colors used
     for application windows, buttons and other features. These colors
-    are grouped into three \e {color groups}: \c Active, \c Inactive,
-    and \c Disabled.  See the QPalette documentation for details about
+    are grouped into three \e {color groups}: \c active, \c inactive,
+    and \c disabled.  See the QPalette documentation for details about
     color groups and the properties provided by SystemPalette.
 
     This can be used to color items in a way that provides a more
@@ -235,11 +235,9 @@ QColor QQuickSystemPalette::placeholderText() const
 
     The color group of the palette. This can be one of:
 
-    \list
-    \li SystemPalette.Active (default)
-    \li SystemPalette.Inactive
-    \li SystemPalette.Disabled
-    \endlist
+    \value SystemPalette.Active     (default) QPalette::Active
+    \value SystemPalette.Inactive   QPalette::Inactive
+    \value SystemPalette.Disabled   QPalette::Disabled
 
     \sa QPalette::ColorGroup
 */

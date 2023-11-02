@@ -1,3 +1,6 @@
+# Copyright (C) 2022 The Qt Company Ltd.
+# SPDX-License-Identifier: BSD-3-Clause
+
 #####################################################################
 ## Quick Module:
 #####################################################################
@@ -204,6 +207,11 @@ qt_internal_add_qml_module(Quick
         util/qquickvalidator.cpp util/qquickvalidator_p.h
         util/qquickvaluetypes.cpp util/qquickvaluetypes_p.h
         util/qquickframeanimation.cpp util/qquickframeanimation_p.h
+    NO_UNITY_BUILD_SOURCES
+        scenegraph/qsgdefaultcontext.cpp # redefinition of 'qmlDisableDistanceField' (from qquicktextinput.cpp)
+        scenegraph/util/qsgtexturematerial.cpp # redefinition of 'isPowerOfTwo' (from qsgdefaultinternalimagenode.cpp)
+        util/qquickvalidator.cpp # expl. spec. of 'QMetaTypeId<QValidator *>' after inst.
+        quick_qmltyperegistrations.cpp # qquickvalidator_p.h: error: explicit specialization of 'QMetaTypeId<QValidator *>' after instantiation
     DEFINES
         QT_NO_FOREACH
         QT_NO_INTEGER_EVENT_COORDINATES
@@ -298,12 +306,6 @@ qt_internal_add_shaders(Quick "scenegraph_shaders"
         "scenegraph/shaders_ng/visualization.frag"
         "scenegraph/shaders_ng/visualization.vert"
 )
-
-if(ANDROID)
-    set_property(TARGET Quick APPEND PROPERTY QT_ANDROID_BUNDLED_FILES
-        qml
-    )
-endif()
 
 qt_internal_extend_target(Quick CONDITION QT_FEATURE_qml_network
     LIBRARIES
@@ -420,7 +422,7 @@ qt_internal_extend_target(Quick CONDITION QT_FEATURE_quick_sprite
 
 qt_internal_extend_target(Quick CONDITION QT_FEATURE_quick_draganddrop
     SOURCES
-        items/qquickdrag.cpp items/qquickdrag_p.h
+        items/qquickdrag.cpp items/qquickdrag_p.h items/qquickdrag_p_p.h
         items/qquickdroparea.cpp items/qquickdroparea_p.h
 )
 
@@ -476,6 +478,8 @@ qt_internal_extend_target(Quick CONDITION QT_FEATURE_quick_positioners
     SOURCES
         items/qquickpositioners.cpp items/qquickpositioners_p.h
         items/qquickpositioners_p_p.h
+    NO_UNITY_BUILD_SOURCES
+        items/qquickpositioners.cpp # redefinition of 'watchedChanges' (from qquickloader.cpp)
 )
 
 qt_internal_extend_target(Quick CONDITION QT_FEATURE_quick_flipable
@@ -491,7 +495,7 @@ qt_internal_extend_target(Quick CONDITION QT_FEATURE_quick_repeater
 
 qt_internal_extend_target(Quick CONDITION QT_FEATURE_quick_shadereffect
     SOURCES
-        items/qquickshadereffect.cpp items/qquickshadereffect_p.h
+        items/qquickshadereffect.cpp items/qquickshadereffect_p.h items/qquickshadereffect_p_p.h
         items/qquickshadereffectmesh.cpp items/qquickshadereffectmesh_p.h
         items/qquickshadereffectsource.cpp items/qquickshadereffectsource_p.h
 )
@@ -517,7 +521,14 @@ qt_internal_extend_target(Quick CONDITION QT_FEATURE_im
         util/qquickinputmethod.cpp util/qquickinputmethod_p.h
 )
 
-qt_internal_create_tracepoints(Quick qtquick.tracepoints)
+qt_internal_generate_tracepoints(Quick quick
+    SOURCES
+        scenegraph/qsgrenderloop.cpp
+        scenegraph/coreapi/qsgrenderer.cpp
+        scenegraph/qsgthreadedrenderloop.cpp
+        scenegraph/adaptations/software/qsgsoftwarethreadedrenderloop.cpp
+        scenegraph/qsgadaptationlayer.cpp
+)
 qt_internal_add_docs(Quick
     doc/qtquick.qdocconf
 )

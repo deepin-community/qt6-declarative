@@ -92,6 +92,9 @@ bool QQuickTest::qIsPolishScheduled(const QQuickItem *item)
             QVERIFY(QQuickTest::qWaitForPolish(window));
     \endcode
 
+    The QML equivalent of this function is
+    \l [QML]{TestCase::}{isPolishScheduled()}.
+
     \sa QQuickItem::polish(), QQuickItem::updatePolish(),
         QQuickTest::qWaitForPolish()
 */
@@ -150,6 +153,9 @@ bool QQuickTest::qWaitForPolish(const QQuickItem *item, int timeout)
 
     Returns \c true if \c qIsPolishScheduled(item) returns false for all items
     within \a timeout milliseconds, otherwise returns \c false.
+
+    The QML equivalent of this function is
+    \l [QML]{TestCase::}{waitForPolish()}.
 
     \sa QQuickItem::polish(), QQuickItem::updatePolish(),
         QQuickTest::qIsPolishScheduled()
@@ -217,7 +223,7 @@ static void handleCompileErrors(
     results.stopLogging();
 }
 
-bool qWaitForSignal(QObject *obj, const char* signal, int timeout = 5000)
+bool qWaitForSignal(QObject *obj, const char* signal, int timeout)
 {
     QSignalSpy spy(obj, signal);
     QElapsedTimer timer;
@@ -235,7 +241,8 @@ bool qWaitForSignal(QObject *obj, const char* signal, int timeout = 5000)
     return spy.size();
 }
 
-void maybeInvokeSetupMethod(QObject *setupObject, const char *member, QGenericArgument val0 = QGenericArgument(nullptr))
+template <typename... Args>
+void maybeInvokeSetupMethod(QObject *setupObject, const char *member, Args &&... args)
 {
     // It's OK if it doesn't exist: since we have more than one callback that
     // can be called, it makes sense if the user only implements one of them.
@@ -246,7 +253,7 @@ void maybeInvokeSetupMethod(QObject *setupObject, const char *member, QGenericAr
     const int methodIndex = setupMetaObject->indexOfMethod(member);
     if (methodIndex != -1) {
         const QMetaMethod method = setupMetaObject->method(methodIndex);
-        method.invoke(setupObject, val0);
+        method.invoke(setupObject, std::forward<Args>(args)...);
     }
 }
 
@@ -609,39 +616,33 @@ int quick_test_main_with_setup(int argc, char **argv, const char *name, const ch
             handleCompileErrors(fi, view.errors(), view.engine(), &view);
             continue;
         }
-        if (!QTestRootObject::instance()->hasQuit) {
-            // If the test already quit, then it was performed
-            // synchronously during setSource().  Otherwise it is
-            // an asynchronous test and we need to show the window
-            // and wait for the first frame to be rendered
-            // and then wait for quit indication.
-            view.setFramePosition(QPoint(50, 50));
-            if (view.size().isEmpty()) { // Avoid hangs with empty windows.
-                view.resize(200, 200);
-            }
-            view.show();
-            if (!QTest::qWaitForWindowExposed(&view)) {
-                qWarning().nospace()
-                    << "Test '" << QDir::toNativeSeparators(path) << "' window not exposed after show().";
-            }
-            view.requestActivate();
-            if (!QTest::qWaitForWindowActive(&view)) {
-                qWarning().nospace()
-                    << "Test '" << QDir::toNativeSeparators(path) << "' window not active after requestActivate().";
-            }
-            if (view.isExposed()) {
-                // Defer property update until event loop has started
-                QTimer::singleShot(0, []() {
-                    QTestRootObject::instance()->setWindowShown(true);
-                });
-            } else {
-                qWarning().nospace()
-                    << "Test '" << QDir::toNativeSeparators(path) << "' window was never exposed! "
-                    << "If the test case was expecting windowShown, it will hang.";
-            }
-            if (!QTestRootObject::instance()->hasQuit && QTestRootObject::instance()->hasTestCase())
-                eventLoop.exec();
+
+        view.setFramePosition(QPoint(50, 50));
+        if (view.size().isEmpty()) { // Avoid hangs with empty windows.
+            view.resize(200, 200);
         }
+        view.show();
+        if (!QTest::qWaitForWindowExposed(&view)) {
+            qWarning().nospace()
+                << "Test '" << QDir::toNativeSeparators(path) << "' window not exposed after show().";
+        }
+        view.requestActivate();
+        if (!QTest::qWaitForWindowActive(&view)) {
+            qWarning().nospace()
+                << "Test '" << QDir::toNativeSeparators(path) << "' window not active after requestActivate().";
+        }
+        if (view.isExposed()) {
+            // Defer property update until event loop has started
+            QTimer::singleShot(0, []() {
+                QTestRootObject::instance()->setWindowShown(true);
+            });
+        } else {
+            qWarning().nospace()
+                << "Test '" << QDir::toNativeSeparators(path) << "' window was never exposed! "
+                << "If the test case was expecting windowShown, it will hang.";
+        }
+        if (!QTestRootObject::instance()->hasQuit && QTestRootObject::instance()->hasTestCase())
+            eventLoop.exec();
     }
 
     if (setup)

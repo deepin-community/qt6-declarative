@@ -52,6 +52,7 @@ struct Q_QML_EXPORT QmlListWrapper : Object
     V4_OBJECT2(QmlListWrapper, Object)
     V4_NEEDS_DESTROY
     V4_PROTOTYPE(propertyListPrototype)
+    Q_MANAGED_TYPE(QmlListProperty)
 
     static ReturnedValue create(ExecutionEngine *engine, QObject *object, int propId, QMetaType propType);
     static ReturnedValue create(ExecutionEngine *engine, const QQmlListProperty<QObject> &prop, QMetaType propType);
@@ -60,15 +61,27 @@ struct Q_QML_EXPORT QmlListWrapper : Object
     QQmlListReference toListReference() const;
 
     static ReturnedValue virtualGet(const Managed *m, PropertyKey id, const Value *receiver, bool *hasProperty);
+    static qint64 virtualGetLength(const Managed *m);
     static bool virtualPut(Managed *m, PropertyKey id, const Value &value, Value *receiver);
     static OwnPropertyKeyIterator *virtualOwnPropertyKeys(const Object *m, Value *target);
 };
 
 struct PropertyListPrototype : Object
 {
-    void init(ExecutionEngine *engine);
+    V4_PROTOTYPE(arrayPrototype)
 
+    void init();
+
+    static ReturnedValue method_pop(const FunctionObject *, const Value *thisObject, const Value *argv, int argc);
     static ReturnedValue method_push(const FunctionObject *, const Value *thisObject, const Value *argv, int argc);
+    static ReturnedValue method_shift(const FunctionObject *, const Value *thisObject, const Value *argv, int argc);
+    static ReturnedValue method_splice(const FunctionObject *, const Value *thisObject, const Value *argv, int argc);
+    static ReturnedValue method_unshift(const FunctionObject *, const Value *thisObject, const Value *argv, int argc);
+    static ReturnedValue method_indexOf(const FunctionObject *, const Value *thisObject, const Value *argv, int argc);
+    static ReturnedValue method_lastIndexOf(const FunctionObject *, const Value *thisObject, const Value *argv, int argc);
+    static ReturnedValue method_sort(const FunctionObject *, const Value *thisObject, const Value *argv, int argc);
+    static ReturnedValue method_get_length(const FunctionObject *, const Value *thisObject, const Value *argv, int argc);
+    static ReturnedValue method_set_length(const FunctionObject *, const Value *thisObject, const Value *argv, int argc);
 };
 
 }

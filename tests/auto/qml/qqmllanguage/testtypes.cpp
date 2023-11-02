@@ -107,7 +107,7 @@ void registerTypes()
 
     {
         // A metatype for the namespace to hold the enums
-        static const auto metaType = QQmlPrivate::metaTypeForNamespace(
+        Q_CONSTINIT static auto metaType = QQmlPrivate::metaTypeForNamespace(
                     [](const QtPrivate::QMetaTypeInterface *) {
             return &ValueTypeWithEnum1::staticMetaObject;
         }, "ValueTypeWithEnum1");
@@ -132,7 +132,7 @@ void registerTypes()
 
     {
         // A metatype for the namespace to hold the enums
-        static const auto metaType = QQmlPrivate::metaTypeForNamespace(
+        Q_CONSTINIT static auto metaType = QQmlPrivate::metaTypeForNamespace(
                     [](const QtPrivate::QMetaTypeInterface *) {
             return &ValueTypeWithEnum2::staticMetaObject;
         }, "ValueTypeWithEnum2");
@@ -148,6 +148,22 @@ void registerTypes()
 
     qmlRegisterTypesAndRevisions<BaseValueType>("ValueTypes", 1);
     qmlRegisterTypesAndRevisions<DerivedValueType>("ValueTypes", 1);
+    qmlRegisterTypesAndRevisions<GetterObject>("Test", 1);
+
+    qmlRegisterNamespaceAndRevisions(&TypedEnums::staticMetaObject, "TypedEnums", 1);
+    qmlRegisterTypesAndRevisions<ObjectWithEnums>("TypedEnums", 1);
+    qmlRegisterTypesAndRevisions<GadgetWithEnums>("TypedEnums", 1);
+
+    QMetaType::registerConverter<UnregisteredValueDerivedType, UnregisteredValueBaseType>();
+    qmlRegisterTypesAndRevisions<UnregisteredValueTypeHandler>("Test", 1);
+
+    qmlRegisterTypesAndRevisions<Greeter>("QmlOtherThis", 1);
+    qmlRegisterTypesAndRevisions<BirthdayParty>("People", 1);
+    qmlRegisterTypesAndRevisions<AttachedInCtor>("Test", 1);
+
+    qmlRegisterTypesAndRevisions<ByteArrayReceiver>("Test", 1);
+
+    qmlRegisterTypesAndRevisions<Counter>("Test", 1);
 }
 
 QVariant myCustomVariantTypeConverter(const QString &data)

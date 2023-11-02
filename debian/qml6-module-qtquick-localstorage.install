@@ -1,3 +1,4 @@
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/qml/QtQuick/LocalStorage/libqmllocalstorageplugin.so
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/qml/QtQuick/LocalStorage/plugins.qmltypes
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/qml/QtQuick/LocalStorage/qmldir
+usr/lib/${DEB_HOST_MULTIARCH}/libQt6QmlLocalStorage.so.*

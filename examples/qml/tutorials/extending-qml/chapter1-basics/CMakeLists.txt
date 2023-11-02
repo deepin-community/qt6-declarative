@@ -1,3 +1,6 @@
+# Copyright (C) 2022 The Qt Company Ltd.
+# SPDX-License-Identifier: BSD-3-Clause
+
 cmake_minimum_required(VERSION 3.16)
 project(chapter1-basics LANGUAGES CXX)
 
@@ -22,15 +25,14 @@ set_target_properties(chapter1-basics PROPERTIES
 )
 
 target_link_libraries(chapter1-basics PUBLIC
-    Qt::Core
-    Qt::Gui
-    Qt::Qml
-    Qt::Quick
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Qml
+    Qt6::Quick
 )
 #![0]
 qt_add_qml_module(chapter1-basics
     URI Charts
-    VERSION 1.0
     QML_FILES app.qml
     NO_RESOURCE_TARGET_PATH
     DEPENDENCIES QtQuick

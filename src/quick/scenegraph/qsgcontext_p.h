@@ -101,6 +101,7 @@ public:
 #endif
     virtual QAnimationDriver *createAnimationDriver(QObject *parent);
     virtual float vsyncIntervalForAnimationDriver(QAnimationDriver *driver);
+    virtual bool isVSyncDependent(QAnimationDriver *driver);
 
     virtual QSize minimumFBOSize() const;
     virtual QSurfaceFormat defaultSurfaceFormat() const = 0;
@@ -165,6 +166,7 @@ public:
 
     virtual int maxTextureSize() const = 0;
 
+    void unregisterFontengineForCleanup(QFontEngine *engine);
     void registerFontengineForCleanup(QFontEngine *engine);
 
     virtual QRhi *rhi() const;
@@ -172,6 +174,7 @@ public:
 Q_SIGNALS:
     void initialized();
     void invalidated();
+    void releaseCachedResourcesRequested();
 
 public Q_SLOTS:
     void textureFactoryDestroyed(QObject *o);
@@ -185,7 +188,9 @@ protected:
     QSet<QSGTexture *> m_texturesToDelete;
     QHash<QString, QSGDistanceFieldGlyphCache *> m_glyphCaches;
 
-    QSet<QFontEngine *> m_fontEnginesToClean;
+    // References to font engines that are currently in use by native rendering glyph nodes
+    // and which must be kept alive as long as they are used in the render thread.
+    QHash<QFontEngine *, int> m_fontEnginesToClean;
 };
 
 QT_END_NAMESPACE

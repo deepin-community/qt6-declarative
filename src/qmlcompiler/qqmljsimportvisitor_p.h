@@ -33,18 +33,29 @@
 
 QT_BEGIN_NAMESPACE
 
+namespace QQmlJS::Dom {
+class QQmlDomAstCreatorWithQQmlJSScope;
+}
+
 struct QQmlJSResourceFileMapper;
 class Q_QMLCOMPILER_PRIVATE_EXPORT QQmlJSImportVisitor : public QQmlJS::AST::Visitor
 {
 public:
+    QQmlJSImportVisitor();
     QQmlJSImportVisitor(const QQmlJSScope::Ptr &target,
                         QQmlJSImporter *importer, QQmlJSLogger *logger,
                         const QString &implicitImportDirectory,
                         const QStringList &qmldirFiles = QStringList());
     ~QQmlJSImportVisitor();
 
+    using QQmlJS::AST::Visitor::endVisit;
+    using QQmlJS::AST::Visitor::postVisit;
+    using QQmlJS::AST::Visitor::preVisit;
+    using QQmlJS::AST::Visitor::visit;
+
     QQmlJSScope::Ptr result() const { return m_exportedRootScope; }
 
+    const QQmlJSLogger *logger() const { return m_logger; }
     QQmlJSLogger *logger() { return m_logger; }
 
     QQmlJSImporter::ImportedTypes imports() const { return m_rootScopeImports; }
@@ -63,7 +74,9 @@ public:
     static QString implicitImportDirectory(
             const QString &localFile, QQmlJSResourceFileMapper *mapper);
 
-    QQmlJSImporter *importer() { return m_importer; } // ### should this be restricted?
+    // ### should this be restricted?
+    QQmlJSImporter *importer() { return m_importer; }
+    const QQmlJSImporter *importer() const { return m_importer; }
 
     struct UnfinishedBinding
     {
@@ -146,7 +159,11 @@ protected:
     QQmlJSImporter *m_importer = nullptr;
     QQmlJSLogger *m_logger = nullptr;
 
-    QStringView m_inlineComponentName;
+    using RootDocumentNameType = QQmlJSScope::RootDocumentNameType;
+    using InlineComponentNameType = QQmlJSScope::InlineComponentNameType;
+    using InlineComponentOrDocumentRootName = QQmlJSScope::RootDocumentNameType;
+    QQmlJSScope::InlineComponentOrDocumentRootName m_currentRootName =
+            QQmlJSScope::RootDocumentNameType();
     bool m_nextIsInlineComponent = false;
     bool m_rootIsSingleton = false;
     QQmlJSScope::Ptr m_savedBindingOuterScope;
@@ -243,7 +260,6 @@ protected:
     void checkRequiredProperties();
     void processPropertyTypes();
     void processPropertyBindingObjects();
-    void checkSignals();
     void flushPendingSignalParameters();
 
     QQmlJSScope::ConstPtr scopeById(const QString &id, const QQmlJSScope::ConstPtr &current);
@@ -311,13 +327,15 @@ protected:
     QVector<QQmlJSScope::Ptr> m_objectDefinitionScopes;
 
     QHash<QQmlJSScope::Ptr, QVector<WithVisibilityScope<QString>>> m_propertyBindings;
-    QHash<QQmlJSScope::Ptr, QVector<WithVisibilityScope<QPair<QString, QStringList>>>> m_signals;
 
     QHash<QQmlJS::SourceLocation, QQmlJSMetaSignalHandler> m_signalHandlers;
     QSet<QQmlJSScope::ConstPtr> m_literalScopesToCheck;
     QQmlJS::SourceLocation m_pendingSignalHandler;
 
 private:
+    void checkSignal(
+            const QQmlJSScope::ConstPtr &signalScope, const QQmlJS::SourceLocation &location,
+            const QString &handlerName, const QStringList &handlerParameters);
     void importBaseModules();
     void resolveAliasesAndIds();
     void handleIdDeclaration(QQmlJS::AST::UiScriptBinding *scriptBinding);
@@ -331,6 +349,14 @@ private:
                               const QQmlJS::SourceLocation &location);
     void enterRootScope(QQmlJSScope::ScopeType type, const QString &name,
                            const QQmlJS::SourceLocation &location);
+
+    void importFromHost(const QString &path, const QString &prefix,
+                        const QQmlJS::SourceLocation &location);
+    void importFromQrc(const QString &path, const QString &prefix,
+                       const QQmlJS::SourceLocation &location);
+
+public:
+    friend class QQmlJS::Dom::QQmlDomAstCreatorWithQQmlJSScope;
 };
 
 QT_END_NAMESPACE

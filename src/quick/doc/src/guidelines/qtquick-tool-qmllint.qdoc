@@ -46,7 +46,7 @@ To get an overview and explanation of all available command line options, run \c
 
 qmllint can warn you about code that cannot be compiled by \l{qmlsc}.
 
-These warnigs are not enabled by default. In order to enable them specify
+These warnings are not enabled by default. In order to enable them specify
 \c{--compiler warning} or adjust your settings file accordingly.
 
 \section2 Marking components and properties as deprecated
@@ -135,6 +135,6 @@ level. Use the special filename '-' to write to stdout instead of a file.
 This can be used to more easily integrate qmllint in your pre-commit hooks or
 CI testing.
 
-\sa {Type Description Files}{qmltypes}
-\sa {QtQuick Tools and Utilities}{qtquick-tools-and-utilities}
+\sa {Type Description Files}
+\sa {Qt Quick Tools and Utilities}
 */

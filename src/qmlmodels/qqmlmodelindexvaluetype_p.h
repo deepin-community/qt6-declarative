@@ -54,6 +54,8 @@ public:
 
     static QPersistentModelIndex toPersistentModelIndex(const QModelIndex &index)
     { return QPersistentModelIndex(index); }
+
+    operator QModelIndex() const { return v; }
 };
 
 struct QQmlPersistentModelIndexValueType
@@ -82,6 +84,8 @@ public:
     inline bool isValid() const { return v.isValid(); }
     inline QAbstractItemModel *model() const { return const_cast<QAbstractItemModel *>(v.model()); }
     inline quint64 internalId() const { return v.internalId(); }
+
+    operator QPersistentModelIndex() const { return v; }
 };
 
 struct QQmlItemSelectionRangeValueType
@@ -129,6 +133,35 @@ public:
     inline QAbstractItemModel *model() const { return const_cast<QAbstractItemModel *>(v.model()); }
     inline bool isValid() const { return v.isValid(); }
     inline bool isEmpty() const { return v.isEmpty(); }
+
+    operator QItemSelectionRange() const { return v; }
+};
+
+struct QModelIndexListForeign
+{
+    Q_GADGET
+    QML_ANONYMOUS
+    QML_SEQUENTIAL_CONTAINER(QModelIndex)
+    QML_FOREIGN(QModelIndexList)
+    QML_ADDED_IN_VERSION(2, 0)
+};
+
+struct QModelIndexStdVectorForeign
+{
+    Q_GADGET
+    QML_ANONYMOUS
+    QML_SEQUENTIAL_CONTAINER(QModelIndex)
+    QML_FOREIGN(std::vector<QModelIndex>)
+    QML_ADDED_IN_VERSION(2, 0)
+};
+
+struct QItemSelectionForeign
+{
+    Q_GADGET
+    QML_ANONYMOUS
+    QML_SEQUENTIAL_CONTAINER(QItemSelectionRange)
+    QML_FOREIGN(QItemSelection)
+    QML_ADDED_IN_VERSION(2, 0)
 };
 
 #undef QLISTVALUETYPE_INVOKABLE_API

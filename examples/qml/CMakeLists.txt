@@ -1,14 +1,11 @@
-add_subdirectory(referenceexamples)
+# Copyright (C) 2022 The Qt Company Ltd.
+# SPDX-License-Identifier: BSD-3-Clause
+
 add_subdirectory(tutorials)
-qt_internal_add_example(shell)
-if(TARGET Qt::Quick)
-    qt_internal_add_example(qmlextensionplugins)
-    qt_internal_add_example(xmlhttprequest)
-    if (TARGET Qt::lupdate)
+if(TARGET Qt6::Quick)
+    if (TARGET Qt6::lupdate)
         qt_internal_add_example(qml-i18n)
     endif()
     qt_internal_add_example(dynamicscene)
 endif()
-if(QT_FEATURE_qml_network AND TARGET Qt::Quick)
-    qt_internal_add_example(networkaccessmanagerfactory)
-endif()
+

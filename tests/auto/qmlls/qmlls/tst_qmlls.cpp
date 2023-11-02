@@ -12,6 +12,7 @@
 
 #include <iostream>
 
+using namespace Qt::StringLiterals;
 using namespace QLspSpecification;
 
 class DiagnosticsHandler
@@ -94,10 +95,16 @@ tst_Qmlls::tst_Qmlls()
     });
 
     connect(&m_server, &QProcess::readyReadStandardError, this,
-            [this]() { qWarning() << "LSPerr" << m_server.readAllStandardError(); });
+            [this]() {
+        QProcess::ProcessChannel tmp = m_server.readChannel();
+        m_server.setReadChannel(QProcess::StandardError);
+        while (m_server.canReadLine())
+            std::cerr << m_server.readLine().constData();
+        m_server.setReadChannel(tmp);
+    });
 
     m_qmllsPath =
-            QLibraryInfo::path(QLibraryInfo::LibraryExecutablesPath) + QLatin1String("/qmlls");
+            QLibraryInfo::path(QLibraryInfo::BinariesPath) + QLatin1String("/qmlls");
 #ifdef Q_OS_WIN
     m_qmllsPath += QLatin1String(".exe");
 #endif
@@ -127,8 +134,8 @@ void tst_Qmlls::initTestCase()
     tDoc.publishDiagnostics = pDiag;
     pDiag.versionSupport = true;
     clientInfo.capabilities.textDocument = tDoc;
-    QJsonObject workspace({ { u"didChangeWatchedFiles"_qs,
-                              QJsonObject({ { u"dynamicRegistration"_qs, true } }) } });
+    QJsonObject workspace({ { u"didChangeWatchedFiles"_s,
+                              QJsonObject({ { u"dynamicRegistration"_s, true } }) } });
     clientInfo.capabilities.workspace = workspace;
     bool didInit = false;
     m_protocol.registerRegistrationRequestHandler([this](const QByteArray &,
@@ -207,8 +214,7 @@ void tst_Qmlls::didOpenTextDocument()
 
                     QString title = QString::fromUtf8(action.title);
                     QVERIFY(action.kind.has_value());
-                    QCOMPARE(QString::fromUtf8(action.kind.value()),
-                             QLatin1StringView("refactor.rewrite"));
+                    QCOMPARE(QString::fromUtf8(action.kind.value()), QLatin1StringView("quickfix"));
                     QVERIFY(action.edit.has_value());
                     WorkspaceEdit edit = action.edit.value();
 

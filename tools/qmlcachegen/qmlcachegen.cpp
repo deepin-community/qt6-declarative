@@ -56,7 +56,7 @@ static bool argumentsFromCommandLineAndFile(QStringList& allArguments, const QSt
 int main(int argc, char **argv)
 {
     // Produce reliably the same output for the same input by disabling QHash's random seeding.
-    qSetGlobalQHashSeed(0);
+    QHashSeed::setDeterministicGlobalSeed();
 
     QCoreApplication app(argc, argv);
     QCoreApplication::setApplicationName(QStringLiteral("qmlcachegen"));
@@ -98,6 +98,10 @@ int main(int argc, char **argv)
                 QCoreApplication::translate(
                     "main", "Generate only byte code for bindings and functions, no C++ code"));
     parser.addOption(onlyBytecode);
+    QCommandLineOption verboseOption(
+            QStringLiteral("verbose"),
+            QCoreApplication::translate("main", "Output compile warnings"));
+    parser.addOption(verboseOption);
 
     QCommandLineOption outputFileOption(QStringLiteral("o"), QCoreApplication::translate("main", "Output file name"), QCoreApplication::translate("main", "file name"));
     parser.addOption(outputFileOption);
@@ -137,7 +141,7 @@ int main(int argc, char **argv)
     const QStringList sources = parser.positionalArguments();
     if (sources.isEmpty()){
         parser.showHelp();
-    } else if (sources.count() > 1 && (target != GenerateLoader && target != GenerateLoaderStandAlone)) {
+    } else if (sources.size() > 1 && (target != GenerateLoader && target != GenerateLoaderStandAlone)) {
         fprintf(stderr, "%s\n", qPrintable(QStringLiteral("Too many input files specified: '") + sources.join(QStringLiteral("' '")) + QLatin1Char('\'')));
         return EXIT_FAILURE;
     }
@@ -233,8 +237,14 @@ int main(int argc, char **argv)
             }
         } else {
             QStringList importPaths;
+
+            if (parser.isSet(resourceOption)) {
+                importPaths.append(QLatin1String(":/qt-project.org/imports"));
+                importPaths.append(QLatin1String(":/qt/qml"));
+            };
+
             if (parser.isSet(importPathOption))
-                importPaths = parser.values(importPathOption);
+                importPaths.append(parser.values(importPathOption));
 
             if (!parser.isSet(bareOption))
                 importPaths.append(QLibraryInfo::path(QLibraryInfo::QmlImportsPath));
@@ -244,16 +254,11 @@ int main(int argc, char **argv)
             QQmlJSLogger logger;
 
             // Always trigger the qFatal() on "pragma Strict" violations.
-            logger.setCategoryLevel(Log_Compiler, QtCriticalMsg);
-            logger.setCategoryIgnored(Log_Compiler, false);
-            logger.setCategoryFatal(Log_Compiler, true);
+            logger.setCategoryLevel(qmlCompiler, QtWarningMsg);
+            logger.setCategoryIgnored(qmlCompiler, false);
+            logger.setCategoryFatal(qmlCompiler, true);
 
-            // By default, we're completely silent,
-            // as the lcAotCompiler category default is QtFatalMsg
-            const bool loggingEnabled = lcAotCompiler().isDebugEnabled()
-                    || lcAotCompiler().isInfoEnabled() || lcAotCompiler().isWarningEnabled()
-                    || lcAotCompiler().isCriticalEnabled();
-            if (!loggingEnabled)
+            if (!parser.isSet(verboseOption))
                 logger.setSilent(true);
 
             QQmlJSAotCompiler cppCodeGen(
@@ -269,8 +274,8 @@ int main(int argc, char **argv)
 
             if (!warnings.isEmpty()) {
                 logger.log(QStringLiteral("Type warnings occurred while compiling file:"),
-                           Log_Import, QQmlJS::SourceLocation());
-                logger.processMessages(warnings, Log_Import);
+                           qmlImport, QQmlJS::SourceLocation());
+                logger.processMessages(warnings, qmlImport);
             }
         }
     } else if (inputFile.endsWith(QLatin1String(".js")) || inputFile.endsWith(QLatin1String(".mjs"))) {

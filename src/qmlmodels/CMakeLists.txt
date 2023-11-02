@@ -1,3 +1,6 @@
+# Copyright (C) 2022 The Qt Company Ltd.
+# SPDX-License-Identifier: BSD-3-Clause
+
 #####################################################################
 ## QmlModels Module:
 #####################################################################
@@ -8,6 +11,8 @@ qt_internal_add_qml_module(QmlModels
     DESIGNER_SUPPORTED
     PLUGIN_TARGET modelsplugin
     CLASS_NAME QtQmlModelsPlugin
+    DEPENDENCIES
+        QtQml.Base/auto
     SOURCES
         qqmlchangeset.cpp qqmlchangeset_p.h
         qqmlmodelsmodule.cpp qqmlmodelsmodule_p.h
@@ -58,8 +63,12 @@ qt_internal_extend_target(QmlModels CONDITION QT_FEATURE_qml_delegate_model
     SOURCES
         qqmlabstractdelegatecomponent.cpp qqmlabstractdelegatecomponent_p.h
         qqmladaptormodel.cpp qqmladaptormodel_p.h
+        qqmladaptormodelenginedata.cpp qqmladaptormodelenginedata_p.h
         qqmldelegatemodel.cpp qqmldelegatemodel_p.h
         qqmldelegatemodel_p_p.h
+        qqmldmabstractitemmodeldata.cpp qqmldmabstractitemmodeldata_p.h
+        qqmldmlistaccessordata.cpp qqmldmlistaccessordata_p.h
+        qqmldmobjectdata.cpp qqmldmobjectdata_p.h
         qqmllistaccessor.cpp qqmllistaccessor_p.h
         qqmllistcompositor.cpp qqmllistcompositor_p.h
         qquickpackage.cpp qquickpackage_p.h

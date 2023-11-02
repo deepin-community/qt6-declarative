@@ -36,31 +36,38 @@ public:
         return data.resize(size);
     }
 
-    int count() const { return data.size(); }
+    int count() const {
+        // the property cache vector will never contain more thant INT_MAX many elements
+        return int(data.size());
+    }
     void clear()
     {
-        for (int i = 0; i < data.size(); ++i) {
-            const auto &cache = data.at(i);
-            if (cache.isT2()) {
-                if (QQmlPropertyCache *data = cache.asT2())
-                    data->release();
-            } else if (const QQmlPropertyCache *data = cache.asT1()) {
-                data->release();
-            }
-        }
+        for (int i = 0; i < data.size(); ++i)
+            releaseElement(i);
         data.clear();
+    }
+
+    void resetAndResize(int size)
+    {
+        for (int i = 0; i < data.size(); ++i) {
+            releaseElement(i);
+            data[i] = BiPointer();
+        }
+        data.resize(size);
     }
 
     void append(const QQmlPropertyCache::ConstPtr &cache) {
         cache->addref();
-        data.append(QBiPointer<const QQmlPropertyCache, QQmlPropertyCache>(cache.data()));
+        data.append(BiPointer(cache.data()));
         Q_ASSERT(data.last().isT1());
+        Q_ASSERT(data.size() <= std::numeric_limits<int>::max());
     }
 
     void appendOwn(const QQmlPropertyCache::Ptr &cache) {
         cache->addref();
-        data.append(QBiPointer<const QQmlPropertyCache, QQmlPropertyCache>(cache.data()));
+        data.append(BiPointer(cache.data()));
         Q_ASSERT(data.last().isT2());
+        Q_ASSERT(data.size() <= std::numeric_limits<int>::max());
     }
 
     QQmlPropertyCache::ConstPtr at(int index) const
@@ -117,8 +124,20 @@ public:
     }
 
 private:
+    void releaseElement(int i)
+    {
+        const auto &cache = data.at(i);
+        if (cache.isT2()) {
+            if (QQmlPropertyCache *data = cache.asT2())
+                data->release();
+        } else if (const QQmlPropertyCache *data = cache.asT1()) {
+            data->release();
+        }
+    }
+
     Q_DISABLE_COPY(QQmlPropertyCacheVector)
-    QVector<QBiPointer<const QQmlPropertyCache, QQmlPropertyCache>> data;
+    using BiPointer = QBiPointer<const QQmlPropertyCache, QQmlPropertyCache>;
+    QVector<BiPointer> data;
 };
 
 QT_END_NAMESPACE

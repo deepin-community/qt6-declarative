@@ -1,9 +1,9 @@
 // Copyright (C) 2016 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GFDL-1.3-no-invariants-only
 
-import QtQuick 2.2
-import QtQuick.Layouts 1.2
-import QtQuick.Window 2.2
+import QtQuick
+import QtQuick.Layouts
+import QtQuick.Window
 
 Window {
     //! [binddefaultsize]
@@ -25,7 +25,7 @@ Window {
     //! [anchoring]
         spacing: 6
         Rectangle {
-            color: 'azure'
+            color: 'orange'
             Layout.fillWidth: true
             Layout.minimumWidth: 50
             Layout.preferredWidth: 100

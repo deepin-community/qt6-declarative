@@ -23,7 +23,10 @@
 #include <QtCore/qhash.h>
 
 #include <QtQml/private/qqmljssourcelocation_p.h>
+#include <QtQml/private/qqmltranslation_p.h>
 
+#include "qqmlsaconstants.h"
+#include "qqmlsa.h"
 #include "qqmljsannotation_p.h"
 
 // MetaMethod and MetaProperty have both type names and actual QQmlJSScope types.
@@ -38,6 +41,13 @@
 
 QT_BEGIN_NAMESPACE
 
+enum ScriptBindingValueType : unsigned int {
+    ScriptValue_Unknown,
+    ScriptValue_Undefined // property int p: undefined
+};
+
+using QQmlJSMetaMethodType = QQmlSA::MethodType;
+
 class QQmlJSTypeResolver;
 class QQmlJSScope;
 class QQmlJSMetaEnum
@@ -46,8 +56,10 @@ class QQmlJSMetaEnum
     QList<int> m_values; // empty if values unknown.
     QString m_name;
     QString m_alias;
+    QString m_typeName;
     QSharedPointer<const QQmlJSScope> m_type;
     bool m_isFlag = false;
+    bool m_scoped = true;
 
 public:
     QQmlJSMetaEnum() = default;
@@ -64,6 +76,9 @@ public:
     bool isFlag() const { return m_isFlag; }
     void setIsFlag(bool isFlag) { m_isFlag = isFlag; }
 
+    bool isScoped() const { return m_scoped; }
+    void setScoped(bool v) { m_scoped = v; }
+
     void addKey(const QString &key) { m_keys.append(key); }
     QStringList keys() const { return m_keys; }
 
@@ -73,6 +88,9 @@ public:
     bool hasValues() const { return !m_values.isEmpty(); }
     int value(const QString &key) const { return m_values.value(m_keys.indexOf(key)); }
     bool hasKey(const QString &key) const { return m_keys.indexOf(key) != -1; }
+
+    QString typeName() const { return m_typeName; }
+    void setTypeName(const QString &typeName) { m_typeName = typeName; }
 
     QSharedPointer<const QQmlJSScope> type() const { return m_type; }
     void setType(const QSharedPointer<const QQmlJSScope> &type) { m_type = type; }
@@ -98,21 +116,74 @@ public:
     }
 };
 
+class QQmlJSMetaParameter
+{
+public:
+    /*!
+       \internal
+       A non-const parameter is passed either by pointer or by value, depending on its access
+       semantics. For types with reference access semantics, they can be const and will be passed
+       then as const pointer. Const references are treated like values (i.e. non-const).
+     */
+    enum Constness {
+        NonConst = 0,
+        Const,
+    };
+
+    QQmlJSMetaParameter(const QString &name, const QString &typeName,
+                        Constness typeQualifier = NonConst,
+                        QWeakPointer<const QQmlJSScope> type = {})
+        : m_name(name), m_typeName(typeName), m_type(type), m_typeQualifier(typeQualifier)
+    {
+    }
+
+    QString name() const { return m_name; }
+    void setName(const QString &name) { m_name = name; }
+    QString typeName() const { return m_typeName; }
+    void setTypeName(const QString &typeName) { m_typeName = typeName; }
+    QSharedPointer<const QQmlJSScope> type() const { return m_type.toStrongRef(); }
+    void setType(QWeakPointer<const QQmlJSScope> type) { m_type = type; }
+    Constness typeQualifier() const { return m_typeQualifier; }
+    void setTypeQualifier(Constness typeQualifier) { m_typeQualifier = typeQualifier; }
+    bool isPointer() const { return m_isPointer; }
+    void setIsPointer(bool isPointer) { m_isPointer = isPointer; }
+    bool isList() const { return m_isList; }
+    void setIsList(bool isList) { m_isList = isList; }
+
+    friend bool operator==(const QQmlJSMetaParameter &a, const QQmlJSMetaParameter &b)
+    {
+        return a.m_name == b.m_name && a.m_typeName == b.m_typeName
+                && a.m_type.toStrongRef().data() == b.m_type.toStrongRef().data()
+                && a.m_typeQualifier == b.m_typeQualifier;
+    }
+
+    friend bool operator!=(const QQmlJSMetaParameter &a, const QQmlJSMetaParameter &b)
+    {
+        return !(a == b);
+    }
+
+    friend size_t qHash(const QQmlJSMetaParameter &e, size_t seed = 0)
+    {
+        return qHashMulti(seed, e.m_name, e.m_typeName, e.m_type.toStrongRef().data(),
+                          e.m_typeQualifier);
+    }
+
+private:
+    QString m_name;
+    QString m_typeName;
+    QWeakPointer<const QQmlJSScope> m_type;
+    Constness m_typeQualifier = NonConst;
+    bool m_isPointer = false;
+    bool m_isList = false;
+};
+
 class QQmlJSMetaMethod
 {
 public:
-    enum Type {
-        Signal,
-        Slot,
-        Method
-    };
+    enum Access { Private, Protected, Public };
+    using MethodType = QQmlJSMetaMethodType;
 
-    enum Access {
-        Private,
-        Protected,
-        Public
-    };
-
+public:
     /*! \internal
 
         Represents a relative JavaScript function/expression index within a type
@@ -131,9 +202,9 @@ public:
 
     QQmlJSMetaMethod() = default;
     explicit QQmlJSMetaMethod(QString name, QString returnType = QString())
-        : m_name(std::move(name))
-        , m_returnTypeName(std::move(returnType))
-        , m_methodType(Method)
+        : m_name(std::move(name)),
+          m_returnTypeName(std::move(returnType)),
+          m_methodType(MethodType::Method)
     {}
 
     QString methodName() const { return m_name; }
@@ -147,37 +218,31 @@ public:
         m_returnType = type;
     }
 
-    QStringList parameterNames() const { return m_paramNames; }
-    QStringList parameterTypeNames() const { return m_paramTypeNames; }
-    QList<QSharedPointer<const QQmlJSScope>> parameterTypes() const
+    QList<QQmlJSMetaParameter> parameters() const { return m_parameters; }
+
+    QStringList parameterNames() const
     {
-        QList<QSharedPointer<const QQmlJSScope>> result;
-        for (const auto &type : m_paramTypes)
-            result.append(type.toStrongRef());
-        return result;
-    }
-    void setParameterTypes(const QList<QSharedPointer<const QQmlJSScope>> &types)
-    {
-        Q_ASSERT(types.size() == m_paramNames.size());
-        m_paramTypes.clear();
-        for (const auto &type : types)
-            m_paramTypes.append(type);
-    }
-    void addParameter(const QString &name, const QString &typeName,
-                      const QSharedPointer<const QQmlJSScope> &type = {})
-    {
-        m_paramNames.append(name);
-        m_paramTypeNames.append(typeName);
-        m_paramTypes.append(type);
+        QStringList names;
+        for (const auto &p : m_parameters)
+            names.append(p.name());
+
+        return names;
     }
 
-    int methodType() const { return m_methodType; }
-    void setMethodType(Type methodType) { m_methodType = methodType; }
+    void setParameters(const QList<QQmlJSMetaParameter> &parameters) { m_parameters = parameters; }
+
+    void addParameter(const QQmlJSMetaParameter &p) { m_parameters.append(p); }
+
+    QQmlJSMetaMethodType methodType() const { return m_methodType; }
+    void setMethodType(MethodType methodType) { m_methodType = methodType; }
 
     Access access() const { return m_methodAccess; }
 
     int revision() const { return m_revision; }
     void setRevision(int r) { m_revision = r; }
+
+    bool isCloned() const { return m_isCloned; }
+    void setIsCloned(bool isCloned) { m_isCloned= isCloned; }
 
     bool isConstructor() const { return m_isConstructor; }
     void setIsConstructor(bool isConstructor) { m_isConstructor = isConstructor; }
@@ -199,21 +264,36 @@ public:
     const QVector<QQmlJSAnnotation>& annotations() const { return m_annotations; }
     void setAnnotations(QVector<QQmlJSAnnotation> annotations) { m_annotations = annotations; }
 
-    void setJsFunctionIndex(RelativeFunctionIndex index) { m_jsFunctionIndex = index; }
-    RelativeFunctionIndex jsFunctionIndex() const { return m_jsFunctionIndex; }
+    void setJsFunctionIndex(RelativeFunctionIndex index)
+    {
+        Q_ASSERT(!m_isConstructor);
+        m_relativeFunctionIndex = index;
+    }
+
+    RelativeFunctionIndex jsFunctionIndex() const
+    {
+        Q_ASSERT(!m_isConstructor);
+        return m_relativeFunctionIndex;
+    }
+
+    void setConstructorIndex(RelativeFunctionIndex index)
+    {
+        Q_ASSERT(m_isConstructor);
+        m_relativeFunctionIndex = index;
+    }
+
+    RelativeFunctionIndex constructorIndex() const
+    {
+        Q_ASSERT(m_isConstructor);
+        return m_relativeFunctionIndex;
+    }
 
     friend bool operator==(const QQmlJSMetaMethod &a, const QQmlJSMetaMethod &b)
     {
-        return a.m_name == b.m_name
-                && a.m_returnTypeName == b.m_returnTypeName
-                && a.m_returnType == b.m_returnType
-                && a.m_paramNames == b.m_paramNames
-                && a.m_paramTypeNames == b.m_paramTypeNames
-                && a.m_paramTypes == b.m_paramTypes
-                && a.m_annotations == b.m_annotations
-                && a.m_methodType == b.m_methodType
-                && a.m_methodAccess == b.m_methodAccess
-                && a.m_revision == b.m_revision
+        return a.m_name == b.m_name && a.m_returnTypeName == b.m_returnTypeName
+                && a.m_returnType == b.m_returnType && a.m_parameters == b.m_parameters
+                && a.m_annotations == b.m_annotations && a.m_methodType == b.m_methodType
+                && a.m_methodAccess == b.m_methodAccess && a.m_revision == b.m_revision
                 && a.m_isConstructor == b.m_isConstructor;
     }
 
@@ -229,16 +309,15 @@ public:
         seed = combine(seed, method.m_name);
         seed = combine(seed, method.m_returnTypeName);
         seed = combine(seed, method.m_returnType.toStrongRef().data());
-        seed = combine(seed, method.m_paramNames);
-        seed = combine(seed, method.m_paramTypeNames);
         seed = combine(seed, method.m_annotations);
         seed = combine(seed, method.m_methodType);
         seed = combine(seed, method.m_methodAccess);
         seed = combine(seed, method.m_revision);
         seed = combine(seed, method.m_isConstructor);
 
-        for (const auto &type : method.m_paramTypes)
-            seed = combine(seed, type.toStrongRef().data());
+        for (const auto &type : method.m_parameters) {
+            seed = combine(seed, type);
+        }
 
         return seed;
     }
@@ -248,15 +327,14 @@ private:
     QString m_returnTypeName;
     QWeakPointer<const QQmlJSScope> m_returnType;
 
-    QStringList m_paramNames;
-    QStringList m_paramTypeNames;
-    QList<QWeakPointer<const QQmlJSScope>> m_paramTypes;
+    QList<QQmlJSMetaParameter> m_parameters;
     QList<QQmlJSAnnotation> m_annotations;
 
-    Type m_methodType = Signal;
+    MethodType m_methodType = MethodType::Signal;
     Access m_methodAccess = Public;
     int m_revision = 0;
-    RelativeFunctionIndex m_jsFunctionIndex = RelativeFunctionIndex::Invalid;
+    RelativeFunctionIndex m_relativeFunctionIndex = RelativeFunctionIndex::Invalid;
+    bool m_isCloned = false;
     bool m_isConstructor = false;
     bool m_isJavaScriptFunction = false;
     bool m_isImplicitQmlPropertyChangeSignal = false;
@@ -268,6 +346,7 @@ class QQmlJSMetaProperty
     QString m_typeName;
     QString m_read;
     QString m_write;
+    QString m_reset;
     QString m_bindable;
     QString m_notify;
     QString m_privateClass;
@@ -278,6 +357,7 @@ class QQmlJSMetaProperty
     bool m_isWritable = false;
     bool m_isPointer = false;
     bool m_isFinal = false;
+    bool m_isConstant = false;
     int m_revision = 0;
     int m_index = -1; // relative property index within owning QQmlJSScope
 
@@ -295,6 +375,9 @@ public:
 
     void setWrite(const QString &write) { m_write = write; }
     QString write() const { return m_write; }
+
+    void setReset(const QString &reset) { m_reset = reset; }
+    QString reset() const { return m_reset; }
 
     void setBindable(const QString &bindable) { m_bindable = bindable; }
     QString bindable() const { return m_bindable; }
@@ -327,6 +410,9 @@ public:
 
     void setIsFinal(bool isFinal) { m_isFinal = isFinal; }
     bool isFinal() const { return m_isFinal; }
+
+    void setIsConstant(bool isConstant) { m_isConstant = isConstant; }
+    bool isConstant() const { return m_isConstant; }
 
     void setRevision(int revision) { m_revision = revision; }
     int revision() const { return m_revision; }
@@ -371,37 +457,8 @@ public:
 */
 class Q_QMLCOMPILER_PRIVATE_EXPORT QQmlJSMetaPropertyBinding
 {
-public:
-    enum BindingType : unsigned int {
-        Invalid,
-        BoolLiteral,
-        NumberLiteral,
-        StringLiteral,
-        RegExpLiteral,
-        Null,
-        Translation,
-        TranslationById,
-        Script,
-        Object,
-        Interceptor,
-        ValueSource,
-        AttachedProperty,
-        GroupProperty,
-    };
-
-    enum ScriptBindingKind : unsigned int {
-        Script_Invalid,
-        Script_PropertyBinding, // property int p: 1 + 1
-        Script_SignalHandler, // onSignal: { ... }
-        Script_ChangeHandler, // onXChanged: { ... }
-    };
-
-    enum ScriptBindingValueType : unsigned int {
-        ScriptValue_Unknown,
-        ScriptValue_Undefined // property int p: undefined
-    };
-
-private:
+    using BindingType = QQmlSA::BindingType;
+    using ScriptBindingKind = QQmlSA::ScriptBindingKind;
 
     // needs to be kept in sync with the BindingType enum
     struct Content {
@@ -436,14 +493,24 @@ private:
             friend bool operator!=(Null a, Null b) { return !(a == b); }
         };
         struct TranslationString {
-            friend bool operator==(TranslationString a, TranslationString b) { return a.value == b.value; }
+            friend bool operator==(TranslationString a, TranslationString b)
+            {
+                return a.text == b.text && a.comment == b.comment && a.number == b.number && a.context == b.context;
+            }
             friend bool operator!=(TranslationString a, TranslationString b) { return !(a == b); }
-            QString value;
+            QString text;
+            QString comment;
+            QString context;
+            int number;
         };
         struct TranslationById {
-            friend bool operator==(TranslationById a, TranslationById b) { return a.value == b.value; }
+            friend bool operator==(TranslationById a, TranslationById b)
+            {
+                return a.id == b.id && a.number == b.number;
+            }
             friend bool operator!=(TranslationById a, TranslationById b) { return !(a == b); }
-            QString value;
+            QString id;
+            int number;
         };
         struct Script {
             friend bool operator==(Script a, Script b)
@@ -453,8 +520,8 @@ private:
             friend bool operator!=(Script a, Script b) { return !(a == b); }
             QQmlJSMetaMethod::RelativeFunctionIndex index =
                     QQmlJSMetaMethod::RelativeFunctionIndex::Invalid;
-            ScriptBindingKind kind = Script_Invalid;
-            ScriptBindingValueType valueType = ScriptValue_Unknown;
+            ScriptBindingKind kind = ScriptBindingKind::Invalid;
+            ScriptBindingValueType valueType = ScriptBindingValueType::ScriptValue_Unknown;
         };
         struct Object {
             friend bool operator==(Object a, Object b) { return a.value == b.value && a.typeName == b.typeName; }
@@ -556,6 +623,7 @@ public:
                 || type == BindingType::Null; // special. we record it as literal
     }
 
+    QQmlJSMetaPropertyBinding();
     QQmlJSMetaPropertyBinding(QQmlJS::SourceLocation location) : m_sourceLocation(location) { }
     explicit QQmlJSMetaPropertyBinding(QQmlJS::SourceLocation location, const QString &propName)
         : m_sourceLocation(location), m_propertyName(propName)
@@ -582,8 +650,9 @@ public:
         m_bindingContent = Content::StringLiteral { value.toString() };
     }
 
-    void setScriptBinding(QQmlJSMetaMethod::RelativeFunctionIndex value, ScriptBindingKind kind,
-                          ScriptBindingValueType valueType = ScriptValue_Unknown)
+    void
+    setScriptBinding(QQmlJSMetaMethod::RelativeFunctionIndex value, ScriptBindingKind kind,
+                     ScriptBindingValueType valueType = ScriptBindingValueType::ScriptValue_Unknown)
     {
         ensureSetBindingTypeOnce();
         m_bindingContent = Content::Script { value, kind, valueType };
@@ -625,17 +694,17 @@ public:
         m_bindingContent = Content::RegexpLiteral { value.toString() };
     }
 
-    // ### TODO: we might need comment and translation number at some point
-    void setTranslation(QStringView translation)
+    void setTranslation(QStringView text, QStringView comment, QStringView context, int number)
     {
         ensureSetBindingTypeOnce();
-        m_bindingContent = Content::TranslationString { translation.toString() };
+        m_bindingContent =
+                Content::TranslationString{ text.toString(), comment.toString(), context.toString(), number };
     }
 
-    void setTranslationId(QStringView id)
+    void setTranslationId(QStringView id, int number)
     {
         ensureSetBindingTypeOnce();
-        m_bindingContent = Content::TranslationById { id.toString() };
+        m_bindingContent = Content::TranslationById{ id.toString(), number };
     }
 
     void setObject(const QString &typeName, const QSharedPointer<const QQmlJSScope> &type)
@@ -667,6 +736,8 @@ public:
 
     QString regExpValue() const;
 
+    QQmlTranslation translationDataValue(QString qmlFileNameForContext = QStringLiteral("")) const;
+
     QSharedPointer<const QQmlJSScope> literalType(const QQmlJSTypeResolver *resolver) const;
 
     QQmlJSMetaMethod::RelativeFunctionIndex scriptIndex() const
@@ -682,7 +753,7 @@ public:
         if (auto *script = std::get_if<Content::Script>(&m_bindingContent))
             return script->kind;
         // warn
-        return ScriptBindingKind::Script_Invalid;
+        return ScriptBindingKind::Invalid;
     }
 
     ScriptBindingValueType scriptValueType() const

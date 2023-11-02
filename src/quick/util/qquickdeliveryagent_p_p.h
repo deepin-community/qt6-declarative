@@ -131,6 +131,7 @@ public:
     void flushFrameSynchronousEvents(QQuickWindow *win);
     void deliverDelayedTouchEvent();
     void handleWindowDeactivate(QQuickWindow *win);
+    void handleWindowHidden(QQuickWindow *win);
 
     // utility functions that used to be in QQuickPointerEvent et al.
     bool allUpdatedPointsAccepted(const QPointerEvent *ev);
@@ -139,6 +140,7 @@ public:
     static bool anyPointGrabbed(const QPointerEvent *ev);
     static bool allPointsGrabbed(const QPointerEvent *ev);
     static bool isMouseEvent(const QPointerEvent *ev);
+    static bool isMouseOrWheelEvent(const QPointerEvent *ev);
     static bool isHoverEvent(const QPointerEvent *ev);
     static bool isTouchEvent(const QPointerEvent *ev);
     static bool isTabletEvent(const QPointerEvent *ev);

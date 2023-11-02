@@ -1,3 +1,6 @@
+# Copyright (C) 2022 The Qt Company Ltd.
+# SPDX-License-Identifier: BSD-3-Clause
+
 # Generated from scenegraph.pro.
 
 #####################################################################
@@ -13,7 +16,7 @@ list(APPEND test_data ${test_data_glob})
 qt_internal_add_test(tst_scenegraph
     SOURCES
         tst_scenegraph.cpp
-    PUBLIC_LIBRARIES
+    LIBRARIES
         Qt::CorePrivate
         Qt::Gui
         Qt::GuiPrivate
@@ -21,6 +24,16 @@ qt_internal_add_test(tst_scenegraph
         Qt::QuickPrivate
         Qt::QuickTestUtilsPrivate
     TESTDATA ${test_data}
+)
+
+qt_internal_add_shaders(tst_scenegraph "shaders"
+    BATCHABLE
+    PRECOMPILE
+    OPTIMIZED
+    PREFIX
+        "/"
+    FILES
+        "data/render_bug37422.frag"
 )
 
 #### Keys ignored in scope 1:.:.:scenegraph.pro:<TRUE>:
@@ -31,10 +44,10 @@ qt_internal_add_test(tst_scenegraph
 
 qt_internal_extend_target(tst_scenegraph CONDITION ANDROID OR IOS
     DEFINES
-        QT_QMLTEST_DATADIR=\\\":/data\\\"
+        QT_QMLTEST_DATADIR=":/data"
 )
 
 qt_internal_extend_target(tst_scenegraph CONDITION NOT ANDROID AND NOT IOS
     DEFINES
-        QT_QMLTEST_DATADIR=\\\"${CMAKE_CURRENT_SOURCE_DIR}/data\\\"
+        QT_QMLTEST_DATADIR="${CMAKE_CURRENT_SOURCE_DIR}/data"
 )

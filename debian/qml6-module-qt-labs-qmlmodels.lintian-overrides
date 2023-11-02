@@ -1,0 +1,3 @@
+# libQt6LabsQmlModels6 is a private library installed in a public path
+qml6-module-qt-labs-qmlmodels: package-name-doesnt-match-sonames libQt6LabsQmlModels6
+qml6-module-qt-labs-qmlmodels: no-symbols-control-file usr/lib/*/libQt6LabsQmlModels.so.6.*

@@ -72,7 +72,7 @@ QQuickDropAreaPrivate::~QQuickDropAreaPrivate()
     The \l drag.source property is communicated to the source of a drag event as
     the recipient of a drop on the drag target.
 
-    \sa {Qt Quick Examples - Drag and Drop}, {Qt Quick Examples - externaldraganddrop}
+    \sa {Qt Quick Examples - Drag and Drop}
 */
 
 QQuickDropArea::QQuickDropArea(QQuickItem *parent)
@@ -353,12 +353,10 @@ void QQuickDropArea::dropEvent(QDropEvent *event)
 
     The drop action may be one of:
 
-    \list
-    \li Qt.CopyAction Copy the data to the target.
-    \li Qt.MoveAction Move the data from the source to the target.
-    \li Qt.LinkAction Create a link from the source to the target.
-    \li Qt.IgnoreAction Ignore the action (do nothing with the data).
-    \endlist
+    \value Qt.CopyAction    Copy the data to the target.
+    \value Qt.MoveAction    Move the data from the source to the target.
+    \value Qt.LinkAction    Create a link from the source to the target.
+    \value Qt.IgnoreAction  Ignore the action (do nothing with the data).
 */
 
 /*!

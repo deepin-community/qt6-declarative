@@ -4,24 +4,30 @@
 #include <private/qqmlengine_p.h>
 
 #include <qtest.h>
-#include <QDebug>
+
 #include <QQmlEngine>
-#include <QFontDatabase>
-#include <QFileInfo>
 #include <QQmlComponent>
+#include <QtQuick/QQuickItem>
+
+#include <QCryptographicHash>
+#include <QDateTime>
+#include <QDebug>
+#include <QDateTime>
 #include <QDesktopServices>
 #include <QDir>
-#include <QCryptographicHash>
-#include <QtQuick/QQuickItem>
+#include <QFileInfo>
+#include <QFont>
+#include <QFontDatabase>
+#include <QMatrix4x4>
+#include <QQuaternion>
 #include <QSignalSpy>
 #include <QVector2D>
 #include <QVector3D>
 #include <QVector4D>
-#include <QQuaternion>
-#include <QMatrix4x4>
-#include <QFont>
+#include <QTimeZone>
+
 #include <QtQuickTestUtils/private/qmlutils_p.h>
-#include <private/qglobal_p.h>
+#include <private/qtenvironmentvariables_p.h> // for qTzSet()
 
 class tst_qqmlqt : public QQmlDataTest
 {
@@ -743,18 +749,18 @@ void tst_qqmlqt::dateTimeConversion()
     QTime time(14,15,38,200);
     QDateTime dateTime(date, time);
     QDateTime dateTime0(QDate(2021, 7, 1).startOfDay());
-    QDateTime dateTime0utc(QDate(2021, 7, 1).startOfDay(Qt::UTC));
+    QDateTime dateTime0utc(QDate(2021, 7, 1).startOfDay(QTimeZone::UTC));
     QDateTime dateTime1(QDate(2021, 7, 31).startOfDay());
-    QDateTime dateTime1utc(QDate(2021, 7, 31).startOfDay(Qt::UTC));
+    QDateTime dateTime1utc(QDate(2021, 7, 31).startOfDay(QTimeZone::UTC));
     QDateTime dateTime2(QDate(2852,12,31), QTime(23,59,59,500));
     QDateTime dateTime3(QDate(2000,1,1), QTime(0,0,0,0));
     QDateTime dateTime4(QDate(2001,2,2), QTime(0,0,0,0));
     QDateTime dateTime5(QDate(1999,1,1), QTime(2,3,4,0));
     QDateTime dateTime6(QDate(2008,2,24), QTime(14,15,38,200));
-    QDateTime dateTime7(QDate(1970,1,1), QTime(0,0,0,0), Qt::UTC);
-    QDateTime dateTime8(QDate(1586,2,2), QTime(0,0,0,0), Qt::UTC);
-    QDateTime dateTime9(QDate(955,1,1), QTime(0,0,0,0), Qt::UTC);
-    QDateTime dateTime10(QDate(113,2,24), QTime(14,15,38,200), Qt::UTC);
+    QDateTime dateTime7(QDate(1970, 1, 1), QTime(0, 0), QTimeZone::UTC);
+    QDateTime dateTime8(QDate(1586, 2, 2), QTime(0, 0), QTimeZone::UTC);
+    QDateTime dateTime9(QDate(955, 1, 1), QTime(0, 0), QTimeZone::UTC);
+    QDateTime dateTime10(QDate(113, 2, 24), QTime(14, 15, 38, 200), QTimeZone::UTC);
 
     QQmlEngine eng;
     QQmlComponent component(&eng, testFileUrl("dateTimeConversion.qml"));
@@ -903,7 +909,10 @@ void tst_qqmlqt::dateTimeFormattingVariants()
         QTest::ignoreMessage(QtWarningMsg, QRegularExpression(warning));
 
     warnings.clear();
-    if (method == QStringLiteral("formatTime") && variant.typeId() == QMetaType::QString) {
+
+    if (method == QStringLiteral("formatTime")
+            && variant.typeId() == QMetaType::QString
+            && QByteArrayView(QTest::currentDataTag()).endsWith("ISO")) {
         for (int i = 0; i < 4; ++i) {
             QTest::ignoreMessage(QtWarningMsg,
                                  "\"2011/05/31 11:16:39.755\" is a "
@@ -919,13 +928,18 @@ void tst_qqmlqt::dateTimeFormattingVariants()
                     QtWarningMsg,
                     QRegularExpression("formatting.qml:19: Error: Invalid argument passed to "
                                        "formatTime"));
-        } else {
-            QTest::ignoreMessage(QtWarningMsg,
-                                 QRegularExpression("Could not convert argument 0 at"));
-            QTest::ignoreMessage(QtWarningMsg, QRegularExpression(method + "@"));
-            QTest::ignoreMessage(QtWarningMsg, QRegularExpression(
-                                     "TypeError: Passing incompatible arguments to "
-                                     "C.. functions from JavaScript is not allowed."));
+        } else if (method == "formatDate") {
+            // formatDate has special error handling as it parses the strings itself.
+            QTest::ignoreMessage(
+                    QtWarningMsg,
+                    QRegularExpression("formatting.qml:10: Error: Invalid argument passed to "
+                                       "formatDate"));
+        } else if (method == "formatDateTime") {
+            // formatDateTime has special error handling as it parses the strings itself.
+            QTest::ignoreMessage(
+                    QtWarningMsg,
+                    QRegularExpression("formatting.qml:29: Error: Invalid argument passed to "
+                                       "formatDateTime"));
         }
     }
 
@@ -961,7 +975,7 @@ void tst_qqmlqt::dateTimeFormattingVariants_data()
 
     QDate date(2011,5,31);
     // V4 reads the date in UTC but DateObject::toQDateTime() gives it back in local time:
-    temporary = QDateTime(date, QTime(0, 0, 0), Qt::UTC).toLocalTime();
+    temporary = date.startOfDay(QTimeZone::UTC).toLocalTime();
     QTest::newRow("formatDate, qdate")
         << "formatDate" << QVariant::fromValue(date)
         << (QStringList()
@@ -1004,27 +1018,47 @@ void tst_qqmlqt::dateTimeFormattingVariants_data()
             << temporary.time().toString("H:m:s a")
             << temporary.time().toString("hh:mm:ss.zzz"));
 
-    QString string(QLatin1String("2011/05/31 11:16:39.755"));
-    temporary = QDateTime::fromString(string, "yyyy/MM/dd HH:mm:ss.zzz");
-    QTest::newRow("formatDate, qstring")
-        << "formatDate" << QVariant::fromValue(string)
+    const QString isoString(QLatin1String("2011/05/31 11:16:39.755"));
+    temporary = QDateTime::fromString(isoString, "yyyy/MM/dd HH:mm:ss.zzz");
+    const QString jsString = engine.coerceValue<QDateTime, QString>(temporary);
+    QTest::newRow("formatDate, qstring, ISO")
+        << "formatDate" << QVariant::fromValue(isoString)
         << (QStringList()
             << QLocale().toString(temporary.date(), QLocale::ShortFormat)
             << QLocale().toString(temporary.date(), QLocale::LongFormat)
             << temporary.date().toString("ddd MMMM d yy"));
-    QTest::newRow("formatDateTime, qstring")
-        << "formatDateTime" << QVariant::fromValue(string)
+    QTest::newRow("formatDate, qstring, JS")
+        << "formatDate" << QVariant::fromValue(jsString)
+        << (QStringList()
+            << QLocale().toString(temporary.date(), QLocale::ShortFormat)
+            << QLocale().toString(temporary.date(), QLocale::LongFormat)
+            << temporary.date().toString("ddd MMMM d yy"));
+    QTest::newRow("formatDateTime, qstring, ISO")
+        << "formatDateTime" << QVariant::fromValue(isoString)
         << (QStringList()
             << QLocale().toString(temporary, QLocale::ShortFormat)
             << QLocale().toString(temporary, QLocale::LongFormat)
             << temporary.toString("M/d/yy H:m:s a"));
-    QTest::newRow("formatTime, qstring")
-        << "formatTime" << QVariant::fromValue(string)
+    QTest::newRow("formatDateTime, qstring, JS")
+        << "formatDateTime" << QVariant::fromValue(jsString)
+        << (QStringList()
+            << QLocale().toString(temporary, QLocale::ShortFormat)
+            << QLocale().toString(temporary, QLocale::LongFormat)
+            << temporary.toString("M/d/yy H:m:s a"));
+    QTest::newRow("formatTime, qstring, ISO")
+        << "formatTime" << QVariant::fromValue(isoString)
         << (QStringList()
             << QLocale().toString(temporary.time(), QLocale::ShortFormat)
             << QLocale().toString(temporary.time(), QLocale::LongFormat)
             << temporary.time().toString("H:m:s a")
             << temporary.time().toString("hh:mm:ss.zzz"));
+    QTest::newRow("formatTime, qstring, JS")
+        << "formatTime" << QVariant::fromValue(jsString)
+        << (QStringList()
+            << QLocale().toString(temporary.time(), QLocale::ShortFormat)
+            << QLocale().toString(temporary.time(), QLocale::LongFormat)
+            << temporary.time().toString("H:m:s a")
+            << temporary.time().toString("hh:mm:ss.000")); // JS Date to string coercion drops milliseconds
 
     QColor color(Qt::red);
     temporary = QVariant::fromValue(color).toDateTime();
@@ -1331,6 +1365,7 @@ class TimeProvider: public QObject
 {
     Q_OBJECT
     QML_NAMED_ELEMENT(TimeProvider)
+    QML_UNCREATABLE("")
     Q_PROPERTY(QTime time READ time WRITE setTime NOTIFY timeChanged)
 
 public:

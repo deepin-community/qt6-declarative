@@ -26,7 +26,7 @@
 #include <QtCore/private/qobject_p.h>
 
 #include <QtQuick/private/qquickwindow_p.h>
-#include <QtGui/private/qrhi_p.h>
+#include <rhi/qrhi.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -60,7 +60,7 @@ QT_BEGIN_NAMESPACE
 
   Management of the graphics devices, contexts, image and texture objects is up
   to the application. The device or context that will be used by Qt Quick must
-  be created before calling initialize(). The creation of the the texture object
+  be created before calling initialize(). The creation of the texture object
   can be deferred, see below. Qt 5.4 introduces the ability for QOpenGLContext
   to adopt existing native contexts. Together with QQuickRenderControl this
   makes it possible to create a QOpenGLContext that shares with an external
@@ -165,8 +165,12 @@ QQuickRenderControl::~QQuickRenderControl()
 
     invalidate();
 
-    if (d->window)
-        QQuickWindowPrivate::get(d->window)->renderControl = nullptr;
+    QQuickGraphicsConfiguration config;
+    if (d->window) {
+        QQuickWindowPrivate *wd = QQuickWindowPrivate::get(d->window);
+        wd->renderControl = nullptr;
+        config = wd->graphicsConfig;
+    }
 
     // It is likely that the cleanup in windowDestroyed() is not called since
     // the standard pattern is to destroy the rendercontrol before the QQuickWindow.
@@ -180,7 +184,7 @@ QQuickRenderControl::~QQuickRenderControl()
     // using the rendercontrol without ever calling initialize() - it is then
     // important to completely skip calling any QSGRhiSupport functions.
     if (d->rhi)
-        d->resetRhi();
+        d->resetRhi(config);
 }
 
 void QQuickRenderControlPrivate::windowDestroyed()
@@ -192,9 +196,11 @@ void QQuickRenderControlPrivate::windowDestroyed()
         rc->invalidate();
 
         QQuickWindowPrivate::get(window)->animationController.reset();
+
 #if QT_CONFIG(quick_shadereffect)
-        QSGRhiShaderEffectNode::cleanupMaterialTypeCache(window);
+        QSGRhiShaderEffectNode::resetMaterialTypeCache(window);
 #endif
+
         window = nullptr;
     }
 }
@@ -275,6 +281,17 @@ int QQuickRenderControl::samples() const
     \note This function does not need to be, and must not be, called when using
     the \c software adaptation of Qt Quick.
 
+    With the default Qt Quick adaptation this function creates a new \l QRhi
+    object, similarly to what would happen with an on-screen QQuickWindow when
+    QQuickRenderControl was not used. To make this new QRhi object adopt some
+    existing device or context resource (e.g. use an existing QOpenGLContext
+    instead of creating a new one), use QQuickWindow::setGraphicsDevice() as
+    mentioned above. When the application wants to make the Qt Quick rendering
+    use an already existing \l QRhi object, that is possible as well via
+    \l QQuickGraphicsDevice::fromRhi(). When such a QQuickGraphicsDevice,
+    referencing an already existing QRhi, is set, there will be no new,
+    dedicated \l QRhi object created in initialize().
+
     \since 6.0
 
     \sa QQuickRenderTarget, QQuickGraphicsDevice, QQuickGraphicsConfiguration::preferredInstanceExtensions()
@@ -321,7 +338,7 @@ void QQuickRenderControl::polishItems()
         return;
 
     QQuickWindowPrivate *cd = QQuickWindowPrivate::get(d->window);
-    cd->flushFrameSynchronousEvents();
+    cd->deliveryAgentPrivate()->flushFrameSynchronousEvents(d->window);
     if (!d->window)
         return;
     cd->polishItems();
@@ -351,7 +368,8 @@ bool QQuickRenderControl::sync()
             return false;
         }
         if (!d->cb) {
-            qWarning("QQuickRenderControl cannot be used with QRhi when no QRhiCommandBuffer is provided");
+            qWarning("QQuickRenderControl cannot be used with QRhi when no QRhiCommandBuffer is provided "
+                     "(perhaps beginFrame() was not called or it was unsuccessful?)");
             return false;
         }
         cd->setCustomCommandBuffer(d->cb);
@@ -425,7 +443,7 @@ void QQuickRenderControl::render()
         cd->setCustomCommandBuffer(d->cb);
     }
 
-    cd->renderSceneGraph(d->window->size());
+    cd->renderSceneGraph();
 }
 
 /*!
@@ -509,7 +527,7 @@ void QQuickRenderControlPrivate::maybeUpdate()
   Reimplemented in subclasses to return the real window this render control
   is rendering into.
 
-  If \a offset in non-null, it is set to the offset of the control
+  If \a offset is non-null, it is set to the offset of the control
   inside the window.
 
   \note While not mandatory, reimplementing this function becomes essential for
@@ -521,7 +539,7 @@ void QQuickRenderControlPrivate::maybeUpdate()
 /*!
   Returns the real window that \a win is being rendered to, if any.
 
-  If \a offset in non-null, it is set to the offset of the rendering
+  If \a offset is non-null, it is set to the offset of the rendering
   inside its window.
 
  */
@@ -543,6 +561,16 @@ bool QQuickRenderControlPrivate::isRenderWindowFor(QQuickWindow *quickWin, const
     return false;
 }
 
+bool QQuickRenderControlPrivate::isRenderWindow(const QWindow *w)
+{
+    Q_Q(QQuickRenderControl);
+
+    if (window && w)
+        return q->renderWindowFor(window, nullptr) == w;
+
+    return false;
+}
+
 /*!
     \return the QQuickWindow this QQuickRenderControl is associated with.
 
@@ -559,6 +587,49 @@ QQuickWindow *QQuickRenderControl::window() const
 }
 
 /*!
+    \return the QRhi this QQuickRenderControl is associated with.
+
+    \note The QRhi exists only when initialize() has successfully completed.
+    Before that the return value is null.
+
+    \note This function is not applicable and returns null when using the
+    \c software adaptation of Qt Quick.
+
+    \since 6.6
+
+    \sa commandBuffer(), beginFrame(), endFrame()
+ */
+QRhi *QQuickRenderControl::rhi() const
+{
+    Q_D(const QQuickRenderControl);
+    return d->rhi;
+}
+
+/*!
+    \return the current command buffer.
+
+    Once beginFrame() is called, a QRhiCommandBuffer is set up automatically.
+    That is the command buffer Qt Quick scenegraph uses, but in some cases
+    applications may also want to query it, for example to issue resource
+    updates (for example, a texture readback).
+
+    The command buffer is only valid for use between beginFrame() and
+    endFrame().
+
+    \note This function is not applicable and returns null when using the
+    \c software adaptation of Qt Quick.
+
+    \since 6.6
+
+    \sa rhi(), beginFrame(), endFrame()
+ */
+QRhiCommandBuffer *QQuickRenderControl::commandBuffer() const
+{
+    Q_D(const QQuickRenderControl);
+    return d->cb;
+}
+
+/*!
     Specifies the start of a graphics frame. Calls to sync() or render() must
     be enclosed by calls to beginFrame() and endFrame().
 
@@ -568,7 +639,7 @@ QQuickWindow *QQuickRenderControl::window() const
     to the user of QQuickRenderControl to specify these points.
 
     A typical update step, including initialization of rendering into an
-    existing texture, could like like the following. The example snippet
+    existing texture, could look like the following. The example snippet
     assumes Direct3D 11 but the same concepts apply other graphics APIs as
     well.
 
@@ -594,6 +665,15 @@ QQuickWindow *QQuickRenderControl::window() const
         m_renderControl->endFrame(); // Qt Quick's rendering commands are submitted to the device context here
     \endcode
 
+    \note This function does not need to be, and must not be, called when using
+    the \c software adaptation of Qt Quick.
+
+    \note Internally beginFrame() and endFrame() invoke
+    \l{QRhi::}beginOffscreenFrame() and \l{QRhi::}endOffscreenFrame(),
+    respectively. This implies that there must not be a frame (neither
+    offscreen, nor swapchain-based) being recorded on the QRhi when
+    this function is called.
+
     \since 6.0
 
     \sa endFrame(), initialize(), sync(), render(), QQuickGraphicsDevice, QQuickRenderTarget
@@ -601,8 +681,18 @@ QQuickWindow *QQuickRenderControl::window() const
 void QQuickRenderControl::beginFrame()
 {
     Q_D(QQuickRenderControl);
-    if (!d->rhi || d->rhi->isRecordingFrame())
+    if (!d->rhi) {
+        qWarning("QQuickRenderControl: No QRhi in beginFrame()");
         return;
+    }
+    if (d->frameStatus == QQuickRenderControlPrivate::RecordingFrame) {
+        qWarning("QQuickRenderControl: beginFrame() must be followed by a call to endFrame() before calling beginFrame() again");
+        return;
+    }
+    if (d->rhi->isRecordingFrame()) {
+        qWarning("QQuickRenderControl: Attempted to beginFrame() while the QRhi is already recording a frame");
+        return;
+    }
 
     emit d->window->beforeFrameBegin();
 
@@ -633,6 +723,9 @@ void QQuickRenderControl::beginFrame()
     scenegraph are submitted to the context or command queue, whichever is
     applicable.
 
+    \note This function does not need to be, and must not be, called when using
+    the \c software adaptation of Qt Quick.
+
     \since 6.0
 
     \sa beginFrame(), initialize(), sync(), render(), QQuickGraphicsDevice, QQuickRenderTarget
@@ -640,8 +733,18 @@ void QQuickRenderControl::beginFrame()
 void QQuickRenderControl::endFrame()
 {
     Q_D(QQuickRenderControl);
-    if (!d->rhi || !d->rhi->isRecordingFrame())
+    if (!d->rhi) {
+        qWarning("QQuickRenderControl: No QRhi in endFrame()");
         return;
+    }
+    if (d->frameStatus != QQuickRenderControlPrivate::RecordingFrame) {
+        qWarning("QQuickRenderControl: endFrame() must only be called after a successful beginFrame()");
+        return;
+    }
+    if (!d->rhi->isRecordingFrame()) {
+        qWarning("QQuickRenderControl: Attempted to endFrame() while the QRhi is not recording a frame");
+        return;
+    }
 
     d->rhi->endOffscreenFrame();
     d->cb = nullptr;
@@ -685,10 +788,10 @@ bool QQuickRenderControlPrivate::initRhi()
     return true;
 }
 
-void QQuickRenderControlPrivate::resetRhi()
+void QQuickRenderControlPrivate::resetRhi(const QQuickGraphicsConfiguration &config)
 {
     if (ownRhi)
-        QSGRhiSupport::instance()->destroyRhi(rhi);
+        QSGRhiSupport::instance()->destroyRhi(rhi, config);
 
     rhi = nullptr;
 

@@ -98,7 +98,7 @@ const ListLayout::Role &ListLayout::createRole(const QString &key, ListLayout::R
         sizeof(double),
         sizeof(bool),
         sizeof(ListModel *),
-        sizeof(ListElement::GuardedQObjectPointer),
+        sizeof(QV4::PersistentValue),
         sizeof(QVariantMap),
         sizeof(QDateTime),
         sizeof(QUrl),
@@ -109,7 +109,7 @@ const ListLayout::Role &ListLayout::createRole(const QString &key, ListLayout::R
         alignof(double),
         alignof(bool),
         alignof(ListModel *),
-        alignof(QObject *),
+        alignof(QV4::PersistentValue),
         alignof(QVariantMap),
         alignof(QDateTime),
         alignof(QUrl),
@@ -319,9 +319,12 @@ QObject *ListModel::getOrCreateModelObject(QQmlListModel *model, int elementInde
         void *memory = operator new(sizeof(QObject) + sizeof(QQmlData));
         void *ddataMemory = ((char *)memory) + sizeof(QObject);
         e->m_objectCache = new (memory) QObject;
-        QQmlData *ddata = new (ddataMemory) QQmlData;
-        ddata->ownMemory = false;
-        QObjectPrivate::get(e->m_objectCache)->declarativeData = ddata;
+
+        const QAbstractDeclarativeData *old = std::exchange(
+            QObjectPrivate::get(e->m_objectCache)->declarativeData,
+            new (ddataMemory) QQmlData(QQmlData::DoesNotOwnMemory));
+        Q_ASSERT(!old); // QObject should really not manipulate QQmlData
+
         (void)new ModelNodeMetaObject(e->m_objectCache, model, elementIndex);
     }
     return e->m_objectCache;
@@ -618,11 +621,11 @@ void ListModel::set(int elementIndex, QV4::Object *object, QVector<int> *roles)
             roleIndex = e->setFunctionProperty(r, jsv);
         } else if (QV4::Object *o = propertyValue->as<QV4::Object>()) {
             if (QV4::QObjectWrapper *wrapper = o->as<QV4::QObjectWrapper>()) {
-                QObject *o = wrapper->object();
                 const ListLayout::Role &role = m_layout->getRoleOrCreate(propertyName, ListLayout::Role::QObject);
                 if (role.type == ListLayout::Role::QObject)
-                    roleIndex = e->setQObjectProperty(role, o);
-            } else if (QVariant maybeUrl = o->engine()->toVariant(o->asReturnedValue(), QMetaType::fromType<QUrl>(), true);
+                    roleIndex = e->setQObjectProperty(role, wrapper);
+            } else if (QVariant maybeUrl = QV4::ExecutionEngine::toVariant(
+                           o->asReturnedValue(), QMetaType::fromType<QUrl>(), true);
                        maybeUrl.metaType() == QMetaType::fromType<QUrl>()) {
                 const ListLayout::Role &r = m_layout->getRoleOrCreate(propertyName, ListLayout::Role::Url);
                 QUrl qurl = maybeUrl.toUrl();
@@ -709,12 +712,12 @@ void ListModel::set(int elementIndex, QV4::Object *object, ListModel::SetElement
             }
         } else if (QV4::Object *o = propertyValue->as<QV4::Object>()) {
             if (QV4::QObjectWrapper *wrapper = o->as<QV4::QObjectWrapper>()) {
-                QObject *o = wrapper->object();
                 const ListLayout::Role &r = m_layout->getRoleOrCreate(propertyName, ListLayout::Role::QObject);
                 if (r.type == ListLayout::Role::QObject)
-                    e->setQObjectPropertyFast(r, o);
+                    e->setQObjectPropertyFast(r, wrapper);
             } else {
-                QVariant maybeUrl = o->engine()->toVariant(o->asReturnedValue(), QMetaType::fromType<QUrl>(), true);
+                QVariant maybeUrl = QV4::ExecutionEngine::toVariant(
+                            o->asReturnedValue(), QMetaType::fromType<QUrl>(), true);
                 if (maybeUrl.metaType() == QMetaType::fromType<QUrl>()) {
                     const QUrl qurl = maybeUrl.toUrl();
                     const ListLayout::Role &r = m_layout->getRoleOrCreate(propertyName, ListLayout::Role::Url);
@@ -836,12 +839,11 @@ StringOrTranslation *ListElement::getStringProperty(const ListLayout::Role &role
     return s;
 }
 
-QObject *ListElement::getQObjectProperty(const ListLayout::Role &role)
+QV4::QObjectWrapper *ListElement::getQObjectProperty(const ListLayout::Role &role)
 {
     char *mem = getPropertyMemory(role);
-    GuardedQObjectPointer *o
-            = reinterpret_cast<GuardedQObjectPointer *>(mem);
-    return o->data();
+    QV4::PersistentValue *g = reinterpret_cast<QV4::PersistentValue *>(mem);
+    return g->as<QV4::QObjectWrapper>();
 }
 
 QVariantMap *ListElement::getVariantMapProperty(const ListLayout::Role &role)
@@ -888,13 +890,13 @@ QJSValue *ListElement::getFunctionProperty(const ListLayout::Role &role)
     return f;
 }
 
-ListElement::GuardedQObjectPointer *
+QV4::PersistentValue *
 ListElement::getGuardProperty(const ListLayout::Role &role)
 {
     char *mem = getPropertyMemory(role);
 
     bool existingGuard = false;
-    for (size_t i = 0; i < sizeof(GuardedQObjectPointer);
+    for (size_t i = 0; i < sizeof(QV4::PersistentValue);
          ++i) {
         if (mem[i] != 0) {
             existingGuard = true;
@@ -902,12 +904,12 @@ ListElement::getGuardProperty(const ListLayout::Role &role)
         }
     }
 
-    GuardedQObjectPointer *o = nullptr;
+    QV4::PersistentValue *g = nullptr;
 
     if (existingGuard)
-        o = reinterpret_cast<GuardedQObjectPointer *>(mem);
+        g = reinterpret_cast<QV4::PersistentValue *>(mem);
 
-    return o;
+    return g;
 }
 
 ListModel *ListElement::getListProperty(const ListLayout::Role &role)
@@ -963,12 +965,8 @@ QVariant ListElement::getProperty(const ListLayout::Role &role, const QQmlListMo
             break;
         case ListLayout::Role::QObject:
             {
-            GuardedQObjectPointer *guard =
-                    reinterpret_cast<GuardedQObjectPointer *>(
-                            mem);
-            QObject *object = guard->data();
-            if (object)
-                data = QVariant::fromValue(object);
+                QV4::PersistentValue *guard = reinterpret_cast<QV4::PersistentValue *>(mem);
+                data = QVariant::fromValue(guard->as<QV4::QObjectWrapper>()->object());
             }
             break;
         case ListLayout::Role::VariantMap:
@@ -1080,67 +1078,17 @@ int ListElement::setListProperty(const ListLayout::Role &role, ListModel *m)
     return roleIndex;
 }
 
-static void
-restoreQObjectOwnership(ListElement::GuardedQObjectPointer *pointer)
-{
-    if (QObject *o = pointer->data()) {
-        QQmlData *data = QQmlData::get(o, false);
-        Q_ASSERT(data);
-
-        // Only restore the previous state if the object hasn't become explicitly
-        // owned
-        if (!data->explicitIndestructibleSet)
-            data->indestructible = (pointer->tag() & ListElement::Indestructible);
-    }
-}
-
-static void setQObjectOwnership(char *mem, QObject *o)
-{
-    QQmlData *ddata = QQmlData::get(o, false);
-    const int ownership = (!ddata || ddata->indestructible ? ListElement::Indestructible : 0)
-            | (ddata && ddata->explicitIndestructibleSet ? ListElement::ExplicitlySet : 0);
-
-    // If ddata didn't exist above, force its creation now
-    if (!ddata)
-        ddata = QQmlData::get(o, true);
-
-    if (!ddata->explicitIndestructibleSet)
-        ddata->indestructible = ownership != 0;
-
-    new (mem) ListElement::GuardedQObjectPointer(
-            o, static_cast<ListElement::ObjectIndestructible>(ownership));
-}
-
-int ListElement::setQObjectProperty(const ListLayout::Role &role, QObject *o)
+int ListElement::setQObjectProperty(const ListLayout::Role &role, QV4::QObjectWrapper *o)
 {
     int roleIndex = -1;
 
     if (role.type == ListLayout::Role::QObject) {
         char *mem = getPropertyMemory(role);
-        GuardedQObjectPointer *g =
-                reinterpret_cast<GuardedQObjectPointer *>(mem);
-        bool existingGuard = false;
-        for (size_t i = 0; i < sizeof(GuardedQObjectPointer);
-             ++i) {
-            if (mem[i] != 0) {
-                existingGuard = true;
-                break;
-            }
-        }
-        bool changed;
-        if (existingGuard) {
-            changed = g->data() != o;
-            if (changed)
-                restoreQObjectOwnership(g);
-            g->~GuardedQObjectPointer();
-        } else {
-            changed = true;
-        }
-
-        setQObjectOwnership(mem, o);
-
-        if (changed)
-            roleIndex = role.index;
+        if (isMemoryUsed<QVariantMap>(mem))
+            reinterpret_cast<QV4::PersistentValue *>(mem)->set(o->engine(), *o);
+        else
+            new (mem) QV4::PersistentValue(o->engine(), o);
+        roleIndex = role.index;
     }
 
     return roleIndex;
@@ -1273,11 +1221,10 @@ void ListElement::setBoolPropertyFast(const ListLayout::Role &role, bool b)
     *value = b;
 }
 
-void ListElement::setQObjectPropertyFast(const ListLayout::Role &role, QObject *o)
+void ListElement::setQObjectPropertyFast(const ListLayout::Role &role, QV4::QObjectWrapper *o)
 {
     char *mem = getPropertyMemory(role);
-
-    setQObjectOwnership(mem, o);
+    new (mem) QV4::PersistentValue(o->engine(), o);
 }
 
 void ListElement::setListPropertyFast(const ListLayout::Role &role, ListModel *m)
@@ -1394,7 +1341,7 @@ QVector<int> ListElement::sync(ListElement *src, ListLayout *srcLayout, ListElem
                 break;
             case ListLayout::Role::QObject:
                 {
-                    QObject *object = src->getQObjectProperty(srcRole);
+                    QV4::QObjectWrapper *object = src->getQObjectProperty(srcRole);
                     roleIndex = target->setQObjectProperty(targetRole, object);
                 }
                 break;
@@ -1449,14 +1396,8 @@ void ListElement::destroy(ListLayout *layout)
                     break;
                 case ListLayout::Role::QObject:
                     {
-                    GuardedQObjectPointer *guard =
-                            getGuardProperty(r);
-
-                    if (guard) {
-                        restoreQObjectOwnership(guard);
-
-                        guard->~GuardedQObjectPointer();
-                    }
+                        if (QV4::PersistentValue *guard = getGuardProperty(r))
+                            guard->~PersistentValue();
                     }
                     break;
                 case ListLayout::Role::VariantMap:
@@ -1593,12 +1534,12 @@ int ListElement::setJsProperty(const ListLayout::Role &role, const QV4::Value &d
         QV4::ScopedObject o(scope, d);
         QV4::QObjectWrapper *wrapper = o->as<QV4::QObjectWrapper>();
         if (role.type == ListLayout::Role::QObject && wrapper) {
-            QObject *o = wrapper->object();
-            roleIndex = setQObjectProperty(role, o);
+            roleIndex = setQObjectProperty(role, wrapper);
         } else if (role.type == ListLayout::Role::VariantMap) {
             roleIndex = setVariantMapProperty(role, o);
         } else if (role.type == ListLayout::Role::Url) {
-            QVariant maybeUrl = o->engine()->toVariant(o.asReturnedValue(), QMetaType::fromType<QUrl>(), true);
+            QVariant maybeUrl = QV4::ExecutionEngine::toVariant(
+                        o.asReturnedValue(), QMetaType::fromType<QUrl>(), true);
             if (maybeUrl.metaType() == QMetaType::fromType<QUrl>()) {
                 roleIndex = setUrlProperty(role, maybeUrl.toUrl());
             }
@@ -2040,7 +1981,7 @@ void DynamicRoleModelNodeMetaObject::propertyWritten(int index)
 
     \section1 Using Threaded List Models with WorkerScript
 
-    ListModel can be used together with WorkerScript access a list model
+    ListModel can be used together with WorkerScript to access a list model
     from multiple threads. This is useful if list modifications are
     synchronous and take some time: the list operations can be moved to a
     different thread to avoid blocking of the main GUI thread.
@@ -2048,11 +1989,11 @@ void DynamicRoleModelNodeMetaObject::propertyWritten(int index)
     Here is an example that uses WorkerScript to periodically append the
     current time to a list model:
 
-    \snippet ../../examples/quick/threading/threadedlistmodel/timedisplay.qml 0
+    \snippet qml/listmodel/WorkerScript.qml 0
 
     The included file, \tt dataloader.mjs, looks like this:
 
-    \snippet ../../examples/quick/threading/threadedlistmodel/dataloader.mjs 0
+    \snippet qml/listmodel/dataloader.mjs 0
 
     The timer in the main example sends messages to the worker script by calling
     \l WorkerScript::sendMessage(). When this message is received,
@@ -2063,7 +2004,7 @@ void DynamicRoleModelNodeMetaObject::propertyWritten(int index)
     You must call sync() or else the changes made to the list from that
     thread will not be reflected in the list model in the main thread.
 
-    \sa {qml-data-models}{Data Models}, {Qt Quick Examples - Threading}, {Qt QML}
+    \sa {qml-data-models}{Data Models}, {Qt QML}
 */
 
 QQmlListModel::QQmlListModel(QObject *parent)
