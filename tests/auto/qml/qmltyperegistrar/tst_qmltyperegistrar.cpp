@@ -7,8 +7,10 @@
 #include <QtCore/qfile.h>
 #include <QtQml/QQmlEngine>
 #include <QtQml/QQmlComponent>
+#include <QtQml/qqmlprivate.h>
 
 #include "hppheader.hpp"
+#include "UnregisteredTypes/uncreatable.h"
 
 void tst_qmltyperegistrar::initTestCase()
 {
@@ -379,6 +381,353 @@ void tst_qmltyperegistrar::typeInModuleMajorVersionZero()
                              "TypeInModuleMajorVersionZero {}\n").toUtf8(),
               QUrl(QTest::currentDataTag()));
     QVERIFY2(c.isReady(), qPrintable(c.errorString()));
+}
+
+void tst_qmltyperegistrar::resettableProperty()
+{
+    QVERIFY(qmltypesData.contains(R"(reset: "resetFoo")"));
+}
+
+void tst_qmltyperegistrar::duplicateExportWarnings()
+{
+    QmlTypeRegistrar r;
+    QString moduleName = "tstmodule";
+    QString targetNamespace = "tstnamespace";
+    r.setModuleNameAndNamespace(moduleName, targetNamespace);
+
+    MetaTypesJsonProcessor processor(true);
+    QVERIFY(processor.processTypes({ ":/duplicatedExports.json" }));
+    processor.postProcessTypes();
+    QVector<QJsonObject> types = processor.types();
+    QVector<QJsonObject> typesforeign = processor.foreignTypes();
+    r.setTypes(types, typesforeign);
+
+    auto expectWarning = [](QString message) {
+        QTest::ignoreMessage(QtWarningMsg, qPrintable(message));
+    };
+    expectWarning("Warning: ExportedQmlElement was registered multiple times by following Cpp "
+                  "classes:  ExportedQmlElement, ExportedQmlElement2 (added in 1.2), "
+                  "ExportedQmlElementDifferentVersion (added in 1.0) (removed in 1.7)");
+    expectWarning("Warning: SameNameSameExport was registered multiple times by following Cpp "
+                  "classes:  SameNameSameExport, SameNameSameExport2 (added in 1.2), "
+                  "SameNameSameExportDifferentVersion (added in 1.0)");
+
+    QString outputData;
+    QTextStream output(&outputData, QIODeviceBase::ReadWrite);
+    r.write(output);
+}
+
+void tst_qmltyperegistrar::clonedSignal()
+{
+    QVERIFY(qmltypesData.contains(R"(Signal {
+            name: "clonedSignal"
+            Parameter { name: "i"; type: "int" }
+        })"));
+
+    QVERIFY(qmltypesData.contains(R"(Signal { name: "clonedSignal"; isCloned: true })"));
+}
+
+void tst_qmltyperegistrar::hasIsConstantInParameters()
+{
+    QVERIFY(qmltypesData.contains(R"(        Signal {
+            name: "mySignal"
+            Parameter { name: "myObject"; type: "QObject"; isPointer: true }
+            Parameter { name: "myConstObject"; type: "QObject"; isPointer: true; isConstant: true }
+            Parameter { name: "myConstObject2"; type: "QObject"; isPointer: true; isConstant: true }
+            Parameter { name: "myObject2"; type: "QObject"; isPointer: true }
+            Parameter { name: "myConstObject3"; type: "QObject"; isPointer: true; isConstant: true }
+        }
+)"));
+
+    QVERIFY(qmltypesData.contains(R"(Signal {
+            name: "myVolatileSignal"
+            Parameter { name: "a"; type: "volatile QObject"; isPointer: true; isConstant: true }
+            Parameter { name: "b"; type: "volatile QObject"; isPointer: true; isConstant: true }
+            Parameter { name: "nonConst"; type: "volatile QObject"; isPointer: true }
+        }
+)"));
+}
+
+void tst_qmltyperegistrar::uncreatable()
+{
+    using namespace QQmlPrivate;
+
+    // "normal" constructible types
+    QVERIFY(QmlMetaType<Creatable>::hasAcceptableCtors());
+    QVERIFY(QmlMetaType<Creatable2>::hasAcceptableCtors());
+
+    // good singletons
+    QCOMPARE((singletonConstructionMode<SingletonCreatable, SingletonCreatable>()),
+             SingletonConstructionMode::Factory);
+    QCOMPARE((singletonConstructionMode<SingletonCreatable2, SingletonCreatable2>()),
+             SingletonConstructionMode::Constructor);
+    QCOMPARE((singletonConstructionMode<SingletonCreatable2, SingletonCreatable2>()),
+             SingletonConstructionMode::Constructor);
+    QCOMPARE((singletonConstructionMode<SingletonForeign, SingletonLocalCreatable>()),
+             SingletonConstructionMode::FactoryWrapper);
+
+    // bad singletons
+    QCOMPARE((singletonConstructionMode<SingletonIncreatable, SingletonIncreatable>()),
+             SingletonConstructionMode::None);
+    QCOMPARE((singletonConstructionMode<SingletonIncreatable2, SingletonIncreatable2>()),
+             SingletonConstructionMode::None);
+    QCOMPARE((singletonConstructionMode<SingletonIncreatable3, SingletonIncreatable3>()),
+             SingletonConstructionMode::None);
+    QCOMPARE((singletonConstructionMode<SingletonIncreatable4, SingletonIncreatable4>()),
+             SingletonConstructionMode::None);
+    QCOMPARE((singletonConstructionMode<SingletonIncreatableExtended,
+                                        SingletonIncreatableExtended>()),
+             SingletonConstructionMode::None);
+    QCOMPARE((singletonConstructionMode<SingletonForeign, SingletonLocalUncreatable1>()),
+             SingletonConstructionMode::None);
+    QCOMPARE((singletonConstructionMode<SingletonForeign, SingletonLocalUncreatable2>()),
+             SingletonConstructionMode::None);
+#if QT_DEPRECATED_SINCE(6, 4)
+    QTest::ignoreMessage(
+                QtWarningMsg,
+                "Singleton SingletonIncreatable needs either a default constructor or, "
+                "when adding a default constructor is infeasible, a public static "
+                "create(QQmlEngine *, QJSEngine *) method.");
+    qmlRegisterTypesAndRevisions<SingletonIncreatable>("A", 1);
+    QTest::ignoreMessage(
+                QtWarningMsg,
+                "Singleton SingletonIncreatable2 needs either a default constructor or, "
+                "when adding a default constructor is infeasible, a public static "
+                "create(QQmlEngine *, QJSEngine *) method.");
+    qmlRegisterTypesAndRevisions<SingletonIncreatable2>("A", 1);
+    QTest::ignoreMessage(
+                QtWarningMsg,
+                "Singleton SingletonIncreatable3 needs either a default constructor or, "
+                "when adding a default constructor is infeasible, a public static "
+                "create(QQmlEngine *, QJSEngine *) method.");
+    qmlRegisterTypesAndRevisions<SingletonIncreatable3>("A", 1);
+    QTest::ignoreMessage(
+                QtWarningMsg,
+                "Singleton SingletonIncreatable4 needs either a default constructor or, "
+                "when adding a default constructor is infeasible, a public static "
+                "create(QQmlEngine *, QJSEngine *) method.");
+    qmlRegisterTypesAndRevisions<SingletonIncreatable4>("A", 1);
+    QTest::ignoreMessage(
+                QtWarningMsg,
+                "Singleton SingletonIncreatableExtended needs either a default constructor or, "
+                "when adding a default constructor is infeasible, a public static "
+                "create(QQmlEngine *, QJSEngine *) method.");
+    qmlRegisterTypesAndRevisions<SingletonIncreatableExtended>("A", 1);
+    QTest::ignoreMessage(
+                QtWarningMsg,
+                "Singleton SingletonForeign needs either a default constructor or, "
+                "when adding a default constructor is infeasible, a public static "
+                "create(QQmlEngine *, QJSEngine *) method.");
+    qmlRegisterTypesAndRevisions<SingletonLocalUncreatable1>("A", 1);
+    QTest::ignoreMessage(
+                QtWarningMsg,
+                "Singleton SingletonForeign needs either a default constructor or, "
+                "when adding a default constructor is infeasible, a public static "
+                "create(QQmlEngine *, QJSEngine *) method.");
+    qmlRegisterTypesAndRevisions<SingletonLocalUncreatable2>("A", 1);
+#endif
+
+    // QML_UNCREATABLE types
+    QVERIFY(!QmlMetaType<BadUncreatable>::hasAcceptableCtors());
+    QVERIFY(!QmlMetaType<BadUncreatableExtended>::hasAcceptableCtors());
+    QVERIFY(!QmlMetaType<GoodUncreatable>::hasAcceptableCtors());
+    QVERIFY(!QmlMetaType<UncreatableNeedsForeign>::hasAcceptableCtors());
+    QVERIFY(!QmlMetaType<GoodUncreatableExtended>::hasAcceptableCtors());
+#if QT_DEPRECATED_SINCE(6, 4)
+    QTest::ignoreMessage(
+                QtWarningMsg,
+                "BadUncreatable is neither a QObject, nor default- and copy-constructible, "
+                "nor uncreatable. You should not use it as a QML type.");
+    qmlRegisterTypesAndRevisions<BadUncreatable>("A", 1);
+    QTest::ignoreMessage(
+                QtWarningMsg,
+                "BadUncreatableExtended is neither a QObject, nor default- and copy-constructible, "
+                "nor uncreatable. You should not use it as a QML type.");
+    qmlRegisterTypesAndRevisions<BadUncreatableExtended>("A", 1);
+#endif
+
+    const auto oldHandler = qInstallMessageHandler(
+                [](QtMsgType, const QMessageLogContext &, const QString &message) {
+        QFAIL(qPrintable(message));
+    });
+    const auto guard = qScopeGuard([oldHandler](){qInstallMessageHandler(oldHandler); });
+
+    // These should not print any messages.
+
+    qmlRegisterTypesAndRevisions<Creatable>("A", 1);
+    qmlRegisterTypesAndRevisions<Creatable2>("A", 1);
+
+    qmlRegisterTypesAndRevisions<SingletonCreatable>("A", 1);
+    qmlRegisterTypesAndRevisions<SingletonCreatable2>("A", 1);
+    qmlRegisterTypesAndRevisions<SingletonCreatable3>("A", 1);
+
+    qmlRegisterTypesAndRevisions<GoodUncreatable>("A", 1);
+    qmlRegisterTypesAndRevisions<GoodUncreatable2>("A", 1);
+    qmlRegisterTypesAndRevisions<GoodUncreatableExtended>("A", 1);
+}
+
+void tst_qmltyperegistrar::baseVersionInQmltypes()
+{
+    // Since it has no QML_ADDED_IN_VERSION, WithMethod was added in .0 of the current version.
+    // The current version is 1.1, so it's 1.0.
+    QVERIFY(qmltypesData.contains("exports: [\"QmlTypeRegistrarTest/WithMethod 1.0\"]"));
+}
+
+void tst_qmltyperegistrar::constructibleValueType()
+{
+    QVERIFY(qmltypesData.contains(
+    R"(Component {
+        file: "tst_qmltyperegistrar.h"
+        name: "Constructible"
+        accessSemantics: "value"
+        exports: ["QmlTypeRegistrarTest/constructible 1.0"]
+        exportMetaObjectRevisions: [256]
+        Method {
+            name: "Constructible"
+            isConstructor: true
+            Parameter { name: "i"; type: "int" }
+        }
+        Method { name: "Constructible"; isCloned: true; isConstructor: true }
+    })"));
+}
+
+void tst_qmltyperegistrar::anonymousAndUncreatable()
+{
+    QVERIFY(qmltypesData.contains(
+    R"(Component {
+        file: "tst_qmltyperegistrar.h"
+        name: "AnonymousAndUncreatable"
+        accessSemantics: "reference"
+        prototype: "QObject"
+    })"));
+}
+
+void tst_qmltyperegistrar::omitInvisible()
+{
+    // If it cannot resolve the type a QML_FOREIGN refers to, it should not generate anything.
+    QVERIFY(qmltypesData.contains(
+                R"(Component { file: "tst_qmltyperegistrar.h"; name: "Invisible"; accessSemantics: "none" })"));
+}
+
+void tst_qmltyperegistrar::typedEnum()
+{
+    QVERIFY(qmltypesData.contains(
+    R"(Component {
+        file: "tst_qmltyperegistrar.h"
+        name: "TypedEnum"
+        accessSemantics: "reference"
+        prototype: "QObject"
+        exports: ["QmlTypeRegistrarTest/TypedEnum 1.0"]
+        exportMetaObjectRevisions: [256]
+        Enum {
+            name: "S"
+            type: "short"
+            values: ["A", "B", "C"]
+        }
+        Enum {
+            name: "T"
+            type: "ushort"
+            values: ["D", "E", "F"]
+        }
+        Enum {
+            name: "U"
+            type: "qint8"
+            values: ["G", "H", "I"]
+        }
+        Enum {
+            name: "V"
+            type: "quint8"
+            values: ["J", "K", "L"]
+        }
+    })"));
+}
+
+void tst_qmltyperegistrar::listSignal()
+{
+    QVERIFY(qmltypesData.contains(
+    R"(Component {
+        file: "tst_qmltyperegistrar.h"
+        name: "ListSignal"
+        accessSemantics: "reference"
+        prototype: "QObject"
+        Signal {
+            name: "objectListHappened"
+            Parameter { type: "QObjectList" }
+        }
+    })"));
+}
+
+void tst_qmltyperegistrar::withNamespace()
+{
+    QVERIFY(qmltypesData.contains(R"(Component {
+        file: "tst_qmltyperegistrar.h"
+        name: "Bar"
+        accessSemantics: "reference"
+        prototype: "QObject"
+        Property {
+            name: "outerBarProp"
+            type: "int"
+            read: "bar"
+            index: 0
+            isReadonly: true
+            isConstant: true
+        }
+    })"));
+
+    QVERIFY(qmltypesData.contains(R"(Component {
+        file: "tst_qmltyperegistrar.h"
+        name: "Testing::Bar"
+        accessSemantics: "reference"
+        prototype: "Testing::Foo"
+        exports: ["QmlTypeRegistrarTest/Bar 1.0"]
+        exportMetaObjectRevisions: [256]
+        Property { name: "barProp"; type: "int"; read: "bar"; index: 0; isReadonly: true; isConstant: true }
+    })"));
+
+    QVERIFY(qmltypesData.contains(R"(Component {
+        file: "tst_qmltyperegistrar.h"
+        name: "Testing::Foo"
+        accessSemantics: "reference"
+        prototype: "QObject"
+        Property { name: "fooProp"; type: "int"; read: "foo"; index: 0; isReadonly: true; isConstant: true }
+    })"));
+
+    QVERIFY(qmltypesData.contains(R"(Component {
+        file: "tst_qmltyperegistrar.h"
+        name: "Testing::Inner::Baz"
+        accessSemantics: "reference"
+        prototype: "Testing::Bar"
+        extension: "Bar"
+        exports: ["QmlTypeRegistrarTest/Baz 1.0"]
+        exportMetaObjectRevisions: [256]
+        attachedType: "Testing::Foo"
+    })"));
+}
+
+void tst_qmltyperegistrar::sequenceRegistration()
+{
+    QVERIFY(qmltypesData.contains(R"(Component {
+        file: "tst_qmltyperegistrar.h"
+        name: "std::vector<QByteArray>"
+        accessSemantics: "sequence"
+        valueType: "QByteArray"
+    })"));
+}
+
+void tst_qmltyperegistrar::valueTypeSelfReference()
+{
+    QVERIFY(qmltypesData.contains(R"(Component {
+        file: "tst_qmltyperegistrar.h"
+        name: "QPersistentModelIndex"
+        accessSemantics: "value"
+        extension: "QPersistentModelIndexValueType"
+    })"));
+    QVERIFY(qmltypesData.contains(R"(Component {
+        file: "tst_qmltyperegistrar.h"
+        name: "QPersistentModelIndexValueType"
+        accessSemantics: "value"
+        Property { name: "row"; type: "int"; read: "row"; index: 0; isReadonly: true; isFinal: true }
+    })"));
 }
 
 QTEST_MAIN(tst_qmltyperegistrar)

@@ -118,6 +118,7 @@ private slots:
     void destroyComponentObject();
     void objectOwnershipFlip();
     void enumsInListElement();
+    void protectQObjectFromGC();
 };
 
 bool tst_qqmllistmodel::compareVariantList(const QVariantList &testList, QVariant object)
@@ -788,7 +789,7 @@ void tst_qqmllistmodel::get()
     RUNEXPR("model.append({roleC: {} })");
     RUNEXPR("model.append({roleD: [ { a:1, b:2 }, { c: 3 } ] })");
 
-    QSignalSpy spy(model, SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)));
+    QSignalSpy spy(model, SIGNAL(dataChanged(QModelIndex,QModelIndex,QList<int>)));
     QQmlExpression expr(engine.rootContext(), model, expression);
     expr.evaluate();
     QVERIFY(!expr.hasError());
@@ -916,7 +917,7 @@ void tst_qqmllistmodel::get_nested()
         QString extendedExpression = QString("get(%1).%2.%3").arg(outerListIndex).arg(outerListRoleName).arg(expression);
         QQmlExpression expr(engine.rootContext(), model, extendedExpression);
 
-        QSignalSpy spy(childModel, SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)));
+        QSignalSpy spy(childModel, SIGNAL(dataChanged(QModelIndex,QModelIndex,QList<int>)));
         expr.evaluate();
         QVERIFY(!expr.hasError());
 
@@ -1111,7 +1112,7 @@ void tst_qqmllistmodel::property_changes()
     QObject *connectionsObject = component.create();
     QVERIFY2(component.errorString().isEmpty(), qPrintable(component.errorString()));
 
-    QSignalSpy spyItemsChanged(&model, SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)));
+    QSignalSpy spyItemsChanged(&model, SIGNAL(dataChanged(QModelIndex,QModelIndex,QList<int>)));
 
     expr.setExpression(script_change);
     expr.evaluate();
@@ -1548,6 +1549,8 @@ void tst_qqmllistmodel::modify_through_delegate()
         "       ListElement { name: \"Doe\"; age: 33 }\n"
         "   }\n"
         "   ListView {\n"
+        "       height: 100\n" \
+        "       width: 100\n" \
         "       model: testModel\n"
         "       delegate: Item {\n"
         "           Component.onCompleted: model.age = 18;\n"
@@ -1855,7 +1858,7 @@ void tst_qqmllistmodel::destroyComponentObject()
                                Q_RETURN_ARG(QVariant, retVal));
     QVERIFY(retVal.toBool());
     QTRY_VERIFY(created.isNull());
-    QTRY_VERIFY(list->get(0).property("obj").isUndefined());
+    QTRY_VERIFY(list->get(0).property("obj").isNull());
     QCOMPARE(list->count(), 1);
 }
 
@@ -1906,6 +1909,25 @@ void tst_qqmllistmodel::enumsInListElement()
     QCOMPARE(listView->count(), 3);
     for (int i = 0; i < 3; ++i) {
         QCOMPARE(listView->itemAtIndex(i)->property("text"), QVariant(QString::number(i)));
+    }
+}
+
+void tst_qqmllistmodel::protectQObjectFromGC()
+{
+    QQmlEngine engine;
+    QQmlComponent component(&engine, testFileUrl("protectQObjectFromGC.qml"));
+    QVERIFY2(component.isReady(), qPrintable(component.errorString()));
+    QScopedPointer<QObject> root(component.create());
+    QVERIFY(!root.isNull());
+
+    QQmlListModel *listModel = qobject_cast<QQmlListModel *>(root.data());
+    QVERIFY(listModel);
+    QCOMPARE(listModel->count(), 10);
+
+    for (int i = 0; i < 10; ++i) {
+        QObject *element = qjsvalue_cast<QObject *>(listModel->get(i).property("path"));
+        QVERIFY(element);
+        QCOMPARE(element->property("name").toString(), QString::number(i));
     }
 }
 

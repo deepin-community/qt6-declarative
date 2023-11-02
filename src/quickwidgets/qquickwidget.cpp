@@ -42,8 +42,10 @@
 
 #include "private/qwidget_p.h"
 
+#if QT_CONFIG(graphicsview)
 #include <QtWidgets/qgraphicsscene.h>
 #include <QtWidgets/qgraphicsview.h>
+#endif
 
 QT_BEGIN_NAMESPACE
 
@@ -239,7 +241,7 @@ void QQuickWidgetPrivate::handleWindowChange()
     // must be recreated because its RHI will contain a dangling pointer to
     // the context.
 
-    delete offscreenWindow;
+    QScopedPointer<QQuickWindow> oldOffScreenWindow(offscreenWindow); // Do not delete before reparenting sgItem
     offscreenWindow = nullptr;
     delete renderControl;
 
@@ -333,8 +335,10 @@ void QQuickWidgetPrivate::render(bool needsSync)
             q->createFramebufferObject();
         }
 
-        if (!rhi)
+        if (!rhi) {
+            qWarning("QQuickWidget: Attempted to render scene with no rhi");
             return;
+        }
 
         // createFramebufferObject() bails out when the size is empty. In this case
         // we cannot render either.
@@ -393,11 +397,6 @@ void QQuickWidgetPrivate::renderSceneGraph()
 
     if (!q->isVisible() || fakeHidden)
         return;
-
-    if (!useSoftwareRenderer && !rhi) {
-        qWarning("QQuickWidget: Attempted to render scene with no rhi");
-        return;
-    }
 
     render(true);
 
@@ -613,6 +612,7 @@ QQuickWidget::QQuickWidget(QWidget *parent)
 {
     setMouseTracking(true);
     setFocusPolicy(Qt::StrongFocus);
+    setAttribute(Qt::WA_AcceptTouchEvents);
     d_func()->init();
 }
 
@@ -989,6 +989,8 @@ static inline QPlatformBackingStoreRhiConfig::Api graphicsApiToBackingStoreRhiAp
         return QPlatformBackingStoreRhiConfig::Vulkan;
     case QSGRendererInterface::Direct3D11:
         return QPlatformBackingStoreRhiConfig::D3D11;
+    case QSGRendererInterface::Direct3D12:
+        return QPlatformBackingStoreRhiConfig::D3D12;
     case QSGRendererInterface::Metal:
         return QPlatformBackingStoreRhiConfig::Metal;
     default:
@@ -1266,19 +1268,28 @@ QPlatformBackingStoreRhiConfig QQuickWidgetPrivate::rhiConfig() const
         return {};
 
     QPlatformBackingStoreRhiConfig config(graphicsApiToBackingStoreRhiApi(QQuickWindow::graphicsApi()));
-    config.setDebugLayer(QSGRhiSupport::instance()->isDebugLayerRequested());
+
+    QQuickWindowPrivate *wd = QQuickWindowPrivate::get(offscreenWindow);
+    // This is only here to support some of the env.vars. (such as
+    // QSG_RHI_DEBUG_LAYER). There is currently no way to set a
+    // QQuickGraphicsConfiguration for a QQuickWidget, which means things like
+    // the pipeline cache are just not available. That is something to support
+    // on the widget/backingstore level since that's where the QRhi is
+    // controlled in this case.
+    const bool debugLayerRequested = wd->graphicsConfig.isDebugLayerEnabled();
+    config.setDebugLayer(debugLayerRequested);
     return config;
 }
 
-QRhiTexture *QQuickWidgetPrivate::texture() const
+QWidgetPrivate::TextureData QQuickWidgetPrivate::texture() const
 {
     Q_Q(const QQuickWidget);
     if (!q->isWindow() && q->internalWinId()) {
         qWarning() << "QQuickWidget cannot be used as a native child widget."
                    << "Consider setting Qt::AA_DontCreateNativeWidgetSiblings";
-        return 0;
+        return {};
     }
-    return outputTexture;
+    return { outputTexture, nullptr };
 }
 
 QPlatformTextureList::Flags QQuickWidgetPrivate::textureListFlags()
@@ -1450,6 +1461,8 @@ void QQuickWidget::mouseMoveEvent(QMouseEvent *e)
     // top-level window always.
     QMouseEvent mappedEvent(e->type(), e->position(), e->position(), e->globalPosition(),
                             e->button(), e->buttons(), e->modifiers(), e->source());
+    // It's not just the timestamp but also the globalPressPosition, velocity etc.
+    mappedEvent.setTimestamp(e->timestamp());
     QCoreApplication::sendEvent(d->offscreenWindow, &mappedEvent);
     e->setAccepted(mappedEvent.isAccepted());
 }
@@ -1465,10 +1478,12 @@ void QQuickWidget::mouseDoubleClickEvent(QMouseEvent *e)
     // See QTBUG-25831
     QMouseEvent pressEvent(QEvent::MouseButtonPress, e->position(), e->position(), e->globalPosition(),
                            e->button(), e->buttons(), e->modifiers(), e->source());
+    pressEvent.setTimestamp(e->timestamp());
     QCoreApplication::sendEvent(d->offscreenWindow, &pressEvent);
     e->setAccepted(pressEvent.isAccepted());
     QMouseEvent mappedEvent(e->type(), e->position(), e->position(), e->globalPosition(),
                             e->button(), e->buttons(), e->modifiers(), e->source());
+    mappedEvent.setTimestamp(e->timestamp());
     QCoreApplication::sendEvent(d->offscreenWindow, &mappedEvent);
 }
 
@@ -1528,6 +1543,7 @@ void QQuickWidget::mousePressEvent(QMouseEvent *e)
 
     QMouseEvent mappedEvent(e->type(), e->position(), e->position(), e->globalPosition(),
                             e->button(), e->buttons(), e->modifiers(), e->source());
+    mappedEvent.setTimestamp(e->timestamp());
     QCoreApplication::sendEvent(d->offscreenWindow, &mappedEvent);
     e->setAccepted(mappedEvent.isAccepted());
 }
@@ -1541,6 +1557,7 @@ void QQuickWidget::mouseReleaseEvent(QMouseEvent *e)
 
     QMouseEvent mappedEvent(e->type(), e->position(), e->position(), e->globalPosition(),
                             e->button(), e->buttons(), e->modifiers(), e->source());
+    mappedEvent.setTimestamp(e->timestamp());
     QCoreApplication::sendEvent(d->offscreenWindow, &mappedEvent);
     e->setAccepted(mappedEvent.isAccepted());
 }
@@ -1623,9 +1640,23 @@ bool QQuickWidget::event(QEvent *e)
     case QEvent::TouchBegin:
     case QEvent::TouchEnd:
     case QEvent::TouchUpdate:
-    case QEvent::TouchCancel:
+    case QEvent::TouchCancel: {
         // Touch events only have local and global positions, no need to map.
-        return QCoreApplication::sendEvent(d->offscreenWindow, e);
+        bool res = QCoreApplication::sendEvent(d->offscreenWindow, e);
+        if (e->isAccepted() && e->type() == QEvent::TouchBegin) {
+            // If the TouchBegin got accepted, then make sure all points that have
+            // an exclusive grabber are also accepted so that the widget code for
+            // delivering touch events make this widget an implicit grabber of those
+            // points.
+            QPointerEvent *pointerEvent = static_cast<QPointerEvent *>(e);
+            auto deliveredPoints = pointerEvent->points();
+            for (auto &point : deliveredPoints) {
+                if (pointerEvent->exclusiveGrabber(point))
+                    point.setAccepted(true);
+            }
+        }
+        return res;
+    }
 
     case QEvent::FocusAboutToChange:
         return QCoreApplication::sendEvent(d->offscreenWindow, e);
@@ -1645,6 +1676,7 @@ bool QQuickWidget::event(QEvent *e)
 
     case QEvent::WindowAboutToChangeInternal:
         d->invalidateRenderControl();
+        d->deviceLost = true;
         d->rhi = nullptr;
         break;
 
@@ -1657,15 +1689,20 @@ bool QQuickWidget::event(QEvent *e)
         QScreen *newScreen = screen();
         if (d->offscreenWindow)
             d->offscreenWindow->setScreen(newScreen);
-
+        break;
+    }
+    case QEvent::DevicePixelRatioChange:
         if (d->useSoftwareRenderer || d->outputTexture) {
             // This will check the size taking the devicePixelRatio into account
             // and recreate if needed.
             createFramebufferObject();
             d->render(true);
         }
+        if (d->offscreenWindow) {
+            QEvent dprChangeEvent(QEvent::DevicePixelRatioChange);
+            QGuiApplication::sendEvent(d->offscreenWindow, &dprChangeEvent);
+        }
         break;
-    }
     case QEvent::Show:
     case QEvent::Move:
         d->updatePosition();

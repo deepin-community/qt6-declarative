@@ -53,7 +53,30 @@ struct RequiredPropertyInfo
     QVector<AliasToRequiredInfo> aliasesToRequired;
 };
 
-class RequiredProperties : public QHash<const QQmlPropertyData *, RequiredPropertyInfo> {};
+struct RequiredPropertyKey
+{
+    RequiredPropertyKey() = default;
+    RequiredPropertyKey(const QObject *object, const QQmlPropertyData *data)
+        : object(object)
+        , data(data)
+    {}
+
+    const QObject *object = nullptr;
+    const QQmlPropertyData *data = nullptr;
+
+private:
+    friend size_t qHash(const RequiredPropertyKey &key, size_t seed = 0)
+    {
+        return qHashMulti(seed, key.object, key.data);
+    }
+
+    friend bool operator==(const RequiredPropertyKey &a, const RequiredPropertyKey &b)
+    {
+        return a.object == b.object && a.data == b.data;
+    }
+};
+
+class RequiredProperties : public QHash<RequiredPropertyKey, RequiredPropertyInfo> {};
 
 struct DeferredQPropertyBinding {
     QObject *target = nullptr;
@@ -61,7 +84,7 @@ struct DeferredQPropertyBinding {
     QUntypedPropertyBinding binding;
 };
 
-struct QQmlObjectCreatorSharedState : QQmlRefCount
+struct QQmlObjectCreatorSharedState : QQmlRefCounted<QQmlObjectCreatorSharedState>
 {
     QQmlRefPointer<QQmlContextData> rootContext;
     QQmlRefPointer<QQmlContextData> creationContext;
@@ -97,6 +120,10 @@ public:
     void beginPopulateDeferred(const QQmlRefPointer<QQmlContextData> &context);
     void populateDeferredBinding(const QQmlProperty &qmlProperty, int deferredIndex,
                                  const QV4::CompiledData::Binding *binding);
+    void populateDeferredInstance(QObject *outerObject, int deferredIndex,
+                                  int index, QObject *instance, QObject *bindingTarget,
+                                  const QQmlPropertyData *valueTypeProperty,
+                                  const QV4::CompiledData::Binding *binding = nullptr);
     void finalizePopulateDeferred();
 
     bool finalize(QQmlInstantiationInterrupt &interrupt);
@@ -113,13 +140,23 @@ public:
     }
     QFiniteStack<QQmlGuard<QObject> > &allCreatedObjects() { return sharedState->allCreatedObjects; }
 
-    RequiredProperties &requiredProperties() {return sharedState->requiredProperties;}
+    RequiredProperties *requiredProperties() {return &sharedState->requiredProperties;}
     bool componentHadTopLevelRequiredProperties() const {return sharedState->hadTopLevelRequiredProperties;}
 
     static QQmlComponent *createComponent(QQmlEngine *engine,
                                           QV4::ExecutableCompilationUnit *compilationUnit,
                                           int index, QObject *parent,
                                           const QQmlRefPointer<QQmlContextData> &context);
+
+    void removePendingBinding(QObject *target, int propertyIndex)
+    {
+        QList<DeferredQPropertyBinding> &pendingBindings = sharedState.data()->allQPropertyBindings;
+        auto it = std::remove_if(pendingBindings.begin(), pendingBindings.end(),
+                                 [&](const DeferredQPropertyBinding &deferred) {
+            return deferred.properyIndex == propertyIndex && deferred.target == target;
+        });
+        pendingBindings.erase(it, pendingBindings.end());
+    }
 
 private:
     QQmlObjectCreator(QQmlRefPointer<QQmlContextData> contextData,

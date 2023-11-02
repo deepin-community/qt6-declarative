@@ -3,6 +3,7 @@
 
 #include <QtTest/QtTest>
 
+#include <QtGui/qstylehints.h>
 #include <QtQml/qqmlengine.h>
 #include <QtQml/qqmlproperty.h>
 #include <QtQuick/private/qquickdraghandler_p.h>
@@ -65,7 +66,7 @@ void tst_MouseAreaInterop::dragHandlerInSiblingStealingGrabFromMouseAreaViaMouse
     QPoint p1(150, 150);
     QTest::mousePress(window, Qt::LeftButton, Qt::NoModifier, p1);
     QCOMPARE(window->mouseGrabberItem(), ma);
-    QCOMPARE(ma->pressed(), true);
+    QCOMPARE(ma->isPressed(), true);
 
     // Start dragging
     // DragHandler keeps monitoring, due to its passive grab,
@@ -83,7 +84,7 @@ void tst_MouseAreaInterop::dragHandlerInSiblingStealingGrabFromMouseAreaViaMouse
         qCDebug(lcPointerTests, "DragHandler stole the grab after %d events", dragStoleGrab);
     QVERIFY(dragStoleGrab > 1);
     QCOMPARE(handler->active(), true);
-    QCOMPARE(ma->pressed(), false);
+    QCOMPARE(ma->isPressed(), false);
 
     QTest::mouseRelease(window, Qt::LeftButton, Qt::NoModifier, p1);
     QCOMPARE(handler->active(), false);
@@ -124,7 +125,7 @@ void tst_MouseAreaInterop::dragHandlerInSiblingStealingGrabFromMouseAreaViaTouch
     QVERIFY(epd);
     QVERIFY(epd->passiveGrabbers.contains(handler.data()));
     QCOMPARE(epd->exclusiveGrabber, ma);
-    QCOMPARE(ma->pressed(), true);
+    QCOMPARE(ma->isPressed(), true);
 
     // Start dragging
     // DragHandler keeps monitoring, due to its passive grab,
@@ -142,11 +143,11 @@ void tst_MouseAreaInterop::dragHandlerInSiblingStealingGrabFromMouseAreaViaTouch
     if (preventStealing) {
         QCOMPARE(dragStoleGrab, 0);
         QCOMPARE(handler->active(), false);
-        QCOMPARE(ma->pressed(), true);
+        QCOMPARE(ma->isPressed(), true);
     } else {
         QVERIFY(dragStoleGrab > 1);
         QCOMPARE(handler->active(), true);
-        QCOMPARE(ma->pressed(), false);
+        QCOMPARE(ma->isPressed(), false);
     }
 
     touch.release(1, p1).commit();
@@ -176,11 +177,11 @@ void tst_MouseAreaInterop::hoverHandlerDoesntHoverOnPress() // QTBUG-72843
 
     QSignalSpy hoveredChangedSpy(handler, SIGNAL(hoveredChanged()));
     QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, p);
-    QTRY_COMPARE(ma->pressed(), true);
+    QTRY_COMPARE(ma->isPressed(), true);
     QCOMPARE(handler->isHovered(), true);
     QCOMPARE(hoveredChangedSpy.size(), 0);
     QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, p);
-    QTRY_COMPARE(ma->pressed(), false);
+    QTRY_COMPARE(ma->isPressed(), false);
     QCOMPARE(handler->isHovered(), true);
     QCOMPARE(hoveredChangedSpy.size(), 0);
 }

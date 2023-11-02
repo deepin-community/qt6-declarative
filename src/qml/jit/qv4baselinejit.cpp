@@ -173,6 +173,7 @@ void BaselineJIT::generate_LoadName(int name)
 
 void BaselineJIT::generate_LoadGlobalLookup(int index)
 {
+    STORE_IP();
     as->prepareCallWithArgCount(3);
     as->passInt32AsArg(index, 2);
     as->passFunctionAsArg(1);
@@ -182,6 +183,7 @@ void BaselineJIT::generate_LoadGlobalLookup(int index)
 
 void BaselineJIT::generate_LoadQmlContextPropertyLookup(int index)
 {
+    STORE_IP();
     as->prepareCallWithArgCount(2);
     as->passInt32AsArg(index, 1);
     as->passEngineAsArg(0);
@@ -387,18 +389,6 @@ void BaselineJIT::generate_CallPropertyLookup(int lookupIndex, int base, int arg
     BASELINEJIT_GENERATE_RUNTIME_CALL(CallPropertyLookup, CallResultDestination::InAccumulator);
 }
 
-void BaselineJIT::generate_CallElement(int base, int index, int argc, int argv)
-{
-    STORE_IP();
-    as->prepareCallWithArgCount(5);
-    as->passInt32AsArg(argc, 4);
-    as->passJSSlotAsArg(argv, 3);
-    as->passJSSlotAsArg(index, 2);
-    as->passJSSlotAsArg(base, 1);
-    as->passEngineAsArg(0);
-    BASELINEJIT_GENERATE_RUNTIME_CALL(CallElement, CallResultDestination::InAccumulator);
-}
-
 void BaselineJIT::generate_CallName(int name, int argc, int argv)
 {
     STORE_IP();
@@ -518,6 +508,8 @@ void BaselineJIT::generate_ThrowException()
     as->passEngineAsArg(0);
     BASELINEJIT_GENERATE_RUNTIME_CALL(ThrowException, CallResultDestination::Ignore);
     as->gotoCatchException();
+
+    // LOAD_ACC(); <- not needed here since it would be unreachable.
 }
 
 void BaselineJIT::generate_GetException() { as->getException(); }
@@ -525,9 +517,11 @@ void BaselineJIT::generate_SetException() { as->setException(); }
 
 void BaselineJIT::generate_CreateCallContext()
 {
+    STORE_ACC();
     as->prepareCallWithArgCount(1);
     as->passCppFrameAsArg(0);
     BASELINEJIT_GENERATE_RUNTIME_CALL(PushCallContext, CallResultDestination::Ignore);
+    LOAD_ACC();
 }
 
 void BaselineJIT::generate_PushCatchContext(int index, int name) { as->pushCatchContext(index, name); }

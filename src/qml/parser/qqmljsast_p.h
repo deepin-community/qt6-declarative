@@ -23,6 +23,8 @@
 #include <QtCore/qtaggedpointer.h>
 #include <QtCore/qversionnumber.h>
 
+#include <type_traits>
+
 QT_BEGIN_NAMESPACE
 
 class QString;
@@ -96,10 +98,10 @@ enum class VariableScope {
 template <typename T1, typename T2>
 T1 cast(T2 *ast)
 {
-    if (ast && ast->kind == static_cast<T1>(0)->K)
+    if (ast && ast->kind == std::remove_pointer_t<T1>::K)
         return static_cast<T1>(ast);
 
-    return 0;
+    return nullptr;
 }
 
 FunctionExpression *asAnonymousFunctionDefinition(AST::Node *n);
@@ -209,7 +211,7 @@ public:
         Kind_PatternProperty,
         Kind_PatternPropertyList,
         Kind_Type,
-        Kind_TypeArgumentList,
+        Kind_TypeArgument,
         Kind_TypeAnnotation,
 
         Kind_UiArrayBinding,
@@ -220,6 +222,7 @@ public:
         Kind_UiObjectInitializer,
         Kind_UiObjectMemberList,
         Kind_UiArrayMemberList,
+        Kind_UiPragmaValueList,
         Kind_UiPragma,
         Kind_UiProgram,
         Kind_UiParameterList,
@@ -325,7 +328,27 @@ public:
     { return identifierToken; }
 
     SourceLocation lastSourceLocation() const override
-    { return lastListElement(this)->identifierToken; }
+    {
+        return lastListElement(this)->lastOwnSourceLocation();
+    }
+
+    SourceLocation lastOwnSourceLocation() const { return identifierToken; }
+
+    QString toString() const
+    {
+        QString result;
+        toString(&result);
+        return result;
+    }
+
+    void toString(QString *out) const
+    {
+        for (const UiQualifiedId *it = this; it; it = it->next) {
+            out->append(it->name);
+            if (it->next)
+                out->append(QLatin1Char('.'));
+        }
+    }
 
 // attributes
     UiQualifiedId *next;
@@ -338,9 +361,9 @@ class QML_PARSER_EXPORT Type: public Node
 public:
     QQMLJS_DECLARE_AST_NODE(Type)
 
-    Type(UiQualifiedId *typeId, Node *typeArguments = nullptr)
+    Type(UiQualifiedId *typeId, Type *typeArgument = nullptr)
         : typeId(typeId)
-        , typeArguments(typeArguments)
+        , typeArgument(typeArgument ? typeArgument->typeId : nullptr)
     { kind = K; }
 
     void accept0(BaseVisitor *visitor) override;
@@ -349,53 +372,14 @@ public:
     { return typeId->firstSourceLocation(); }
 
     SourceLocation lastSourceLocation() const override
-    { return typeArguments ? typeArguments->lastSourceLocation() : typeId->lastSourceLocation(); }
+    { return typeArgument ? typeArgument->lastSourceLocation() : typeId->lastSourceLocation(); }
 
     QString toString() const;
     void toString(QString *out) const;
 
 // attributes
     UiQualifiedId *typeId;
-    Node *typeArguments; // TypeArgumentList
-};
-
-
-class QML_PARSER_EXPORT TypeArgumentList: public Node
-{
-public:
-    QQMLJS_DECLARE_AST_NODE(TypeArgumentList)
-
-    TypeArgumentList(Type *typeId)
-        : typeId(typeId)
-        , next(this)
-    { kind = K; }
-
-    TypeArgumentList(TypeArgumentList *previous, Type *typeId)
-        : typeId(typeId)
-    {
-        kind = K;
-        next = previous->next;
-        previous->next = this;
-    }
-
-    void accept0(BaseVisitor *visitor) override;
-
-    SourceLocation firstSourceLocation() const override
-    { return typeId->firstSourceLocation(); }
-
-    SourceLocation lastSourceLocation() const override
-    { return lastListElement(this)->typeId->lastSourceLocation(); }
-
-    inline TypeArgumentList *finish()
-    {
-        TypeArgumentList *front = next;
-        next = nullptr;
-        return front;
-    }
-
-// attributes
-    Type *typeId;
-    TypeArgumentList *next;
+    UiQualifiedId *typeArgument;
 };
 
 class QML_PARSER_EXPORT TypeAnnotation: public Node
@@ -865,7 +849,7 @@ struct QML_PARSER_EXPORT BoundName
         : id(id), typeAnnotation(typeAnnotation, type)
     {}
     BoundName() = default;
-    QString typeName() const { return typeAnnotation ? typeAnnotation->type->toString() : QString(); }
+
     bool isInjected() const { return typeAnnotation.tag() == Injected; }
 };
 
@@ -3095,13 +3079,53 @@ public:
     UiObjectMember *member;
 };
 
+class QML_PARSER_EXPORT UiPragmaValueList: public Node
+{
+public:
+    QQMLJS_DECLARE_AST_NODE(UiPragmaValueList)
+
+    UiPragmaValueList(QStringView value)
+        : value(value)
+        , next(this)
+    {
+        kind = K;
+    }
+
+    UiPragmaValueList(UiPragmaValueList *previous, QStringView value)
+        : value(value)
+    {
+        kind = K;
+        next = previous->next;
+        previous->next = this;
+    }
+
+    void accept0(BaseVisitor *visitor) override;
+
+    SourceLocation firstSourceLocation() const override
+    { return location; }
+
+    SourceLocation lastSourceLocation() const override
+    { return lastListElement(this)->location; }
+
+    UiPragmaValueList *finish()
+    {
+        UiPragmaValueList *head = next;
+        next = nullptr;
+        return head;
+    }
+
+    QStringView value;
+    UiPragmaValueList *next;
+    SourceLocation location;
+};
+
 class QML_PARSER_EXPORT UiPragma: public Node
 {
 public:
     QQMLJS_DECLARE_AST_NODE(UiPragma)
 
-    UiPragma(QStringView name, QStringView value = {})
-        : name(name), value(value)
+    UiPragma(QStringView name, UiPragmaValueList *values = nullptr)
+        : name(name), values(values)
     { kind = K; }
 
     void accept0(BaseVisitor *visitor) override;
@@ -3114,7 +3138,7 @@ public:
 
 // attributes
     QStringView name;
-    QStringView value;
+    UiPragmaValueList *values;
     SourceLocation pragmaToken;
     SourceLocation semicolonToken;
 };
@@ -3290,11 +3314,11 @@ class QML_PARSER_EXPORT UiParameterList: public Node
 public:
     QQMLJS_DECLARE_AST_NODE(UiParameterList)
 
-    UiParameterList(UiQualifiedId *t, QStringView n):
+    UiParameterList(Type *t, QStringView n):
         type (t), name (n), next (this)
         { kind = K; }
 
-    UiParameterList(UiParameterList *previous, UiQualifiedId *t, QStringView n):
+    UiParameterList(UiParameterList *previous, Type *t, QStringView n):
         type (t), name (n)
     {
         kind = K;
@@ -3310,7 +3334,12 @@ public:
     SourceLocation lastSourceLocation() const override
     {
         auto last = lastListElement(this);
-        return (last->colonToken.isValid() ? last->propertyTypeToken : last->identifierToken);
+        return last->lastOwnSourceLocation();
+    }
+
+    SourceLocation lastOwnSourceLocation() const
+    {
+        return (colonToken.isValid() ? propertyTypeToken : identifierToken);
     }
 
     inline UiParameterList *finish ()
@@ -3321,7 +3350,7 @@ public:
     }
 
 // attributes
-    UiQualifiedId *type;
+    Type *type;
     QStringView name;
     UiParameterList *next;
     SourceLocation commaToken;
@@ -3705,6 +3734,8 @@ public:
 
 // attributes
     SourceLocation enumToken;
+    SourceLocation identifierToken;
+    SourceLocation lbraceToken;
     SourceLocation rbraceToken;
     QStringView name;
     UiEnumMemberList *members;

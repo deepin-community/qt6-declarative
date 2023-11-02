@@ -5,10 +5,13 @@
 #include "qquickfolderlistmodel_p.h"
 #include "fileinfothread_p.h"
 #include "fileproperty_p.h"
+#include <QtCore/qloggingcategory.h>
 #include <qqmlcontext.h>
 #include <qqmlfile.h>
 
 QT_BEGIN_NAMESPACE
+
+Q_LOGGING_CATEGORY(lcFolderListModel, "qt.labs.folderlistmodel")
 
 class QQuickFolderListModelPrivate
 {
@@ -103,11 +106,13 @@ void QQuickFolderListModelPrivate::updateSorting()
 
 void QQuickFolderListModelPrivate::_q_directoryChanged(const QString &directory, const QList<FileProperty> &list)
 {
+    qCDebug(lcFolderListModel) << "_q_directoryChanged called with directory" << directory;
     Q_Q(QQuickFolderListModel);
     Q_UNUSED(directory);
 
     data = list;
     q->endResetModel();
+    qCDebug(lcFolderListModel) << "- endResetModel called";
     emit q->rowCountChanged();
     emit q->folderChanged();
 }
@@ -147,17 +152,22 @@ void QQuickFolderListModelPrivate::_q_directoryUpdated(const QString &directory,
 void QQuickFolderListModelPrivate::_q_sortFinished(const QList<FileProperty> &list)
 {
     Q_Q(QQuickFolderListModel);
+    qCDebug(lcFolderListModel) << "_q_sortFinished called with" << list.size() << "files";
 
     QModelIndex parent;
     if (data.size() > 0) {
+        qCDebug(lcFolderListModel) << "- removing all existing rows...";
         q->beginRemoveRows(parent, 0, data.size()-1);
         data.clear();
         q->endRemoveRows();
+        qCDebug(lcFolderListModel) << "- ...removed all existing rows";
     }
 
+    qCDebug(lcFolderListModel) << "- inserting sorted rows...";
     q->beginInsertRows(parent, 0, list.size()-1);
     data = list;
     q->endInsertRows();
+    qCDebug(lcFolderListModel) << "- ... inserted sorted rows";
 }
 
 void QQuickFolderListModelPrivate::_q_statusChanged(QQuickFolderListModel::Status s)
@@ -207,6 +217,12 @@ QString QQuickFolderListModelPrivate::resolvePath(const QUrl &path)
     \e{Elements in the Qt.labs module are not guaranteed to remain compatible
     in future versions.}
 
+    \note Some features in FolderListModel depend on \l QFileSystemWatcher. If \l QFileSystemWatcher
+    is disabled, the folder set using \c setFolder is not watched for changes, which results in
+    signals typically emitted on directory changes (like directoryUpdated or directoryChanged) not
+    being emitted without manually calling \c setFolder again. For more information, see
+    \l{Qt Configure Options}.
+
     \qml
     import Qt.labs.folderlistmodel
     \endqml
@@ -216,16 +232,16 @@ QString QQuickFolderListModelPrivate::resolvePath(const QUrl &path)
     Components access names and paths via the following roles:
 
     \list
-    \li \c fileName
-    \li \c filePath
-    \li \c fileURL (since Qt 5.2; deprecated since Qt 5.15)
-    \li \c fileUrl (since Qt 5.15)
-    \li \c fileBaseName
-    \li \c fileSuffix
-    \li \c fileSize
-    \li \c fileModified
-    \li \c fileAccessed
-    \li \c fileIsDir
+    \li \c fileName (\c string)
+    \li \c filePath (\c string)
+    \li \c fileURL (\c url) (since Qt 5.2; deprecated since Qt 5.15)
+    \li \c fileUrl (\c url) (since Qt 5.15)
+    \li \c fileBaseName (\c string)
+    \li \c fileSuffix (\c string)
+    \li \c fileSize (\c qlonglong)
+    \li \c fileModified (\c date)
+    \li \c fileAccessed (\c date)
+    \li \c fileIsDir (\c bool)
     \endlist
 
     Additionally a file entry can be differentiated from a folder entry via the
@@ -268,6 +284,7 @@ QString QQuickFolderListModelPrivate::resolvePath(const QUrl &path)
 
         Component {
             id: fileDelegate
+            required property string fileName
             Text { text: fileName }
         }
 
@@ -359,6 +376,7 @@ QHash<int, QByteArray> QQuickFolderListModel::roleNames() const
 
 /*!
     \qmlproperty int FolderListModel::count
+    \readonly
 
     Returns the number of items in the current folder that match the
     filter criteria.
@@ -383,7 +401,8 @@ QModelIndex QQuickFolderListModel::index(int row, int , const QModelIndex &) con
 
     The value must be a \c file: or \c qrc: URL, or a relative URL.
 
-    The default value is an invalid URL.
+    The default value is the application's working directory at the time
+    when the FolderListModel is first initialized.
 */
 QUrl QQuickFolderListModel::folder() const
 {
@@ -400,6 +419,7 @@ void QQuickFolderListModel::setFolder(const QUrl &folder)
 
     QString resolvedPath = QQuickFolderListModelPrivate::resolvePath(folder);
 
+    qCDebug(lcFolderListModel) << "about to emit beginResetModel since our folder was set to" << folder;
     beginResetModel();
 
     //Remove the old path for the file system watcher
@@ -457,6 +477,7 @@ void QQuickFolderListModel::setRootFolder(const QUrl &path)
 
 /*!
     \qmlproperty url FolderListModel::parentFolder
+    \readonly
 
     Returns the URL of the parent of the current \l folder.
 */
@@ -527,15 +548,14 @@ void QQuickFolderListModel::componentComplete()
 /*!
     \qmlproperty enumeration FolderListModel::sortField
 
-    The \a sortField property contains field to use for sorting.  sortField
-    may be one of:
-    \list
-    \li Unsorted - no sorting is applied.
-    \li Name - sort by filename
-    \li Time - sort by time modified
-    \li Size - sort by file size
-    \li Type - sort by file type (extension)
-    \endlist
+    The \a sortField property contains the field to use for sorting.
+    \c sortField may be one of:
+
+    \value FolderListModel.Unsorted no sorting is applied
+    \value FolderListModel.Name     sort by filename (default)
+    \value FolderListModel.Time     sort by time modified
+    \value FolderListModel.Size     sort by file size
+    \value FolderListModel.Type     sort by file type/extension
 
     \sa sortReversed
 */
@@ -783,13 +803,13 @@ void QQuickFolderListModel::setCaseSensitive(bool on)
 /*!
     \qmlproperty enumeration FolderListModel::status
     \since 5.11
+    \readonly
 
     This property holds the status of folder reading.  It can be one of:
-    \list
-    \li FolderListModel.Null - no \a folder has been set
-    \li FolderListModel.Ready - the folder has been loaded
-    \li FolderListModel.Loading - the folder is currently being loaded
-    \endlist
+
+    \value FolderListModel.Null     no \a folder has been set
+    \value FolderListModel.Ready    the folder has been loaded
+    \value FolderListModel.Loading  the folder is currently being loaded
 
     Use this status to provide an update or respond to the status change in some way.
     For example, you could:
@@ -850,16 +870,16 @@ void QQuickFolderListModel::setSortCaseSensitive(bool on)
     are available:
 
     \list
-        \li \c fileName
-        \li \c filePath
-        \li \c fileURL (since Qt 5.2; deprecated since Qt 5.15)
-        \li \c fileUrl (since Qt 5.15)
-        \li \c fileBaseName
-        \li \c fileSuffix
-        \li \c fileSize
-        \li \c fileModified
-        \li \c fileAccessed
-        \li \c fileIsDir
+        \li \c fileName (\c string)
+        \li \c filePath (\c string)
+        \li \c fileURL (\c url) (since Qt 5.2; deprecated since Qt 5.15)
+        \li \c fileUrl (\c url) (since Qt 5.15)
+        \li \c fileBaseName (\c string)
+        \li \c fileSuffix (\c string)
+        \li \c fileSize (\c qlonglong)
+        \li \c fileModified (\c date)
+        \li \c fileAccessed (\c date)
+        \li \c fileIsDir (\c bool)
     \endlist
 */
 QVariant QQuickFolderListModel::get(int idx, const QString &property) const

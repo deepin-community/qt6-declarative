@@ -12,6 +12,7 @@
 #include "private/qv4globalobject_p.h"
 #include "private/qv4script_p.h"
 #include "private/qv4runtime_p.h"
+#include <private/qv4dateobject_p.h>
 #include <private/qqmlbuiltinfunctions_p.h>
 #include <private/qqmldebugconnector_p.h>
 #include <private/qv4qobjectwrapper_p.h>
@@ -242,7 +243,7 @@ Q_DECLARE_METATYPE(QList<int>)
   \section1 Extensions
 
   QJSEngine provides a compliant ECMAScript implementation. By default,
-  familiar utilities like logging are not available, but they can can be
+  familiar utilities like logging are not available, but they can be
   installed via the \l installExtensions() function.
 
   \sa QJSValue, {Making Applications Scriptable},
@@ -366,7 +367,7 @@ QJSEngine::QJSEngine(QJSEnginePrivate &dd, QObject *parent)
     Destroys this QJSEngine.
 
     Garbage is not collected from the persistent JS heap during QJSEngine
-    destruction. If you need all memory freed, call collectGarbage manually
+    destruction. If you need all memory freed, call collectGarbage() manually
     right before destroying the QJSEngine.
 */
 QJSEngine::~QJSEngine()
@@ -473,6 +474,9 @@ static QUrl urlForFileName(const QString &fileName)
 
     The script code will be evaluated in the context of the global object.
 
+    \note If you need to evaluate inside a QML context, use \l QQmlExpression
+    instead.
+
     The evaluation of \a program can cause an \l{Script Exceptions}{exception} in the
     engine; in this case the return value will be the exception
     that was thrown (typically an \c{Error} object; see
@@ -503,6 +507,8 @@ static QUrl urlForFileName(const QString &fileName)
     exception value will still be returned. Use \c exceptionStackTrace->isEmpty()
     to distinguish whether the value was a normal or an exceptional return
     value.
+
+    \sa QQmlExpression::evaluate
 */
 QJSValue QJSEngine::evaluate(const QString& program, const QString& fileName, int lineNumber, QStringList *exceptionStackTrace)
 {
@@ -529,7 +535,7 @@ QJSValue QJSEngine::evaluate(const QString& program, const QString& fileName, in
             for (auto &&frame: trace)
                 exceptionStackTrace->push_back(QString::fromLatin1("%1:%2:%3:%4").arg(
                                           frame.function,
-                                          QString::number(frame.line),
+                                          QString::number(qAbs(frame.line)),
                                           QString::number(frame.column),
                                           frame.source)
                                       );
@@ -566,20 +572,26 @@ QJSValue QJSEngine::evaluate(const QString& program, const QString& fileName, in
 QJSValue QJSEngine::importModule(const QString &fileName)
 {
     const QUrl url = urlForFileName(QFileInfo(fileName).canonicalFilePath());
-    auto moduleUnit = m_v4Engine->loadModule(url);
+    const auto module = m_v4Engine->loadModule(url);
     if (m_v4Engine->hasException)
         return QJSValuePrivate::fromReturnedValue(m_v4Engine->catchException());
 
     QV4::Scope scope(m_v4Engine);
-    QV4::Scoped<QV4::Module> moduleNamespace(scope, moduleUnit->instantiate(m_v4Engine));
-    if (m_v4Engine->hasException)
-        return QJSValuePrivate::fromReturnedValue(m_v4Engine->catchException());
-    moduleUnit->evaluate();
-    if (!m_v4Engine->isInterrupted.loadRelaxed())
-        return QJSValuePrivate::fromReturnedValue(moduleNamespace->asReturnedValue());
+    if (const auto compiled = module.compiled) {
+        QV4::Scoped<QV4::Module> moduleNamespace(scope, compiled->instantiate(m_v4Engine));
+        if (m_v4Engine->hasException)
+            return QJSValuePrivate::fromReturnedValue(m_v4Engine->catchException());
+        compiled->evaluate();
+        if (!m_v4Engine->isInterrupted.loadRelaxed())
+            return QJSValuePrivate::fromReturnedValue(moduleNamespace->asReturnedValue());
+        return QJSValuePrivate::fromReturnedValue(
+                    m_v4Engine->newErrorObject(QStringLiteral("Interrupted"))->asReturnedValue());
+    }
 
-    return QJSValuePrivate::fromReturnedValue(
-            m_v4Engine->newErrorObject(QStringLiteral("Interrupted"))->asReturnedValue());
+    // If there is neither a native nor a compiled module, we should have seen an exception
+    Q_ASSERT(module.native);
+
+    return QJSValuePrivate::fromReturnedValue(module.native->asReturnedValue());
 }
 
 /*!
@@ -609,7 +621,9 @@ QJSValue QJSEngine::importModule(const QString &fileName)
  */
 bool QJSEngine::registerModule(const QString &moduleName, const QJSValue &value)
 {
-    m_v4Engine->registerModule(moduleName, value);
+    QV4::Scope scope(m_v4Engine);
+    QV4::ScopedValue v4Value(scope, QJSValuePrivate::asReturnedValue(&value));
+    m_v4Engine->registerNativeModule(QUrl(moduleName), v4Value);
     if (m_v4Engine->hasException)
         return false;
     return true;
@@ -784,6 +798,13 @@ QJSValue QJSEngine::globalObject() const
     return QJSValuePrivate::fromReturnedValue(v->asReturnedValue());
 }
 
+QJSPrimitiveValue QJSEngine::createPrimitive(QMetaType type, const void *ptr)
+{
+    QV4::Scope scope(m_v4Engine);
+    QV4::ScopedValue v(scope, m_v4Engine->metaTypeToJS(type, ptr));
+    return QV4::ExecutionEngine::createPrimitive(v);
+}
+
 QJSManagedValue QJSEngine::createManaged(QMetaType type, const void *ptr)
 {
     QJSManagedValue result(m_v4Engine);
@@ -802,13 +823,25 @@ QJSValue QJSEngine::create(QMetaType type, const void *ptr)
     return QJSValuePrivate::fromReturnedValue(v->asReturnedValue());
 }
 
-#if QT_VERSION < QT_VERSION_CHECK(7,0,0)
-QJSValue QJSEngine::create(int typeId, const void *ptr)
+bool QJSEngine::convertPrimitive(const QJSPrimitiveValue &value, QMetaType type, void *ptr)
 {
-    QMetaType type(typeId);
-    return create(type, ptr);
+    switch (value.type()) {
+    case QJSPrimitiveValue::Undefined:
+        return QV4::ExecutionEngine::metaTypeFromJS(QV4::Value::undefinedValue(), type, ptr);
+    case QJSPrimitiveValue::Null:
+        return QV4::ExecutionEngine::metaTypeFromJS(QV4::Value::nullValue(), type, ptr);
+    case QJSPrimitiveValue::Boolean:
+        return QV4::ExecutionEngine::metaTypeFromJS(QV4::Value::fromBoolean(value.toBoolean()), type, ptr);
+    case QJSPrimitiveValue::Integer:
+        return QV4::ExecutionEngine::metaTypeFromJS(QV4::Value::fromInt32(value.toInteger()), type, ptr);
+    case QJSPrimitiveValue::Double:
+        return QV4::ExecutionEngine::metaTypeFromJS(QV4::Value::fromDouble(value.toDouble()), type, ptr);
+    case QJSPrimitiveValue::String:
+        return convertString(value.toString(), type, ptr);
+    }
+
+    Q_UNREACHABLE_RETURN(false);
 }
-#endif
 
 bool QJSEngine::convertManaged(const QJSManagedValue &value, int type, void *ptr)
 {
@@ -820,12 +853,7 @@ bool QJSEngine::convertManaged(const QJSManagedValue &value, QMetaType type, voi
     return QV4::ExecutionEngine::metaTypeFromJS(*value.d, type, ptr);
 }
 
-bool QJSEngine::convertV2(const QJSValue &value, int type, void *ptr)
-{
-    return convertV2(value, QMetaType(type), ptr);
-}
-
-static bool convertString(const QString &string, QMetaType metaType, void *ptr)
+bool QJSEngine::convertString(const QString &string, QMetaType metaType, void *ptr)
 {
     // have a string based value without engine. Do conversion manually
     if (metaType == QMetaType::fromType<bool>()) {
@@ -848,6 +876,12 @@ static bool convertString(const QString &string, QMetaType metaType, void *ptr)
         return true;
     case QMetaType::UInt:
         *reinterpret_cast<uint*>(ptr) = QV4::Value::toUInt32(d);
+        return true;
+    case QMetaType::Long:
+        *reinterpret_cast<long*>(ptr) = QV4::Value::toInteger(d);
+        return true;
+    case QMetaType::ULong:
+        *reinterpret_cast<ulong*>(ptr) = QV4::Value::toInteger(d);
         return true;
     case QMetaType::LongLong:
         *reinterpret_cast<qlonglong*>(ptr) = QV4::Value::toInteger(d);
@@ -893,45 +927,115 @@ bool QJSEngine::convertV2(const QJSValue &value, QMetaType metaType, void *ptr)
     if (const QString *string = QJSValuePrivate::asQString(&value))
         return convertString(*string, metaType, ptr);
 
+    // Does not need scoping since QJSValue still holds on to the value.
     return QV4::ExecutionEngine::metaTypeFromJS(QJSValuePrivate::asReturnedValue(&value), metaType, ptr);
 }
 
 bool QJSEngine::convertVariant(const QVariant &value, QMetaType metaType, void *ptr)
 {
-    if (value.metaType() == QMetaType::fromType<QString>())
-        return convertString(value.toString(), metaType, ptr);
-
     // TODO: We could probably avoid creating a QV4::Value in many cases, but we'd have to
     //       duplicate much of metaTypeFromJS and some methods of QV4::Value itself here.
-    return QV4::ExecutionEngine::metaTypeFromJS(handle()->fromVariant(value), metaType, ptr);
+    QV4::Scope scope(handle());
+    QV4::ScopedValue scoped(scope, scope.engine->fromVariant(value));
+    return QV4::ExecutionEngine::metaTypeFromJS(scoped, metaType, ptr);
+}
+
+bool QJSEngine::convertMetaType(QMetaType fromType, const void *from, QMetaType toType, void *to)
+{
+    // TODO: We could probably avoid creating a QV4::Value in many cases, but we'd have to
+    //       duplicate much of metaTypeFromJS and some methods of QV4::Value itself here.
+    QV4::Scope scope(handle());
+    QV4::ScopedValue scoped(scope, scope.engine->fromData(fromType, from));
+    return QV4::ExecutionEngine::metaTypeFromJS(scoped, toType, to);
+}
+
+QString QJSEngine::convertQObjectToString(QObject *object)
+{
+    return QV4::QObjectWrapper::objectToString(
+                handle(), object ? object->metaObject() : nullptr, object);
+}
+
+QString QJSEngine::convertDateTimeToString(const QDateTime &dateTime)
+{
+    return QV4::DateObject::dateTimeToString(dateTime, handle());
+}
+
+QDate QJSEngine::convertDateTimeToDate(const QDateTime &dateTime)
+{
+    return QV4::DateObject::dateTimeToDate(dateTime);
 }
 
 /*! \fn template <typename T> QJSValue QJSEngine::toScriptValue(const T &value)
 
     Creates a QJSValue with the given \a value.
-    This works with any type \c{T} that has a \c{QMetaType}.
 
-    \sa fromScriptValue()
+    \sa fromScriptValue(), coerceValue()
+*/
+
+/*! \fn template <typename T> QJSManagedValue QJSEngine::toManagedValue(const T &value)
+
+    Creates a QJSManagedValue with the given \a value.
+
+    \sa fromManagedValue(), coerceValue()
+*/
+
+/*! \fn template <typename T> QJSPrimitiveValue QJSEngine::toPrimitiveValue(const T &value)
+
+    Creates a QJSPrimitiveValue with the given \a value.
+
+    Since QJSPrimitiveValue can only hold int, bool, double, QString, and the
+    equivalents of JavaScript \c null and \c undefined, the value will be
+    coerced aggressively if you pass any other type.
+
+    \sa fromPrimitiveValue(), coerceValue()
 */
 
 /*! \fn template <typename T> T QJSEngine::fromScriptValue(const QJSValue &value)
 
     Returns the given \a value converted to the template type \c{T}.
-    This works with any type \c{T} that has a \c{QMetaType}.
 
-    \sa toScriptValue()
+    \sa toScriptValue(), coerceValue()
+*/
+
+/*! \fn template <typename T> T QJSEngine::fromManagedValue(const QJSManagedValue &value)
+
+    Returns the given \a value converted to the template type \c{T}.
+
+    \sa toManagedValue(), coerceValue()
+*/
+
+/*! \fn template <typename T> T QJSEngine::fromPrimitiveValue(const QJSPrimitiveValue &value)
+
+    Returns the given \a value converted to the template type \c{T}.
+
+    Since QJSPrimitiveValue can only hold int, bool, double, QString, and the
+    equivalents of JavaScript \c null and \c undefined, the value will be
+    coerced aggressively if you request any other type.
+
+    \sa toPrimitiveValue(), coerceValue()
 */
 
 /*! \fn template <typename T> T QJSEngine::fromVariant(const QVariant &value)
 
     Returns the given \a value converted to the template type \c{T}.
-    This works with any type \c{T} that has a \c{QMetaType}. The
-    conversion is done in JavaScript semantics. Those differ from
+    The conversion is done in JavaScript semantics. Those differ from
     qvariant_cast's semantics. There are a number of implicit
     conversions between JavaScript-equivalent types that are not
     performed by qvariant_cast by default.
 
-    \sa fromScriptValue() qvariant_cast()
+    \sa coerceValue(), fromScriptValue(), qvariant_cast()
+*/
+
+/*! \fn template <typename From, typename To> T QJSEngine::coerceValue(const From &from)
+
+    Returns the given \a from converted to the template type \c{To}.
+    The conversion is done in JavaScript semantics. Those differ from
+    qvariant_cast's semantics. There are a number of implicit
+    conversions between JavaScript-equivalent types that are not
+    performed by qvariant_cast by default. This method is a generalization of
+    all the other conversion methods in this class.
+
+    \sa fromVariant(), qvariant_cast(), fromScriptValue(), toScriptValue()
 */
 
 /*!
@@ -943,7 +1047,7 @@ bool QJSEngine::convertVariant(const QVariant &value, QMetaType metaType, void *
     JavaScript function through QJSEngine.
 
     When returning from C++, the engine will interrupt the normal flow of
-    execution and call the the next pre-registered exception handler with
+    execution and call the next pre-registered exception handler with
     an error object that contains the given \a message. The error object
     will point to the location of the top-most context on the JavaScript
     caller stack; specifically, it will have properties \c lineNumber,

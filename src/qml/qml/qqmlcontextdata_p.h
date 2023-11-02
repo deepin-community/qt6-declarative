@@ -266,6 +266,10 @@ public:
 
     void addExpression(QQmlJavaScriptExpression *expression);
 
+    bool valueTypesAreAddressable() const {
+        return m_typeCompilationUnit && m_typeCompilationUnit->valueTypesAreAddressable();
+    }
+
 private:
     friend class QQmlGuardedContextData;
     friend class QQmlContextPrivate;
@@ -358,7 +362,7 @@ private:
     quint32 m_ownedByParent:1;
     quint32 m_ownedByPublicContext:1;
     quint32 m_hasExtraObject:1; // used in QQmlDelegateModelItem::dataForObject to find the corresponding QQmlDelegateModelItem of an object
-    quint32 m_dummy:23;
+    Q_DECL_UNUSED_MEMBER quint32 m_dummy:23;
     QQmlContext *m_publicContext = nullptr;
 
     union {

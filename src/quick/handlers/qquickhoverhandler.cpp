@@ -3,6 +3,8 @@
 
 #include "qquickhoverhandler_p.h"
 #include <private/qquicksinglepointhandler_p_p.h>
+#include <private/qquickdeliveryagent_p.h>
+#include <private/qquickitem_p.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -31,7 +33,7 @@ Q_LOGGING_CATEGORY(lcHoverHandler, "qt.quick.handler.hover")
     The \l cursorShape property allows changing the cursor whenever
     \l hovered changes to \c true.
 
-    \sa MouseArea, PointHandler
+    \sa MouseArea, PointHandler, {Qt Quick Examples - Pointer Handlers}
 */
 
 class QQuickHoverHandlerPrivate : public QQuickSinglePointHandlerPrivate
@@ -150,7 +152,7 @@ bool QQuickHoverHandler::wantsPointerEvent(QPointerEvent *event)
     }
 
     // Some hover events come from QQuickWindow::tabletEvent(). In between,
-    // some hover events come from QQWindowPrivate::flushFrameSynchronousEvents(),
+    // some hover events come from QQuickDeliveryAgentPrivate::flushFrameSynchronousEvents(),
     // but those look like mouse events. If a particular HoverHandler instance
     // is filtering for tablet events only (e.g. by setting
     // acceptedDevices:PointerDevice.Stylus), those events should not cause
@@ -334,6 +336,13 @@ void QQuickHoverHandler::setHovered(bool hovered)
     if you read the value it will return \c Qt.ArrowCursor.
 
     \sa Qt::CursorShape, QQuickItem::cursor()
+*/
+
+/*!
+    \internal
+    \qmlproperty flags HoverHandler::dragThreshold
+
+    This property is not used in HoverHandler.
 */
 
 QT_END_NAMESPACE

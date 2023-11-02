@@ -1,0 +1,3 @@
+# libQt6LabsFolderListModel6 is a private library installed in a public path
+qml6-module-qt-labs-folderlistmodel: package-name-doesnt-match-sonames libQt6LabsFolderListModel6
+qml6-module-qt-labs-folderlistmodel: no-symbols-control-file usr/lib/*/libQt6LabsFolderListModel.so.6.*

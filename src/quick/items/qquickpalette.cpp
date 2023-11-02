@@ -23,9 +23,9 @@ static constexpr bool is_valid(QPalette::ColorGroup cg) noexcept
 
     // GCC 8.x does not tread __builtin_unreachable() as constexpr
 #if defined(Q_CC_INTEL) || defined(Q_CC_CLANG) || (defined(Q_CC_GNU) && Q_CC_GNU >= 900)
+    // NOLINTNEXTLINE(qt-use-unreachable-return): Triggers on Clang, breaking GCC 8
     Q_UNREACHABLE();
 #endif
-
     return false;
 }
 
@@ -33,7 +33,7 @@ static constexpr bool is_valid(QPalette::ColorGroup cg) noexcept
     \internal
 
     \class QQuickPalette
-    \brief The QQuickPalette class contains color groups for each QML item state.
+    \brief Contains color groups for each QML item state.
     \inmodule QtQuick
     \since 6.0
 
@@ -48,10 +48,10 @@ static constexpr bool is_valid(QPalette::ColorGroup cg) noexcept
     \inherits QQuickColorGroup
     \inqmlmodule QtQuick
     \ingroup qtquick-visual
-    \brief The QQuickPalette class contains color groups for each QML item state.
+    \brief Contains color groups for each QML item state.
 
-    A palette consists of three color groups: Active, Disabled, and Inactive.
-    Active color group is the default group, its colors are used for other groups
+    A palette consists of three color groups: \c active, \c disabled, and \c inactive.
+    The \c active color group is the default group: its colors are used for other groups
     if colors of these groups aren't explicitly specified.
 
     In the following example, color is applied for all color groups:
@@ -93,22 +93,23 @@ static constexpr bool is_valid(QPalette::ColorGroup cg) noexcept
     \endcode
 
     It is also possible to specify colors like this:
-    \code
-    palette {
-        buttonText: "azure"
-        button: "khaki"
 
-        disabled {
-            buttonText: "lavender"
-            button: "coral"
-        }
-    }
-    \endcode
-    This approach is convenient when you need to specify a whole palette with all color groups.
+    \snippet qtquickcontrols-custom-palette-buttons.qml palette
+
+    This approach is especially convenient when you need to specify a whole
+    palette with all color groups; but as with the other cases above, the
+    colors that are not specified are initialized from SystemPalette, or
+    potentially the \l {Styling Qt Quick Controls}{Qt Quick Controls style},
+    if one is in use.
+
+    \note Some Controls styles use some palette colors, but many styles use
+    independent colors.
+
+    \sa Window::palette, Item::palette, Popup::palette, SystemPalette
 */
 
 /*!
-    \qmlproperty QQuickColorGroup QtQuick::Palette::active
+    \qmlproperty ColorGroup QtQuick::Palette::active
 
     The Active group is used for windows that are in focus.
 
@@ -116,7 +117,7 @@ static constexpr bool is_valid(QPalette::ColorGroup cg) noexcept
 */
 
 /*!
-    \qmlproperty QQuickColorGroup QtQuick::Palette::inactive
+    \qmlproperty ColorGroup QtQuick::Palette::inactive
 
     The Inactive group is used for windows that have no keyboard focus.
 
@@ -124,7 +125,7 @@ static constexpr bool is_valid(QPalette::ColorGroup cg) noexcept
 */
 
 /*!
-    \qmlproperty QQuickColorGroup QtQuick::Palette::disabled
+    \qmlproperty ColorGroup QtQuick::Palette::disabled
 
     The Disabled group is used for elements that are disabled for some reason.
 

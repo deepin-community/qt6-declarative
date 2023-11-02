@@ -10,8 +10,11 @@ usr/include/${DEB_HOST_MULTIARCH}/qt6/QtQmlCompiler/*/QtQmlCompiler/private/*.h
 usr/include/${DEB_HOST_MULTIARCH}/qt6/QtQmlCore/*/QtQmlCore/private/*.h
 usr/include/${DEB_HOST_MULTIARCH}/qt6/QtQmlDebug/*/QtQmlDebug/private/*.h
 usr/include/${DEB_HOST_MULTIARCH}/qt6/QtQmlDom/*/QtQmlDom/private/*.h
+usr/include/${DEB_HOST_MULTIARCH}/qt6/QtQmlLS/*/QtQmlLS/private/*.h
 usr/include/${DEB_HOST_MULTIARCH}/qt6/QtQmlLocalStorage/*/QtQmlLocalStorage/private/*.h
 usr/include/${DEB_HOST_MULTIARCH}/qt6/QtQmlModels/*/QtQmlModels/private/*.h
+usr/include/${DEB_HOST_MULTIARCH}/qt6/QtQmlToolingSettings/*/QtQmlToolingSettings/private/*.h
+usr/include/${DEB_HOST_MULTIARCH}/qt6/QtQmlTypeRegistrar/*/QtQmlTypeRegistrar/private/*.h
 usr/include/${DEB_HOST_MULTIARCH}/qt6/QtQmlWorkerScript/*/QtQmlWorkerScript/private/*.h
 usr/include/${DEB_HOST_MULTIARCH}/qt6/QtQmlXmlListModel/*/QtQmlXmlListModel/private/*.h
 usr/include/${DEB_HOST_MULTIARCH}/qt6/QtQuick/*/QtQuick/private/*.h
@@ -21,6 +24,7 @@ usr/include/${DEB_HOST_MULTIARCH}/qt6/QtQuickControlsTestUtils/*/QtQuickControls
 usr/include/${DEB_HOST_MULTIARCH}/qt6/QtQuickDialogs2/*/QtQuickDialogs2/private/*.h
 usr/include/${DEB_HOST_MULTIARCH}/qt6/QtQuickDialogs2QuickImpl/*/QtQuickDialogs2QuickImpl/private/*.h
 usr/include/${DEB_HOST_MULTIARCH}/qt6/QtQuickDialogs2Utils/*/QtQuickDialogs2Utils/private/*.h
+usr/include/${DEB_HOST_MULTIARCH}/qt6/QtQuickEffects/*/QtQuickEffects/private/*.h
 usr/include/${DEB_HOST_MULTIARCH}/qt6/QtQuickLayouts/*/QtQuickLayouts/private/*.h
 usr/include/${DEB_HOST_MULTIARCH}/qt6/QtQuickParticles/*/QtQuickParticles/private/*.h
 usr/include/${DEB_HOST_MULTIARCH}/qt6/QtQuickShapes/*/QtQuickShapes/private/*.h
@@ -42,8 +46,11 @@ usr/lib/${DEB_HOST_MULTIARCH}/qt6/mkspecs/modules/qt_lib_qmldebug_private.pri
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/mkspecs/modules/qt_lib_qmldom_private.pri
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/mkspecs/modules/qt_lib_qmlintegration_private.pri
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/mkspecs/modules/qt_lib_qmllocalstorage_private.pri
+usr/lib/${DEB_HOST_MULTIARCH}/qt6/mkspecs/modules/qt_lib_qmlls_private.pri
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/mkspecs/modules/qt_lib_qmlmodels_private.pri
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/mkspecs/modules/qt_lib_qmltest_private.pri
+usr/lib/${DEB_HOST_MULTIARCH}/qt6/mkspecs/modules/qt_lib_qmltoolingsettings_private.pri
+usr/lib/${DEB_HOST_MULTIARCH}/qt6/mkspecs/modules/qt_lib_qmltyperegistrar_private.pri
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/mkspecs/modules/qt_lib_qmlworkerscript_private.pri
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/mkspecs/modules/qt_lib_qmlxmllistmodel_private.pri
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/mkspecs/modules/qt_lib_quick_private.pri
@@ -53,6 +60,7 @@ usr/lib/${DEB_HOST_MULTIARCH}/qt6/mkspecs/modules/qt_lib_quickcontrolstestutilsp
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/mkspecs/modules/qt_lib_quickdialogs2_private.pri
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/mkspecs/modules/qt_lib_quickdialogs2quickimpl_private.pri
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/mkspecs/modules/qt_lib_quickdialogs2utils_private.pri
+usr/lib/${DEB_HOST_MULTIARCH}/qt6/mkspecs/modules/qt_lib_quickeffects_private.pri
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/mkspecs/modules/qt_lib_quicklayouts_private.pri
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/mkspecs/modules/qt_lib_quickparticles_private.pri
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/mkspecs/modules/qt_lib_quickshapes_private.pri

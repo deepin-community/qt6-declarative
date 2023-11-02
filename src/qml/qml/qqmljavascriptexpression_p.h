@@ -132,6 +132,8 @@ public:
 
     QQmlEngine *engine() const { return m_context ? m_context->engine() : nullptr; }
     bool hasUnresolvedNames() const { return m_context && m_context->hasUnresolvedNames(); }
+
+    bool needsPropertyChangeTrigger(QObject *target, int propertyIndex);
     QPropertyChangeTrigger *allocatePropertyChangeTrigger(QObject *target, int propertyIndex);
 
 protected:
@@ -164,7 +166,8 @@ private:
     friend class QQmlContextData;
     friend class QQmlPropertyCapture;
     friend void QQmlJavaScriptExpressionGuard_callback(QQmlNotifierEndpoint *, void **);
-    friend class QQmlTranslationBinding;
+    friend class QQmlTranslationBindingFromBinding;
+    friend class QQmlTranslationBindingFromTranslationInfo;
     friend class QQmlJavaScriptExpressionCapture;
 
     // Not refcounted as the context will clear the expressions when destructed.

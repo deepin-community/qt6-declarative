@@ -51,11 +51,18 @@ private:
     int m_eee = 25;
 };
 
+struct Foozle {
+    Q_GADGET
+    int foo = 1;
+};
+
 class BirthdayParty : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(Person *host READ host WRITE setHost NOTIFY hostChanged FINAL)
     Q_PROPERTY(QQmlListProperty<Person> guests READ guests)
+    Q_PROPERTY(QStringList guestNames READ guestNames FINAL)
+    Q_PROPERTY(QVariantList stuffs READ stuffs FINAL)
     QML_ELEMENT
     QML_ATTACHED(BirthdayPartyAttached)
     QML_EXTENDED(BirthDayPartyExtended)
@@ -69,11 +76,15 @@ public:
     int guestCount() const;
     Person *guest(int) const;
 
+    QStringList guestNames() const;
+    QVariantList stuffs() const;
+
     Q_INVOKABLE void invite(const QString &name);
     static BirthdayPartyAttached *qmlAttachedProperties(QObject *object);
 
 signals:
     void hostChanged();
+    void partyStarted(Foozle foozle);
 
 private:
     Person *m_host;

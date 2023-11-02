@@ -43,16 +43,18 @@ class Q_QUICK_PRIVATE_EXPORT QQuickColorValueType
     Q_PROPERTY(qreal hslHue READ hslHue WRITE setHslHue FINAL)
     Q_PROPERTY(qreal hslSaturation READ hslSaturation WRITE setHslSaturation FINAL)
     Q_PROPERTY(qreal hslLightness READ hslLightness WRITE setHslLightness FINAL)
-    Q_PROPERTY(bool valid READ isValid)
+    Q_PROPERTY(bool valid READ isValid FINAL)
     Q_GADGET
     QML_ADDED_IN_VERSION(2, 0)
     QML_FOREIGN(QColor)
     QML_VALUE_TYPE(color)
     QML_EXTENDED(QQuickColorValueType)
+    QML_STRUCTURED_VALUE
 
 public:
     static QVariant create(const QJSValue &params);
 
+    Q_INVOKABLE QQuickColorValueType(const QString &string);
     Q_INVOKABLE QString toString() const;
 
     Q_INVOKABLE QVariant alpha(qreal value) const;
@@ -81,6 +83,8 @@ public:
     void setHslHue(qreal);
     void setHslSaturation(qreal);
     void setHslLightness(qreal);
+
+    operator QColor() const { return v; }
 };
 
 class Q_QUICK_PRIVATE_EXPORT QQuickVector2DValueType
@@ -93,6 +97,7 @@ class Q_QUICK_PRIVATE_EXPORT QQuickVector2DValueType
     QML_FOREIGN(QVector2D)
     QML_VALUE_TYPE(vector2d)
     QML_EXTENDED(QQuickVector2DValueType)
+    QML_STRUCTURED_VALUE
 
 public:
     static QVariant create(const QJSValue &params);
@@ -115,6 +120,8 @@ public:
     Q_INVOKABLE QVector4D toVector4d() const;
     Q_INVOKABLE bool fuzzyEquals(const QVector2D &vec, qreal epsilon) const;
     Q_INVOKABLE bool fuzzyEquals(const QVector2D &vec) const;
+
+    operator QVector2D() const { return v; }
 };
 
 class Q_QUICK_PRIVATE_EXPORT QQuickVector3DValueType
@@ -128,6 +135,7 @@ class Q_QUICK_PRIVATE_EXPORT QQuickVector3DValueType
     QML_FOREIGN(QVector3D)
     QML_VALUE_TYPE(vector3d)
     QML_EXTENDED(QQuickVector3DValueType)
+    QML_STRUCTURED_VALUE
 
 public:
     static QVariant create(const QJSValue &params);
@@ -154,6 +162,8 @@ public:
     Q_INVOKABLE QVector4D toVector4d() const;
     Q_INVOKABLE bool fuzzyEquals(const QVector3D &vec, qreal epsilon) const;
     Q_INVOKABLE bool fuzzyEquals(const QVector3D &vec) const;
+
+    operator QVector3D() const { return v; }
 };
 
 class Q_QUICK_PRIVATE_EXPORT QQuickVector4DValueType
@@ -168,6 +178,7 @@ class Q_QUICK_PRIVATE_EXPORT QQuickVector4DValueType
     QML_FOREIGN(QVector4D)
     QML_VALUE_TYPE(vector4d)
     QML_EXTENDED(QQuickVector4DValueType)
+    QML_STRUCTURED_VALUE
 
 public:
     static QVariant create(const QJSValue &params);
@@ -195,20 +206,23 @@ public:
     Q_INVOKABLE QVector3D toVector3d() const;
     Q_INVOKABLE bool fuzzyEquals(const QVector4D &vec, qreal epsilon) const;
     Q_INVOKABLE bool fuzzyEquals(const QVector4D &vec) const;
+
+    operator QVector4D() const { return v; }
 };
 
 class Q_QUICK_PRIVATE_EXPORT QQuickQuaternionValueType
 {
     QQuaternion v;
-    Q_PROPERTY(qreal scalar READ scalar WRITE setScalar)
-    Q_PROPERTY(qreal x READ x WRITE setX)
-    Q_PROPERTY(qreal y READ y WRITE setY)
-    Q_PROPERTY(qreal z READ z WRITE setZ)
+    Q_PROPERTY(qreal scalar READ scalar WRITE setScalar FINAL)
+    Q_PROPERTY(qreal x READ x WRITE setX FINAL)
+    Q_PROPERTY(qreal y READ y WRITE setY FINAL)
+    Q_PROPERTY(qreal z READ z WRITE setZ FINAL)
     Q_GADGET
     QML_ADDED_IN_VERSION(2, 0)
     QML_FOREIGN(QQuaternion)
     QML_VALUE_TYPE(quaternion)
     QML_EXTENDED(QQuickQuaternionValueType)
+    QML_STRUCTURED_VALUE
 
 public:
     static QVariant create(const QJSValue &params);
@@ -241,6 +255,8 @@ public:
 
     Q_INVOKABLE bool fuzzyEquals(const QQuaternion &q, qreal epsilon) const;
     Q_INVOKABLE bool fuzzyEquals(const QQuaternion &q) const;
+
+    operator QQuaternion() const { return v; }
 };
 
 class Q_QUICK_PRIVATE_EXPORT QQuickMatrix4x4ValueType
@@ -267,6 +283,7 @@ class Q_QUICK_PRIVATE_EXPORT QQuickMatrix4x4ValueType
     QML_FOREIGN(QMatrix4x4)
     QML_VALUE_TYPE(matrix4x4)
     QML_EXTENDED(QQuickMatrix4x4ValueType)
+    QML_STRUCTURED_VALUE
 
 public:
     static QVariant create(const QJSValue &params);
@@ -327,8 +344,13 @@ public:
     Q_INVOKABLE QMatrix4x4 inverted() const;
     Q_INVOKABLE QMatrix4x4 transposed() const;
 
+    Q_INVOKABLE QPointF map(const QPointF p) const;
+    Q_INVOKABLE QRectF mapRect(const QRectF r) const;
+
     Q_INVOKABLE bool fuzzyEquals(const QMatrix4x4 &m, qreal epsilon) const;
     Q_INVOKABLE bool fuzzyEquals(const QMatrix4x4 &m) const;
+
+    operator QMatrix4x4() const { return v; }
 };
 
 namespace QQuickFontEnums
@@ -385,11 +407,13 @@ class Q_QUICK_PRIVATE_EXPORT QQuickFontValueType
     Q_PROPERTY(QQuickFontEnums::HintingPreference hintingPreference READ hintingPreference WRITE setHintingPreference FINAL)
     Q_PROPERTY(bool kerning READ kerning WRITE setKerning FINAL)
     Q_PROPERTY(bool preferShaping READ preferShaping WRITE setPreferShaping FINAL)
+    Q_PROPERTY(QVariantMap features READ features WRITE setFeatures FINAL)
 
     QML_VALUE_TYPE(font)
     QML_FOREIGN(QFont)
     QML_ADDED_IN_VERSION(2, 0)
     QML_EXTENDED(QQuickFontValueType)
+    QML_STRUCTURED_VALUE
 
 public:
     static QVariant create(const QJSValue &value);
@@ -443,6 +467,11 @@ public:
 
     bool preferShaping() const;
     void setPreferShaping(bool b);
+
+    QVariantMap features() const;
+    void setFeatures(const QVariantMap &features);
+
+    operator QFont() const { return v; }
 };
 
 namespace QQuickColorSpaceEnums
@@ -494,6 +523,7 @@ class Q_QUICK_PRIVATE_EXPORT QQuickColorSpaceValueType
     QML_FOREIGN(QColorSpace)
     QML_ADDED_IN_VERSION(2, 15)
     QML_EXTENDED(QQuickColorSpaceValueType)
+    QML_STRUCTURED_VALUE
 
 public:
     static QVariant create(const QJSValue &params);
@@ -506,6 +536,8 @@ public:
     void setTransferFunction(QQuickColorSpaceEnums::TransferFunction transferFunction);
     float gamma() const noexcept;
     void setGamma(float gamma);
+
+    operator QColorSpace() const { return v; }
 };
 
 QT_END_NAMESPACE

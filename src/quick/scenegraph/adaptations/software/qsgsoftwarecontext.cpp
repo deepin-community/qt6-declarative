@@ -107,6 +107,17 @@ void QSGSoftwareRenderContext::initializeIfNeeded()
 
 void QSGSoftwareRenderContext::invalidate()
 {
+    qDeleteAll(m_texturesToDelete);
+    m_texturesToDelete.clear();
+
+    qDeleteAll(m_textures);
+    m_textures.clear();
+
+    Q_ASSERT(m_fontEnginesToClean.isEmpty());
+
+    qDeleteAll(m_glyphCaches);
+    m_glyphCaches.clear();
+
     m_sg->renderContextInvalidated(this);
     emit invalidated();
 }

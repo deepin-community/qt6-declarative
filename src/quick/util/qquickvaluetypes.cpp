@@ -10,6 +10,11 @@
 
 QT_BEGIN_NAMESPACE
 
+QQuickColorValueType::QQuickColorValueType(const QString &string)
+    : v(QColor::fromString(string))
+{
+}
+
 QVariant QQuickColorValueType::create(const QJSValue &params)
 {
     return params.isString() ? QColor::fromString(params.toString()) : QVariant();
@@ -168,10 +173,10 @@ QVariant createValueTypeFromNumberString(const QString &s)
 
     QVarLengthArray<float, NumParams> parameters;
     bool ok = true;
-    for (qsizetype prev = 0, next = s.indexOf(u','), length = s.length(); ok && prev < length;) {
+    for (qsizetype prev = 0, next = s.indexOf(u','), length = s.size(); ok && prev < length;) {
         parameters.append(s.mid(prev, next - prev).toFloat(&ok));
         prev = next + 1;
-        next = (parameters.length() == NumParams - 1) ? length : s.indexOf(u',', prev);
+        next = (parameters.size() == NumParams - 1) ? length : s.indexOf(u',', prev);
     }
 
     if (!ok)
@@ -757,6 +762,16 @@ QMatrix4x4 QQuickMatrix4x4ValueType::transposed() const
     return v.transposed();
 }
 
+QPointF QQuickMatrix4x4ValueType::map(const QPointF p) const
+{
+    return v.map(p);
+}
+
+QRectF QQuickMatrix4x4ValueType::mapRect(const QRectF r) const
+{
+    return v.mapRect(r);
+}
+
 bool QQuickMatrix4x4ValueType::fuzzyEquals(const QMatrix4x4 &m, qreal epsilon) const
 {
     qreal absEps = qAbs(epsilon);
@@ -1030,6 +1045,40 @@ void QQuickFontValueType::setPreferShaping(bool enable)
         v.setStyleStrategy(static_cast<QFont::StyleStrategy>(v.styleStrategy() & ~QFont::PreferNoShaping));
     else
         v.setStyleStrategy(static_cast<QFont::StyleStrategy>(v.styleStrategy() | QFont::PreferNoShaping));
+}
+
+void QQuickFontValueType::setFeatures(const QVariantMap &features)
+{
+    v.clearFeatures();
+    for (auto it = features.constBegin(); it != features.constEnd(); ++it) {
+        QString featureName = it.key();
+        quint32 tag = QFont::stringToTag(featureName.toUtf8());
+        if (tag == 0) {
+            qWarning() << "Invalid font feature" << featureName << "ignored";
+            continue;
+        }
+
+        bool ok;
+        quint32 value = it.value().toUInt(&ok);
+        if (!ok) {
+            qWarning() << "Font feature value" << it.value() << "is not an integer.";
+            continue;
+        }
+
+        v.setFeature(tag, value);
+    }
+}
+
+QVariantMap QQuickFontValueType::features() const
+{
+    QVariantMap ret;
+    for (quint32 tag : v.featureTags()) {
+        QString featureName = QString::fromUtf8(QFont::tagToString(tag));
+
+        ret.insert(featureName, v.featureValue(tag));
+    }
+
+    return ret;
 }
 
 QVariant QQuickColorSpaceValueType::create(const QJSValue &params)

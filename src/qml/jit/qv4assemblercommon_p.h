@@ -16,11 +16,14 @@
 //
 
 #include <private/qv4engine_p.h>
-#include <private/qv4global_p.h>
 #include <private/qv4function_p.h>
-#include <QHash>
+#include <private/qv4global_p.h>
+#include <private/qv4stackframe_p.h>
+
 #include <wtf/Vector.h>
 #include <assembler/MacroAssembler.h>
+
+#include <QtCore/qhash.h>
 
 #if QT_CONFIG(qml_jit)
 
@@ -30,7 +33,7 @@ namespace QV4 {
 namespace JIT {
 
 #if defined(Q_PROCESSOR_X86_64) || defined(ENABLE_ALL_ASSEMBLERS_FOR_REFACTORING_PURPOSES)
-#if defined(Q_OS_LINUX) || defined(Q_OS_QNX) || defined(Q_OS_FREEBSD) || defined(Q_OS_DARWIN)
+#if defined(Q_OS_LINUX) || defined(Q_OS_QNX) || defined(Q_OS_FREEBSD) || defined(Q_OS_DARWIN) || defined(Q_OS_SOLARIS)
 
 class PlatformAssembler_X86_64_SysV : public JSC::MacroAssembler<JSC::MacroAssemblerX86_64>
 {

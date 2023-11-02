@@ -92,7 +92,14 @@ protected:
         }
     }
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 6, 0)
     // we are not supposed to handle the ui
+    bool visit(UiPragmaValueList *) override
+    {
+        Q_ASSERT(false);
+        return false;
+    }
+#endif
     bool visit(UiPragma *) override
     {
         Q_ASSERT(false);
@@ -301,25 +308,52 @@ protected:
         for (PatternPropertyList *it = ast; it; it = it->next) {
             PatternProperty *assignment = AST::cast<PatternProperty *>(it->property);
             if (assignment) {
-                bool isStringLike = AST::cast<StringLiteralPropertyName *>(assignment->name)
-                        || cast<IdentifierPropertyName *>(assignment->name);
+                preVisit(assignment);
+                const bool isStringLike = [this](const SourceLocation &loc) {
+                    const auto name = loc2Str(loc);
+                    if (name.first() == name.last()) {
+                        if (name.first() == QStringLiteral("\'")
+                            || name.first() == QStringLiteral("\""))
+                            return true;
+                    }
+                    return false;
+                }(assignment->name->propertyNameToken);
+
                 if (isStringLike)
                     out("\"");
+
                 accept(assignment->name);
                 if (isStringLike)
                     out("\"");
-                out(": "); // assignment->colonToken
-                if (it->next)
-                    postOps[assignment->initializer].append([this] {
-                        out(","); // always invalid?
-                    });
-                accept(assignment->initializer);
-                if (it->next)
+
+                bool useInitializer = false;
+                const bool bindingIdentifierExist = !assignment->bindingIdentifier.isEmpty();
+                if (assignment->colonToken.length > 0) {
+                    out(": ");
+                    useInitializer = true;
+                    if (bindingIdentifierExist)
+                        out(assignment->bindingIdentifier);
+                }
+
+                if (assignment->initializer) {
+                    if (bindingIdentifierExist) {
+                        out(" = ");
+                        useInitializer = true;
+                    }
+                    if (useInitializer)
+                        accept(assignment->initializer);
+                }
+
+                if (it->next) {
+                    out(",");
                     newLine();
+                }
+                postVisit(assignment);
                 continue;
             }
+
             PatternPropertyList *getterSetter = AST::cast<PatternPropertyList *>(it->next);
-            if (getterSetter->property) {
+            if (getterSetter && getterSetter->property) {
                 switch (getterSetter->property->type) {
                 case PatternElement::Getter:
                     out("get");
@@ -574,7 +608,6 @@ protected:
         if (ast->isForDeclaration) {
             outputScope(ast->scope);
         }
-        accept(ast->bindingTarget);
         switch (ast->type) {
         case PatternElement::Literal:
         case PatternElement::Method:
@@ -590,9 +623,12 @@ protected:
             out("...");
             break;
         }
-        out(ast->identifierToken);
+
+        accept(ast->bindingTarget);
+        if (!ast->destructuringPattern())
+            out(ast->identifierToken);
         if (ast->initializer) {
-            if (ast->isVariableDeclaration())
+            if (ast->isVariableDeclaration() || ast->type == AST::PatternElement::Binding)
                 out(" = ");
             accept(ast->initializer);
         }
@@ -847,12 +883,15 @@ protected:
                 out(ast->identifierToken);
         }
         out(ast->lparenToken);
-        if (ast->isArrowFunction && ast->formals && ast->formals->next)
+        const bool needParentheses = ast->formals &&
+                (ast->formals->next ||
+                 (ast->formals->element && ast->formals->element->bindingTarget));
+        if (ast->isArrowFunction && needParentheses)
             out("(");
         int baseIndent = lw.increaseIndent(1);
         accept(ast->formals);
         lw.decreaseIndent(1, baseIndent);
-        if (ast->isArrowFunction && ast->formals && ast->formals->next)
+        if (ast->isArrowFunction && needParentheses)
             out(")");
         out(ast->rparenToken);
         if (ast->isArrowFunction && !ast->formals)
@@ -943,7 +982,11 @@ protected:
     bool visit(FormalParameterList *ast) override
     {
         for (FormalParameterList *it = ast; it; it = it->next) {
-            out(it->element->bindingIdentifier.toString()); // TODO
+            // compare FormalParameterList::finish
+            if (auto id = it->element->bindingIdentifier.toString(); !id.isEmpty())
+                out(id);
+            if (it->element->bindingTarget)
+                accept(it->element->bindingTarget);
             if (it->next)
                 out(", ");
         }
@@ -952,7 +995,11 @@ protected:
 
     // to check
     bool visit(TypeExpression *) override { return true; }
-    bool visit(SuperLiteral *) override { return true; }
+    bool visit(SuperLiteral *) override
+    {
+        out("super");
+        return true;
+    }
     bool visit(PatternProperty *) override { return true; }
     bool visit(ComputedPropertyName *) override
     {
@@ -975,7 +1022,61 @@ protected:
     }
     bool visit(YieldExpression *) override { return true; }
     bool visit(ClassExpression *) override { return true; }
-    bool visit(ClassDeclaration *) override { return true; }
+
+    // Return false because we want to omit default function calls in accept0 implementation.
+    bool visit(ClassDeclaration *ast) override
+    {
+        preVisit(ast);
+        out(ast->classToken);
+        out(" ");
+        out(ast->name);
+        if (ast->heritage) {
+            out(" extends ");
+            accept(ast->heritage);
+        }
+        out(" {");
+        int baseIndent = lw.increaseIndent();
+        for (ClassElementList *it = ast->elements; it; it = it->next) {
+            PatternProperty *property = it->property;
+            lw.newline();
+            preVisit(property);
+            if (it->isStatic)
+                out("static ");
+            if (property->type == PatternProperty::Getter)
+                out("get ");
+            else if (property->type == PatternProperty::Setter)
+                out("set ");
+            FunctionExpression *f = AST::cast<FunctionExpression *>(property->initializer);
+            const bool scoped = f->lbraceToken.length != 0;
+            out(f->functionToken);
+            out(f->lparenToken);
+            accept(f->formals);
+            out(f->rparenToken);
+            out(f->lbraceToken);
+            if (scoped)
+                ++expressionDepth;
+            if (f->body) {
+                if (f->body->next || scoped) {
+                    lnAcceptIndented(f->body);
+                    lw.newline();
+                } else {
+                    baseIndent = lw.increaseIndent(1);
+                    accept(f->body);
+                    lw.decreaseIndent(1, baseIndent);
+                }
+            }
+            if (scoped)
+                --expressionDepth;
+            out(f->rbraceToken);
+            lw.newline();
+            postVisit(property);
+        }
+        lw.decreaseIndent(1, baseIndent);
+        out("}");
+        postVisit(ast);
+        return false;
+    }
+
     bool visit(ClassElementList *) override { return true; }
     bool visit(Program *) override { return true; }
     bool visit(NameSpaceImport *) override { return true; }
@@ -992,13 +1093,15 @@ protected:
     bool visit(ESModule *) override { return true; }
     bool visit(DebuggerStatement *) override { return true; }
     bool visit(Type *) override { return true; }
-    bool visit(TypeArgumentList *) override { return true; }
     bool visit(TypeAnnotation *) override { return true; }
 
     // overridden to use BasicVisitor (and ensure warnings about new added AST)
     void endVisit(UiProgram *) override { }
     void endVisit(UiImport *) override { }
     void endVisit(UiHeaderItemList *) override { }
+#if QT_VERSION >= QT_VERSION_CHECK(6, 6, 0)
+    void endVisit(UiPragmaValueList *) override { }
+#endif
     void endVisit(UiPragma *) override { }
     void endVisit(UiPublicMember *) override { }
     void endVisit(UiSourceElement *) override { }
@@ -1109,7 +1212,6 @@ protected:
     void endVisit(ESModule *) override { }
     void endVisit(DebuggerStatement *) override { }
     void endVisit(Type *) override { }
-    void endVisit(TypeArgumentList *) override { }
     void endVisit(TypeAnnotation *) override { }
 
     void throwRecursionDepthError() override

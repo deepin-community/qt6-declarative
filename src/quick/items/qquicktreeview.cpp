@@ -5,6 +5,7 @@
 
 #include <QtCore/qobject.h>
 #include <QtQml/qqmlcontext.h>
+#include <QtQuick/private/qquicktaphandler_p.h>
 
 #include <QtQmlModels/private/qqmltreemodeltotablemodel_p_p.h>
 
@@ -67,7 +68,7 @@
         \li \c {required property bool expanded}
                 - Is \c true if the model item drawn by the delegate is expanded
                 in the view.
-        \li \c {required property int hasChildren}
+        \li \c {required property bool hasChildren}
                 - Is \c true if the model item drawn by the delegate has children
                 in the model.
         \li \c {required property int depth}
@@ -78,7 +79,25 @@
 
     See also \l {Required Properties}.
 
+    By default, TreeView \l {toggleExpanded()}{toggles} the expanded state
+    of a row when you double tap on it. Since this is in conflict with
+    double tapping to edit a cell, TreeView sets \l {TableView::}{editTriggers} to
+    \c TableView.EditKeyPressed by default (which is different from TableView,
+    which uses \c {TableView.EditKeyPressed | TableView.DoubleTapped}.
+    If you change \l {TableView::}{editTriggers} to also contain \c TableView.DoubleTapped,
+    toggling the expanded state with a double tap will be disabled.
+
     \note A TreeView only accepts a model that inherits \l QAbstractItemModel.
+*/
+
+/*!
+    \qmlproperty QModelIndex QtQuick::TreeView::rootIndex
+    \since 6.6
+
+    This property holds the model index of the root item in the tree.
+    By default, this is the same as the root index in the model, but you can
+    set it to be a child index instead, to show only a branch of the tree.
+    Set it to \c undefined to show the whole model.
 */
 
 /*!
@@ -338,8 +357,8 @@ void QQuickTreeViewPrivate::updateSelection(const QRect &oldSelection, const QRe
     for (int row = newRect.y(); row <= newRect.y() + newRect.height(); ++row) {
         if (oldRect.y() != -1 && oldRect.y() <= row && row <= oldRect.y() + oldRect.height())
             continue;
-        const QModelIndex startIndex = q->modelIndex(newRect.x(), row);
-        const QModelIndex endIndex = q->modelIndex(newRect.x() + newRect.width(), row);
+        const QModelIndex startIndex = q->index(row, newRect.x());
+        const QModelIndex endIndex = q->index(row, newRect.x() + newRect.width());
         selectionModel->select(QItemSelection(startIndex, endIndex), QItemSelectionModel::Select);
     }
 
@@ -351,15 +370,15 @@ void QQuickTreeViewPrivate::updateSelection(const QRect &oldSelection, const QRe
             if (oldRect.x() <= column && column <= oldRect.x() + oldRect.width())
                 continue;
             for (int row = newRect.y(); row <= newRect.y() + newRect.height(); ++row)
-                selectionModel->select(q->modelIndex(column, row), QItemSelectionModel::Select);
+                selectionModel->select(q->index(row, column), QItemSelectionModel::Select);
         }
 
         // Unselect the rows inside oldRect that don't overlap with newRect
         for (int row = oldRect.y(); row <= oldRect.y() + oldRect.height(); ++row) {
             if (newRect.y() <= row && row <= newRect.y() + newRect.height())
                 continue;
-            const QModelIndex startIndex = q->modelIndex(oldRect.x(), row);
-            const QModelIndex endIndex = q->modelIndex(oldRect.x() + oldRect.width(), row);
+            const QModelIndex startIndex = q->index(row, oldRect.x());
+            const QModelIndex endIndex = q->index(row, oldRect.x() + oldRect.width());
             selectionModel->select(QItemSelection(startIndex, endIndex), QItemSelectionModel::Deselect);
         }
 
@@ -375,7 +394,7 @@ void QQuickTreeViewPrivate::updateSelection(const QRect &oldSelection, const QRe
             // performance. But large selections containing a lot of columns is not normally
             // the case for a treeview, so accept this potential corner case for now.
             for (int row = newRect.y(); row <= newRect.y() + newRect.height(); ++row)
-                selectionModel->select(q->modelIndex(column, row), QItemSelectionModel::Deselect);
+                selectionModel->select(q->index(row, column), QItemSelectionModel::Deselect);
         }
     }
 }
@@ -386,6 +405,7 @@ QQuickTreeView::QQuickTreeView(QQuickItem *parent)
     Q_D(QQuickTreeView);
 
     setSelectionBehavior(SelectRows);
+    setEditTriggers(EditKeyPressed);
 
     // Note: QQuickTableView will only ever see the table model m_treeModelToTableModel, and
     // never the actual tree model that is assigned to us by the application.
@@ -393,10 +413,43 @@ QQuickTreeView::QQuickTreeView(QQuickItem *parent)
     d->QQuickTableViewPrivate::setModelImpl(modelAsVariant);
     QObjectPrivate::connect(&d->m_treeModelToTableModel, &QAbstractItemModel::dataChanged,
                             d, &QQuickTreeViewPrivate::dataChangedCallback);
+    QObject::connect(&d->m_treeModelToTableModel, &QQmlTreeModelToTableModel::rootIndexChanged,
+                     this, &QQuickTreeView::rootIndexChanged);
+
+    auto tapHandler = new QQuickTapHandler(this);
+    tapHandler->setAcceptedModifiers(Qt::NoModifier);
+    connect(tapHandler, &QQuickTapHandler::doubleTapped, [this, tapHandler]{
+        if (!pointerNavigationEnabled())
+            return;
+        if (editTriggers() & DoubleTapped)
+            return;
+
+        const int row = cellAtPosition(tapHandler->point().pressPosition()).y();
+        toggleExpanded(row);
+    });
 }
 
 QQuickTreeView::~QQuickTreeView()
 {
+}
+
+QModelIndex QQuickTreeView::rootIndex() const
+{
+    return d_func()->m_treeModelToTableModel.rootIndex();
+}
+
+void QQuickTreeView::setRootIndex(const QModelIndex &index)
+{
+    Q_D(QQuickTreeView);
+    d->m_treeModelToTableModel.setRootIndex(index);
+    positionViewAtCell({0, 0}, QQuickTableView::AlignTop | QQuickTableView::AlignLeft);
+}
+
+void QQuickTreeView::resetRootIndex()
+{
+    Q_D(QQuickTreeView);
+    d->m_treeModelToTableModel.resetRootIndex();
+    positionViewAtCell({0, 0}, QQuickTableView::AlignTop | QQuickTableView::AlignLeft);
 }
 
 int QQuickTreeView::depth(int row) const
@@ -588,10 +641,25 @@ QPoint QQuickTreeView::cellAtIndex(const QModelIndex &index) const
     return QPoint(tableIndex.column(), tableIndex.row());
 }
 
-QModelIndex QQuickTreeView::modelIndex(int column, int row) const
+#if QT_DEPRECATED_SINCE(6, 4)
+QModelIndex QQuickTreeView::modelIndex(int row, int column) const
 {
-    return modelIndex({column, row});
+    static const bool compat6_4 = qEnvironmentVariable("QT_QUICK_TABLEVIEW_COMPAT_VERSION") == QStringLiteral("6.4");
+    if (compat6_4) {
+        // XXX Qt 7: Remove this compatibility path here and in QQuickTableView.
+        // In Qt 6.4.0 and 6.4.1, a source incompatible change led to row and column
+        // being documented to be specified in the opposite order.
+        // QT_QUICK_TABLEVIEW_COMPAT_VERSION can therefore be set to force tableview
+        // to continue accepting calls to modelIndex(column, row).
+        return modelIndex({row, column});
+    } else {
+        qmlWarning(this) << "modelIndex(row, column) is deprecated. "
+                            "Use index(row, column) instead. For more information, see "
+                            "https://doc.qt.io/qt-6/qml-qtquick-tableview-obsolete.html";
+        return modelIndex({column, row});
+    }
 }
+#endif
 
 void QQuickTreeView::keyPressEvent(QKeyEvent *event)
 {

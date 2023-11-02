@@ -38,6 +38,8 @@ private slots:
     void invalidFileImport_data();
     void invalidFileImport();
     void implicitWithDependencies();
+    void qualifiedScriptImport();
+    void invalidImportUrl();
 };
 
 void tst_QQmlImport::cleanup()
@@ -121,6 +123,31 @@ void tst_QQmlImport::implicitWithDependencies()
     QScopedPointer<QObject> o(component.create());
     QVERIFY(!o.isNull());
     QCOMPARE(o->objectName(), QStringLiteral("notARectangle"));
+}
+
+void tst_QQmlImport::qualifiedScriptImport()
+{
+    QQmlEngine engine;
+    QQmlComponent component(&engine, testFileUrl("qualifiedScriptImport.qml"));
+    QVERIFY2(component.isReady(), qPrintable(component.errorString()));
+    QScopedPointer<QObject> o(component.create());
+    QVERIFY(!o.isNull());
+
+    QCOMPARE(o->property("a"), QVariant::fromValue<double>(12));
+    QCOMPARE(o->property("b"), QVariant::fromValue<int>(3));
+    QCOMPARE(o->property("c"), QVariant());
+}
+
+void tst_QQmlImport::invalidImportUrl()
+{
+    QQmlEngine engine;
+    const QUrl url = testFileUrl("fileDotSlashImport.qml");
+    QQmlComponent component(&engine, url);
+    QVERIFY(component.isError());
+    QCOMPARE(
+            component.errorString(),
+            url.toString() + QLatin1String(
+                    ":2 Cannot resolve URL for import \"file://./MyModuleName\"\n"));
 }
 
 void tst_QQmlImport::testDesignerSupported()
@@ -218,6 +245,7 @@ void tst_QQmlImport::importPathOrder()
 #endif
     expectedImportPaths << appDirPath
                         << QLatin1String("qrc:/qt-project.org/imports")
+                        << QLatin1String("qrc:/qt/qml")
                         << qml2Imports;
     QQmlEngine engine;
     QCOMPARE(engine.importPathList(), expectedImportPaths);
@@ -430,18 +458,37 @@ void tst_QQmlImport::partialImportVersions()
     }
 }
 
+class NotItem : public QObject
+{
+    Q_OBJECT
+    QML_NAMED_ELEMENT(Item)
+};
+
 void tst_QQmlImport::registerModuleImport()
 {
-    const auto isValid = [&]() {
+    enum Result { IsItem, IsNotItem, IsNull, IsInvalid };
+    const auto check = [&]() -> Result {
         QQmlEngine engine;
         engine.addImportPath(directory());
         QQmlComponent component(&engine);
         component.setData("import MyPluginSupported; Item {}", QUrl());
         if (!component.isReady())
-            return false;
+            return IsInvalid;
         QScopedPointer<QObject> obj(component.create());
-        return !obj.isNull();
+        if (obj.isNull())
+            return IsNull;
+        if (qobject_cast<NotItem *>(obj.data()))
+            return IsNotItem;
+        else if (qobject_cast<QQuickItem *>(obj.data()))
+            return IsItem;
+        return IsInvalid;
     };
+
+    const auto isValid = [&]() {
+        return check() == IsItem;
+    };
+
+    qmlRegisterTypesAndRevisions<NotItem>("ShadowQuick", 1);
 
     qmlRegisterModuleImport("MyPluginSupported", 2, "QtQuick");
     QVERIFY(isValid());
@@ -469,6 +516,20 @@ void tst_QQmlImport::registerModuleImport()
     QVERIFY(!isValid());
     qmlUnregisterModuleImport("MyPluginSupported", 1, "QtQuick");
     QVERIFY(!isValid());
+
+    qmlRegisterModuleImport("MyPluginSupported", 2, "ShadowQuick", 1);
+    qmlRegisterModuleImport("MyPluginSupported", 2, "QtQuick", 2);
+    QCOMPARE(check(), IsItem);
+
+    qmlUnregisterModuleImport("MyPluginSupported", 2, "ShadowQuick", 1);
+    qmlUnregisterModuleImport("MyPluginSupported", 2, "QtQuick", 2);
+
+    qmlRegisterModuleImport("MyPluginSupported", 2, "QtQuick", 2);
+    qmlRegisterModuleImport("MyPluginSupported", 2, "ShadowQuick", 1);
+    QCOMPARE(check(), IsNotItem);
+
+    qmlUnregisterModuleImport("MyPluginSupported", 2, "QtQuick", 2);
+    qmlUnregisterModuleImport("MyPluginSupported", 2, "ShadowQuick", 1);
 }
 
 void tst_QQmlImport::importDependenciesPrecedence()

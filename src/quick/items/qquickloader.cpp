@@ -161,9 +161,7 @@ qreal QQuickLoaderPrivate::getImplicitHeight() const
 
     \section2 Loader Sizing Behavior
 
-    If the source component is not an Item type, Loader does not
-    apply any special sizing rules.  When used to load visual types,
-    Loader applies the following sizing rules:
+    When used to load visual types, Loader applies the following sizing rules:
 
     \list
     \li If an explicit size is not specified for the Loader, the Loader
@@ -190,6 +188,8 @@ qreal QQuickLoaderPrivate::getImplicitHeight() const
     \li The red rectangle will be 50x50, centered in the root item.
     \endtable
 
+    If the source component is not an Item type, Loader does not apply any
+    special sizing rules.
 
     \section2 Receiving Signals from Loaded Objects
 
@@ -368,7 +368,7 @@ QUrl QQuickLoader::source() const
     return d->source;
 }
 
-void QQuickLoader::setSource(const QUrl &url)
+void QQuickLoader::setSourceWithoutResolve(const QUrl &url)
 {
     setSource(url, true); // clear previous values
 }
@@ -476,6 +476,22 @@ void QQuickLoader::loadFromSourceComponent()
         d->load();
 }
 
+
+QUrl QQuickLoader::setSourceUrlHelper(const QUrl &unresolvedUrl)
+{
+    Q_D(QQuickLoader);
+
+    // 1. If setSource is called with a valid url, clear the old component and its corresponding url
+    // 2. If setSource is called with an invalid url(e.g. empty url), clear the old component but
+    // hold the url for old one.(we will compare it with new url later and may update status of loader to Loader.Null)
+    QUrl oldUrl = d->source;
+    d->clear();
+    QUrl sourceUrl = qmlEngine(this)->handle()->callingQmlContext()->resolvedUrl(unresolvedUrl);
+    if (!sourceUrl.isValid())
+        d->source = oldUrl;
+    return sourceUrl;
+}
+
 /*!
     \qmlmethod object QtQuick::Loader::setSource(url source, object properties)
 
@@ -540,32 +556,34 @@ void QQuickLoader::loadFromSourceComponent()
 
     \sa source, active
 */
-void QQuickLoader::setSource(QQmlV4Function *args)
+void QQuickLoader::setSource(const QUrl &source, QJSValue properties)
 {
-    Q_ASSERT(args);
     Q_D(QQuickLoader);
 
-    bool ipvError = false;
-    args->setReturnValue(QV4::Encode::undefined());
-    QV4::Scope scope(args->v4engine());
-    QV4::ScopedValue ipv(scope, d->extractInitialPropertyValues(args, this, &ipvError));
-    if (ipvError)
+    if (!(properties.isArray() || properties.isObject())) {
+        qmlWarning(this) << QQuickLoader::tr("setSource: value is not an object");
         return;
+    }
 
-    // 1. If setSource is called with a valid url, clear the old component and its corresponding url
-    // 2. If setSource is called with an invalid url(e.g. empty url), clear the old component but
-    // hold the url for old one.(we will compare it with new url later and may update status of loader to Loader.Null)
-    QUrl oldUrl = d->source;
-    d->clear();
-    QUrl sourceUrl = d->resolveSourceUrl(args);
-    if (!sourceUrl.isValid())
-        d->source = oldUrl;
+    QUrl sourceUrl = setSourceUrlHelper(source);
 
     d->disposeInitialPropertyValues();
-    if (!ipv->isUndefined()) {
-        d->initialPropertyValues.set(args->v4engine(), ipv);
-    }
-    d->qmlCallingContext.set(scope.engine, scope.engine->qmlContext());
+    auto engine = qmlEngine(this)->handle();
+    d->initialPropertyValues.set(engine, QJSValuePrivate::takeManagedValue(&properties)->asReturnedValue());
+    d->qmlCallingContext.set(engine, engine->qmlContext());
+
+    setSource(sourceUrl, false); // already cleared and set ipv above.
+}
+
+void QQuickLoader::setSource(const QUrl &source)
+{
+    Q_D(QQuickLoader);
+
+    QUrl sourceUrl = setSourceUrlHelper(source);
+
+    d->disposeInitialPropertyValues();
+    auto engine = qmlEngine(this)->handle();
+    d->qmlCallingContext.set(engine, engine->qmlContext());
 
     setSource(sourceUrl, false); // already cleared and set ipv above.
 }
@@ -621,7 +639,8 @@ void QQuickLoaderPrivate::setInitialState(QObject *obj)
         item->setParentItem(q);
     }
     if (obj) {
-        QQml_setParent_noEvent(itemContext, obj);
+        if (itemContext)
+            QQml_setParent_noEvent(itemContext, obj);
         QQml_setParent_noEvent(obj, q);
         itemContext = nullptr;
     }
@@ -704,14 +723,22 @@ void QQuickLoaderPrivate::_q_sourceLoaded()
         return;
 
     QQmlContext *creationContext = component->creationContext();
-    if (!creationContext) creationContext = qmlContext(q);
-    itemContext = new QQmlContext(creationContext);
-    itemContext->setContextObject(q);
+    if (!creationContext)
+        creationContext = qmlContext(q);
+
+    QQmlComponentPrivate *cp = QQmlComponentPrivate::get(component);
+    QQmlContext *context = [&](){
+        if (cp->isBound())
+            return creationContext;
+        itemContext = new QQmlContext(creationContext);
+        itemContext->setContextObject(q);
+        return itemContext;
+    }();
 
     delete incubator;
     incubator = new QQuickLoaderIncubator(this, asynchronous ? QQmlIncubator::Asynchronous : QQmlIncubator::AsynchronousIfNested);
 
-    component->create(*incubator, itemContext);
+    component->create(*incubator, context);
 
     if (incubator && incubator->status() == QQmlIncubator::Loading)
         updateStatus();
@@ -768,7 +795,7 @@ void QQuickLoader::componentComplete()
 {
     Q_D(QQuickLoader);
     QQuickItem::componentComplete();
-    if (active()) {
+    if (active() && (status() != Ready)) {
         if (d->loadingFromSource)
             d->createComponent();
         d->load();
@@ -777,12 +804,23 @@ void QQuickLoader::componentComplete()
 
 void QQuickLoader::itemChange(QQuickItem::ItemChange change, const QQuickItem::ItemChangeData &value)
 {
-    if (change == ItemSceneChange) {
+    switch (change) {
+    case ItemSceneChange: {
         QQuickWindow *loadedWindow = qmlobject_cast<QQuickWindow *>(item());
         if (loadedWindow) {
             qCDebug(lcTransient) << loadedWindow << "is transient for" << value.window;
             loadedWindow->setTransientParent(value.window);
         }
+        break;
+    }
+    case ItemChildAddedChange:
+        Q_ASSERT(value.item);
+        if (value.item->flags().testFlag(QQuickItem::ItemObservesViewport))
+            // Re-trigger the parent traversal to get subtreeTransformChangedEnabled turned on
+            value.item->setFlag(QQuickItem::ItemObservesViewport);
+        break;
+    default:
+        break;
     }
     QQuickItem::itemChange(change, value);
 }
@@ -924,34 +962,6 @@ void QQuickLoader::geometryChange(const QRectF &newGeometry, const QRectF &oldGe
         d->_q_updateSize();
     }
     QQuickItem::geometryChange(newGeometry, oldGeometry);
-}
-
-QUrl QQuickLoaderPrivate::resolveSourceUrl(QQmlV4Function *args)
-{
-    QV4::Scope scope(args->v4engine());
-    QV4::ScopedValue v(scope, (*args)[0]);
-    if (v->isUndefined())
-        return QUrl();
-    QString arg = v->toQString();
-    return arg.isEmpty() ? QUrl() : scope.engine->callingQmlContext()->resolvedUrl(QUrl(arg));
-}
-
-QV4::ReturnedValue QQuickLoaderPrivate::extractInitialPropertyValues(QQmlV4Function *args, QObject *loader, bool *error)
-{
-    QV4::Scope scope(args->v4engine());
-    QV4::ScopedValue valuemap(scope, QV4::Encode::undefined());
-    if (args->length() >= 2) {
-        QV4::ScopedValue v(scope, (*args)[1]);
-        if (!v->isObject() || v->as<QV4::ArrayObject>()) {
-            *error = true;
-            qmlWarning(loader) << QQuickLoader::tr("setSource: value is not an object");
-        } else {
-            *error = false;
-            valuemap = v;
-        }
-    }
-
-    return valuemap->asReturnedValue();
 }
 
 QQuickLoader::Status QQuickLoaderPrivate::computeStatus() const

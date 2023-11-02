@@ -96,8 +96,10 @@ QQuickStateGroup::QQuickStateGroup(QObject *parent)
 QQuickStateGroup::~QQuickStateGroup()
 {
     Q_D(const QQuickStateGroup);
-    for (int i = 0; i < d->states.size(); ++i)
-        d->states.at(i)->setStateGroup(nullptr);
+    for (int i = 0; i < d->states.size(); ++i) {
+        if (d->states.at(i))
+            d->states.at(i)->setStateGroup(nullptr);
+    }
     if (d->nullState)
         d->nullState->setStateGroup(nullptr);
 }
@@ -143,11 +145,9 @@ QQmlListProperty<QQuickState> QQuickStateGroup::statesProperty()
 void QQuickStateGroupPrivate::append_state(QQmlListProperty<QQuickState> *list, QQuickState *state)
 {
     QQuickStateGroup *_this = static_cast<QQuickStateGroup *>(list->object);
-    if (state) {
-        _this->d_func()->states.append(state);
+    _this->d_func()->states.append(state);
+    if (state)
         state->setStateGroup(_this);
-    }
-
 }
 
 qsizetype QQuickStateGroupPrivate::count_state(QQmlListProperty<QQuickState> *list)
@@ -167,28 +167,30 @@ void QQuickStateGroupPrivate::clear_states(QQmlListProperty<QQuickState> *list)
     QQuickStateGroup *_this = static_cast<QQuickStateGroup *>(list->object);
     _this->d_func()->setCurrentStateInternal(QString(), true);
     for (qsizetype i = 0; i < _this->d_func()->states.size(); ++i) {
-        _this->d_func()->states.at(i)->setStateGroup(nullptr);
+        if (_this->d_func()->states.at(i))
+            _this->d_func()->states.at(i)->setStateGroup(nullptr);
     }
     _this->d_func()->states.clear();
 }
 
 void QQuickStateGroupPrivate::replace_states(QQmlListProperty<QQuickState> *list, qsizetype index, QQuickState *state)
 {
-    auto *self = qobject_cast<QQuickStateGroup *>(list->object);
+    auto *self = static_cast<QQuickStateGroup *>(list->object);
     auto *d = self->d_func();
     auto *oldState = d->states.at(index);
     if (oldState != state) {
-        oldState->setStateGroup(nullptr);
+        if (oldState)
+            oldState->setStateGroup(nullptr);
         state->setStateGroup(self);
         d->states.replace(index, state);
-        if (d->currentState == oldState->name())
+        if (!oldState || d->currentState == oldState->name())
             d->setCurrentStateInternal(state->name(), true);
     }
 }
 
 void QQuickStateGroupPrivate::removeLast_states(QQmlListProperty<QQuickState> *list)
 {
-    auto *d = qobject_cast<QQuickStateGroup *>(list->object)->d_func();
+    auto *d = static_cast<QQuickStateGroup *>(list->object)->d_func();
     if (d->currentState == d->states.last()->name())
         d->setCurrentStateInternal(d->states.size() > 1 ? d->states.first()->name() : QString(), true);
     d->states.last()->setStateGroup(nullptr);
@@ -257,14 +259,14 @@ void QQuickStateGroupPrivate::clear_transitions(QQmlListProperty<QQuickTransitio
   This property is often used in scripts to change between states. For
   example:
 
-  \js
+  \qml
   function toggle() {
       if (button.state == 'On')
           button.state = 'Off';
       else
           button.state = 'On';
   }
-  \endjs
+  \endqml
 
   If the state group is in its base state (i.e. no explicit state has been
   set), \c state will be a blank string. Likewise, you can return a
@@ -353,11 +355,10 @@ bool QQuickStateGroupPrivate::updateAutoState()
                 if (abstractBinding && abstractBinding->kind() == QQmlAbstractBinding::QmlBinding) {
                     QQmlBinding *binding = static_cast<QQmlBinding *>(abstractBinding);
                     if (binding->hasValidContext()) {
-                        QVariant evalResult = binding->evaluate();
-                        if (evalResult.metaType() == QMetaType::fromType<QJSValue>())
-                            whenValue = evalResult.value<QJSValue>().toBool();
-                        else
-                            whenValue = evalResult.toBool();
+                        const auto boolType = QMetaType::fromType<bool>();
+                        const bool isUndefined = !binding->evaluate(&whenValue, boolType);
+                        if (isUndefined)
+                            whenValue = false;
                     }
                 }
 

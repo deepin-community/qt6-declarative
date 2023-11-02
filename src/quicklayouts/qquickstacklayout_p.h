@@ -26,8 +26,8 @@ class QQuickStackLayoutAttached;
 class Q_QUICKLAYOUTS_PRIVATE_EXPORT QQuickStackLayout : public QQuickLayout
 {
     Q_OBJECT
-    Q_PROPERTY(int count READ count NOTIFY countChanged)
-    Q_PROPERTY(int currentIndex READ currentIndex WRITE setCurrentIndex NOTIFY currentIndexChanged)
+    Q_PROPERTY(int count READ count NOTIFY countChanged FINAL)
+    Q_PROPERTY(int currentIndex READ currentIndex WRITE setCurrentIndex NOTIFY currentIndexChanged FINAL)
     QML_NAMED_ELEMENT(StackLayout)
     QML_ADDED_IN_VERSION(1, 3)
     QML_ATTACHED(QQuickStackLayoutAttached)
@@ -45,11 +45,15 @@ public:
     void invalidate(QQuickItem *childItem = nullptr)  override;
     void updateLayoutItems() override { }
     void rearrange(const QSizeF &) override;
+    void setStretchFactor(QQuickItem *item, int stretchFactor, Qt::Orientation orient) override;
 
     // iterator
     Q_INVOKABLE QQuickItem *itemAt(int index) const override;
     int itemCount() const override;
     int indexOf(QQuickItem *item) const;
+
+    /* QQuickItemChangeListener */
+    void itemSiblingOrderChanged(QQuickItem *item) override;
 
     static QQuickStackLayoutAttached *qmlAttachedProperties(QObject *object);
 
@@ -58,9 +62,14 @@ Q_SIGNALS:
     void countChanged();
 
 private:
+    enum AdjustCurrentIndexPolicy {
+        DontAdjustCurrentIndex,
+        AdjustCurrentIndex
+    };
+
     static void collectItemSizeHints(QQuickItem *item, QSizeF *sizeHints);
     bool shouldIgnoreItem(QQuickItem *item) const;
-    void childItemsChanged();
+    void childItemsChanged(AdjustCurrentIndexPolicy adjustCurrentIndexPolicy = DontAdjustCurrentIndex);
     Q_DECLARE_PRIVATE(QQuickStackLayout)
 
     friend class QQuickStackLayoutAttached;
@@ -93,9 +102,9 @@ private:
 class Q_QUICKLAYOUTS_PRIVATE_EXPORT QQuickStackLayoutAttached : public QObject
 {
     Q_OBJECT
-    Q_PROPERTY(int index READ index NOTIFY indexChanged)
-    Q_PROPERTY(bool isCurrentItem READ isCurrentItem NOTIFY isCurrentItemChanged)
-    Q_PROPERTY(QQuickStackLayout *layout READ layout NOTIFY layoutChanged)
+    Q_PROPERTY(int index READ index NOTIFY indexChanged FINAL)
+    Q_PROPERTY(bool isCurrentItem READ isCurrentItem NOTIFY isCurrentItemChanged FINAL)
+    Q_PROPERTY(QQuickStackLayout *layout READ layout NOTIFY layoutChanged FINAL)
 
 public:
     QQuickStackLayoutAttached(QObject *object);

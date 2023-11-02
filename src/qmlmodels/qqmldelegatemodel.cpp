@@ -103,7 +103,7 @@ public:
     QV4::PersistentValue changeProto;
 };
 
-V4_DEFINE_EXTENSION(QQmlDelegateModelEngineData, engineData)
+V4_DEFINE_EXTENSION(QQmlDelegateModelEngineData, qdmEngineData)
 
 
 void QQmlDelegateModelPartsMetaObject::propertyCreated(int, QMetaPropertyBuilder &prop)
@@ -363,12 +363,12 @@ void QQmlDelegateModelPrivate::connectToAbstractItemModel()
                       q, QQmlDelegateModel, SLOT(_q_columnsRemoved(QModelIndex,int,int)));
     qmlobject_connect(aim, QAbstractItemModel, SIGNAL(columnsMoved(QModelIndex,int,int,QModelIndex,int)),
                       q, QQmlDelegateModel, SLOT(_q_columnsMoved(QModelIndex,int,int,QModelIndex,int)));
-    qmlobject_connect(aim, QAbstractItemModel, SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)),
-                      q, QQmlDelegateModel, SLOT(_q_dataChanged(QModelIndex,QModelIndex,QVector<int>)));
+    qmlobject_connect(aim, QAbstractItemModel, SIGNAL(dataChanged(QModelIndex,QModelIndex,QList<int>)),
+                      q, QQmlDelegateModel, SLOT(_q_dataChanged(QModelIndex,QModelIndex,QList<int>)));
     qmlobject_connect(aim, QAbstractItemModel, SIGNAL(rowsMoved(QModelIndex,int,int,QModelIndex,int)),
                       q, QQmlDelegateModel, SLOT(_q_rowsMoved(QModelIndex,int,int,QModelIndex,int)));
-    qmlobject_connect(aim, QAbstractItemModel, SIGNAL(modelReset()),
-                      q, QQmlDelegateModel, SLOT(_q_modelReset()));
+
+    QObject::connect(aim, &QAbstractItemModel::modelAboutToBeReset, q, &QQmlDelegateModel::_q_modelAboutToBeReset);
     qmlobject_connect(aim, QAbstractItemModel, SIGNAL(layoutChanged(QList<QPersistentModelIndex>,QAbstractItemModel::LayoutChangeHint)),
                       q, QQmlDelegateModel, SLOT(_q_layoutChanged(QList<QPersistentModelIndex>,QAbstractItemModel::LayoutChangeHint)));
 }
@@ -393,12 +393,11 @@ void QQmlDelegateModelPrivate::disconnectFromAbstractItemModel()
                         SLOT(_q_columnsRemoved(QModelIndex,int,int)));
     QObject::disconnect(aim, SIGNAL(columnsMoved(QModelIndex,int,int,QModelIndex,int)), q,
                         SLOT(_q_columnsMoved(QModelIndex,int,int,QModelIndex,int)));
-    QObject::disconnect(aim, SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)),
-                        q, SLOT(_q_dataChanged(QModelIndex,QModelIndex,QVector<int>)));
+    QObject::disconnect(aim, SIGNAL(dataChanged(QModelIndex,QModelIndex,QList<int>)),
+                        q, SLOT(_q_dataChanged(QModelIndex,QModelIndex,QList<int>)));
     QObject::disconnect(aim, SIGNAL(rowsMoved(QModelIndex,int,int,QModelIndex,int)),
                         q, SLOT(_q_rowsMoved(QModelIndex,int,int,QModelIndex,int)));
-    QObject::disconnect(aim, SIGNAL(modelReset()),
-                        q, SLOT(_q_modelReset()));
+    QObject::disconnect(aim, &QAbstractItemModel::modelAboutToBeReset, q, &QQmlDelegateModel::_q_modelAboutToBeReset);
     QObject::disconnect(aim, SIGNAL(layoutChanged(QList<QPersistentModelIndex>,QAbstractItemModel::LayoutChangeHint)),
                         q, SLOT(_q_layoutChanged(QList<QPersistentModelIndex>,QAbstractItemModel::LayoutChangeHint)));
 }
@@ -922,7 +921,7 @@ void QQDMIncubationTask::initializeRequiredProperties(QQmlDelegateModelItem *mod
     if (incubatorPriv->hadTopLevelRequiredProperties()) {
         // If we have required properties, we clear the context object
         // so that the model role names are not polluting the context.
-        // Unless the context is bound, in which case we have never set context object.
+        // Unless the context is bound, in which case we have never set the context object.
         if (incubating && !isBound) {
             Q_ASSERT(incubating->contextData);
             incubating->contextData->setContextObject(nullptr);
@@ -931,16 +930,20 @@ void QQDMIncubationTask::initializeRequiredProperties(QQmlDelegateModelItem *mod
             proxyContext->setContextObject(nullptr);
         }
 
-        if (incubatorPriv->requiredProperties().empty())
-            return;
-        RequiredProperties &requiredProperties = incubatorPriv->requiredProperties();
+        // Retrieve the metaObject before the potential return so that the accessors have a chance
+        // to perform some finalization in case they produce a dynamic metaobject. Here we know for
+        // sure that we are using required properties.
+        const QMetaObject *qmlMetaObject = modelItemToIncubate->metaObject();
 
-        auto qmlMetaObject = modelItemToIncubate->metaObject();
+        if (incubatorPriv->requiredProperties()->empty())
+            return;
+        RequiredProperties *requiredProperties = incubatorPriv->requiredProperties();
+
         // if a required property was not in the model, it might still be a static property of the
         // QQmlDelegateModelItem or one of its derived classes this is the case for index, row,
         // column, model and more
-        // the most derived subclass of QQmlDelegateModelItem is QQmlDMAbstractModelData at depth 2,
-        // so 4 should be plenty
+        // the most derived subclasses of QQmlDelegateModelItem are QQmlDMAbstractItemModelData and
+        // QQmlDMObjectData at depth 2, so 4 should be plenty
         QVarLengthArray<QPair<const QMetaObject *, QObject *>, 4> mos;
         // we first check the dynamic meta object for properties originating from the model
         // contains abstractitemmodelproperties
@@ -987,6 +990,13 @@ void QQDMIncubationTask::initializeRequiredProperties(QQmlDelegateModelItem *mod
             modelItemToIncubate->contextData->setContextObject(modelItemToIncubate);
         if (proxiedObject)
             proxyContext->setContextObject(proxiedObject);
+
+        // Retrieve the metaObject() once so that the accessors have a chance to perform some
+        // finalization in case they produce a dynamic metaobject. For example, they might be
+        // inclined to create a propertyCache now because there are no required properties and any
+        // revisioned properties should be hidden after all. Here is the first time we know for
+        // sure whether we are using context properties.
+        modelItemToIncubate->metaObject();
     }
 }
 
@@ -1203,6 +1213,9 @@ QObject *QQmlDelegateModelPrivate::object(Compositor::Group group, int index, QQ
                 addCacheItem(cacheItem, it);
                 reuseItem(cacheItem, index, flags);
                 cacheItem->referenceObject();
+
+                if (index == m_compositor.count(group) - 1)
+                    requestMoreIfNecessary();
                 return cacheItem->object;
             }
 
@@ -1285,7 +1298,9 @@ QObject *QQmlDelegateModelPrivate::object(Compositor::Group group, int index, QQ
     if (cacheItem->object && (!cacheItem->incubationTask || isDoneIncubating(cacheItem->incubationTask->status())))
         return cacheItem->object;
 
-    cacheItem->releaseObject();
+    if (cacheItem->objectRef > 0)
+        cacheItem->releaseObject();
+
     if (!cacheItem->isReferenced()) {
         removeCacheItem(cacheItem);
         delete cacheItem;
@@ -1602,8 +1617,8 @@ void QQmlDelegateModelPrivate::itemsRemoved(
 
         if (movedItems && remove.isMove()) {
             movedItems->insert(remove.moveId, m_cache.mid(remove.cacheIndex(), remove.count));
-            QList<QQmlDelegateModelItem *>::iterator begin = m_cache.begin() + remove.cacheIndex();
-            QList<QQmlDelegateModelItem *>::iterator end = begin + remove.count;
+            QList<QQmlDelegateModelItem *>::const_iterator begin = m_cache.constBegin() + remove.cacheIndex();
+            QList<QQmlDelegateModelItem *>::const_iterator end = begin + remove.count;
             m_cache.erase(begin, end);
         } else {
             for (; cacheIndex < remove.cacheIndex() + remove.count - removedCache; ++cacheIndex) {
@@ -1617,7 +1632,7 @@ void QQmlDelegateModelPrivate::itemsRemoved(
                         emitDestroyingItem(object);
                     cacheItem->scriptRef -= 1;
                 }
-                if (!cacheItem->isReferenced()) {
+                if (!cacheItem->isReferenced() && !remove.inGroup(Compositor::Persisted)) {
                     m_compositor.clearFlags(Compositor::Cache, cacheIndex, 1, Compositor::CacheFlag);
                     m_cache.removeAt(cacheIndex);
                     delete cacheItem;
@@ -1833,14 +1848,41 @@ void QQmlDelegateModelPrivate::emitChanges()
     for (int i = 1; i < m_groupCount; ++i)
         QQmlDelegateModelGroupPrivate::get(m_groups[i])->emitModelUpdated(reset);
 
-    auto cacheCopy = m_cache; // deliberate; emitChanges may alter m_cache
-    for (QQmlDelegateModelItem *cacheItem : std::as_const(cacheCopy)) {
-        if (cacheItem->attached)
-            cacheItem->attached->emitChanges();
+    // emitChanges may alter m_cache and delete items
+    QVarLengthArray<QPointer<QQmlDelegateModelAttached>> attachedObjects;
+    attachedObjects.reserve(m_cache.length());
+    for (const QQmlDelegateModelItem *cacheItem : std::as_const(m_cache))
+        attachedObjects.append(cacheItem->attached);
+
+    for (const QPointer<QQmlDelegateModelAttached> &attached : std::as_const(attachedObjects)) {
+        if (attached && attached->m_cacheItem)
+            attached->emitChanges();
     }
 }
 
-void QQmlDelegateModel::_q_modelReset()
+void QQmlDelegateModel::_q_modelAboutToBeReset()
+{
+    auto aim = static_cast<QAbstractItemModel *>(sender());
+    auto oldRoleNames = aim->roleNames();
+    // this relies on the fact that modelAboutToBeReset must be followed
+    // by a modelReset signal before any further modelAboutToBeReset can occur
+    QObject::connect(aim, &QAbstractItemModel::modelReset, this, [&, oldRoleNames](){
+        auto aim = static_cast<QAbstractItemModel *>(sender());
+        if (oldRoleNames == aim->roleNames()) {
+            // if the rolenames stayed the same (most common case), then we don't have
+            // to throw away all the setup that we did
+            handleModelReset();
+        } else {
+            // If they did change, we give up and just start from scratch via setMode
+            setModel(QVariant::fromValue(model()));
+            // but we still have to call handleModelReset, otherwise views will
+            // not refresh
+            handleModelReset();
+        }
+    }, Qt::SingleShotConnection);
+}
+
+void QQmlDelegateModel::handleModelReset()
 {
     Q_D(QQmlDelegateModel);
     if (!d->m_delegate)
@@ -2005,7 +2047,7 @@ void QQmlDelegateModel::_q_layoutChanged(const QList<QPersistentModelIndex> &par
         // Ignored
     } else {
         // We don't know what's going on, so reset the model
-        _q_modelReset();
+        handleModelReset();
     }
 }
 
@@ -2042,7 +2084,9 @@ bool QQmlDelegateModelPrivate::insert(Compositor::insert_iterator &before, const
         propertyName = it.nextPropertyNameAsString(v);
         if (propertyName->isNull())
             break;
-        cacheItem->setValue(propertyName->toQStringNoThrow(), scope.engine->toVariant(v, QMetaType {}));
+        cacheItem->setValue(
+                    propertyName->toQStringNoThrow(),
+                    QV4::ExecutionEngine::toVariant(v, QMetaType {}));
     }
 
     cacheItem->groups = groups | Compositor::UnresolvedFlag | Compositor::CacheFlag;
@@ -2718,20 +2762,24 @@ void QQmlDelegateModelAttached::emitChanges()
     m_previousGroups = m_cacheItem->groups;
 
     int indexChanges = 0;
-    for (int i = 1; i < m_cacheItem->metaType->groupCount; ++i) {
+    const int groupCount = m_cacheItem->metaType->groupCount;
+    for (int i = 1; i < groupCount; ++i) {
         if (m_previousIndex[i] != m_currentIndex[i]) {
             m_previousIndex[i] = m_currentIndex[i];
             indexChanges |= (1 << i);
         }
     }
 
+    // Don't access m_cacheItem anymore once we've started sending signals.
+    // We don't own it and someone might delete it.
+
     int notifierId = 0;
     const QMetaObject *meta = metaObject();
-    for (int i = 1; i < m_cacheItem->metaType->groupCount; ++i, ++notifierId) {
+    for (int i = 1; i < groupCount; ++i, ++notifierId) {
         if (groupChanges & (1 << i))
             QMetaObject::activate(this, meta, notifierId, nullptr);
     }
-    for (int i = 1; i < m_cacheItem->metaType->groupCount; ++i, ++notifierId) {
+    for (int i = 1; i < groupCount; ++i, ++notifierId) {
         if (indexChanges & (1 << i))
             QMetaObject::activate(this, meta, notifierId, nullptr);
     }
@@ -2760,9 +2808,9 @@ void QQmlDelegateModelGroupPrivate::emitChanges(QV4::ExecutionEngine *v4)
     Q_Q(QQmlDelegateModelGroup);
     if (isChangedConnected() && !changeSet.isEmpty()) {
         emit q->changed(QJSValuePrivate::fromReturnedValue(
-                            engineData(v4)->array(v4, changeSet.removes())),
+                            qdmEngineData(v4)->array(v4, changeSet.removes())),
                         QJSValuePrivate::fromReturnedValue(
-                            engineData(v4)->array(v4, changeSet.inserts())));
+                            qdmEngineData(v4)->array(v4, changeSet.inserts())));
     }
     if (changeSet.difference() != 0)
         emit q->countChanged();
@@ -3924,7 +3972,7 @@ public:
 
             const QQmlChangeSet::Change &change = array->at(index);
 
-            QV4::ScopedObject changeProto(scope, engineData(v4)->changeProto.value());
+            QV4::ScopedObject changeProto(scope, qdmEngineData(v4)->changeProto.value());
             QV4::Scoped<QQmlDelegateModelGroupChange> object(scope, QQmlDelegateModelGroupChange::create(v4));
             object->setPrototypeOf(changeProto);
             object->d()->change = change;

@@ -7,6 +7,7 @@
 #include <private/qqmlcontext_p.h>
 #include <private/qqmlmetaobject_p.h>
 #include <private/qqmltypedata_p.h>
+#include <private/qqmlvaluetypewrapper_p.h>
 
 #include <private/qjsvalue_p.h>
 #include <private/qv4functionobject_p.h>
@@ -49,19 +50,31 @@ bool QQmlTypeWrapper::isSingleton() const
     return d()->type().isSingleton();
 }
 
+const QMetaObject *QQmlTypeWrapper::metaObject() const
+{
+    const QQmlType type = d()->type();
+    if (!type.isValid())
+        return nullptr;
+
+    if (type.isSingleton())
+        return type.metaObject();
+
+    return type.attachedPropertiesType(QQmlEnginePrivate::get(engine()->qmlEngine()));
+}
+
 QObject *QQmlTypeWrapper::object() const
 {
     const QQmlType type = d()->type();
     if (!type.isValid())
         return nullptr;
 
-    QQmlEngine *qmlEngine = engine()->qmlEngine();
+    QQmlEnginePrivate *qmlEngine = QQmlEnginePrivate::get(engine()->qmlEngine());
     if (type.isSingleton())
-        return QQmlEnginePrivate::get(qmlEngine)->singletonInstance<QObject *>(type);
+        return qmlEngine->singletonInstance<QObject *>(type);
 
     return qmlAttachedPropertiesObject(
             d()->object,
-            type.attachedPropertiesFunction(QQmlEnginePrivate::get(qmlEngine)));
+            type.attachedPropertiesFunction(qmlEngine));
 }
 
 QObject* QQmlTypeWrapper::singletonObject() const
@@ -190,7 +203,9 @@ ReturnedValue QQmlTypeWrapper::virtualGet(const Managed *m, PropertyKey id, cons
 
                     // check for property.
                     bool ok;
-                    const ReturnedValue result = QV4::QObjectWrapper::getQmlProperty(v4, context, qobjectSingleton, name, QV4::QObjectWrapper::IgnoreRevision, &ok);
+                    const ReturnedValue result = QV4::QObjectWrapper::getQmlProperty(
+                                v4, context, w->d(), qobjectSingleton, name,
+                                QV4::QObjectWrapper::AttachMethods, &ok);
                     if (hasProperty)
                         *hasProperty = ok;
 
@@ -232,7 +247,9 @@ ReturnedValue QQmlTypeWrapper::virtualGet(const Managed *m, PropertyKey id, cons
                         object,
                         type.attachedPropertiesFunction(QQmlEnginePrivate::get(v4->qmlEngine())));
                 if (ao)
-                    return QV4::QObjectWrapper::getQmlProperty(v4, context, ao, name, QV4::QObjectWrapper::IgnoreRevision, hasProperty);
+                    return QV4::QObjectWrapper::getQmlProperty(
+                                v4, context, w->d(), ao, name, QV4::QObjectWrapper::AttachMethods,
+                                hasProperty);
 
                 // Fall through to base implementation
             }
@@ -297,13 +314,16 @@ bool QQmlTypeWrapper::virtualPut(Managed *m, PropertyKey id, const Value &value,
         QObject *ao = qmlAttachedPropertiesObject(
                 object, type.attachedPropertiesFunction(QQmlEnginePrivate::get(e)));
         if (ao)
-            return QV4::QObjectWrapper::setQmlProperty(scope.engine, context, ao, name, QV4::QObjectWrapper::IgnoreRevision, value);
+            return QV4::QObjectWrapper::setQmlProperty(
+                        scope.engine, context, ao, name, QV4::QObjectWrapper::NoFlag, value);
         return false;
     } else if (type.isSingleton()) {
         QQmlEnginePrivate *e = QQmlEnginePrivate::get(scope.engine->qmlEngine());
         if (type.isQObjectSingleton() || type.isCompositeSingleton()) {
             if (QObject *qobjectSingleton = e->singletonInstance<QObject*>(type))
-                return QV4::QObjectWrapper::setQmlProperty(scope.engine, context, qobjectSingleton, name, QV4::QObjectWrapper::IgnoreRevision, value);
+                return QV4::QObjectWrapper::setQmlProperty(
+                            scope.engine, context, qobjectSingleton, name,
+                            QV4::QObjectWrapper::NoFlag, value);
 
         } else {
             QJSValue scriptSingleton = e->singletonInstance<QJSValue>(type);
@@ -349,19 +369,11 @@ bool QQmlTypeWrapper::virtualIsEqualTo(Managed *a, Managed *b)
     return false;
 }
 
-ReturnedValue QQmlTypeWrapper::virtualInstanceOf(const Object *typeObject, const Value &var)
+static ReturnedValue instanceOfQObject(const QV4::QQmlTypeWrapper *typeWrapper, const QObjectWrapper *objectWrapper)
 {
-    Q_ASSERT(typeObject->as<QV4::QQmlTypeWrapper>());
-    const QV4::QQmlTypeWrapper *typeWrapper = static_cast<const QV4::QQmlTypeWrapper *>(typeObject);
-
-    // can only compare a QObject* against a QML type
-    const QObjectWrapper *wrapper = var.as<QObjectWrapper>();
-    if (!wrapper)
-        return QV4::Encode(false);
-
-    QV4::ExecutionEngine *engine = typeObject->internalClass()->engine;
+    QV4::ExecutionEngine *engine = typeWrapper->internalClass()->engine;
     // in case the wrapper outlived the QObject*
-    const QObject *wrapperObject = wrapper->object();
+    const QObject *wrapperObject = objectWrapper->object();
     if (!wrapperObject)
         return engine->throwTypeError();
 
@@ -389,6 +401,29 @@ ReturnedValue QQmlTypeWrapper::virtualInstanceOf(const Object *typeObject, const
     const QMetaObject *theirType = wrapperObject->metaObject();
 
     return QV4::Encode(QQmlMetaObject::canConvert(theirType, myQmlType));
+}
+
+ReturnedValue QQmlTypeWrapper::virtualInstanceOf(const Object *typeObject, const Value &var)
+{
+    Q_ASSERT(typeObject->as<QV4::QQmlTypeWrapper>());
+    const QV4::QQmlTypeWrapper *typeWrapper = static_cast<const QV4::QQmlTypeWrapper *>(typeObject);
+
+    if (const QObjectWrapper *objectWrapper = var.as<QObjectWrapper>())
+        return instanceOfQObject(typeWrapper, objectWrapper);
+
+    if (const QMetaObject *valueTypeMetaObject
+            = QQmlMetaType::metaObjectForValueType(typeWrapper->d()->type())) {
+        if (const QQmlValueTypeWrapper *valueWrapper = var.as<QQmlValueTypeWrapper>()) {
+            return QV4::Encode(QQmlMetaObject::canConvert(valueWrapper->metaObject(),
+                                                          valueTypeMetaObject));
+        }
+
+        // We want "foo as valuetype" to return undefined if it doesn't match.
+        return Encode::undefined();
+    }
+
+    // If the target type is an object type  we want null.
+    return Encode(false);
 }
 
 ReturnedValue QQmlTypeWrapper::virtualResolveLookupGetter(const Object *object, ExecutionEngine *engine, Lookup *lookup)
@@ -419,9 +454,15 @@ ReturnedValue QQmlTypeWrapper::virtualResolveLookupGetter(const Object *object, 
                             const QQmlPropertyData *property = ddata->propertyCache->property(name.getPointer(), qobjectSingleton, qmlContext);
                             if (property) {
                                 ScopedValue val(scope, Value::fromReturnedValue(QV4::QObjectWrapper::wrap(engine, qobjectSingleton)));
-                                setupQObjectLookup(lookup, ddata, property,
-                                                   val->objectValue(), This);
-                                lookup->getter = QQmlTypeWrapper::lookupSingletonProperty;
+                                if (qualifiesForMethodLookup(property)) {
+                                    setupQObjectMethodLookup(
+                                                lookup, ddata, property, val->objectValue(), nullptr);
+                                    lookup->getter = QQmlTypeWrapper::lookupSingletonMethod;
+                                } else {
+                                    setupQObjectLookup(
+                                                lookup, ddata, property, val->objectValue(), This);
+                                    lookup->getter = QQmlTypeWrapper::lookupSingletonProperty;
+                                }
                                 return lookup->getter(lookup, engine, *object);
                             }
                             // Fall through to base implementation
@@ -472,6 +513,30 @@ bool QQmlTypeWrapper::virtualResolveLookupSetter(Object *object, ExecutionEngine
     return Object::virtualResolveLookupSetter(object, engine, lookup, value);
 }
 
+OwnPropertyKeyIterator *QQmlTypeWrapper::virtualOwnPropertyKeys(const Object *m, Value *target)
+{
+    QV4::Scope scope(m->engine());
+    QV4::Scoped<QQmlTypeWrapper> typeWrapper(scope, m);
+    Q_ASSERT(typeWrapper);
+    if (QObject *object = typeWrapper->object()) {
+        QV4::Scoped<QV4::QObjectWrapper> objectWrapper(scope, QV4::QObjectWrapper::wrap(typeWrapper->engine(), object));
+        return QV4::QObjectWrapper::virtualOwnPropertyKeys(objectWrapper, target);
+    }
+
+    return Object::virtualOwnPropertyKeys(m, target);
+}
+
+int QQmlTypeWrapper::virtualMetacall(Object *object, QMetaObject::Call call, int index, void **a)
+{
+    QQmlTypeWrapper *wrapper = object->as<QQmlTypeWrapper>();
+    Q_ASSERT(wrapper);
+
+    if (QObject *qObject = wrapper->object())
+        return QMetaObject::metacall(qObject, call, index, a);
+
+    return 0;
+}
+
 ReturnedValue QQmlTypeWrapper::lookupSingletonProperty(Lookup *l, ExecutionEngine *engine, const Value &object)
 {
     const auto revertLookup = [l, engine, &object]() {
@@ -484,6 +549,16 @@ ReturnedValue QQmlTypeWrapper::lookupSingletonProperty(Lookup *l, ExecutionEngin
     // we can safely cast to a QV4::Object here. If object is something else,
     // the internal class won't match
     Heap::Object *o = static_cast<Heap::Object *>(object.heapObject());
+
+    // The qmlTypeIc check is not strictly necessary.
+    // If we have different ways to get to the same QObject type
+    // we can use the same lookup to get its properties, no matter
+    // how we've found the object. Most of the few times this check
+    // fails, we will, of course have different object types. So
+    // this check provides an early exit for the error case.
+    //
+    // So, if we ever need more bits in qobjectLookup, qmlTypeIc is the
+    // member to be replaced.
     if (!o || o->internalClass != l->qobjectLookup.qmlTypeIc)
         return revertLookup();
 
@@ -502,7 +577,42 @@ ReturnedValue QQmlTypeWrapper::lookupSingletonProperty(Lookup *l, ExecutionEngin
 
     Scope scope(engine);
     ScopedValue obj(scope, QV4::QObjectWrapper::wrap(engine, qobjectSingleton));
-    return QObjectWrapper::lookupGetterImpl(l, engine, obj, /*useOriginalProperty*/ true, revertLookup);
+    const QObjectWrapper::Flags flags = l->forCall
+            ? QObjectWrapper::AllowOverride
+            : (QObjectWrapper::AttachMethods | QObjectWrapper::AllowOverride);
+    return QObjectWrapper::lookupPropertyGetterImpl(l, engine, obj, flags, revertLookup);
+}
+
+ReturnedValue QQmlTypeWrapper::lookupSingletonMethod(Lookup *l, ExecutionEngine *engine, const Value &object)
+{
+    const auto revertLookup = [l, engine, &object]() {
+        l->qobjectMethodLookup.propertyCache->release();
+        l->qobjectMethodLookup.propertyCache = nullptr;
+        l->getter = Lookup::getterGeneric;
+        return Lookup::getterGeneric(l, engine, object);
+    };
+
+    // We cannot safely cast here as we don't explicitly check the IC. Therefore as().
+    const QQmlTypeWrapper *This = object.as<QQmlTypeWrapper>();
+    if (!This)
+        return revertLookup();
+
+    QQmlType type = This->d()->type();
+    if (!type.isValid())
+        return revertLookup();
+
+    if (!type.isQObjectSingleton() && !type.isCompositeSingleton())
+        return revertLookup();
+
+    QQmlEnginePrivate *e = QQmlEnginePrivate::get(engine->qmlEngine());
+    QObject *qobjectSingleton = e->singletonInstance<QObject *>(type);
+    Q_ASSERT(qobjectSingleton);
+
+    Scope scope(engine);
+    ScopedValue obj(scope, QV4::QObjectWrapper::wrap(engine, qobjectSingleton));
+    return QObjectWrapper::lookupMethodGetterImpl(
+                l, engine, obj, l->forCall ? QObjectWrapper::NoFlag : QObjectWrapper::AttachMethods,
+                revertLookup);
 }
 
 ReturnedValue QQmlTypeWrapper::lookupEnumValue(Lookup *l, ExecutionEngine *engine, const Value &base)

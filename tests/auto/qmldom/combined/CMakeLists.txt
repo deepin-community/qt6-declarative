@@ -1,3 +1,6 @@
+# Copyright (C) 2022 The Qt Company Ltd.
+# SPDX-License-Identifier: BSD-3-Clause
+
 #####################################################################
 ## tst_dom_all Binary executing all tests together
 ## (simpler to verify coverage)
@@ -17,14 +20,13 @@ qt_internal_add_test(tst_dom_all
         ../domitem/tst_qmldomitem.h
         ../merging/tst_dommerging.h
         ../reformatter/tst_reformatter.h
-        ../standalone/tst_standalone.h
     INCLUDE_DIRECTORIES
         ..
     DEFINES
         NO_QTEST_MAIN
         QT_DEPRECATED_WARNINGS
-        QT_QMLTEST_DATADIR=\\\"${CMAKE_CURRENT_SOURCE_DIR}/../domdata\\\"
-    PUBLIC_LIBRARIES
+        QT_QMLTEST_DATADIR="${CMAKE_CURRENT_SOURCE_DIR}/../domdata"
+    LIBRARIES
         Qt::Core
         Qt::QmlDomPrivate
         Qt::Test
@@ -33,5 +35,5 @@ qt_internal_add_test(tst_dom_all
 
 qt_internal_extend_target(tst_dom_all CONDITION ANDROID OR IOS
     DEFINES
-        QT_QMLTEST_DATADIR=\\\":/domdata\\\"
+        QT_QMLTEST_DATADIR=":/domdata"
 )

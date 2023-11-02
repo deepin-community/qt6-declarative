@@ -62,6 +62,7 @@ struct QmltcEnum
 
 struct QmltcMethodBase
 {
+    QStringList comments; // C++ comments
     QString name; // C++ function name
     QList<QmltcVariable> parameterList; // C++ function parameter list
     QStringList body; // C++ function code
@@ -74,7 +75,7 @@ struct QmltcMethodBase
 struct QmltcMethod : QmltcMethodBase
 {
     QString returnType; // C++ return type
-    QQmlJSMetaMethod::Type type = QQmlJSMetaMethod::Method; // Qt function type
+    QQmlJSMetaMethodType type = QQmlJSMetaMethodType::Method; // Qt function type
 
     // TODO: should be a better way to handle this
     bool userVisible = false; // tells if a function is prioritized during the output generation
@@ -127,6 +128,9 @@ struct QmltcType
 
     // TODO: only needed for binding callables - should not be needed, generally
     bool ignoreInit = false; // specifies whether init and externalCtor should be ignored
+
+    // needed for singletons
+    std::optional<QmltcMethod> staticCreate{};
 };
 
 // Represents whole QML program, compiled to C++
@@ -136,6 +140,8 @@ struct QmltcProgram
     QString cppPath; // C++ output .cpp path
     QString hPath; // C++ output .h path
     QString outNamespace;
+    QString exportMacro; // if not empty, the macro that should be used to export the generated
+                         // classes
     QSet<QString> includes; // non-default C++ include files
     QmltcMethod urlMethod; // returns QUrl of the QML document
 

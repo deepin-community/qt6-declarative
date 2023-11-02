@@ -3,12 +3,13 @@
 
 #include "qv4serialize_p.h"
 
-#include <private/qv4value_p.h>
 #include <private/qv4dateobject_p.h>
-#include <private/qv4regexpobject_p.h>
-#include <private/qv4sequenceobject_p.h>
 #include <private/qv4objectproto_p.h>
 #include <private/qv4qobjectwrapper_p.h>
+#include <private/qv4regexp_p.h>
+#include <private/qv4regexpobject_p.h>
+#include <private/qv4sequenceobject_p.h>
+#include <private/qv4value_p.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -225,7 +226,8 @@ void Serialize::serialize(QByteArray &data, const QV4::Value &v, ExecutionEngine
 
         return;
     } else if (const Object *o = v.as<Object>()) {
-        const QVariant variant = engine->toVariant(v, QMetaType::fromType<QUrl>(), false);
+        const QVariant variant = QV4::ExecutionEngine::toVariant(
+                    v, QMetaType::fromType<QUrl>(), false);
         if (variant.userType() == QMetaType::QUrl) {
             serializeString(data, variant.value<QUrl>().toString(), WorkerUrl);
             return;
@@ -356,7 +358,7 @@ ReturnedValue Serialize::deserialize(const char *&data, ExecutionEngine *engine)
     case WorkerNumber:
         return QV4::Encode(popDouble(data));
     case WorkerDate:
-        return QV4::Encode(engine->newDateObject(QV4::Value::fromDouble(popDouble(data))));
+        return QV4::Encode(engine->newDateObject(popDouble(data)));
     case WorkerRegexp:
     {
         quint32 flags = headersize(header);
@@ -383,7 +385,6 @@ ReturnedValue Serialize::deserialize(const char *&data, ExecutionEngine *engine)
     case WorkerSequence:
     {
         ScopedValue value(scope);
-        bool succeeded = false;
         quint32 length = headersize(header);
         quint32 seqLength = length - 1;
         value = deserialize(data, engine);
@@ -395,8 +396,8 @@ ReturnedValue Serialize::deserialize(const char *&data, ExecutionEngine *engine)
             array->arrayPut(ii, value);
         }
         array->setArrayLengthUnchecked(seqLength);
-        QVariant seqVariant = QV4::SequencePrototype::toVariant(array, QMetaType(sequenceType), &succeeded);
-        return QV4::SequencePrototype::fromVariant(engine, seqVariant, &succeeded);
+        QVariant seqVariant = QV4::SequencePrototype::toVariant(array, QMetaType(sequenceType));
+        return QV4::SequencePrototype::fromVariant(engine, seqVariant);
     }
     }
     Q_ASSERT(!"Unreachable");

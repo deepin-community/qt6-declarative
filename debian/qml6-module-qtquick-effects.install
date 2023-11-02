@@ -1,0 +1,4 @@
+usr/lib/${DEB_HOST_MULTIARCH}/qt6/qml/QtQuick/Effects/libeffectsplugin.so
+usr/lib/${DEB_HOST_MULTIARCH}/qt6/qml/QtQuick/Effects/plugins.qmltypes
+usr/lib/${DEB_HOST_MULTIARCH}/qt6/qml/QtQuick/Effects/qmldir
+usr/lib/${DEB_HOST_MULTIARCH}/libQt6QuickEffects.so.*

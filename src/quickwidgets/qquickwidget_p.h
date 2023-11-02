@@ -17,7 +17,7 @@
 
 #include "qquickwidget.h"
 #include <private/qwidget_p.h>
-#include <private/qrhi_p.h>
+#include <rhi/qrhi.h>
 #include <private/qbackingstorerhisupport_p.h>
 
 #include <QtCore/qurl.h>
@@ -63,7 +63,7 @@ public:
     void handleContextCreationFailure(const QSurfaceFormat &format);
 
     QPlatformBackingStoreRhiConfig rhiConfig() const override;
-    QRhiTexture *texture() const override;
+    TextureData texture() const override;
     QPlatformTextureList::Flags textureListFlags() override;
     QImage grabFramebuffer() override;
 

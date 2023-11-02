@@ -41,6 +41,28 @@ bool QQuickImageBasePrivate::updateDevicePixelRatio(qreal targetDevicePixelRatio
     return setDevicePixelRatio;
 }
 
+void QQuickImageBasePrivate::setStatus(QQuickImageBase::Status value)
+{
+    Q_Q(QQuickImageBase);
+
+    if (status == value)
+        return;
+
+    status = value;
+    emit q->statusChanged(status);
+}
+
+void QQuickImageBasePrivate::setProgress(qreal value)
+{
+    Q_Q(QQuickImageBase);
+
+    if (qFuzzyCompare(progress, value))
+        return;
+
+    progress = value;
+    emit q->progressChanged(progress);
+}
+
 QQuickImageBase::QQuickImageBase(QQuickItem *parent)
 : QQuickImplicitSizeItem(*(new QQuickImageBasePrivate), parent)
 {
@@ -63,13 +85,11 @@ QQuickImageBase::Status QQuickImageBase::status() const
     return d->status;
 }
 
-
 qreal QQuickImageBase::progress() const
 {
     Q_D(const QQuickImageBase);
     return d->progress;
 }
-
 
 bool QQuickImageBase::asynchronous() const
 {
@@ -253,15 +273,11 @@ void QQuickImageBase::loadEmptyUrl()
 {
     Q_D(QQuickImageBase);
     d->pix.clear(this);
-    if (d->progress != 0.0) {
-        d->progress = 0.0;
-        emit progressChanged(d->progress);
-    }
-    d->status = Null;
+    d->setProgress(0);
+    d->setStatus(Null);
     setImplicitSize(0, 0); // also called in QQuickImageBase::pixmapChange, but not QQuickImage/QQuickBorderImage overrides
     pixmapChange(); // This calls update() in QQuickBorderImage and QQuickImage, not in QQuickImageBase...
 
-    emit statusChanged(d->status);
     if (sourceSize() != d->oldSourceSize) {
         d->oldSourceSize = sourceSize();
         emit sourceSizeChanged();
@@ -291,8 +307,10 @@ void QQuickImageBase::loadPixmap(const QUrl &url, LoadPixmapOptions loadOptions)
         const qreal targetDevicePixelRatio = (window() ? window()->effectiveDevicePixelRatio() : qApp->devicePixelRatio());
         d->devicePixelRatio = 1.0;
         bool updatedDevicePixelRatio = false;
-        if (d->sourcesize.isValid() || isScalableImageFormat(d->url))
+        if (d->sourcesize.isValid()
+            || (isScalableImageFormat(d->url) && d->url.scheme() != QLatin1String("image"))) {
             updatedDevicePixelRatio = d->updateDevicePixelRatio(targetDevicePixelRatio);
+        }
 
         if (!updatedDevicePixelRatio) {
             // (possible) local file: loadUrl and d->devicePixelRatio will be modified if
@@ -301,6 +319,8 @@ void QQuickImageBase::loadPixmap(const QUrl &url, LoadPixmapOptions loadOptions)
                                targetDevicePixelRatio, &loadUrl, &d->devicePixelRatio);
         }
     }
+
+    d->status = Null; // reset status, no emit
 
     d->pix.load(qmlEngine(this),
                 loadUrl,
@@ -312,14 +332,8 @@ void QQuickImageBase::loadPixmap(const QUrl &url, LoadPixmapOptions loadOptions)
                 d->devicePixelRatio);
 
     if (d->pix.isLoading()) {
-        if (d->progress != 0.0) {
-            d->progress = 0.0;
-            emit progressChanged(d->progress);
-        }
-        if (d->status != Loading) {
-            d->status = Loading;
-            emit statusChanged(d->status);
-        }
+        d->setProgress(0);
+        d->setStatus(Loading);
 
         static int thisRequestProgress = -1;
         static int thisRequestFinished = -1;
@@ -357,20 +371,14 @@ void QQuickImageBase::requestFinished()
     if (d->pix.isError()) {
         qmlWarning(this) << d->pix.error();
         d->pix.clear(this);
-        d->status = Error;
-        if (d->progress != 0.0) {
-            d->progress = 0.0;
-            emit progressChanged(d->progress);
-        }
+        d->setStatus(Error);
+        d->setProgress(0);
     } else {
-        d->status = Ready;
-        if (d->progress != 1.0) {
-            d->progress = 1.0;
-            emit progressChanged(d->progress);
-        }
+        d->setStatus(Ready);
+        d->setProgress(1);
     }
     pixmapChange();
-    emit statusChanged(d->status);
+
     if (sourceSize() != d->oldSourceSize) {
         d->oldSourceSize = sourceSize();
         emit sourceSizeChanged();
@@ -394,10 +402,8 @@ void QQuickImageBase::requestFinished()
 void QQuickImageBase::requestProgress(qint64 received, qint64 total)
 {
     Q_D(QQuickImageBase);
-    if (d->status == Loading && total > 0) {
-        d->progress = qreal(received)/total;
-        emit progressChanged(d->progress);
-    }
+    if (d->status == Loading && total > 0)
+        d->setProgress(qreal(received) / total);
 }
 
 void QQuickImageBase::itemChange(ItemChange change, const ItemChangeData &value)

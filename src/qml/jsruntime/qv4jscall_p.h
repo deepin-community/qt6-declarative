@@ -14,14 +14,11 @@
 // We mean it.
 //
 
-#include "qv4object_p.h"
-#include "qv4function_p.h"
-#include "qv4functionobject_p.h"
-#include "qv4context_p.h"
-#include "qv4scopedvalue_p.h"
-#include "qv4stackframe_p.h"
-#include "qv4qobjectwrapper_p.h"
 #include <private/qv4alloca_p.h>
+#include <private/qv4functionobject_p.h>
+#include <private/qv4object_p.h>
+#include <private/qv4qobjectwrapper_p.h>
+#include <private/qv4scopedvalue_p.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -99,30 +96,6 @@ ReturnedValue FunctionObject::call(const JSCallData &data) const
 void populateJSCallArguments(ExecutionEngine *v4, JSCallArguments &jsCall, int argc,
                              void **args, const QMetaType *types);
 
-struct ScopedStackFrame
-{
-    ScopedStackFrame(const Scope &scope, ExecutionContext *context)
-        : engine(scope.engine)
-    {
-        if (auto currentFrame = engine->currentStackFrame) {
-            frame.init(currentFrame->v4Function, nullptr, context, nullptr, nullptr, 0);
-            frame.instructionPointer = currentFrame->instructionPointer;
-        } else {
-            frame.init(nullptr, nullptr, context, nullptr, nullptr, 0);
-        }
-        frame.push(engine);
-    }
-
-    ~ScopedStackFrame()
-    {
-        frame.pop(engine);
-    }
-
-private:
-    ExecutionEngine *engine = nullptr;
-    MetaTypesStackFrame frame;
-};
-
 template<typename Callable>
 ReturnedValue convertAndCall(
         ExecutionEngine *engine, const QQmlPrivate::AOTCompiledFunction *aotFunction,
@@ -139,7 +112,7 @@ ReturnedValue convertAndCall(
             Q_ALLOCA_VAR(void, argument, argumentSize);
             argumentType.construct(argument);
             if (i < argc)
-                engine->metaTypeFromJS(argv[i], argumentType, argument);
+                ExecutionEngine::metaTypeFromJS(argv[i], argumentType, argument);
             values[i + 1] = argument;
         } else {
             values[i + 1] = nullptr;
@@ -207,16 +180,55 @@ bool convertAndCall(ExecutionEngine *engine, QObject *thisObject,
         // When the return type is QVariant, JS objects are to be returned as
         // QJSValue wrapped in QVariant. metaTypeFromJS unwraps them, unfortunately.
         if (resultType == QMetaType::fromType<QVariant>()) {
-            new (result) QVariant(scope.engine->toVariant(jsResult, QMetaType {}));
+            new (result) QVariant(ExecutionEngine::toVariant(jsResult, QMetaType {}));
         } else {
             resultType.construct(result);
-            scope.engine->metaTypeFromJS(jsResult, resultType, result);
+            ExecutionEngine::metaTypeFromJS(jsResult, resultType, result);
         }
     }
     return !jsResult->isUndefined();
 }
 
+template<typename Callable>
+ReturnedValue coerceAndCall(
+        ExecutionEngine *engine, const QQmlPrivate::AOTCompiledFunction *typedFunction,
+        const Value *thisObject, const Value *argv, int argc, Callable call)
+{
+    Scope scope(engine);
+    QV4::JSCallArguments jsCallData(scope, argc);
+
+    const qsizetype numFunctionArguments = typedFunction->argumentTypes.size();
+    for (qsizetype i = 0; i < numFunctionArguments; ++i) {
+        const QMetaType argumentType = typedFunction->argumentTypes[i];
+        if (const qsizetype argumentSize = argumentType.sizeOf()) {
+            Q_ALLOCA_VAR(void, argument, argumentSize);
+            argumentType.construct(argument);
+            if (i < argc)
+                ExecutionEngine::metaTypeFromJS(argv[i], argumentType, argument);
+            jsCallData.args[i] = engine->metaTypeToJS(argumentType, argument);
+        } else {
+            jsCallData.args[i] = argv[i];
+        }
+    }
+
+    ScopedValue result(scope, call(thisObject, jsCallData.args, argc));
+    const QMetaType returnType = typedFunction->returnType;
+    if (const qsizetype returnSize = returnType.sizeOf()) {
+        Q_ALLOCA_VAR(void, returnValue, returnSize);
+        if (scope.hasException()) {
+            returnType.construct(returnValue);
+        } else if (returnType == QMetaType::fromType<QVariant>()) {
+            new (returnValue) QVariant(ExecutionEngine::toVariant(result, QMetaType {}));
+        } else {
+            returnType.construct(returnValue);
+            ExecutionEngine::metaTypeFromJS(result, returnType, returnValue);
+        }
+        return engine->metaTypeToJS(returnType, returnValue);
+    }
+    return result->asReturnedValue();
 }
+
+} // namespace QV4
 
 QT_END_NAMESPACE
 

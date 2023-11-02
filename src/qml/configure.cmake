@@ -1,3 +1,6 @@
+# Copyright (C) 2022 The Qt Company Ltd.
+# SPDX-License-Identifier: BSD-3-Clause
+
 
 
 #### Inputs
@@ -156,11 +159,6 @@ qt_feature("qml-preview" PRIVATE
     LABEL "Command line QML Preview tool"
     PURPOSE "Updates QML documents in your application live as you change them on disk"
     CONDITION ( QT_FEATURE_commandlineparser ) AND ( QT_FEATURE_filesystemwatcher ) AND ( QT_FEATURE_qml_network AND QT_FEATURE_localserver ) AND ( QT_FEATURE_process ) AND ( QT_FEATURE_qml_debug )
-)
-qt_feature("qml-devtools" PRIVATE
-    SECTION "QML"
-    LABEL "QML Development Tools"
-    PURPOSE "Provides the QmlDevtools library and various utilities."
 )
 qt_feature("qml-xml-http-request" PRIVATE
     SECTION "QML"

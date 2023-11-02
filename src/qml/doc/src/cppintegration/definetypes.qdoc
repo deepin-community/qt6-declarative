@@ -77,15 +77,18 @@ Types to QML} explains, the properties, methods and signals of any
 QObject-derived class are accessible from QML code.
 
 To register a QObject-derived class as an instantiable QML object type, add
-\c QML_ELEMENT or \c QML_NAMED_ELEMENT(<name>) to the class declaration and
+\c QML_ELEMENT or \c QML_NAMED_ELEMENT(<name>) to the class declaration. You
+also need to make adjustments in the build system. For qmake, add
 \c {CONFIG += qmltypes}, a \c {QML_IMPORT_NAME}, and a
-\c QML_IMPORT_MAJOR_VERSION to your project file. This will register the class
-into the type namespace under the given major version, using either the class
-name or an explicitly given name as QML type name. The minor version(s) will
-be derived from any revisions attached to properties, methods, or signals. The
-default minor version is \c 0. You can explicitly restrict the type to be
-available only from specific minor versions by adding the
-\c QML_ADDED_IN_MINOR_VERSION() macro to the class declaration. Clients can
+\c QML_IMPORT_MAJOR_VERSION to your project file. For CMake, the file containing
+the class should be part of a target set-up with
+\l{qt_add_qml_module}{qt_add_qml_module()}.
+This will register the class into the type namespace under the given major version,
+using either the class name or an explicitly given name as QML type name. The
+minor version(s) will be derived from any revisions attached to properties,
+methods, or signals. The default minor version is \c 0. You can explicitly
+restrict the type to be available only from specific minor versions by adding
+the \c QML_ADDED_IN_MINOR_VERSION() macro to the class declaration. Clients can
 import suitable versions of the namespace in order to use the type.
 
 For example, suppose there is a \c Message class with \c author and
@@ -107,26 +110,52 @@ This type can be registered by adding an appropriate type namespace and version
 number to the project file. For example, to make the type available in the
 \c com.mycompany.messaging namespace with version 1.0:
 
-\code
-CONFIG += qmltypes
-QML_IMPORT_NAME = com.mycompany.messaging
-QML_IMPORT_MAJOR_VERSION = 1
-\endcode
+\if defined(onlinedocs)
+    \tab {build-qt-app}{tab-cmake}{CMake}{selected}
+    \tab {build-qt-app}{tab-qmake}{qmake}{}
+    \tabcontent {tab-cmake}
+ \else
+    \section3 Using CMake
+\endif
+    \badcode
+    qt_add_qml_module(messaging
+        URI com.mycompany.messaging
+        VERSION 1.0
+        SOURCES
+            message.cpp message.h
+    )
+    \endcode
+\if defined(onlinedocs)
+    \endtabcontent
+    \tabcontent {tab-qmake}
+\else
+    \section3 Using QMake
+\endif
+    \code
+    CONFIG += qmltypes
+    QML_IMPORT_NAME = com.mycompany.messaging
+    QML_IMPORT_MAJOR_VERSION = 1
+    \endcode
 
-If the header the class is declared in is not accessible from your project's
-include path, you may have to amend the include path so that the generated
-registration code can be compiled:
+    If the header the class is declared in is not accessible from your project's
+    include path, you may have to amend the include path so that the generated
+    registration code can be compiled.
 
-\code
-INCLUDEPATH += com/mycompany/messaging
-\endcode
+    \code
+    INCLUDEPATH += com/mycompany/messaging
+    \endcode
+\if defined(onlinedocs)
+    \endtabcontent
+\endif
+
+
 
 The type can be used in an \l{qtqml-syntax-basics.html#object-declarations}
 {object declaration} from QML, and its properties can be read and written to,
 as per the example below:
 
 \qml
-import com.mycompany.messaging 1.0
+import com.mycompany.messaging
 
 Message {
     author: "Amelie"
@@ -361,7 +390,11 @@ type definition allows the programmer to supply an additional type, known as the
 \e{extension type}, when registering the class. Its members are transparently
 merged with the original target class when used from within QML. For example:
 
-\snippet referenceexamples/extended/example.qml 0
+\qml
+QLineEdit {
+    leftMargin: 20
+}
+\endqml
 
 The \c leftMargin property is a new property added to an existing C++ type, \l
 QLineEdit, without modifying its source code.
@@ -379,9 +412,6 @@ pointer. However, the extension class creation is delayed until the first
 extended property is accessed. The extension class is created and the target
 object is passed in as the parent. When the property on the original is
 accessed, the corresponding property on the extension object is used instead.
-
-The \l{Extending QML - Extension Objects Example}{Extension Objects Example}
-demonstrates a usage of extension objects.
 
 \section2 Registering Foreign Types
 
@@ -593,6 +623,14 @@ MessageBoardAttachedType *attached =
 
 qDebug() << "Value of MessageBoard.expired:" << attached->expired();
 \endcode
+
+
+\section3 Propagating Attached Properties
+
+\l QQuickAttachedPropertyPropagator can be subclassed to propagate attached properties
+from a parent object to its children, similar to \l {Control::}{font} and
+\l {Item::}{palette} propagation. It supports propagation through
+\l {Item}{items}, \l {Popup}{popups}, and \l {Window}{windows}.
 
 
 \section2 Property Modifier Types

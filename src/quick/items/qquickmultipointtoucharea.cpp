@@ -17,7 +17,7 @@
 
 QT_BEGIN_NAMESPACE
 
-DEFINE_BOOL_CONFIG_OPTION(qmlVisualTouchDebugging, QML_VISUAL_TOUCH_DEBUGGING)
+DEFINE_BOOL_CONFIG_OPTION(qmlMptaVisualTouchDebugging, QML_VISUAL_TOUCH_DEBUGGING)
 
 /*!
     \qmltype TouchPoint
@@ -329,18 +329,39 @@ void QQuickTouchPoint::setUniqueId(const QPointingDeviceUniqueId &id)
 
     If minimumTouchPoints is set to a value greater than one, this signal will not be emitted until the minimum number
     of required touch points has been reached.
+
+    \note If you use the \c touchPoints argument in your signal handler code,
+    it's best to rename it in your formal parameter to avoid confusion with the
+    \c touchPoints property (see \l{QML Coding Conventions}):
+    \qml
+    onPressed: (points) => console.log("pressed", points.length)
+    \endqml
 */
 
 /*!
     \qmlsignal QtQuick::MultiPointTouchArea::updated(list<TouchPoint> touchPoints)
 
     This signal is emitted when existing touch points are updated. \a touchPoints is a list of these updated points.
+
+    \note If you use the \c touchPoints argument in your signal handler code,
+    it's best to rename it in your formal parameter to avoid confusion with the
+    \c touchPoints property (see \l{QML Coding Conventions}):
+    \qml
+    onUpdated: (points) => console.log("updated", points.length)
+    \endqml
 */
 
 /*!
     \qmlsignal QtQuick::MultiPointTouchArea::released(list<TouchPoint> touchPoints)
 
     This signal is emitted when existing touch points are removed. \a touchPoints is a list of these removed points.
+
+    \note If you use the \c touchPoints argument in your signal handler code,
+    it's best to rename it in your formal parameter to avoid confusion with the
+    \c touchPoints property (see \l{QML Coding Conventions}):
+    \qml
+    onReleased: (points) => console.log("released", points.length)
+    \endqml
 */
 
 /*!
@@ -356,7 +377,16 @@ void QQuickTouchPoint::setUniqueId(const QPointingDeviceUniqueId &id)
     \c canceled should be handled in addition to \l released.
 
     \a touchPoints is the list of canceled points.
+
+    \note If you use the \c touchPoints argument in your signal handler code,
+    it's best to rename it in your formal parameter to avoid confusion with the
+    \c touchPoints property (see \l{QML Coding Conventions}):
+    \qml
+    onCanceled: (points) => console.log("canceled", points.length)
+    \endqml
 */
+
+// TODO Qt 7: remove the notes above about the signal touchPoints arguments
 
 /*!
     \qmlsignal QtQuick::MultiPointTouchArea::gestureStarted(GestureEvent gesture)
@@ -407,11 +437,11 @@ QQuickMultiPointTouchArea::QQuickMultiPointTouchArea(QQuickItem *parent)
 {
     setAcceptedMouseButtons(Qt::LeftButton);
     setFiltersChildMouseEvents(true);
-    if (qmlVisualTouchDebugging()) {
+    if (qmlMptaVisualTouchDebugging()) {
         setFlag(QQuickItem::ItemHasContents);
     }
     setAcceptTouchEvents(true);
-#ifdef Q_OS_OSX
+#ifdef Q_OS_MACOS
     setAcceptHoverEvents(true); // needed to enable touch events on mouse hover.
 #endif
 }
@@ -596,6 +626,8 @@ void QQuickMultiPointTouchArea::updateTouchData(QEvent *event, RemapEventPoints 
     }
     if (numTouchPoints >= _minimumTouchPoints && numTouchPoints <= _maximumTouchPoints) {
         for (QEventPoint &p : touchPoints) {
+            QPointF oldPos = p.position();
+            auto transformBack = qScopeGuard([&] { QMutableEventPoint::setPosition(p, oldPos); });
             if (touchPointsFromEvent && remap == RemapEventPoints::ToLocal)
                 QMutableEventPoint::setPosition(p, mapFromScene(p.scenePosition()));
             QEventPoint::State touchPointState = p.state();
@@ -715,17 +747,17 @@ void QQuickMultiPointTouchArea::addTouchPoint(const QMouseEvent *e)
     _mouseTouchPoint = dtp;
 }
 
-#ifdef Q_OS_OSX
+#ifdef Q_OS_MACOS
 void QQuickMultiPointTouchArea::hoverEnterEvent(QHoverEvent *event)
 {
-    Q_UNUSED(event);
-    setTouchEventsEnabled(true);
+    setTouchEventsEnabled(isEnabled());
+    QQuickItem::hoverEnterEvent(event);
 }
 
 void QQuickMultiPointTouchArea::hoverLeaveEvent(QHoverEvent *event)
 {
-    Q_UNUSED(event);
     setTouchEventsEnabled(false);
+    QQuickItem::hoverLeaveEvent(event);
 }
 
 void QQuickMultiPointTouchArea::setTouchEventsEnabled(bool enable)
@@ -739,7 +771,14 @@ void QQuickMultiPointTouchArea::setTouchEventsEnabled(bool enable)
 
     registerTouchWindow(window(), enable);
 }
-#endif // Q_OS_OSX
+
+void QQuickMultiPointTouchArea::itemChange(ItemChange change, const ItemChangeData &data)
+{
+    if (change == ItemEnabledHasChanged)
+        setAcceptHoverEvents(data.boolValue);
+    QQuickItem::itemChange(change, data);
+}
+#endif // Q_OS_MACOS
 
 void QQuickMultiPointTouchArea::addTouchPrototype(QQuickTouchPoint *prototype)
 {
@@ -1000,7 +1039,7 @@ QSGNode *QQuickMultiPointTouchArea::updatePaintNode(QSGNode *oldNode, UpdatePain
 {
     Q_UNUSED(data);
 
-    if (!qmlVisualTouchDebugging())
+    if (!qmlMptaVisualTouchDebugging())
         return nullptr;
 
     QSGInternalRectangleNode *rectangle = static_cast<QSGInternalRectangleNode *>(oldNode);

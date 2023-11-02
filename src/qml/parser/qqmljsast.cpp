@@ -1049,17 +1049,10 @@ void FormalParameterList::accept0(BaseVisitor *visitor)
     }
 }
 
-FormalParameterList *FormalParameterList::finish(QQmlJS::MemoryPool *pool)
+FormalParameterList *FormalParameterList::finish(QQmlJS::MemoryPool *)
 {
     FormalParameterList *front = next;
     next = nullptr;
-
-    int i = 0;
-    for (const FormalParameterList *it = this; it; it = it->next) {
-        if (it->element && it->element->bindingIdentifier.isEmpty())
-            it->element->bindingIdentifier = pool->newString(QLatin1String("arg#") + QString::number(i));
-        ++i;
-    }
     return front;
 }
 
@@ -1311,17 +1304,7 @@ void Type::accept0(BaseVisitor *visitor)
 {
     if (visitor->visit(this)) {
         accept(typeId, visitor);
-        accept(typeArguments, visitor);
-    }
-
-    visitor->endVisit(this);
-}
-
-void TypeArgumentList::accept0(BaseVisitor *visitor)
-{
-    if (visitor->visit(this)) {
-        for (TypeArgumentList *it = this; it; it = it->next)
-            accept(it->typeId, visitor);
+        accept(typeArgument, visitor);
     }
 
     visitor->endVisit(this);
@@ -1345,6 +1328,15 @@ void UiImport::accept0(BaseVisitor *visitor)
 
     visitor->endVisit(this);
 }
+
+void UiPragmaValueList::accept0(BaseVisitor *visitor)
+{
+    if (visitor->visit(this)) {
+    }
+
+    visitor->endVisit(this);
+}
+
 
 void UiPragma::accept0(BaseVisitor *visitor)
 {
@@ -1563,17 +1555,11 @@ QString Type::toString() const
 
 void Type::toString(QString *out) const
 {
-    for (QQmlJS::AST::UiQualifiedId *it = typeId; it; it = it->next) {
-        out->append(it->name);
+    typeId->toString(out);
 
-        if (it->next)
-            out->append(QLatin1Char('.'));
-    }
-
-    if (typeArguments) {
+    if (typeArgument) {
         out->append(QLatin1Char('<'));
-        if (auto subType = static_cast<TypeArgumentList*>(typeArguments)->typeId)
-            subType->toString(out);
+        typeArgument->toString(out);
         out->append(QLatin1Char('>'));
     };
 }

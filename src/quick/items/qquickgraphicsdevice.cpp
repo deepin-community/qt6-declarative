@@ -79,7 +79,7 @@ bool QQuickGraphicsDevice::isNull() const
     the associated QSurfaceFormat, or threading issues due to attempting to use
     \a context on multiple threads are up to the caller to avoid.
  */
-#if QT_CONFIG(opengl) || defined(Q_CLANG_QDOC)
+#if QT_CONFIG(opengl) || defined(Q_QDOC)
 QQuickGraphicsDevice QQuickGraphicsDevice::fromOpenGLContext(QOpenGLContext *context)
 {
     QQuickGraphicsDevice dev;
@@ -93,13 +93,16 @@ QQuickGraphicsDevice QQuickGraphicsDevice::fromOpenGLContext(QOpenGLContext *con
 /*!
     \return a new QQuickGraphicsDevice describing a DXGI adapter and D3D feature level.
 
-    This factory function is suitable for Direct3D 11, particularly in
+    This factory function is suitable for Direct3D 11 and 12, particularly in
     combination with OpenXR. \a adapterLuidLow and \a adapterLuidHigh together
     specify a LUID, while a featureLevel specifies a \c{D3D_FEATURE_LEVEL_}
     value. \a featureLevel can be set to 0 if it is not intended to be
     specified, in which case the scene graph's defaults will be used.
+
+    \note With Direct 3D 12 \a featureLevel specifies the \c minimum feature
+    level passed on to D3D12CreateDevice().
  */
-#if defined(Q_OS_WIN) || defined(Q_CLANG_QDOC)
+#if defined(Q_OS_WIN) || defined(Q_QDOC)
 QQuickGraphicsDevice QQuickGraphicsDevice::fromAdapter(quint32 adapterLuidLow,
                                                        qint32 adapterLuidHigh,
                                                        int featureLevel)
@@ -120,11 +123,15 @@ QQuickGraphicsDevice QQuickGraphicsDevice::fromAdapter(quint32 adapterLuidLow,
     be a \c{ID3D11Device*}, \a context is expected to be a
     \c{ID3D11DeviceContext*}.
 
+    It also supports Direct 3D 12, if that is the 3D API used at run time. With
+    D3D12 \a context is unused and can be set to null. \a device is expected to
+    be a \c{ID3D12Device*}.
+
     \note the resulting QQuickGraphicsDevice does not own any native resources,
     it merely contains references. It is the caller's responsibility to ensure
     that the native resource exists as long as necessary.
  */
-#if defined(Q_OS_WIN) || defined(Q_CLANG_QDOC)
+#if defined(Q_OS_WIN) || defined(Q_QDOC)
 QQuickGraphicsDevice QQuickGraphicsDevice::fromDeviceAndContext(void *device, void *context)
 {
     QQuickGraphicsDevice dev;
@@ -146,7 +153,7 @@ QQuickGraphicsDevice QQuickGraphicsDevice::fromDeviceAndContext(void *device, vo
     that the native resource exists as long as necessary.
 
  */
-#if defined(Q_OS_MACOS) || defined(Q_OS_IOS) || defined(Q_CLANG_QDOC)
+#if defined(Q_OS_MACOS) || defined(Q_OS_IOS) || defined(Q_QDOC)
 QQuickGraphicsDevice QQuickGraphicsDevice::fromDeviceAndCommandQueue(MTLDevice *device,
                                                                      MTLCommandQueue *commandQueue)
 {
@@ -168,7 +175,7 @@ QQuickGraphicsDevice QQuickGraphicsDevice::fromDeviceAndCommandQueue(MTLDevice *
     it merely contains references. It is the caller's responsibility to ensure
     that the native resource exists as long as necessary.
  */
-#if QT_CONFIG(vulkan) || defined(Q_CLANG_QDOC)
+#if QT_CONFIG(vulkan) || defined(Q_QDOC)
 QQuickGraphicsDevice QQuickGraphicsDevice::fromPhysicalDevice(VkPhysicalDevice physicalDevice)
 {
     QQuickGraphicsDevice dev;
@@ -190,7 +197,7 @@ QQuickGraphicsDevice QQuickGraphicsDevice::fromPhysicalDevice(VkPhysicalDevice p
     it merely contains references. It is the caller's responsibility to ensure
     that the native resource exists as long as necessary.
  */
-#if QT_CONFIG(vulkan) || defined(Q_CLANG_QDOC)
+#if QT_CONFIG(vulkan) || defined(Q_QDOC)
 QQuickGraphicsDevice QQuickGraphicsDevice::fromDeviceObjects(VkPhysicalDevice physicalDevice,
                                                              VkDevice device,
                                                              int queueFamilyIndex,
@@ -205,12 +212,14 @@ QQuickGraphicsDevice QQuickGraphicsDevice::fromDeviceObjects(VkPhysicalDevice ph
 #endif
 
 /*!
-    \internal
+    \return a new QQuickGraphicsDevice referencing an existing \a rhi object.
 
     \note Similarly to fromOpenGLContext(), the caller must be careful to only
     share a QRhi (and so the underlying graphics context or device) between
     QQuickWindows that are known to be compatible, not breaking the underlying
     graphics API's rules when it comes to threading, pixel formats, etc.
+
+    \since 6.6
 */
 QQuickGraphicsDevice QQuickGraphicsDevice::fromRhi(QRhi *rhi)
 {

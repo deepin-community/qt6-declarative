@@ -23,6 +23,7 @@ QT_BEGIN_NAMESPACE
 class QRhi;
 class QRhiCommandBuffer;
 class QOffscreenSurface;
+class QQuickGraphicsConfiguration;
 
 class Q_QUICK_PRIVATE_EXPORT QQuickRenderControlPrivate : public QObjectPrivate
 {
@@ -43,7 +44,7 @@ public:
     }
 
     static bool isRenderWindowFor(QQuickWindow *quickWin, const QWindow *renderWin);
-    virtual bool isRenderWindow(const QWindow *w) { Q_UNUSED(w); return false; }
+    virtual bool isRenderWindow(const QWindow *w);
 
     static void cleanup();
 
@@ -53,7 +54,7 @@ public:
     void maybeUpdate();
 
     bool initRhi();
-    void resetRhi();
+    void resetRhi(const QQuickGraphicsConfiguration &config);
 
     QImage grab();
 

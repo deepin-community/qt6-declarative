@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GFDL-1.3-no-invariants-only
 
 /*!
-\page qml-advtutorial.html tutorial
+\page qml-advtutorial.html
 \title QML Advanced Tutorial
 \brief A more advanced tutorial, showing how to use QML to create a game.
 \nextpage QML Advanced Tutorial 1 - Creating the Game Canvas and Blocks
@@ -44,6 +44,7 @@ directory.
 \nextpage QML Advanced Tutorial 2 - Populating the Game Canvas
 
 \example tutorials/samegame/samegame1
+\examplecategory {Application Examples}
 
 \section2 Creating the Application Screen
 

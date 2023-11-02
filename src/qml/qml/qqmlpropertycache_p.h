@@ -40,9 +40,9 @@ class QQmlVMEMetaObject;
 class QQmlMetaObjectPointer
 {
 public:
-    QQmlMetaObjectPointer() = default;
+    Q_NODISCARD_CTOR QQmlMetaObjectPointer() = default;
 
-    QQmlMetaObjectPointer(const QMetaObject *staticMetaObject)
+    Q_NODISCARD_CTOR QQmlMetaObjectPointer(const QMetaObject *staticMetaObject)
         : d(quintptr(staticMetaObject))
     {
         Q_ASSERT((d.loadRelaxed() & Shared) == 0);
@@ -57,7 +57,7 @@ public:
 
 private:
     friend class QQmlPropertyCache;
-    QQmlMetaObjectPointer(const QQmlMetaObjectPointer &other)
+    Q_NODISCARD_CTOR QQmlMetaObjectPointer(const QQmlMetaObjectPointer &other)
         : d(other.d.loadRelaxed())
     {
         // other has to survive until this ctor is done. So d cannot disappear before.
@@ -105,7 +105,7 @@ private:
         Shared = 1
     };
 
-    struct SharedHolder : public QQmlRefCount
+    struct SharedHolder : public QQmlRefCounted<SharedHolder>
     {
         Q_DISABLE_COPY_MOVE(SharedHolder)
         SharedHolder(QMetaObject *shared) : metaObject(shared) {}
@@ -116,7 +116,8 @@ private:
     mutable QBasicAtomicInteger<quintptr> d = 0;
 };
 
-class Q_QML_PRIVATE_EXPORT QQmlPropertyCache : public QQmlRefCount
+class Q_QML_PRIVATE_EXPORT QQmlPropertyCache
+    : public QQmlRefCounted<QQmlPropertyCache>
 {
 public:
     using Ptr = QQmlRefPointer<QQmlPropertyCache>;
@@ -232,7 +233,7 @@ private:
     friend class QQmlCompiler;
     template <typename T> friend class QQmlPropertyCacheCreator;
     template <typename T> friend class QQmlPropertyCacheAliasCreator;
-    friend class QQmlComponentAndAliasResolver;
+    template <typename T> friend class QQmlComponentAndAliasResolver;
     friend class QQmlMetaObject;
 
     QQmlPropertyCache(const QQmlMetaObjectPointer &metaObject) : _metaObject(metaObject) {}
@@ -263,10 +264,9 @@ private:
     }
 
     template<typename K>
-    void setNamedProperty(const K &key, int index, QQmlPropertyData *data, bool isOverride)
+    void setNamedProperty(const K &key, int index, QQmlPropertyData *data)
     {
         stringCache.insert(key, qMakePair(index, data));
-        _hasPropertyOverrides |= isOverride;
     }
 
 private:
@@ -311,7 +311,6 @@ private:
     int methodIndexCacheStart = 0;
     int signalHandlerIndexCacheStart = 0;
     int _jsFactoryMethodIndex = -1;
-    bool _hasPropertyOverrides = false;
 };
 
 // Returns this property cache's metaObject.  May be null if it hasn't been created yet.
@@ -434,7 +433,7 @@ bool QQmlPropertyCache::isAllowedInRevision(const QQmlPropertyData *data) const
 
 int QQmlPropertyCache::propertyCount() const
 {
-    return propertyIndexCacheStart + propertyIndexCache.size();
+    return propertyIndexCacheStart + int(propertyIndexCache.size());
 }
 
 int QQmlPropertyCache::propertyOffset() const
@@ -444,7 +443,7 @@ int QQmlPropertyCache::propertyOffset() const
 
 int QQmlPropertyCache::methodCount() const
 {
-    return methodIndexCacheStart + methodIndexCache.size();
+    return methodIndexCacheStart + int(methodIndexCache.size());
 }
 
 int QQmlPropertyCache::methodOffset() const
@@ -454,7 +453,7 @@ int QQmlPropertyCache::methodOffset() const
 
 int QQmlPropertyCache::signalCount() const
 {
-    return signalHandlerIndexCacheStart + signalHandlerIndexCache.size();
+    return signalHandlerIndexCacheStart + int(signalHandlerIndexCache.size());
 }
 
 int QQmlPropertyCache::signalOffset() const
@@ -464,7 +463,7 @@ int QQmlPropertyCache::signalOffset() const
 
 int QQmlPropertyCache::qmlEnumCount() const
 {
-    return enumCache.size();
+    return int(enumCache.size());
 }
 
 bool QQmlPropertyCache::callJSFactoryMethod(QObject *object, void **args) const

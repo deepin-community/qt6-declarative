@@ -6,10 +6,6 @@
 #include <private/qmetaobject_p.h>
 #include <private/qmetaobjectbuilder_p.h>
 #include "qqmlengine_p.h"
-#include "qqmlexpression_p.h"
-#include "qqmlcontext_p.h"
-#include "qqml.h"
-#include "qqmlcontext.h"
 #include "qqmlglobal_p.h"
 #include <private/qqmlprofiler_p.h>
 #include <private/qqmldebugconnector_p.h>
@@ -27,6 +23,10 @@
 #include <qtqml_tracepoints_p.h>
 
 QT_BEGIN_NAMESPACE
+
+Q_TRACE_POINT(qtqml, QQmlHandlingSignal_entry, const QQmlEngine *engine, const QString &function,
+              const QString &fileName, int line, int column)
+Q_TRACE_POINT(qtqml, QQmlHandlingSignal_exit)
 
 QQmlBoundSignalExpression::QQmlBoundSignalExpression(const QObject *target, int index, const QQmlRefPointer<QQmlContextData> &ctxt, QObject *scope,
         const QString &expression, const QString &fileName, quint16 line, quint16 column,
@@ -187,7 +187,7 @@ void QQmlBoundSignalExpression::evaluate(void **a)
             if (!type.isValid())
                 argCount = 0;
             else if (type.flags().testFlag(QMetaType::IsEnumeration))
-                storage.append(QMetaType::fromType<int>());
+                storage.append(type.underlyingType());
             else
                 storage.append(type);
         }

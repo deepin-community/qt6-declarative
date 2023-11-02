@@ -25,12 +25,17 @@ class QQuickTreeViewPrivate;
 class Q_QUICK_PRIVATE_EXPORT QQuickTreeView : public QQuickTableView
 {
     Q_OBJECT
+    Q_PROPERTY(QModelIndex rootIndex READ rootIndex WRITE setRootIndex RESET resetRootIndex NOTIFY rootIndexChanged REVISION(6, 6) FINAL)
     QML_NAMED_ELEMENT(TreeView)
     QML_ADDED_IN_VERSION(6, 3)
 
 public:
     QQuickTreeView(QQuickItem *parent = nullptr);
     ~QQuickTreeView() override;
+
+    QModelIndex rootIndex() const;
+    void setRootIndex(const QModelIndex &index);
+    void resetRootIndex();
 
     Q_INVOKABLE int depth(int row) const;
 
@@ -44,12 +49,17 @@ public:
     Q_REVISION(6, 4) Q_INVOKABLE void expandToIndex(const QModelIndex &index);
 
     Q_INVOKABLE QModelIndex modelIndex(const QPoint &cell) const override;
-    Q_INVOKABLE QModelIndex modelIndex(int column, int row) const override;
     Q_INVOKABLE QPoint cellAtIndex(const QModelIndex &index) const override;
+
+#if QT_DEPRECATED_SINCE(6, 4)
+    QT_DEPRECATED_VERSION_X_6_4("Use index(row, column) instead")
+    Q_REVISION(6, 4) Q_INVOKABLE QModelIndex modelIndex(int row, int column) const override;
+#endif
 
 Q_SIGNALS:
     void expanded(int row, int depth);
     void collapsed(int row, bool recursively);
+    Q_REVISION(6, 6) void rootIndexChanged();
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;

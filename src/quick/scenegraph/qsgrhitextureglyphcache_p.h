@@ -16,7 +16,7 @@
 //
 
 #include <QtGui/private/qtextureglyphcache_p.h>
-#include <QtGui/private/qrhi_p.h>
+#include <rhi/qrhi.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -60,7 +60,6 @@ private:
     QSize m_size;
     bool m_bgra = false;
     QVarLengthArray<QRhiTextureUploadEntry, 16> m_uploads;
-    QSet<QRhiTexture *> m_pendingDispose;
 };
 
 QT_END_NAMESPACE

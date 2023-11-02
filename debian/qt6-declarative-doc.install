@@ -1,10 +1,11 @@
 usr/share/qt6/doc/qtlabsplatform.qch
-usr/share/qt6/doc/qtqml.qch
+usr/share/qt6/doc/qtqmlcompiler.qch
 usr/share/qt6/doc/qtqmlcore.qch
 usr/share/qt6/doc/qtqmlmodels.qch
+usr/share/qt6/doc/qtqml.qch
 usr/share/qt6/doc/qtqmltest.qch
 usr/share/qt6/doc/qtqmlworkerscript.qch
 usr/share/qt6/doc/qtqmlxmllistmodel.qch
-usr/share/qt6/doc/qtquick.qch
 usr/share/qt6/doc/qtquickcontrols.qch
 usr/share/qt6/doc/qtquickdialogs.qch
+usr/share/qt6/doc/qtquick.qch

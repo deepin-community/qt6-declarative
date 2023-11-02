@@ -9,11 +9,7 @@
 #include <QtQml/private/qqmljsparser_p.h>
 #include <QtQml/private/qqmljslexer_p.h>
 #include <QtQml/private/qqmljsengine_p.h>
-#ifdef QMLDOM_STANDALONE
-#    include "qmlcompiler/qqmljstypedescriptionreader_p.h"
-#else
-#    include <private/qqmljstypedescriptionreader_p.h>
-#endif
+#include <private/qqmljstypedescriptionreader_p.h>
 
 #include <QtCore/qdir.h>
 
@@ -24,7 +20,7 @@ namespace Dom {
 
 using namespace QQmlJS::AST;
 
-static ErrorGroups myParseErrors()
+static ErrorGroups readerParseErrors()
 {
     static ErrorGroups errs = { { NewErrorGroup("Dom"), NewErrorGroup("QmltypesFile"),
                                   NewErrorGroup("Parsing") } };
@@ -49,7 +45,7 @@ void QmltypesReader::insertProperty(QQmlJSScope::Ptr jsScope, const QQmlJSMetaPr
     prop.notify = property.notify();
 
     if (prop.name.isEmpty() || prop.typeName.isEmpty()) {
-        addError(myParseErrors()
+        addError(readerParseErrors()
                          .warning(tr("Property object is missing a name or type script binding."))
                          .handle());
         return;
@@ -63,23 +59,22 @@ void QmltypesReader::insertSignalOrMethod(const QQmlJSMetaMethod &metaMethod,
     MethodInfo methodInfo;
     // ### confusion between Method and Slot. Method should be removed.
     switch (metaMethod.methodType()) {
-    case QQmlJSMetaMethod::Method:
-    case QQmlJSMetaMethod::Slot:
+    case QQmlJSMetaMethodType::Method:
+    case QQmlJSMetaMethodType::Slot:
         methodInfo.methodType = MethodInfo::MethodType::Method;
         break;
-    case QQmlJSMetaMethod::Signal:
+    case QQmlJSMetaMethodType::Signal:
         methodInfo.methodType = MethodInfo::MethodType::Signal;
         break;
     default:
         Q_UNREACHABLE();
     }
-    QStringList pNames = metaMethod.parameterNames();
-    QStringList pTypes = metaMethod.parameterTypeNames();
-    qsizetype nParam = qMax(pNames.size(), pTypes.size());
+    auto parameters = metaMethod.parameters();
+    qsizetype nParam = parameters.size();
     for (int i = 0; i < nParam; ++i) {
         MethodParameter param;
-        param.name = ((i < pNames.size()) ? pNames.at(i) : QString());
-        param.typeName = ((i < pTypes.size()) ? pTypes.at(i) : QString());
+        param.name = parameters[i].name();
+        param.typeName = parameters[i].typeName();
         methodInfo.parameters.append(param);
     }
     methodInfo.name = metaMethod.methodName();
@@ -87,7 +82,7 @@ void QmltypesReader::insertSignalOrMethod(const QQmlJSMetaMethod &metaMethod,
     int revision = metaMethod.revision();
     methodInfo.isConstructor = metaMethod.isConstructor();
     if (methodInfo.name.isEmpty()) {
-        addError(myParseErrors().error(tr("Method or signal is missing a name.")).handle());
+        addError(readerParseErrors().error(tr("Method or signal is missing a name.")).handle());
         return;
     }
 
@@ -161,7 +156,7 @@ void QmltypesReader::insertComponent(const QQmlJSScope::Ptr &jsScope,
     comp.setFileName(jsScope->filePath());
     comp.setName(jsScope->internalName());
     m_currentPath = m_currentPath.key(comp.name())
-                            .index(qmltypesFilePtr()->components().values(comp.name()).length());
+                            .index(qmltypesFilePtr()->components().values(comp.name()).size());
     incrementedPath = true;
     prototype = jsScope->baseTypeName();
     defaultPropertyName = jsScope->ownDefaultPropertyName();
@@ -188,13 +183,13 @@ void QmltypesReader::insertComponent(const QQmlJSScope::Ptr &jsScope,
                             .canonicalPath()
                             .field(Fields::components)
                             .key(comp.name())
-                            .index(qmltypesFilePtr()->components().values(comp.name()).length());
+                            .index(qmltypesFilePtr()->components().values(comp.name()).size());
 
     // emit & map objs
     while (it != begin) {
         --it;
         if (it.key() < 0) {
-            addError(myParseErrors().error(
+            addError(readerParseErrors().error(
                     tr("negative meta revision %1 not supported").arg(it.key())));
         }
         revToPath.insert(it.key(), compPath.field(Fields::objects).index(objectIndex));
@@ -231,7 +226,7 @@ void QmltypesReader::insertComponent(const QQmlJSScope::Ptr &jsScope,
     }
 
     if (comp.name().isEmpty()) {
-        addError(myParseErrors()
+        addError(readerParseErrors()
                          .error(tr("Component definition is missing a name binding."))
                          .handle());
         return;
@@ -246,7 +241,7 @@ bool QmltypesReader::parse()
     QQmlJSTypeDescriptionReader reader(qmltypesFilePtr()->canonicalFilePath(),
                                        qmltypesFilePtr()->code());
     QStringList dependencies;
-    QHash<QString, QQmlJSExportedScope> objects;
+    QList<QQmlJSExportedScope> objects;
     m_isValid = reader(&objects, &dependencies);
     for (const auto &obj : std::as_const(objects))
         insertComponent(obj.scope, obj.exports);

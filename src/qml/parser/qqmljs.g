@@ -73,7 +73,18 @@
 %token T_GET "get"
 %token T_SET "set"
 
+-- token representing no token
+%token T_NONE
+
 %token T_ERROR
+
+-- states for line by line parsing
+%token T_EOL
+%token T_PARTIAL_COMMENT "non closed multiline comment"
+%token T_PARTIAL_SINGLE_QUOTE_STRING_LITERAL "multiline single quote string literal"
+%token T_PARTIAL_DOUBLE_QUOTE_STRING_LITERAL "multiline double quote string literal"
+%token T_PARTIAL_TEMPLATE_HEAD "(template head)"
+%token T_PARTIAL_TEMPLATE_MIDDLE "(template middle)"
 
 --- feed tokens
 %token T_FEED_UI_PROGRAM
@@ -201,11 +212,11 @@ public:
       AST::ExportClause *ExportClause;
       AST::ExportDeclaration *ExportDeclaration;
       AST::TypeAnnotation *TypeAnnotation;
-      AST::TypeArgumentList *TypeArgumentList;
       AST::Type *Type;
 
       AST::UiProgram *UiProgram;
       AST::UiHeaderItemList *UiHeaderItemList;
+      AST::UiPragmaValueList *UiPragmaValueList;
       AST::UiPragma *UiPragma;
       AST::UiImport *UiImport;
       AST::UiParameterList *UiParameterList;
@@ -340,8 +351,8 @@ protected:
     Value *sym_stack = nullptr;
     int *state_stack = nullptr;
     SourceLocation *location_stack = nullptr;
-    QList<QStringView> string_stack;
-    QList<QStringView> rawString_stack;
+    std::vector<QStringView> string_stack;
+    std::vector<QStringView> rawString_stack;
 
     AST::Node *program = nullptr;
 
@@ -706,9 +717,30 @@ UiHeaderItemList: UiHeaderItemList UiImport;
 ./
 
 PragmaId: JsIdentifier;
+PragmaValue: JsIdentifier;
 
 Semicolon: T_AUTOMATIC_SEMICOLON;
 Semicolon: T_SEMICOLON;
+
+UiPragmaValueList: PragmaValue;
+/.
+    case $rule_number: {
+        AST::UiPragmaValueList *list
+            = new (pool) AST::UiPragmaValueList(stringRef(1));
+        list->location = loc(1);
+        sym(1).Node = list;
+    } break;
+./
+
+UiPragmaValueList: UiPragmaValueList T_COMMA PragmaValue;
+/.
+    case $rule_number: {
+        AST::UiPragmaValueList *list
+            = new (pool) AST::UiPragmaValueList(sym(1).UiPragmaValueList, stringRef(3));
+        list->location = loc(3);
+        sym(1).Node = list;
+    } break;
+./
 
 UiPragma: T_PRAGMA PragmaId Semicolon;
 /.
@@ -720,10 +752,11 @@ UiPragma: T_PRAGMA PragmaId Semicolon;
     } break;
 ./
 
-UiPragma: T_PRAGMA PragmaId T_COLON JsIdentifier Semicolon;
+UiPragma: T_PRAGMA PragmaId T_COLON UiPragmaValueList Semicolon;
 /.
     case $rule_number: {
-        AST::UiPragma *pragma = new (pool) AST::UiPragma(stringRef(2), stringRef(4));
+        AST::UiPragma *pragma = new (pool) AST::UiPragma(
+                stringRef(2), sym(4).UiPragmaValueList->finish());
         pragma->pragmaToken = loc(1);
         pragma->semicolonToken = loc(5);
         sym(1).Node = pragma;
@@ -1120,10 +1153,10 @@ UiParameterListOpt: UiParameterList;
     } break;
 ./
 
-UiParameterList: QmlIdentifier T_COLON UiPropertyType;
+UiParameterList: QmlIdentifier T_COLON Type;
 /.
     case $rule_number: {
-        AST::UiParameterList *node = new (pool) AST::UiParameterList(sym(3).UiQualifiedId->finish(), stringRef(1));
+        AST::UiParameterList *node = new (pool) AST::UiParameterList(sym(3).Type, stringRef(1));
         node->identifierToken = loc(1);
         node->colonToken = loc(2);
         node->propertyTypeToken = loc(3);
@@ -1131,20 +1164,20 @@ UiParameterList: QmlIdentifier T_COLON UiPropertyType;
     } break;
 ./
 
-UiParameterList: UiPropertyType QmlIdentifier;
+UiParameterList: Type QmlIdentifier;
 /.
     case $rule_number: {
-        AST::UiParameterList *node = new (pool) AST::UiParameterList(sym(1).UiQualifiedId->finish(), stringRef(2));
+        AST::UiParameterList *node = new (pool) AST::UiParameterList(sym(1).Type, stringRef(2));
         node->propertyTypeToken = loc(1);
         node->identifierToken = loc(2);
         sym(1).Node = node;
     } break;
 ./
 
-UiParameterList: UiParameterList T_COMMA QmlIdentifier T_COLON UiPropertyType;
+UiParameterList: UiParameterList T_COMMA QmlIdentifier T_COLON Type;
 /.
     case $rule_number: {
-        AST::UiParameterList *node = new (pool) AST::UiParameterList(sym(1).UiParameterList, sym(5).UiQualifiedId->finish(), stringRef(3));
+        AST::UiParameterList *node = new (pool) AST::UiParameterList(sym(1).UiParameterList, sym(5).Type, stringRef(3));
         node->propertyTypeToken = loc(5);
         node->commaToken = loc(2);
         node->identifierToken = loc(3);
@@ -1153,10 +1186,10 @@ UiParameterList: UiParameterList T_COMMA QmlIdentifier T_COLON UiPropertyType;
     } break;
 ./
 
-UiParameterList: UiParameterList T_COMMA UiPropertyType QmlIdentifier;
+UiParameterList: UiParameterList T_COMMA Type QmlIdentifier;
 /.
     case $rule_number: {
-        AST::UiParameterList *node = new (pool) AST::UiParameterList(sym(1).UiParameterList, sym(3).UiQualifiedId->finish(), stringRef(4));
+        AST::UiParameterList *node = new (pool) AST::UiParameterList(sym(1).UiParameterList, sym(3).Type, stringRef(4));
         node->propertyTypeToken = loc(3);
         node->commaToken = loc(2);
         node->identifierToken = loc(4);
@@ -1444,6 +1477,8 @@ UiObjectMember: T_ENUM T_IDENTIFIER T_LBRACE EnumMemberList T_RBRACE;
     case $rule_number: {
         AST::UiEnumDeclaration *enumDeclaration = new (pool) AST::UiEnumDeclaration(stringRef(2), sym(4).UiEnumMemberList->finish());
         enumDeclaration->enumToken = loc(1);
+        enumDeclaration->identifierToken = loc(2);
+        enumDeclaration->lbraceToken = loc(3);
         enumDeclaration->rbraceToken = loc(5);
         sym(1).Node = enumDeclaration;
         break;
@@ -1484,6 +1519,18 @@ EnumMemberList: T_IDENTIFIER T_EQ T_NUMERIC_LITERAL;
     }
 ./
 
+
+EnumMemberList: T_IDENTIFIER T_EQ T_MINUS T_NUMERIC_LITERAL;
+/.
+    case $rule_number: {
+        AST::UiEnumMemberList *node = new (pool) AST::UiEnumMemberList(stringRef(1), -sym(4).dval);
+        node->memberToken = loc(1);
+        node->valueToken = combine(loc(3), loc(4));
+        sym(1).Node = node;
+        break;
+    }
+./
+
 EnumMemberList: EnumMemberList T_COMMA T_IDENTIFIER;
 /.
     case $rule_number: {
@@ -1500,6 +1547,18 @@ EnumMemberList: EnumMemberList T_COMMA T_IDENTIFIER T_EQ T_NUMERIC_LITERAL;
         AST::UiEnumMemberList *node = new (pool) AST::UiEnumMemberList(sym(1).UiEnumMemberList, stringRef(3), sym(5).dval);
         node->memberToken = loc(3);
         node->valueToken = loc(5);
+        sym(1).Node = node;
+        break;
+    }
+./
+
+
+EnumMemberList: EnumMemberList T_COMMA T_IDENTIFIER T_EQ T_MINUS T_NUMERIC_LITERAL;
+/.
+    case $rule_number: {
+        AST::UiEnumMemberList *node = new (pool) AST::UiEnumMemberList(sym(1).UiEnumMemberList, stringRef(3), -sym(6).dval);
+        node->memberToken = loc(3);
+        node->valueToken = combine(loc(5), loc(6));
         sym(1).Node = node;
         break;
     }
@@ -1538,28 +1597,16 @@ BindingIdentifier: IdentifierReference;
 -- Types
 --------------------------------------------------------------------------------------------------------
 
-TypeArguments: Type;
+Type: UiQualifiedId T_LT SimpleType T_GT;
 /.
     case $rule_number: {
-        sym(1).TypeArgumentList = new (pool) AST::TypeArgumentList(sym(1).Type);
+        sym(1).Type = new (pool) AST::Type(sym(1).UiQualifiedId, sym(3).Type);
     } break;
 ./
 
-TypeArguments: TypeArguments T_COMMA Type;
-/.
-    case $rule_number: {
-        sym(1).TypeArgumentList = new (pool) AST::TypeArgumentList(sym(1).TypeArgumentList, sym(3).Type);
-    } break;
-./
+Type: SimpleType;
 
-Type: UiQualifiedId T_LT TypeArguments T_GT;
-/.
-    case $rule_number: {
-        sym(1).Type = new (pool) AST::Type(sym(1).UiQualifiedId, sym(3).TypeArgumentList->finish());
-    } break;
-./
-
-Type: T_RESERVED_WORD;
+SimpleType: T_RESERVED_WORD;
 /.
     case $rule_number: {
         AST::UiQualifiedId *id = new (pool) AST::UiQualifiedId(stringRef(1));
@@ -1568,17 +1615,17 @@ Type: T_RESERVED_WORD;
     } break;
 ./
 
-Type: UiQualifiedId;
+SimpleType: UiQualifiedId;
 /.
     case $rule_number: {
         sym(1).Type = new (pool) AST::Type(sym(1).UiQualifiedId);
     } break;
 ./
 
-Type: T_VAR;
+SimpleType: T_VAR;
 /.  case $rule_number: Q_FALLTHROUGH(); ./
 
-Type: T_VOID;
+SimpleType: T_VOID;
 /.
     case $rule_number: {
         AST::UiQualifiedId *id = new (pool) AST::UiQualifiedId(stringRef(1));
@@ -1958,7 +2005,6 @@ PropertyDefinition: IdentifierReference;
         AST::IdentifierExpression *expr = new (pool) AST::IdentifierExpression(stringRef(1));
         expr->identifierToken = loc(1);
         AST::PatternProperty *node = new (pool) AST::PatternProperty(name, expr);
-        node->colonToken = loc(2);
         sym(1).Node = node;
     } break;
 ./
@@ -1981,7 +2027,6 @@ CoverInitializedName: IdentifierReference Initializer_In;
         AST::BinaryExpression *assignment = new (pool) AST::BinaryExpression(left, QSOperator::Assign, sym(2).Expression);
         assignment->operatorToken = loc(2);
         AST::PatternProperty *node = new (pool) AST::PatternProperty(name, assignment);
-        node->colonToken = loc(1);
         sym(1).Node = node;
 
     } break;
@@ -3291,7 +3336,8 @@ BindingProperty: BindingIdentifier InitializerOpt_In;
             f->name = stringRef(1);
         if (auto *c = asAnonymousClassDefinition(sym(2).Expression))
             c->name = stringRef(1);
-        sym(1).Node = new (pool) AST::PatternProperty(name, stringRef(1), sym(2).Expression);
+        AST::PatternProperty *node = new (pool) AST::PatternProperty(name, stringRef(1), sym(2).Expression);
+        sym(1).Node = node;
     } break;
 ./
 
@@ -3299,6 +3345,7 @@ BindingProperty: PropertyName T_COLON BindingIdentifier InitializerOpt_In;
 /.
     case $rule_number: {
         AST::PatternProperty *node = new (pool) AST::PatternProperty(sym(1).PropertyName, stringRef(3), sym(4).Expression);
+        node->colonToken = loc(2);
         sym(1).Node = node;
     } break;
 ./
@@ -3307,6 +3354,7 @@ BindingProperty: PropertyName T_COLON BindingPattern InitializerOpt_In;
 /.
     case $rule_number: {
         AST::PatternProperty *node = new (pool) AST::PatternProperty(sym(1).PropertyName, sym(3).Pattern, sym(4).Expression);
+        node->colonToken = loc(2);
         sym(1).Node = node;
     } break;
 ./
@@ -4065,7 +4113,6 @@ MethodDefinition: T_STAR PropertyName GeneratorLParen StrictFormalParameters T_R
         f->rbraceToken = loc(9);
         f->isGenerator = true;
         AST::PatternProperty *node = new (pool) AST::PatternProperty(sym(2).PropertyName, f, AST::PatternProperty::Method);
-        node->colonToken = loc(2);
         sym(1).Node = node;
     } break;
 ./
@@ -4083,7 +4130,6 @@ MethodDefinition: T_GET PropertyName T_LPAREN T_RPAREN TypeAnnotationOpt Functio
         f->lbraceToken = loc(6);
         f->rbraceToken = loc(8);
         AST::PatternProperty *node = new (pool) AST::PatternProperty(sym(2).PropertyName, f, AST::PatternProperty::Getter);
-        node->colonToken = loc(2);
         sym(1).Node = node;
     } break;
 ./
@@ -4100,7 +4146,6 @@ MethodDefinition: T_SET PropertyName T_LPAREN PropertySetParameterList T_RPAREN 
         f->lbraceToken = loc(7);
         f->rbraceToken = loc(9);
         AST::PatternProperty *node = new (pool) AST::PatternProperty(sym(2).PropertyName, f, AST::PatternProperty::Setter);
-        node->colonToken = loc(2);
         sym(1).Node = node;
     } break;
 ./

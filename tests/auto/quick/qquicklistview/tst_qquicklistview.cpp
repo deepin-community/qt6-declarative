@@ -187,6 +187,7 @@ private slots:
 
     void populateTransitions();
     void populateTransitions_data();
+    void repositionFirstItemOnPopulateTransition();
     void sizeTransitions();
     void sizeTransitions_data();
 
@@ -2739,7 +2740,7 @@ void tst_QQuickListView::sectionsSnap()
     QTRY_VERIFY(listview != nullptr);
     listview->setSnapMode(snapMode);
 
-    QTRY_COMPARE(QQuickItemPrivate::get(listview)->polishScheduled, false);
+    QTRY_VERIFY(!QQuickItemPrivate::get(listview)->polishScheduled);
     QTRY_COMPARE(listview->currentIndex(), 0);
     QCOMPARE(listview->contentY(), qreal(-50));
 
@@ -6792,6 +6793,20 @@ void tst_QQuickListView::populateTransitions_data()
     QTest::newRow("empty to start with, no populate") << false << false << false;
 }
 
+// QTBUG-111050
+/* Reposition first visible item in list view on populate transition
+   Note: Occurs only in BottomToTop or RightToLeft layout */
+void tst_QQuickListView::repositionFirstItemOnPopulateTransition()
+{
+    QScopedPointer<QQuickView> window(createView());
+    window->setSource(testFileUrl("repositionListViewOnPopulateTransition.qml"));
+    window->show();
+    QVERIFY(QTest::qWaitForWindowExposed(window.data()));
+
+    QQuickListView *listview = qobject_cast<QQuickListView*>(window->rootObject());
+    QTRY_VERIFY(listview != nullptr);
+    QTRY_COMPARE(listview->contentY(), -100.0);
+}
 
 /*
  * Tests if the first visible item is not repositioned if the same item
@@ -8013,7 +8028,7 @@ void tst_QQuickListView::flickBothDirections()
             listview->setContentHeight(contentHeight);
     }
 
-    flick(window, QPoint(100, 100), QPoint(25, 25), 50);
+    flick(window, QPoint(140, 140), QPoint(25, 25), 50);
     QVERIFY(listview->isMoving());
     QTRY_VERIFY(!listview->isMoving());
     QCOMPARE(listview->contentX(), targetPos.x());
@@ -8845,7 +8860,7 @@ void tst_QQuickListView::QTBUG_38209()
     listview->flick(0, 1000);
 
     // ensure we move more than just a couple pixels
-    QTRY_VERIFY(contentY - listview->contentY() > qreal(100.0));
+    QTRY_COMPARE_GE(contentY - listview->contentY(), 100);
 }
 
 void tst_QQuickListView::programmaticFlickAtBounds()
@@ -9691,7 +9706,7 @@ void tst_QQuickListView::touchCancel() // QTBUG-74679
     QPoint p1(300, 300);
     QTest::touchEvent(window.data(), touchDevice).press(0, p1, window.data());
     QQuickTouchUtils::flush(window.data());
-    QTRY_VERIFY(mouseArea->pressed());
+    QTRY_VERIFY(mouseArea->isPressed());
     // and because Flickable filtered it, QQuickFlickablePrivate::pressed
     // should be true, but it's not easily tested here
 

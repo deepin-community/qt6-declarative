@@ -1,17 +1,19 @@
 // Copyright (C) 2021 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only WITH Qt-GPL-exception-1.0
 
-#include <QtTest/QtTest>
-#include <QSignalSpy>
-#include <QMetaObject>
-#include <QSortFilterProxyModel>
-#include <QFile>
-#include <QTimer>
-#include <QTemporaryFile>
-#include <QNetworkRequest>
-#include <QNetworkAccessManager>
 #include <QtQmlXmlListModel/private/qqmlxmllistmodel_p.h>
 #include <QtQuickTestUtils/private/qmlutils_p.h>
+
+#include <QtTest/qsignalspy.h>
+
+#include <QtQml/qqmlcomponent.h>
+#include <QtQml/qqmlengine.h>
+#include <QtQml/qqmlnetworkaccessmanagerfactory.h>
+
+#include <QtCore/qset.h>
+#include <QtCore/qsortfilterproxymodel.h>
+#include <QtCore/qtemporaryfile.h>
+#include <QtCore/qtimer.h>
 
 using namespace Qt::StringLiterals;
 
@@ -433,8 +435,8 @@ void tst_QQmlXmlListModel::reload()
     QVERIFY(model != nullptr);
     QTRY_COMPARE(model->rowCount(), 9);
 
-    QSignalSpy spyInsert(model.get(), SIGNAL(rowsInserted(QModelIndex, int, int)));
-    QSignalSpy spyRemove(model.get(), SIGNAL(rowsRemoved(QModelIndex, int, int)));
+    QSignalSpy spyInsert(model.get(), SIGNAL(rowsInserted(QModelIndex,int,int)));
+    QSignalSpy spyRemove(model.get(), SIGNAL(rowsRemoved(QModelIndex,int,int)));
     QSignalSpy spyCount(model.get(), SIGNAL(countChanged()));
     // reload multiple times to test the xml query aborting
     QMetaObject::invokeMethod(model.get(), "reload");

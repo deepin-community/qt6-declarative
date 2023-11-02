@@ -124,6 +124,9 @@ private slots:
     void viewport();
 
     void qobject_castOnDestruction();
+    void signalsOnDestruction_data();
+    void signalsOnDestruction();
+    void visibleChanged();
 
 private:
     QQmlEngine engine;
@@ -1870,90 +1873,90 @@ void tst_QQuickItem::layoutMirroring()
     QQuickItemPrivate *rootPrivate = QQuickItemPrivate::get(rootItem);
     QVERIFY(rootPrivate);
 
-    QCOMPARE(childPrivate(rootItem, "mirrored1")->effectiveLayoutMirror, true);
-    QCOMPARE(childPrivate(rootItem, "mirrored2")->effectiveLayoutMirror, true);
-    QCOMPARE(childPrivate(rootItem, "notMirrored1")->effectiveLayoutMirror, false);
-    QCOMPARE(childPrivate(rootItem, "notMirrored2")->effectiveLayoutMirror, false);
-    QCOMPARE(childPrivate(rootItem, "inheritedMirror1")->effectiveLayoutMirror, true);
-    QCOMPARE(childPrivate(rootItem, "inheritedMirror2")->effectiveLayoutMirror, true);
+    QVERIFY(childPrivate(rootItem, "mirrored1")->effectiveLayoutMirror);
+    QVERIFY(childPrivate(rootItem, "mirrored2")->effectiveLayoutMirror);
+    QVERIFY(!childPrivate(rootItem, "notMirrored1")->effectiveLayoutMirror);
+    QVERIFY(!childPrivate(rootItem, "notMirrored2")->effectiveLayoutMirror);
+    QVERIFY(childPrivate(rootItem, "inheritedMirror1")->effectiveLayoutMirror);
+    QVERIFY(childPrivate(rootItem, "inheritedMirror2")->effectiveLayoutMirror);
 
-    QCOMPARE(anchorsMirrored(rootItem, "mirrored1"), true);
-    QCOMPARE(anchorsMirrored(rootItem, "mirrored2"), true);
-    QCOMPARE(anchorsMirrored(rootItem, "notMirrored1"), false);
-    QCOMPARE(anchorsMirrored(rootItem, "notMirrored2"), false);
-    QCOMPARE(anchorsMirrored(rootItem, "inheritedMirror1"), true);
-    QCOMPARE(anchorsMirrored(rootItem, "inheritedMirror2"), true);
+    QVERIFY(anchorsMirrored(rootItem, "mirrored1"));
+    QVERIFY(anchorsMirrored(rootItem, "mirrored2"));
+    QVERIFY(!anchorsMirrored(rootItem, "notMirrored1"));
+    QVERIFY(!anchorsMirrored(rootItem, "notMirrored2"));
+    QVERIFY(anchorsMirrored(rootItem, "inheritedMirror1"));
+    QVERIFY(anchorsMirrored(rootItem, "inheritedMirror2"));
 
-    QCOMPARE(childPrivate(rootItem, "mirrored1")->inheritedLayoutMirror, true);
-    QCOMPARE(childPrivate(rootItem, "mirrored2")->inheritedLayoutMirror, false);
-    QCOMPARE(childPrivate(rootItem, "notMirrored1")->inheritedLayoutMirror, true);
-    QCOMPARE(childPrivate(rootItem, "notMirrored2")->inheritedLayoutMirror, false);
-    QCOMPARE(childPrivate(rootItem, "inheritedMirror1")->inheritedLayoutMirror, true);
-    QCOMPARE(childPrivate(rootItem, "inheritedMirror2")->inheritedLayoutMirror, true);
+    QVERIFY(childPrivate(rootItem, "mirrored1")->inheritedLayoutMirror);
+    QVERIFY(!childPrivate(rootItem, "mirrored2")->inheritedLayoutMirror);
+    QVERIFY(childPrivate(rootItem, "notMirrored1")->inheritedLayoutMirror);
+    QVERIFY(!childPrivate(rootItem, "notMirrored2")->inheritedLayoutMirror);
+    QVERIFY(childPrivate(rootItem, "inheritedMirror1")->inheritedLayoutMirror);
+    QVERIFY(childPrivate(rootItem, "inheritedMirror2")->inheritedLayoutMirror);
 
-    QCOMPARE(childPrivate(rootItem, "mirrored1")->isMirrorImplicit, false);
-    QCOMPARE(childPrivate(rootItem, "mirrored2")->isMirrorImplicit, false);
-    QCOMPARE(childPrivate(rootItem, "notMirrored1")->isMirrorImplicit, false);
-    QCOMPARE(childPrivate(rootItem, "notMirrored2")->isMirrorImplicit, true);
-    QCOMPARE(childPrivate(rootItem, "inheritedMirror1")->isMirrorImplicit, true);
-    QCOMPARE(childPrivate(rootItem, "inheritedMirror2")->isMirrorImplicit, true);
+    QVERIFY(!childPrivate(rootItem, "mirrored1")->isMirrorImplicit);
+    QVERIFY(!childPrivate(rootItem, "mirrored2")->isMirrorImplicit);
+    QVERIFY(!childPrivate(rootItem, "notMirrored1")->isMirrorImplicit);
+    QVERIFY(childPrivate(rootItem, "notMirrored2")->isMirrorImplicit);
+    QVERIFY(childPrivate(rootItem, "inheritedMirror1")->isMirrorImplicit);
+    QVERIFY(childPrivate(rootItem, "inheritedMirror2")->isMirrorImplicit);
 
-    QCOMPARE(childPrivate(rootItem, "mirrored1")->inheritMirrorFromParent, true);
-    QCOMPARE(childPrivate(rootItem, "mirrored2")->inheritMirrorFromParent, false);
-    QCOMPARE(childPrivate(rootItem, "notMirrored1")->inheritMirrorFromParent, true);
-    QCOMPARE(childPrivate(rootItem, "notMirrored2")->inheritMirrorFromParent, false);
-    QCOMPARE(childPrivate(rootItem, "inheritedMirror1")->inheritMirrorFromParent, true);
-    QCOMPARE(childPrivate(rootItem, "inheritedMirror2")->inheritMirrorFromParent, true);
+    QVERIFY(childPrivate(rootItem, "mirrored1")->inheritMirrorFromParent);
+    QVERIFY(!childPrivate(rootItem, "mirrored2")->inheritMirrorFromParent);
+    QVERIFY(childPrivate(rootItem, "notMirrored1")->inheritMirrorFromParent);
+    QVERIFY(!childPrivate(rootItem, "notMirrored2")->inheritMirrorFromParent);
+    QVERIFY(childPrivate(rootItem, "inheritedMirror1")->inheritMirrorFromParent);
+    QVERIFY(childPrivate(rootItem, "inheritedMirror2")->inheritMirrorFromParent);
 
-    QCOMPARE(childPrivate(rootItem, "mirrored1")->inheritMirrorFromItem, true);
-    QCOMPARE(childPrivate(rootItem, "mirrored2")->inheritMirrorFromItem, false);
-    QCOMPARE(childPrivate(rootItem, "notMirrored1")->inheritMirrorFromItem, false);
-    QCOMPARE(childPrivate(rootItem, "notMirrored2")->inheritMirrorFromItem, false);
-    QCOMPARE(childPrivate(rootItem, "inheritedMirror1")->inheritMirrorFromItem, false);
-    QCOMPARE(childPrivate(rootItem, "inheritedMirror2")->inheritMirrorFromItem, false);
+    QVERIFY(childPrivate(rootItem, "mirrored1")->inheritMirrorFromItem);
+    QVERIFY(!childPrivate(rootItem, "mirrored2")->inheritMirrorFromItem);
+    QVERIFY(!childPrivate(rootItem, "notMirrored1")->inheritMirrorFromItem);
+    QVERIFY(!childPrivate(rootItem, "notMirrored2")->inheritMirrorFromItem);
+    QVERIFY(!childPrivate(rootItem, "inheritedMirror1")->inheritMirrorFromItem);
+    QVERIFY(!childPrivate(rootItem, "inheritedMirror2")->inheritMirrorFromItem);
 
     // load dynamic content using Loader that needs to inherit mirroring
     rootItem->setProperty("state", "newContent");
-    QCOMPARE(childPrivate(rootItem, "notMirrored3")->effectiveLayoutMirror, false);
-    QCOMPARE(childPrivate(rootItem, "inheritedMirror3")->effectiveLayoutMirror, true);
+    QVERIFY(!childPrivate(rootItem, "notMirrored3")->effectiveLayoutMirror);
+    QVERIFY(childPrivate(rootItem, "inheritedMirror3")->effectiveLayoutMirror);
 
-    QCOMPARE(childPrivate(rootItem, "notMirrored3")->inheritedLayoutMirror, true);
-    QCOMPARE(childPrivate(rootItem, "inheritedMirror3")->inheritedLayoutMirror, true);
+    QVERIFY(childPrivate(rootItem, "notMirrored3")->inheritedLayoutMirror);
+    QVERIFY(childPrivate(rootItem, "inheritedMirror3")->inheritedLayoutMirror);
 
-    QCOMPARE(childPrivate(rootItem, "notMirrored3")->isMirrorImplicit, false);
-    QCOMPARE(childPrivate(rootItem, "inheritedMirror3")->isMirrorImplicit, true);
+    QVERIFY(!childPrivate(rootItem, "notMirrored3")->isMirrorImplicit);
+    QVERIFY(childPrivate(rootItem, "inheritedMirror3")->isMirrorImplicit);
 
-    QCOMPARE(childPrivate(rootItem, "notMirrored3")->inheritMirrorFromParent, true);
-    QCOMPARE(childPrivate(rootItem, "inheritedMirror3")->inheritMirrorFromParent, true);
+    QVERIFY(childPrivate(rootItem, "notMirrored3")->inheritMirrorFromParent);
+    QVERIFY(childPrivate(rootItem, "inheritedMirror3")->inheritMirrorFromParent);
 
-    QCOMPARE(childPrivate(rootItem, "notMirrored3")->inheritMirrorFromItem, false);
-    QCOMPARE(childPrivate(rootItem, "notMirrored3")->inheritMirrorFromItem, false);
+    QVERIFY(!childPrivate(rootItem, "notMirrored3")->inheritMirrorFromItem);
+    QVERIFY(!childPrivate(rootItem, "notMirrored3")->inheritMirrorFromItem);
 
     // disable inheritance
     rootItem->setProperty("childrenInherit", false);
 
-    QCOMPARE(childPrivate(rootItem, "inheritedMirror1")->effectiveLayoutMirror, false);
-    QCOMPARE(childPrivate(rootItem, "inheritedMirror2")->effectiveLayoutMirror, false);
-    QCOMPARE(childPrivate(rootItem, "mirrored1")->effectiveLayoutMirror, true);
-    QCOMPARE(childPrivate(rootItem, "notMirrored1")->effectiveLayoutMirror, false);
+    QVERIFY(!childPrivate(rootItem, "inheritedMirror1")->effectiveLayoutMirror);
+    QVERIFY(!childPrivate(rootItem, "inheritedMirror2")->effectiveLayoutMirror);
+    QVERIFY(childPrivate(rootItem, "mirrored1")->effectiveLayoutMirror);
+    QVERIFY(!childPrivate(rootItem, "notMirrored1")->effectiveLayoutMirror);
 
-    QCOMPARE(childPrivate(rootItem, "inheritedMirror1")->inheritedLayoutMirror, false);
-    QCOMPARE(childPrivate(rootItem, "inheritedMirror2")->inheritedLayoutMirror, false);
-    QCOMPARE(childPrivate(rootItem, "mirrored1")->inheritedLayoutMirror, false);
-    QCOMPARE(childPrivate(rootItem, "notMirrored1")->inheritedLayoutMirror, false);
+    QVERIFY(!childPrivate(rootItem, "inheritedMirror1")->inheritedLayoutMirror);
+    QVERIFY(!childPrivate(rootItem, "inheritedMirror2")->inheritedLayoutMirror);
+    QVERIFY(!childPrivate(rootItem, "mirrored1")->inheritedLayoutMirror);
+    QVERIFY(!childPrivate(rootItem, "notMirrored1")->inheritedLayoutMirror);
 
     // re-enable inheritance
     rootItem->setProperty("childrenInherit", true);
 
-    QCOMPARE(childPrivate(rootItem, "inheritedMirror1")->effectiveLayoutMirror, true);
-    QCOMPARE(childPrivate(rootItem, "inheritedMirror2")->effectiveLayoutMirror, true);
-    QCOMPARE(childPrivate(rootItem, "mirrored1")->effectiveLayoutMirror, true);
-    QCOMPARE(childPrivate(rootItem, "notMirrored1")->effectiveLayoutMirror, false);
+    QVERIFY(childPrivate(rootItem, "inheritedMirror1")->effectiveLayoutMirror);
+    QVERIFY(childPrivate(rootItem, "inheritedMirror2")->effectiveLayoutMirror);
+    QVERIFY(childPrivate(rootItem, "mirrored1")->effectiveLayoutMirror);
+    QVERIFY(!childPrivate(rootItem, "notMirrored1")->effectiveLayoutMirror);
 
-    QCOMPARE(childPrivate(rootItem, "inheritedMirror1")->inheritedLayoutMirror, true);
-    QCOMPARE(childPrivate(rootItem, "inheritedMirror2")->inheritedLayoutMirror, true);
-    QCOMPARE(childPrivate(rootItem, "mirrored1")->inheritedLayoutMirror, true);
-    QCOMPARE(childPrivate(rootItem, "notMirrored1")->inheritedLayoutMirror, true);
+    QVERIFY(childPrivate(rootItem, "inheritedMirror1")->inheritedLayoutMirror);
+    QVERIFY(childPrivate(rootItem, "inheritedMirror2")->inheritedLayoutMirror);
+    QVERIFY(childPrivate(rootItem, "mirrored1")->inheritedLayoutMirror);
+    QVERIFY(childPrivate(rootItem, "notMirrored1")->inheritedLayoutMirror);
 
     //
     // dynamic parenting
@@ -1966,24 +1969,24 @@ void tst_QQuickItem::layoutMirroring()
 
     // inherit in constructor
     QQuickItem *childItem1 = new QQuickItem(parentItem1);
-    QCOMPARE(QQuickItemPrivate::get(childItem1)->effectiveLayoutMirror, true);
-    QCOMPARE(QQuickItemPrivate::get(childItem1)->inheritMirrorFromParent, true);
+    QVERIFY(QQuickItemPrivate::get(childItem1)->effectiveLayoutMirror);
+    QVERIFY(QQuickItemPrivate::get(childItem1)->inheritMirrorFromParent);
 
     // inherit through a parent change
     QQuickItem *childItem2 = new QQuickItem();
-    QCOMPARE(QQuickItemPrivate::get(childItem2)->effectiveLayoutMirror, false);
-    QCOMPARE(QQuickItemPrivate::get(childItem2)->inheritMirrorFromParent, false);
+    QVERIFY(!QQuickItemPrivate::get(childItem2)->effectiveLayoutMirror);
+    QVERIFY(!QQuickItemPrivate::get(childItem2)->inheritMirrorFromParent);
     childItem2->setParentItem(parentItem1);
-    QCOMPARE(QQuickItemPrivate::get(childItem2)->effectiveLayoutMirror, true);
-    QCOMPARE(QQuickItemPrivate::get(childItem2)->inheritMirrorFromParent, true);
+    QVERIFY(QQuickItemPrivate::get(childItem2)->effectiveLayoutMirror);
+    QVERIFY(QQuickItemPrivate::get(childItem2)->inheritMirrorFromParent);
 
     // stop inherting through a parent change
     QQuickItem *parentItem2 = new QQuickItem();
     QQuickItemPrivate::get(parentItem2)->effectiveLayoutMirror = true; // LayoutMirroring.enabled: true
     QQuickItemPrivate::get(parentItem2)->resolveLayoutMirror();
     childItem2->setParentItem(parentItem2);
-    QCOMPARE(QQuickItemPrivate::get(childItem2)->effectiveLayoutMirror, false);
-    QCOMPARE(QQuickItemPrivate::get(childItem2)->inheritMirrorFromParent, false);
+    QVERIFY(!QQuickItemPrivate::get(childItem2)->effectiveLayoutMirror);
+    QVERIFY(!QQuickItemPrivate::get(childItem2)->inheritMirrorFromParent);
 
     delete parentItem1;
     delete parentItem2;
@@ -1999,11 +2002,11 @@ void tst_QQuickItem::layoutMirroringWindow()
     window->show();
 
     QQuickItemPrivate *content = QQuickItemPrivate::get(window->contentItem());
-    QCOMPARE(content->effectiveLayoutMirror, true);
-    QCOMPARE(content->inheritedLayoutMirror, true);
-    QCOMPARE(content->isMirrorImplicit, false);
-    QCOMPARE(content->inheritMirrorFromParent, true);
-    QCOMPARE(content->inheritMirrorFromItem, true);
+    QVERIFY(content->effectiveLayoutMirror);
+    QVERIFY(content->inheritedLayoutMirror);
+    QVERIFY(!content->isMirrorImplicit);
+    QVERIFY(content->inheritMirrorFromParent);
+    QVERIFY(content->inheritMirrorFromItem);
 }
 
 void tst_QQuickItem::layoutMirroringIllegalParent()
@@ -2694,15 +2697,17 @@ void tst_QQuickItem::mapCoordinates()
             Q_RETURN_ARG(QVariant, result), Q_ARG(QVariant, x), Q_ARG(QVariant, y)));
     QCOMPARE(result.value<QPointF>(), -QPointF(150,150) + QPointF(x, y));
 
-    QString warning1 = testFileUrl("mapCoordinates.qml").toString() + ":10:5: QML Item: mapToItem() given argument \"1122\" which is neither null nor an Item";
-    QString warning2 = testFileUrl("mapCoordinates.qml").toString() + ":10:5: QML Item: mapFromItem() given argument \"1122\" which is neither null nor an Item";
+    QRegularExpression warning1 = QRegularExpression(".*Could not convert argument 0 at.*");
+    QRegularExpression warning2 = QRegularExpression(".*checkMapA.*Invalid@.*");
 
-    QTest::ignoreMessage(QtWarningMsg, qPrintable(warning1));
+    QTest::ignoreMessage(QtWarningMsg, warning1);
+    QTest::ignoreMessage(QtWarningMsg, warning2);
     QVERIFY(QMetaObject::invokeMethod(root, "checkMapAToInvalid",
             Q_RETURN_ARG(QVariant, result), Q_ARG(QVariant, x), Q_ARG(QVariant, y)));
     QVERIFY(result.toBool());
 
-    QTest::ignoreMessage(QtWarningMsg, qPrintable(warning2));
+    QTest::ignoreMessage(QtWarningMsg, warning1);
+    QTest::ignoreMessage(QtWarningMsg, warning2);
     QVERIFY(QMetaObject::invokeMethod(root, "checkMapAFromInvalid",
             Q_RETURN_ARG(QVariant, result), Q_ARG(QVariant, x), Q_ARG(QVariant, y)));
     QVERIFY(result.toBool());
@@ -2726,7 +2731,7 @@ void tst_QQuickItem::mapCoordinatesRect()
     QFETCH(int, width);
     QFETCH(int, height);
 
-    QQuickView *window = new QQuickView(nullptr);
+    std::unique_ptr<QQuickView> window = std::make_unique<QQuickView>();
     window->setBaseSize(QSize(300, 300));
     window->setSource(testFileUrl("mapCoordinatesRect.qml"));
     window->show();
@@ -2765,20 +2770,20 @@ void tst_QQuickItem::mapCoordinatesRect()
             Q_RETURN_ARG(QVariant, result), Q_ARG(QVariant, x), Q_ARG(QVariant, y), Q_ARG(QVariant, width), Q_ARG(QVariant, height)));
     QCOMPARE(result.value<QRectF>(), qobject_cast<QQuickItem*>(a)->mapRectFromScene(QRectF(x, y, width, height)));
 
-    QString warning1 = testFileUrl("mapCoordinatesRect.qml").toString() + ":10:5: QML Item: mapToItem() given argument \"1122\" which is neither null nor an Item";
-    QString warning2 = testFileUrl("mapCoordinatesRect.qml").toString() + ":10:5: QML Item: mapFromItem() given argument \"1122\" which is neither null nor an Item";
+    QRegularExpression warning1 = QRegularExpression(".*Could not convert argument 0 at.*");
+    QRegularExpression warning2 = QRegularExpression(".*checkMapA.*Invalid@.*");
 
-    QTest::ignoreMessage(QtWarningMsg, qPrintable(warning1));
+    QTest::ignoreMessage(QtWarningMsg, warning1);
+    QTest::ignoreMessage(QtWarningMsg, warning2);
     QVERIFY(QMetaObject::invokeMethod(root, "checkMapAToInvalid",
             Q_RETURN_ARG(QVariant, result), Q_ARG(QVariant, x), Q_ARG(QVariant, y), Q_ARG(QVariant, width), Q_ARG(QVariant, height)));
     QVERIFY(result.toBool());
 
-    QTest::ignoreMessage(QtWarningMsg, qPrintable(warning2));
+    QTest::ignoreMessage(QtWarningMsg, warning1);
+    QTest::ignoreMessage(QtWarningMsg, warning2);
     QVERIFY(QMetaObject::invokeMethod(root, "checkMapAFromInvalid",
             Q_RETURN_ARG(QVariant, result), Q_ARG(QVariant, x), Q_ARG(QVariant, y), Q_ARG(QVariant, width), Q_ARG(QVariant, height)));
     QVERIFY(result.toBool());
-
-    delete window;
 }
 
 void tst_QQuickItem::mapCoordinatesRect_data()
@@ -4001,6 +4006,137 @@ void tst_QQuickItem::qobject_castOnDestruction()
         QVERIFY(!dynamic_cast<QQuickItem *>(object));
         QVERIFY(!object->isQuickItemType());
     });
+}
+
+/*
+    Items that are getting destroyed should not emit property change notifications.
+*/
+void tst_QQuickItem::signalsOnDestruction_data()
+{
+    QTest::addColumn<bool>("childVisible");
+    QTest::addColumn<bool>("grandChildVisible");
+
+    QTest::addRow("Both visible") << true << true;
+    QTest::addRow("Child visible") << true << false;
+    QTest::addRow("Grand child visible") << false << true;
+    QTest::addRow("Both hidden") << false << false;
+}
+
+void tst_QQuickItem::signalsOnDestruction()
+{
+    QFETCH(bool, childVisible);
+    QFETCH(bool, grandChildVisible);
+
+    QQuickWindow window;
+    window.show();
+
+    int expectedChildVisibleCount = 0;
+    int expectedGrandChildVisibleCount = 0;
+
+    // Visual children, but not QObject children.
+    // Note: QQuickItem's visible property defaults to true after creation, as visual
+    // items are always expected to be added to a visual hierarchy. So for the sake
+    // of this test we first add, and then remove the item from a parent. This explicitly
+    // sets the effective visibility to false.
+    std::unique_ptr<QQuickItem> parent(new QQuickItem(window.contentItem()));
+    QVERIFY(parent->isVisible());
+    std::unique_ptr<QQuickItem> child(new QQuickItem);
+    child->setVisible(childVisible);
+    child->setParentItem(parent.get());
+    child->setParentItem(nullptr);
+    QVERIFY(!child->isVisible());
+    std::unique_ptr<QQuickItem> grandChild(new QQuickItem);
+    grandChild->setVisible(grandChildVisible);
+    grandChild->setParentItem(child.get());
+    grandChild->setParentItem(nullptr);
+    QVERIFY(!grandChild->isVisible());
+
+    QSignalSpy childrenSpy(parent.get(), &QQuickItem::childrenChanged);
+    QSignalSpy visibleChildrenSpy(parent.get(), &QQuickItem::visibleChildrenChanged);
+    QSignalSpy childParentSpy(child.get(), &QQuickItem::parentChanged);
+    QSignalSpy childVisibleSpy(child.get(), &QQuickItem::visibleChanged);
+    QSignalSpy childChildrenSpy(child.get(), &QQuickItem::childrenChanged);
+    QSignalSpy childVisibleChildrenSpy(child.get(), &QQuickItem::visibleChildrenChanged);
+    QSignalSpy grandChildParentSpy(grandChild.get(), &QQuickItem::parentChanged);
+    QSignalSpy grandChildVisibleSpy(grandChild.get(), &QQuickItem::visibleChanged);
+
+    child->setParentItem(parent.get());
+    QCOMPARE(childrenSpy.count(), 1);
+    if (childVisible)
+        ++expectedChildVisibleCount;
+    QCOMPARE(visibleChildrenSpy.count(), expectedChildVisibleCount);
+    QCOMPARE(childParentSpy.count(), 1);
+    QCOMPARE(childVisibleSpy.count(), expectedChildVisibleCount);
+    QCOMPARE(childChildrenSpy.count(), 0);
+    QCOMPARE(childVisibleChildrenSpy.count(), 0);
+
+    grandChild->setParentItem(child.get());
+    QCOMPARE(childrenSpy.count(), 1);
+    QCOMPARE(visibleChildrenSpy.count(), expectedChildVisibleCount);
+    QCOMPARE(childParentSpy.count(), 1);
+    QCOMPARE(childVisibleSpy.count(), expectedChildVisibleCount);
+    QCOMPARE(childChildrenSpy.count(), 1);
+    if (grandChildVisible && childVisible)
+        ++expectedGrandChildVisibleCount;
+    QCOMPARE(childVisibleChildrenSpy.count(), expectedGrandChildVisibleCount);
+    QCOMPARE(grandChildParentSpy.count(), 1);
+    QCOMPARE(grandChildVisibleSpy.count(), expectedGrandChildVisibleCount);
+
+    parent.reset();
+
+    QVERIFY(!child->parentItem());
+    QVERIFY(grandChild->parentItem());
+    QCOMPARE(childrenSpy.count(), 1);
+    QCOMPARE(visibleChildrenSpy.count(), expectedChildVisibleCount);
+    QCOMPARE(childParentSpy.count(), 2);
+    QCOMPARE(childChildrenSpy.count(), 1);
+    if (childVisible)
+        ++expectedChildVisibleCount;
+    QCOMPARE(childVisibleSpy.count(), expectedChildVisibleCount);
+    if (childVisible && grandChildVisible)
+        ++expectedGrandChildVisibleCount;
+    QCOMPARE(childVisibleChildrenSpy.count(), expectedGrandChildVisibleCount);
+    QCOMPARE(grandChildParentSpy.count(), 1);
+    QCOMPARE(grandChildVisibleSpy.count(), expectedGrandChildVisibleCount);
+}
+
+void tst_QQuickItem::visibleChanged()
+{
+    QQuickView window;
+    window.setSource(testFileUrl("visiblechanged.qml"));
+    window.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+
+    QQuickItem *root = qobject_cast<QQuickItem*>(window.rootObject());
+    QVERIFY(root);
+
+    QPointer<QQuickItem> parentItem = root->findChild<QQuickItem *>("parentItem");
+    QPointer<QQuickItem> childItem = root->findChild<QQuickItem *>("childItem");
+    QPointer<QQuickItem> loader = root->findChild<QQuickItem *>("loader");
+    QPointer<QQuickItem> loaderChild = root->findChild<QQuickItem *>("loaderChild");
+    QVERIFY(parentItem);
+    QVERIFY(childItem);
+    QVERIFY(loader);
+    QVERIFY(loaderChild);
+
+    QSignalSpy parentItemSpy(parentItem.data(), &QQuickItem::visibleChanged);
+    QSignalSpy childItemSpy(childItem.data(), &QQuickItem::visibleChanged);
+    QSignalSpy loaderChildSpy(loaderChild.data(), &QQuickItem::visibleChanged);
+
+    loader->setProperty("active", false);
+    QCOMPARE(parentItemSpy.count(), 0);
+    QCOMPARE(childItemSpy.count(), 0);
+    QVERIFY(!loaderChild->parentItem());
+    QCOMPARE(loaderChildSpy.count(), 1);
+    QCOMPARE(loaderChild->isVisible(), false);
+
+    delete parentItem.data();
+    QVERIFY(!parentItem);
+    QVERIFY(childItem);
+    QVERIFY(!childItem->parentItem());
+
+    QCOMPARE(parentItemSpy.count(), 0);
+    QCOMPARE(childItemSpy.count(), 1);
 }
 
 QTEST_MAIN(tst_QQuickItem)

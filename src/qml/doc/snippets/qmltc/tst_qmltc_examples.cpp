@@ -53,7 +53,7 @@ void tst_qmltc_examples::app()
     QQmlEngine e;
     QQuickWindow window;
 
-    QScopedPointer<myApp> documentRoot(new myApp(&e));
+    QScopedPointer<QmltcExample::myApp> documentRoot(new QmltcExample::myApp(&e));
 
     documentRoot->setParentItem(window.contentItem());
     window.setHeight(documentRoot->height());
@@ -81,7 +81,8 @@ void tst_qmltc_examples::appComponent()
     QQuickWindow window;
 
     QQmlComponent component(&e);
-    component.loadUrl(QUrl(QStringLiteral("qrc:/QmltcExample/myApp.qml")));
+    component.loadUrl(
+                QUrl(QStringLiteral("qrc:/qt/qml/QmltcExample/myApp.qml")));
     //! [qqmlcomponent-app-code-0]
 
     QVERIFY2(!component.isError(), qPrintable(component.errorString()));

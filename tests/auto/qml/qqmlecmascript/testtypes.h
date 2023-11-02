@@ -21,6 +21,7 @@
 #include <QtCore/qjsonobject.h>
 #include <QtCore/qjsonvalue.h>
 #include <QtCore/qproperty.h>
+#include <QtCore/qtimezone.h>
 #include <QtQml/qjsvalue.h>
 #include <QtQml/qqmlscriptstring.h>
 #include <QtQml/qqmlcomponent.h>
@@ -30,6 +31,7 @@
 
 #include <private/qqmlengine_p.h>
 #include <private/qv4qobjectwrapper_p.h>
+#include <private/qqmlcomponentattached_p.h>
 
 class MyQmlAttachedObject : public QObject
 {
@@ -861,6 +863,17 @@ struct NonRegisteredType
 
 struct CompletelyUnknown;
 
+class SingletonWithEnum : public QObject
+{
+    Q_OBJECT
+    Q_ENUMS(TestEnum)
+public:
+    enum TestEnum {
+        TestValue = 42,
+        TestValue_MinusOne = -1
+    };
+};
+
 class MyInvokableObject : public MyInvokableBaseObject
 {
     Q_OBJECT
@@ -924,7 +937,7 @@ public:
         QV4::Scope scope(v->v4engine());
         for (int i = 0, end = v->length(); i != end; ++i) {
             QV4::ScopedValue v4Value(scope, (*v)[i]);
-            m_actuals.append(v->v4engine()->toVariant(v4Value, QMetaType()));
+            m_actuals.append(QV4::ExecutionEngine::toVariant(v4Value, QMetaType()));
         }
     }
     Q_INVOKABLE void method_overload2(const QVariantList &list)
@@ -938,12 +951,73 @@ public:
     Q_INVOKABLE void method_overload2(QString a) { invoke(36); m_actuals << a; }
     Q_INVOKABLE void method_overload2() { invoke(37); }
 
+    Q_INVOKABLE void method_overload3(char c, QUrl a, QDateTime b) { invoke(38); m_actuals << c << a << b; }
+    Q_INVOKABLE void method_overload3(char c, QJsonValue a, QTime b) { invoke(39); m_actuals << c << a << b; }
+    Q_PROPERTY(QFont someFont READ someFont WRITE setSomeFont NOTIFY someFontChanged);
+    QFont someFont() { return m_someFont; }
+    void setSomeFont(const QFont &f)
+    {
+        if (f == m_someFont)
+            return;
+        m_someFont = f;
+        emit someFontChanged();
+    }
+    Q_INVOKABLE void method_gadget(QFont f)
+    {
+        invoke(40);
+        m_actuals << f;
+    }
+
+    Q_INVOKABLE void method_qobject(QObject *o)
+    {
+        invoke(41);
+        m_actuals << QVariant::fromValue(o);
+    }
+
+    Q_INVOKABLE QQmlComponent *someComponent() { return &m_someComponent; }
+    Q_INVOKABLE void method_component(QQmlComponent *c)
+    {
+        invoke(42);
+        m_actuals << QVariant::fromValue(c);
+    }
+
+    Q_INVOKABLE MyTypeObject *someTypeObject() { return &m_someTypeObject; }
+    Q_INVOKABLE void method_component(MyTypeObject *c)
+    {
+        invoke(43);
+        m_actuals << QVariant::fromValue(c);
+    }
+
+    Q_INVOKABLE void method_component(const QUrl &c)
+    {
+        invoke(44);
+        m_actuals << QVariant::fromValue(c);
+    }
+
+    Q_INVOKABLE void method_typeWrapper(QQmlComponentAttached *attached)
+    {
+        m_actuals << QVariant::fromValue(attached);
+    }
+
+    Q_INVOKABLE void method_typeWrapper(SingletonWithEnum *singleton)
+    {
+        m_actuals << QVariant::fromValue(singleton);
+    }
+
 private:
     friend class MyInvokableBaseObject;
     void invoke(int idx) { if (m_invoked != -1) m_invokedError = true; m_invoked = idx;}
     int m_invoked;
     bool m_invokedError;
     QVariantList m_actuals;
+
+    QFont m_someFont;
+    QQmlComponent m_someComponent;
+    MyTypeObject m_someTypeObject;
+
+public:
+Q_SIGNALS:
+    void someFontChanged();
 };
 
 MyInvokableBaseObject::~MyInvokableBaseObject() {}
@@ -1617,7 +1691,7 @@ public:
         case Qt::LocalTime:
             {
             QDateTime utc(m_datetime.toUTC());
-            utc.setTimeSpec(Qt::LocalTime);
+            utc.setTimeZone(QTimeZone::LocalTime);
             m_offset = m_datetime.secsTo(utc) / 60;
             m_timespec = "LocalTime";
             }
@@ -1777,17 +1851,6 @@ public:
 
 QML_DECLARE_TYPEINFO(FallbackBindingsTypeObject, QML_HAS_ATTACHED_PROPERTIES)
 QML_DECLARE_TYPEINFO(FallbackBindingsTypeDerived, QML_HAS_ATTACHED_PROPERTIES)
-
-class SingletonWithEnum : public QObject
-{
-    Q_OBJECT
-    Q_ENUMS(TestEnum)
-public:
-    enum TestEnum {
-        TestValue = 42,
-        TestValue_MinusOne = -1
-    };
-};
 
 // Like QtObject, but with default property
 class QObjectContainer : public QObject
@@ -1951,6 +2014,60 @@ struct Receiver : QObject
 public slots:
     int slot1(int i, int j, int k) {return i+j+k;}
 };
+
+class ReadOnlyBindable : public QObject
+{
+    Q_OBJECT
+    QML_ELEMENT
+    Q_PROPERTY(int x READ x WRITE setX BINDABLE bindableX)
+    Q_OBJECT_BINDABLE_PROPERTY(ReadOnlyBindable, int, _xProp)
+
+public:
+    ReadOnlyBindable(QObject *parent = nullptr)
+        : QObject(parent)
+    {
+        setX(7);
+    }
+
+    int x() const { return _xProp.value(); }
+    void setX(int x) { _xProp.setValue(x); }
+    QBindable<int> bindableX() const { return &_xProp; }
+};
+
+class ResettableGadget
+{
+    Q_GADGET
+    Q_PROPERTY(qreal value READ value WRITE setValue RESET resetValue)
+
+    qreal m_value = 0;
+
+public:
+    qreal value() const { return m_value; }
+    void setValue(qreal val) { m_value = val; }
+    void resetValue() { m_value = 42; }
+};
+
+class ResettableGadgetHolder : public QObject {
+    Q_OBJECT
+    QML_ELEMENT
+
+    Q_PROPERTY(ResettableGadget g READ g WRITE setG NOTIFY gChanged)
+    ResettableGadget m_g;
+
+signals:
+    void gChanged();
+
+public:
+    ResettableGadget g() const { return m_g; }
+    void setG(ResettableGadget newG)
+    {
+        if (m_g.value() == newG.value())
+            return;
+        m_g = newG;
+        Q_EMIT gChanged();
+    }
+};
+
 
 void registerTypes();
 

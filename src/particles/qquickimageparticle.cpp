@@ -17,7 +17,7 @@
 #include <private/qqmlglobal_p.h>
 #include <QtQml/qqmlinfo.h>
 #include <QtCore/QtMath>
-#include <QtGui/private/qrhi_p.h>
+#include <rhi/qrhi.h>
 
 #include <cmath>
 
@@ -651,13 +651,12 @@ void fillUniformArrayFromImage(float* array, const QImage& img, int size)
     For fine-grained control, see sizeTable and opacityTable.
 
     Acceptable values are
-    \list
-    \li ImageParticle.None: Particles just appear and disappear.
-    \li ImageParticle.Fade: Particles fade in from 0 opacity at the start of their life, and fade out to 0 at the end.
-    \li ImageParticle.Scale: Particles scale in from 0 size at the start of their life, and scale back to 0 at the end.
-    \endlist
 
-    Default value is Fade.
+    \value ImageParticle.None   Particles just appear and disappear.
+    \value ImageParticle.Fade   Particles fade in from 0 opacity at the start of their life, and fade out to 0 at the end.
+    \value ImageParticle.Scale  Particles scale in from 0 size at the start of their life, and scale back to 0 at the end.
+
+    The default value is \c ImageParticle.Fade.
 */
 /*!
     \qmlproperty bool QtQuick.Particles::ImageParticle::spritesInterpolate
@@ -730,6 +729,7 @@ void QQuickImageParticle::sceneGraphInvalidated()
     m_material = nullptr;
     delete m_outgoingNode;
     m_outgoingNode = nullptr;
+    m_apiChecked = false;
 }
 
 void QQuickImageParticle::setImage(const QUrl &image)
@@ -1036,6 +1036,12 @@ void QQuickImageParticle::reset()
     QQuickParticlePainter::reset();
     m_pleaseReset = true;
     update();
+}
+
+
+void QQuickImageParticle::invalidateSceneGraph()
+{
+    reset();
 }
 
 void QQuickImageParticle::createEngine()

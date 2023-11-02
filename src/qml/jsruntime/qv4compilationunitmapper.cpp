@@ -29,22 +29,23 @@ public:
         s_staticUnits.insert(file, staticUnit);
     }
 
+    void remove(const QString &file)
+    {
+        s_staticUnits.remove(file);
+    }
+
 private:
     QMutexLocker<QMutex> m_lock;
 
     static QMutex s_mutex;
 
-    // We can copy the mappers around because they're all static, that is the dtors are noops.
+    // We can copy the mappers around because they're all static.
+    // We never unmap the files.
     static QHash<QString, CompilationUnitMapper> s_staticUnits;
 };
 
 QHash<QString, CompilationUnitMapper> StaticUnitCache::s_staticUnits;
 QMutex StaticUnitCache::s_mutex;
-
-CompilationUnitMapper::~CompilationUnitMapper()
-{
-    close();
-}
 
 CompiledData::Unit *CompilationUnitMapper::get(
         const QString &cacheFilePath, const QDateTime &sourceTimeStamp, QString *errorString)
@@ -63,10 +64,19 @@ CompiledData::Unit *CompilationUnitMapper::get(
     }
 
     CompiledData::Unit *data = open(cacheFilePath, sourceTimeStamp, errorString);
-    if (data && (data->flags & CompiledData::Unit::StaticData))
+    if (data && (data->flags & CompiledData::Unit::StaticData)) {
         cache.set(cacheFilePath, *this);
+        return data;
+    } else {
+        close();
+        return nullptr;
+    }
+}
 
-    return data;
+void CompilationUnitMapper::invalidate(const QString &cacheFilePath)
+{
+    StaticUnitCache cache;
+    cache.remove(cacheFilePath);
 }
 
 QT_END_NAMESPACE

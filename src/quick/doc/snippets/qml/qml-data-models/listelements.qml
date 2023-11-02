@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
 
 //! [document]
-import QtQuick 2.0
+import QtQuick
 
 Item {
     width: 200; height: 250
@@ -31,8 +31,12 @@ Item {
         anchors.fill: parent
         model: fruitModel
         delegate: Row {
-            Text { text: "Fruit: " + name }
-            Text { text: "Cost: $" + cost }
+            id: delegate
+            required property string name
+            required property real cost
+
+            Text { text: "Fruit: " + delegate.name }
+            Text { text: "Cost: $" + delegate.cost }
         }
     }
     //! [view]

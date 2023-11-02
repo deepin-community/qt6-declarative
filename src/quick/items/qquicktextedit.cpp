@@ -101,15 +101,6 @@ static const int nodeBreakingSize = 300;
 const int QQuickTextEditPrivate::largeTextSizeThreshold = QQUICKTEXT_LARGETEXT_THRESHOLD;
 
 namespace {
-    class ProtectedLayoutAccessor: public QAbstractTextDocumentLayout
-    {
-    public:
-        inline QTextCharFormat formatAccessor(int pos)
-        {
-            return format(pos);
-        }
-    };
-
     class RootNode : public QSGTransformNode
     {
     public:
@@ -211,17 +202,16 @@ QString QQuickTextEdit::text() const
 
     The requested weight of the font. The weight requested must be an integer
     between 1 and 1000, or one of the predefined values:
-    \list
-    \li Font.Thin
-    \li Font.Light
-    \li Font.ExtraLight
-    \li Font.Normal - the default
-    \li Font.Medium
-    \li Font.DemiBold
-    \li Font.Bold
-    \li Font.ExtraBold
-    \li Font.Black
-    \endlist
+
+    \value Font.Thin        100
+    \value Font.ExtraLight  200
+    \value Font.Light       300
+    \value Font.Normal      400 (default)
+    \value Font.Medium      500
+    \value Font.DemiBold    600
+    \value Font.Bold        700
+    \value Font.ExtraBold   800
+    \value Font.Black       900
 
     \qml
     TextEdit { text: "Hello"; font.weight: Font.DemiBold }
@@ -286,13 +276,12 @@ QString QQuickTextEdit::text() const
 
     Sets the capitalization for the text.
 
-    \list
-    \li Font.MixedCase - This is the normal text rendering option where no capitalization change is applied.
-    \li Font.AllUppercase - This alters the text to be rendered in all uppercase type.
-    \li Font.AllLowercase - This alters the text to be rendered in all lowercase type.
-    \li Font.SmallCaps - This alters the text to be rendered in small-caps type.
-    \li Font.Capitalize - This alters the text to be rendered with the first character of each word as an uppercase character.
-    \endlist
+    \value Font.MixedCase       no capitalization change is applied
+    \value Font.AllUppercase    alters the text to be rendered in all uppercase type
+    \value Font.AllLowercase    alters the text to be rendered in all lowercase type
+    \value Font.SmallCaps       alters the text to be rendered in small-caps type
+    \value Font.Capitalize      alters the text to be rendered with the first character of
+                                each word as an uppercase character
 
     \qml
     TextEdit { text: "Hello"; font.capitalization: Font.AllLowercase }
@@ -309,23 +298,21 @@ QString QQuickTextEdit::text() const
 
     \note This property only has an effect when used together with render type TextEdit.NativeRendering.
 
-    \list
-    \value Font.PreferDefaultHinting - Use the default hinting level for the target platform.
-    \value Font.PreferNoHinting - If possible, render text without hinting the outlines
+    \value Font.PreferDefaultHinting    Use the default hinting level for the target platform.
+    \value Font.PreferNoHinting         If possible, render text without hinting the outlines
            of the glyphs. The text layout will be typographically accurate, using the same metrics
            as are used e.g. when printing.
-    \value Font.PreferVerticalHinting - If possible, render text with no horizontal hinting,
+    \value Font.PreferVerticalHinting   If possible, render text with no horizontal hinting,
            but align glyphs to the pixel grid in the vertical direction. The text will appear
            crisper on displays where the density is too low to give an accurate rendering
            of the glyphs. But since the horizontal metrics of the glyphs are unhinted, the text's
            layout will be scalable to higher density devices (such as printers) without impacting
            details such as line breaks.
-    \value Font.PreferFullHinting - If possible, render text with hinting in both horizontal and
+    \value Font.PreferFullHinting       If possible, render text with hinting in both horizontal and
            vertical directions. The text will be altered to optimize legibility on the target
            device, but since the metrics will depend on the target size of the text, the positions
            of glyphs, line breaks, and other typographical detail will not scale, meaning that a
            text layout may look different on devices with different pixel densities.
-    \endlist
 
     \qml
     TextEdit { text: "Hello"; renderType: TextEdit.NativeRendering; font.hintingPreference: Font.PreferVerticalHinting }
@@ -363,6 +350,13 @@ QString QQuickTextEdit::text() const
 */
 
 /*!
+    \qmlproperty object QtQuick::TextEdit::font.features
+    \since 6.6
+
+    \include qquicktext.cpp qml-font-features
+*/
+
+/*!
     \qmlproperty string QtQuick::TextEdit::text
 
     The text to display.  If the text format is AutoText the text edit will
@@ -376,7 +370,12 @@ QString QQuickTextEdit::text() const
     remarkably better performance for modifying especially large rich text
     content.
 
-    \sa clear(), textFormat
+    Note that some keyboards use a predictive function. In this case,
+    the text being composed by the input method is not part of this property.
+    The part of the text related to the predictions is underlined and stored in
+    the \l preeditText property.
+
+    \sa clear(), preeditText, textFormat
 */
 void QQuickTextEdit::setText(const QString &text)
 {
@@ -426,6 +425,11 @@ void QQuickTextEdit::q_invalidate()
     \since 5.7
 
     This property contains partial text input from an input method.
+
+    To turn off partial text that results from predictions, set the \c Qt.ImhNoPredictiveText
+    flag in inputMethodHints.
+
+    \sa inputMethodHints
 */
 QString QQuickTextEdit::preeditText() const
 {
@@ -523,12 +527,11 @@ void QQuickTextEdit::setTextFormat(TextFormat format)
     Override the default rendering type for this component.
 
     Supported render types are:
-    \list
-    \li Text.QtRendering
-    \li Text.NativeRendering
-    \endlist
 
-    Select Text.NativeRendering if you prefer text to look native on the target platform and do
+    \value TextEdit.QtRendering     Text is rendered using a scalable distance field for each glyph.
+    \value TextEdit.NativeRendering Text is rendered using a platform-specific technique.
+
+    Select \c TextEdit.NativeRendering if you prefer text to look native on the target platform and do
     not require advanced features such as transformation of the text. Using such features in
     combination with the NativeRendering render type will lend poor and sometimes pixelated
     results.
@@ -678,19 +681,21 @@ void QQuickTextEdit::setSelectedTextColor(const QColor &color)
     the left.
 
     Valid values for \c horizontalAlignment are:
-    \list
-    \li TextEdit.AlignLeft (default)
-    \li TextEdit.AlignRight
-    \li TextEdit.AlignHCenter
-    \li TextEdit.AlignJustify
-    \endlist
+
+    \value TextEdit.AlignLeft
+        left alignment with ragged edges on the right (default)
+    \value TextEdit.AlignRight
+        align each line to the right with ragged edges on the left
+    \value TextEdit.AlignHCenter
+        align each line to the center
+    \value TextEdit.AlignJustify
+        align each line to both right and left, spreading out words as necessary
 
     Valid values for \c verticalAlignment are:
-    \list
-    \li TextEdit.AlignTop (default)
-    \li TextEdit.AlignBottom
-    \li TextEdit.AlignVCenter
-    \endlist
+
+    \value TextEdit.AlignTop        start at the top of the item (default)
+    \value TextEdit.AlignBottom     align the last line to the bottom and other lines above
+    \value TextEdit.AlignVCenter    align the center vertically
 
     When using the attached property LayoutMirroring::enabled to mirror application
     layouts, the horizontal alignment of text will also be mirrored. However, the property
@@ -930,20 +935,26 @@ void QQuickTextEdit::setVAlign(QQuickTextEdit::VAlignment alignment)
     moveCursorDelegate();
     emit verticalAlignmentChanged(d->vAlign);
 }
+
 /*!
     \qmlproperty enumeration QtQuick::TextEdit::wrapMode
 
     Set this property to wrap the text to the TextEdit item's width.
     The text will only wrap if an explicit width has been set.
 
-    \list
-    \li TextEdit.NoWrap - no wrapping will be performed. If the text contains insufficient newlines, then implicitWidth will exceed a set width.
-    \li TextEdit.WordWrap - wrapping is done on word boundaries only. If a word is too long, implicitWidth will exceed a set width.
-    \li TextEdit.WrapAnywhere - wrapping is done at any point on a line, even if it occurs in the middle of a word.
-    \li TextEdit.Wrap - if possible, wrapping occurs at a word boundary; otherwise it will occur at the appropriate point on the line, even in the middle of a word.
-    \endlist
+    \value TextEdit.NoWrap
+        (default) no wrapping will be performed. If the text contains insufficient newlines,
+        \l {Item::}{implicitWidth} will exceed a set width.
+    \value TextEdit.WordWrap
+        wrapping is done on word boundaries only. If a word is too long,
+        \l {Item::}{implicitWidth} will exceed a set width.
+    \value TextEdit.WrapAnywhere
+        wrapping is done at any point on a line, even if it occurs in the middle of a word.
+    \value TextEdit.Wrap
+        if possible, wrapping occurs at a word boundary; otherwise it will occur at the appropriate
+        point on the line, even in the middle of a word.
 
-    The default is TextEdit.NoWrap. If you set a width, consider using TextEdit.Wrap.
+    The default is \c TextEdit.NoWrap. If you set a width, consider using \c TextEdit.Wrap.
 */
 QQuickTextEdit::WrapMode QQuickTextEdit::wrapMode() const
 {
@@ -1120,13 +1131,12 @@ int QQuickTextEdit::positionAt(qreal x, qreal y) const
     The selection mode specifies whether the selection is updated on a per character or a per word
     basis. If not specified the selection mode will default to \c {TextEdit.SelectCharacters}.
 
-    \list
-    \li TextEdit.SelectCharacters - Sets either the selectionStart or selectionEnd (whichever was at
-    the previous cursor position) to the specified position.
-    \li TextEdit.SelectWords - Sets the selectionStart and selectionEnd to include all
-    words between the specified position and the previous cursor position.  Words partially in the
-    range are included.
-    \endlist
+    \value TextEdit.SelectCharacters
+        Sets either the selectionStart or selectionEnd (whichever was at the previous cursor position)
+        to the specified position.
+    \value TextEdit.SelectWords
+        Sets the selectionStart and selectionEnd to include all words between the specified position
+        and the previous cursor position. Words partially in the range are included.
 
     For example, take this sequence of calls:
 
@@ -1424,38 +1434,31 @@ void QQuickTextEdit::setTextMargin(qreal margin)
 
     Flags that alter behaviour are:
 
-    \list
-    \li Qt.ImhHiddenText - Characters should be hidden, as is typically used when entering passwords.
-    \li Qt.ImhSensitiveData - Typed text should not be stored by the active input method
-            in any persistent storage like predictive user dictionary.
-    \li Qt.ImhNoAutoUppercase - The input method should not try to automatically switch to upper case
-            when a sentence ends.
-    \li Qt.ImhPreferNumbers - Numbers are preferred (but not required).
-    \li Qt.ImhPreferUppercase - Upper case letters are preferred (but not required).
-    \li Qt.ImhPreferLowercase - Lower case letters are preferred (but not required).
-    \li Qt.ImhNoPredictiveText - Do not use predictive text (i.e. dictionary lookup) while typing.
-
-    \li Qt.ImhDate - The text editor functions as a date field.
-    \li Qt.ImhTime - The text editor functions as a time field.
-    \endlist
+    \value Qt.ImhHiddenText         Characters should be hidden, as is typically used when entering passwords.
+    \value Qt.ImhSensitiveData      Typed text should not be stored by the active input method
+                                    in any persistent storage like predictive user dictionary.
+    \value Qt.ImhNoAutoUppercase    The input method should not try to automatically switch to
+                                    upper case when a sentence ends.
+    \value Qt.ImhPreferNumbers      Numbers are preferred (but not required).
+    \value Qt.ImhPreferUppercase    Upper case letters are preferred (but not required).
+    \value Qt.ImhPreferLowercase    Lower case letters are preferred (but not required).
+    \value Qt.ImhNoPredictiveText   Do not use predictive text (i.e. dictionary lookup) while typing.
+    \value Qt.ImhDate               The text editor functions as a date field.
+    \value Qt.ImhTime               The text editor functions as a time field.
 
     Flags that restrict input (exclusive flags) are:
 
-    \list
-    \li Qt.ImhDigitsOnly - Only digits are allowed.
-    \li Qt.ImhFormattedNumbersOnly - Only number input is allowed. This includes decimal point and minus sign.
-    \li Qt.ImhUppercaseOnly - Only upper case letter input is allowed.
-    \li Qt.ImhLowercaseOnly - Only lower case letter input is allowed.
-    \li Qt.ImhDialableCharactersOnly - Only characters suitable for phone dialing are allowed.
-    \li Qt.ImhEmailCharactersOnly - Only characters suitable for email addresses are allowed.
-    \li Qt.ImhUrlCharactersOnly - Only characters suitable for URLs are allowed.
-    \endlist
+    \value Qt.ImhDigitsOnly         Only digits are allowed.
+    \value Qt.ImhFormattedNumbersOnly Only number input is allowed. This includes decimal point and minus sign.
+    \value Qt.ImhUppercaseOnly      Only upper case letter input is allowed.
+    \value Qt.ImhLowercaseOnly      Only lower case letter input is allowed.
+    \value Qt.ImhDialableCharactersOnly Only characters suitable for phone dialing are allowed.
+    \value Qt.ImhEmailCharactersOnly Only characters suitable for email addresses are allowed.
+    \value Qt.ImhUrlCharactersOnly  Only characters suitable for URLs are allowed.
 
     Masks:
 
-    \list
-    \li Qt.ImhExclusiveInputMask - This mask yields nonzero if any of the exclusive flags are used.
-    \endlist
+    \value Qt.ImhExclusiveInputMask This mask yields nonzero if any of the exclusive flags are used.
 */
 
 Qt::InputMethodHints QQuickTextEdit::inputMethodHints() const
@@ -1627,10 +1630,8 @@ void QQuickTextEdit::setSelectByMouse(bool on)
 
     Specifies how text should be selected using a mouse.
 
-    \list
-    \li TextEdit.SelectCharacters - The selection is updated with individual characters. (Default)
-    \li TextEdit.SelectWords - The selection is updated with whole words.
-    \endlist
+    \value TextEdit.SelectCharacters    (default) The selection is updated with individual characters.
+    \value TextEdit.SelectWords         The selection is updated with whole words.
 
     This property only applies when \l selectByMouse is true.
 */
@@ -2123,6 +2124,10 @@ QSGNode *QQuickTextEdit::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *
 
     RootNode *rootNode = static_cast<RootNode *>(oldNode);
     TextNodeIterator nodeIterator = d->textNodeMap.begin();
+    std::optional<int> firstPosAcrossAllNodes;
+    if (nodeIterator != d->textNodeMap.end())
+        firstPosAcrossAllNodes = nodeIterator->startPos();
+
     while (nodeIterator != d->textNodeMap.end() && !nodeIterator->dirty())
         ++nodeIterator;
 
@@ -2199,7 +2204,7 @@ QSGNode *QQuickTextEdit::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *
                 node = d->createTextNode();
                 updateNodeTransform(node, d->document->documentLayout()->frameBoundingRect(textFrame).topLeft());
                 const int pos = textFrame->firstPosition() - 1;
-                ProtectedLayoutAccessor *a = static_cast<ProtectedLayoutAccessor *>(d->document->documentLayout());
+                auto *a = static_cast<QtPrivate::ProtectedLayoutAccessor *>(d->document->documentLayout());
                 QTextCharFormat format = a->formatAccessor(pos);
                 QTextBlock block = textFrame->firstCursorPosition().block();
                 nodeOffset = d->document->documentLayout()->blockBoundingRect(block).topLeft();
@@ -2241,7 +2246,8 @@ QSGNode *QQuickTextEdit::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *
                             coveredRegion = block.layout()->boundingRect().adjusted(nodeOffset.x(), nodeOffset.y(), nodeOffset.x(), nodeOffset.y());
                             inView = coveredRegion.bottom() > viewport.top();
                         }
-                        if (d->firstBlockInViewport < 0 && inView) {
+                        const bool potentiallyScrollingBackwards = firstPosAcrossAllNodes && *firstPosAcrossAllNodes == firstDirtyPos;
+                        if (d->firstBlockInViewport < 0 && inView && potentiallyScrollingBackwards) {
                             // During backward scrolling, we need to iterate backwards from textNodeMap.begin() to fill the top of the viewport.
                             if (coveredRegion.top() > viewport.top() + 1) {
                                 qCDebug(lcVP) << "checking backwards from block" << block.blockNumber() << "@" << nodeOffset.y() << coveredRegion;
@@ -2669,9 +2675,6 @@ void QQuickTextEdit::updateSize()
         return;
     }
 
-    qreal naturalWidth = d->implicitWidth - leftPadding() - rightPadding();
-
-    qreal newWidth = d->document->idealWidth();
     // ### assumes that if the width is set, the text will fill to edges
     // ### (unless wrap is false, then clipping will occur)
     if (widthValid()) {
@@ -2683,8 +2686,7 @@ void QQuickTextEdit::updateSize()
         }
         if (d->requireImplicitWidth) {
             d->document->setTextWidth(-1);
-            naturalWidth = d->document->idealWidth();
-
+            const qreal naturalWidth = d->document->idealWidth();
             const bool wasInLayout = d->inLayout;
             d->inLayout = true;
             if (d->isImplicitResizeEnabled())
@@ -2694,19 +2696,22 @@ void QQuickTextEdit::updateSize()
                 return;         // get this far we'll get a warning to that effect.
         }
         const qreal newTextWidth = width() - leftPadding() - rightPadding();
-        if (d->document->textWidth() != newTextWidth) {
+        if (d->document->textWidth() != newTextWidth)
             d->document->setTextWidth(newTextWidth);
-            newWidth = d->document->idealWidth();
-        }
-        //### need to confirm cost of always setting these
-    } else if (d->wrapMode == NoWrap && d->document->textWidth() != newWidth) {
-        d->document->setTextWidth(newWidth); // ### Text does not align if width is not set or the idealWidth exceeds the textWidth (QTextDoc bug)
+    } else if (d->wrapMode == NoWrap) {
+        // normally, if explicit width is not set, we should call setTextWidth(-1) here,
+        // as we don't need to fit the text to any fixed width. But because of some bug
+        // in QTextDocument it also breaks RTL text alignment, so we use "idealWidth" instead.
+        const qreal newTextWidth = d->document->idealWidth();
+        if (d->document->textWidth() != newTextWidth)
+            d->document->setTextWidth(newTextWidth);
     } else {
         d->document->setTextWidth(-1);
     }
 
     QFontMetricsF fm(d->font);
-    qreal newHeight = d->document->isEmpty() ? qCeil(fm.height()) : d->document->size().height();
+    const qreal newHeight = d->document->isEmpty() ? qCeil(fm.height()) : d->document->size().height();
+    const qreal newWidth = d->document->idealWidth();
 
     if (d->isImplicitResizeEnabled()) {
         // ### Setting the implicitWidth triggers another updateSize(), and unless there are bindings nothing has changed.
@@ -2723,7 +2728,12 @@ void QQuickTextEdit::updateSize()
     QSizeF size(newWidth, newHeight);
     if (d->contentSize != size) {
         d->contentSize = size;
-        emit contentSizeChanged();
+        // Note: inResize is a bitfield so QScopedValueRollback can't be used here
+        const bool wasInResize = d->inResize;
+        d->inResize = true;
+        if (!wasInResize)
+            emit contentSizeChanged();
+        d->inResize = wasInResize;
         updateTotalLines();
     }
 }
