@@ -426,6 +426,10 @@ private slots:
 
     void callMethodOfAttachedDerived();
 
+    void typeAnnotationCycle();
+    void objectInQmlListAndGc();
+    void deepAliasOnICOrReadonly();
+
 private:
     QQmlEngine engine;
     QStringList defaultImportPathList;
@@ -7457,6 +7461,33 @@ LeakingForeignerForeign {
         QVERIFY(o->property("anotherAbc").isValid());
         QVERIFY(!o->property("abc").isValid());
     }
+
+    {
+        QQmlComponent c(&engine);
+        c.setData(R"(
+import StaticTest
+import QtQml
+QtObject {
+    objectName: 'b' + ForeignNamespaceForeign.B
+})", QUrl());
+        QVERIFY2(c.isReady(), qPrintable(c.errorString()));
+        QScopedPointer<QObject> o(c.create());
+        QVERIFY(o);
+        QCOMPARE(o->objectName(), "b1");
+    }
+    {
+        QQmlComponent c(&engine);
+        c.setData(R"(
+import StaticTest
+import QtQml
+QtObject {
+    objectName: 'b' + LeakingForeignNamespaceForeign.B
+})", QUrl());
+        QVERIFY2(c.isReady(), qPrintable(c.errorString()));
+        QScopedPointer<QObject> o(c.create());
+        QVERIFY(o);
+        QCOMPARE(o->objectName(), "b2");
+    }
 }
 
 void tst_qqmllanguage::attachedOwnProperties()
@@ -8154,6 +8185,64 @@ void tst_qqmllanguage::callMethodOfAttachedDerived()
     QVERIFY(!o.isNull());
 
     QCOMPARE(o->property("v").toInt(), 99);
+}
+
+void tst_qqmllanguage::typeAnnotationCycle()
+{
+    QQmlEngine engine;
+
+    const QUrl url = testFileUrl("TypeAnnotationCycle1.qml");
+    const QUrl url2 = testFileUrl("TypeAnnotationCycle2.qml");
+
+    QTest::ignoreMessage(
+            QtWarningMsg,
+            qPrintable(
+                    QLatin1String("Cyclic dependency detected between \"%1\" and \"%2\"")
+                            .arg(url.toString(), url2.toString())));
+
+    QQmlComponent c(&engine, url);
+    QVERIFY(!c.isReady());
+}
+
+void tst_qqmllanguage::objectInQmlListAndGc()
+{
+    QQmlEngine engine;
+    QQmlComponent c(&engine, testFileUrl("objectInList.qml"));
+    QVERIFY2(c.isReady(), qPrintable(c.errorString()));
+    QScopedPointer<QObject> o(c.create());
+    QVERIFY(!o.isNull());
+
+    // Process the deletion event
+    QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+    QCoreApplication::processEvents();
+
+    QQmlListProperty<QObject> children = o->property("child").value<QQmlListProperty<QObject>>();
+    QCOMPARE(children.count(&children), 1);
+    QObject *child = children.at(&children, 0);
+    QVERIFY(child);
+    QCOMPARE(child->objectName(), QLatin1String("child"));
+}
+
+void tst_qqmllanguage::deepAliasOnICOrReadonly()
+{
+    QQmlEngine engine;
+    QQmlComponent c(&engine, testFileUrl("deepAliasOnICUser.qml"));
+    QVERIFY2(c.isReady(), qPrintable(c.errorString()));
+    QScopedPointer<QObject> o(c.create());
+    QVERIFY(!o.isNull());
+
+    QCOMPARE(o->property("borderColor").toString(), QLatin1String("black"));
+    QCOMPARE(o->property("borderObjectName").toString(), QLatin1String("theLeaf"));
+
+    const QVariant var = o->property("borderVarvar");
+    QCOMPARE(var.metaType(), QMetaType::fromType<QString>());
+    QCOMPARE(var.toString(), QLatin1String("mauve"));
+
+    QQmlComponent c2(&engine, testFileUrl("deepAliasOnReadonly.qml"));
+    QVERIFY(c2.isError());
+    QVERIFY(c2.errorString().contains(
+            QLatin1String(
+                    "Invalid property assignment: \"readonlyRectX\" is a read-only property")));
 }
 
 QTEST_MAIN(tst_qqmllanguage)

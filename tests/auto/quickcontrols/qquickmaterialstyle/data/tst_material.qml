@@ -984,10 +984,10 @@ TestCase {
         verify(textField)
         let placeholderTextItem = textField.children[0]
         verify(placeholderTextItem as MaterialImpl.FloatingPlaceholderText)
-        compare(placeholderTextItem.horizontalAlignment, TextField.AlignLeft)
+        compare(placeholderTextItem.horizontalAlignment, data.horizontalAlignment)
 
         textField.forceActiveFocus()
-        compare(placeholderTextItem.horizontalAlignment, TextField.AlignLeft)
+        compare(placeholderTextItem.horizontalAlignment, data.horizontalAlignment)
         textField.destroy()
     }
 
@@ -995,7 +995,8 @@ TestCase {
         return [
             { tag: "AlignLeft", horizontalAlignment: TextArea.AlignLeft },
             { tag: "AlignHCenter", horizontalAlignment: TextArea.AlignHCenter },
-            { tag: "AlignRight", horizontalAlignment: TextArea.AlignRight }
+            { tag: "AlignRight", horizontalAlignment: TextArea.AlignRight },
+            { tag: "AlignJustify", horizontalAlignment: TextArea.AlignJustify }
         ]
     }
 
@@ -1008,10 +1009,10 @@ TestCase {
         verify(textArea)
         let placeholderTextItem = textArea.children[0]
         verify(placeholderTextItem as MaterialImpl.FloatingPlaceholderText)
-        compare(placeholderTextItem.horizontalAlignment, TextArea.AlignLeft)
+        compare(placeholderTextItem.horizontalAlignment, data.horizontalAlignment)
 
         textArea.forceActiveFocus()
-        compare(placeholderTextItem.horizontalAlignment, TextArea.AlignLeft)
+        compare(placeholderTextItem.horizontalAlignment, data.horizontalAlignment)
     }
 
     function test_placeholderTextPos() {
@@ -1199,5 +1200,19 @@ TestCase {
         let comboBoxPopup = comboBox.popup
         tryCompare(comboBoxPopup, "opened", true)
         compare(comboBoxPopup.background.color, comboBoxPopup.Material.dialogColor)
+    }
+
+    function test_nullTextAreaBackground() {
+        let textArea = createTemporaryObject(textAreaComponent, testCase)
+        verify(textArea)
+        // Store the placeholder text item before we set the background to null,
+        // because it will be unparented at that point.
+        let placeholderTextItem = textArea.children[0]
+        verify(placeholderTextItem as MaterialImpl.FloatingPlaceholderText)
+        // Assigning null to the background shouldn't cause any warnings,
+        // it should just hide the placeholder text item, since it has nothing to anchor to.
+        // Note that we can't use the properties argument of createTemporaryObject due to QTBUG-117201.
+        textArea.background = null
+        verify(!placeholderTextItem.visible)
     }
 }

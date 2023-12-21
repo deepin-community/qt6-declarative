@@ -17,6 +17,7 @@
 #include <QScopeGuard>
 #include <QUrl>
 #include <QModelIndex>
+#include <QtQml/qqmllist.h>
 
 #ifdef Q_CC_MSVC
 #define NO_INLINE __declspec(noinline)
@@ -1673,6 +1674,8 @@ void tst_QJSEngine::valueConversion_basic()
         QCOMPARE(eng.fromScriptValue<unsigned short>(num), (unsigned short)(123));
         QCOMPARE(eng.fromScriptValue<float>(num), float(123));
         QCOMPARE(eng.fromScriptValue<double>(num), double(123));
+        QCOMPARE(eng.fromScriptValue<long>(num), long(123));
+        QCOMPARE(eng.fromScriptValue<ulong>(num), ulong(123));
         QCOMPARE(eng.fromScriptValue<qlonglong>(num), qlonglong(123));
         QCOMPARE(eng.fromScriptValue<qulonglong>(num), qulonglong(123));
     }
@@ -1684,6 +1687,8 @@ void tst_QJSEngine::valueConversion_basic()
         QCOMPARE(eng.fromScriptValue<unsigned short>(num), (unsigned short)(123));
         QCOMPARE(eng.fromScriptValue<float>(num), float(123));
         QCOMPARE(eng.fromScriptValue<double>(num), double(123));
+        QCOMPARE(eng.fromScriptValue<long>(num), long(123));
+        QCOMPARE(eng.fromScriptValue<ulong>(num), ulong(123));
         QCOMPARE(eng.fromScriptValue<qlonglong>(num), qlonglong(123));
         QCOMPARE(eng.fromScriptValue<qulonglong>(num), qulonglong(123));
     }
@@ -1701,6 +1706,13 @@ void tst_QJSEngine::valueConversion_basic()
         QJSValue code = eng.toScriptValue(c.unicode());
         QCOMPARE(eng.fromScriptValue<QChar>(code), c);
         QCOMPARE(eng.fromScriptValue<QChar>(eng.toScriptValue(c)), c);
+    }
+
+    {
+        QList<QObject *> list = {this};
+        QQmlListProperty<QObject> prop(this, &list);
+        QJSValue jsVal = eng.toScriptValue(prop);
+        QCOMPARE(eng.fromScriptValue<QQmlListProperty<QObject>>(jsVal), prop);
     }
 
     QVERIFY(eng.toScriptValue(static_cast<void *>(nullptr)).isNull());

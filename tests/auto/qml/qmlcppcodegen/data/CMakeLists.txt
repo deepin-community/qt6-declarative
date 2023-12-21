@@ -44,6 +44,7 @@ set(qml_files
     Loopy.qml
     OkType.qml
     Panel.qml
+    Planner.qml
     ProgressBar/Keyframe.qml
     ProgressBar/KeyframeGroup.qml
     ProgressBar/ProgressBar.ui.qml
@@ -52,6 +53,8 @@ set(qml_files
     ProgressBar/TimelineAnimation.qml
     RootWithoutId.qml
     SelectionRectangle.qml
+    ShadowedObjectName.qml
+    ShadowedObjectNameDerived.qml
     Test.qml
     TestCase.qml
     WindowDerived.qml
@@ -78,6 +81,7 @@ set(qml_files
     childobject.qml
     colorAsVariant.qml
     colorString.qml
+    comparisonTypes.qml
     componentReturnType.qml
     compositeTypeMethod.qml
     compositesingleton.qml
@@ -85,8 +89,10 @@ set(qml_files
     construct.qml
     contextParam.qml
     conversionDecrement.qml
+    conversionInDeadCode.qml
     conversions.qml
     conversions2.qml
+    convertToOriginalReadAcumulatorForUnaryOperators.qml
     curlygrouped.qml
     cycleHead.qml
     dateConversions.qml
@@ -187,6 +193,7 @@ set(qml_files
     popContextAfterRet.qml
     prefixedMetaType.qml
     pressAndHoldButton.qml
+    readEnumFromInstance.qml
     registerPropagation.qml
     registerelimination.qml
     revisions.qml
@@ -195,6 +202,7 @@ set(qml_files
     script.mjs
     sequenceToIterable.qml
     setLookupConversion.qml
+    shadowedAsCasts.qml
     shadowedMethod.qml
     shared/Slider.qml
     shifts.qml

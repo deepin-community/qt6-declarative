@@ -1059,11 +1059,17 @@ expression: \${expr} \${expr} \\\${expr} \\\${expr}`)",
                 };
     QTest::newRow("IsNotAnEntryOfEnum")
             << QStringLiteral("IsNotAnEntryOfEnum.qml")
-            << Result{ { Message{ QStringLiteral("\"Hour\" is not an entry of enum \"Mode\"."), 13,
-                                  62, QtInfoMsg } },
+            << Result{ {
+                         Message {
+                                  QStringLiteral("Member \"Mode\" not found on type \"Item\""), 12,
+                                  29, QtWarningMsg },
+                          Message{
+                                  QStringLiteral("\"Hour\" is not an entry of enum \"Mode\"."), 13,
+                                  62, QtInfoMsg }
+                       },
                        {},
-                       { Message{ QStringLiteral("Hours") } },
-                       Result::ExitsNormally };
+                       { Message{ QStringLiteral("Hours") } }
+               };
 
     QTest::newRow("StoreNameMethod")
             << QStringLiteral("storeNameMethod.qml")
@@ -1266,6 +1272,8 @@ void TestQmllint::cleanQmlCode_data()
     QTest::newRow("StringToDateTime") << QStringLiteral("stringToDateTime.qml");
     QTest::newRow("ScriptInTemplate") << QStringLiteral("scriptInTemplate.qml");
     QTest::newRow("AddressableValue") << QStringLiteral("addressableValue.qml");
+    QTest::newRow("WriteListProperty") << QStringLiteral("writeListProperty.qml");
+    QTest::newRow("dontConfuseMemberPrintWithGlobalPrint") << QStringLiteral("findMemberPrint.qml");
 }
 
 void TestQmllint::cleanQmlCode()
@@ -1897,6 +1905,9 @@ void TestQmllint::testPlugin()
             Result { { Message { u"QtQuick.Controls and NO QtQuick present"_s } } });
     // Verify that none of the passes do anything when they're not supposed to
     runTest("nothing_pluginTest.qml", Result::clean());
+
+    QVERIFY(runQmllint("settings/plugin/elemenpass_pluginSettingTest.qml", true, QStringList(), false)
+                    .isEmpty());
 }
 
 // TODO: Eventually tests for (real) plugins need to be moved into a separate file

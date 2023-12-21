@@ -617,7 +617,7 @@ int QQmlPrivate::qmlregister(RegistrationType type, void *data)
 
         const QTypeRevision added = revisionClassInfo(
                     type.classInfoMetaObject, "QML.AddedInVersion",
-                    QTypeRevision::fromMinorVersion(0));
+                    QTypeRevision::fromVersion(type.version.majorVersion(), 0));
         const QTypeRevision removed = revisionClassInfo(
                     type.classInfoMetaObject, "QML.RemovedInVersion");
         const QList<QTypeRevision> furtherRevisions = revisionClassInfos(type.classInfoMetaObject,
@@ -1376,7 +1376,7 @@ void AOTCompiledContext::storeNameSloppy(uint nameIndex, void *value, QMetaType 
     // the property cache we store a value into the property.
 
     QV4::Lookup l;
-    l.clear();
+    memset(&l, 0, sizeof(QV4::Lookup));
     l.nameIndex = nameIndex;
     l.forCall = false;
     ObjectPropertyResult storeResult = ObjectPropertyResult::NeedsInit;
