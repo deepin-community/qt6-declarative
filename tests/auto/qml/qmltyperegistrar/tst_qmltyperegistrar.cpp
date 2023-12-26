@@ -566,6 +566,26 @@ void tst_qmltyperegistrar::uncreatable()
     qmlRegisterTypesAndRevisions<GoodUncreatableExtended>("A", 1);
 }
 
+void tst_qmltyperegistrar::singletonVesions()
+{
+    QQmlEngine engine;
+    qmlRegisterTypesAndRevisions<SingletonVesion0>("A", 0);
+    qmlRegisterTypesAndRevisions<SingletonVesion1>("B", 1);
+
+    QQmlComponent c(&engine);
+    c.setData("import QtQuick\n"
+              "import A\n"
+              "import B\n"
+              "QtObject {\n"
+              "    property QtObject v0: SingletonVesion0\n"
+              "    property QtObject v1: SingletonVesion1\n"
+              "}", QUrl());
+    QVERIFY2(c.isReady(), qPrintable(c.errorString()));
+    auto obj = c.create();
+    QVERIFY2(!obj->property("v0").isNull(), "Singleton version 0 is not registered");
+    QVERIFY2(!obj->property("v1").isNull(), "Singleton version 1 is not registered");
+}
+
 void tst_qmltyperegistrar::baseVersionInQmltypes()
 {
     // Since it has no QML_ADDED_IN_VERSION, WithMethod was added in .0 of the current version.
@@ -728,6 +748,38 @@ void tst_qmltyperegistrar::valueTypeSelfReference()
         accessSemantics: "value"
         Property { name: "row"; type: "int"; read: "row"; index: 0; isReadonly: true; isFinal: true }
     })"));
+}
+
+void tst_qmltyperegistrar::foreignNamespaceFromGadget()
+{
+    QQmlEngine engine;
+    {
+        QQmlComponent c(&engine);
+        c.setData(QStringLiteral(R"(
+            import QtQml
+            import QmlTypeRegistrarTest
+            QtObject {
+                objectName: 'b' + NetworkManager.B
+            }
+        )").toUtf8(), QUrl("foreignNamespaceFromGadget.qml"));
+        QVERIFY2(c.isReady(), qPrintable(c.errorString()));
+        QScopedPointer<QObject> o(c.create());
+        QCOMPARE(o->objectName(), QStringLiteral("b1"));
+    }
+
+    {
+        QQmlComponent c(&engine);
+        c.setData(QStringLiteral(R"(
+            import QtQml
+            import QmlTypeRegistrarTest
+            QtObject {
+                objectName: 'b' + NotNamespaceForeign.B
+            }
+        )").toUtf8(), QUrl("foreignNamespaceFromGadget2.qml"));
+        QVERIFY2(c.isReady(), qPrintable(c.errorString()));
+        QScopedPointer<QObject> o(c.create());
+        QCOMPARE(o->objectName(), QStringLiteral("b1"));
+    }
 }
 
 QTEST_MAIN(tst_qmltyperegistrar)

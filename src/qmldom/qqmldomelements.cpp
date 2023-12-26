@@ -1791,7 +1791,7 @@ QString MethodInfo::preCode(DomItem &self) const
             first = false;
         else
             ow.write(u", ");
-        ow.write(mp.name);
+        ow.write(mp.value->code());
     }
     ow.writeRegion(u"rightParen", u")");
     ow.ensureSpace().writeRegion(u"leftBrace", u"{");
@@ -1886,12 +1886,20 @@ bool MethodParameter::iterateDirectSubpaths(DomItem &self, DirectVisitor visitor
 
 void MethodParameter::writeOut(DomItem &self, OutWriter &ow) const
 {
-    ow.writeRegion(u"name", name);
-    if (!typeName.isEmpty())
-        ow.writeRegion(u"colon", u":").space().writeRegion(u"type", typeName);
-    if (defaultValue) {
-        ow.space().writeRegion(u"equal", u"=").space();
-        self.subOwnerItem(PathEls::Field(Fields::defaultValue), defaultValue).writeOut(ow);
+    if (!name.isEmpty()) {
+        if (isRestElement)
+            ow.writeRegion(u"ellipsis", u"...");
+        ow.writeRegion(u"name", name);
+        if (!typeName.isEmpty())
+            ow.writeRegion(u"colon", u":").space().writeRegion(u"type", typeName);
+        if (defaultValue) {
+            ow.space().writeRegion(u"equal", u"=").space();
+            self.subOwnerItem(PathEls::Field(Fields::defaultValue), defaultValue).writeOut(ow);
+        }
+    } else {
+        if (value) {
+            self.subOwnerItem(PathEls::Field(Fields::value), value).writeOut(ow);
+        }
     }
 }
 

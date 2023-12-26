@@ -2495,6 +2495,12 @@ bool ExecutionEngine::metaTypeFromJS(const Value &value, QMetaType metaType, voi
     case QMetaType::UInt:
         *reinterpret_cast<uint*>(data) = value.toUInt32();
         return true;
+    case QMetaType::Long:
+        *reinterpret_cast<long*>(data) = long(value.toInteger());
+        return true;
+    case QMetaType::ULong:
+        *reinterpret_cast<ulong*>(data) = ulong(value.toInteger());
+        return true;
     case QMetaType::LongLong:
         *reinterpret_cast<qlonglong*>(data) = qlonglong(value.toInteger());
         return true;
@@ -2685,6 +2691,13 @@ bool ExecutionEngine::metaTypeFromJS(const Value &value, QMetaType metaType, voi
     if (metaType == QMetaType::fromType<QQmlListReference>()) {
         if (const QV4::QmlListWrapper *wrapper = value.as<QV4::QmlListWrapper>()) {
             *reinterpret_cast<QQmlListReference *>(data) = wrapper->toListReference();
+            return true;
+        }
+    }
+
+    if (metaType == QMetaType::fromType<QQmlListProperty<QObject>>()) {
+        if (const QV4::QmlListWrapper *wrapper = value.as<QV4::QmlListWrapper>()) {
+            *reinterpret_cast<QQmlListProperty<QObject> *>(data) = wrapper->d()->property();
             return true;
         }
     }

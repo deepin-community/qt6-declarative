@@ -1,19 +1,31 @@
-qt6-declarative (6.6.0+dfsg-2deepin1) UNRELEASED; urgency=medium
+qt6-declarative (6.6.1+dfsg-1) experimental; urgency=medium
 
-  * Port upstream fix to qt6-declarative 6.6.0
+  [ Patrick Franz ]
+  * New upstream release (6.6.1).
+  * Bump Qt B-Ds to 6.6.1.
+  * Update ABI to 6.6.1.
+  * Update list of installed files.
+  * Update symbols from buildlogs.
 
- -- YuMing He <heyuming@deepin.org>  Tue, 19 Dec 2023 10:40:12 +0800
+ -- Patrick Franz <deltaone@debian.org>  Sun, 10 Dec 2023 21:49:27 +0100
 
-qt6-declarative (6.6.0+dfsg-2) UNRELEASED; urgency=medium
+qt6-declarative (6.6.0+dfsg-3) experimental; urgency=medium
+
+  [ Patrick Franz ]
+  * Update symbols from buildlogs.
+
+ -- Patrick Franz <deltaone@debian.org>  Mon, 13 Nov 2023 23:01:51 +0100
+
+qt6-declarative (6.6.0+dfsg-2) experimental; urgency=medium
 
   [ Patrick Franz ]
   * Update symbols from buildlogs.
   * Update list of installed files.
+  * Make qt6-declarative depend on on qt6-base 6.6.0+dfsg-6 to ensure
+    plugins are not included in build-dependencies.
+  * Update files for the documentation.
 
-  [ Tianyu Chen ]
-  * Update symbols from buildlogs.
-
- -- Debian Qt/KDE Maintainers <debian-qt-kde@lists.debian.org>  Wed, 01 Nov 2023 18:15:57 +0100
+ -- Patrick Franz <deltaone@debian.org>  Sat, 04 Nov 2023 18:01:01 +0100
 
 qt6-declarative (6.6.0+dfsg-1) experimental; urgency=medium
 

@@ -123,6 +123,10 @@ usr/lib/${DEB_HOST_MULTIARCH}/qt6/examples/quickcontrols/gallery/galleryexample
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/examples/quickcontrols/imagine/automotive/automotiveexample
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/examples/quickcontrols/texteditor/texteditorexample
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/examples/quickcontrols/wearable/lib/${DEB_HOST_MULTIARCH}/qt6/examples/quickcontrols/wearable/Wearable/libwearable.so
+usr/lib/${DEB_HOST_MULTIARCH}/qt6/examples/quickcontrols/wearable/lib/${DEB_HOST_MULTIARCH}/qt6/examples/quickcontrols/wearable/Wearable/qmldir
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/examples/quickcontrols/wearable/lib/${DEB_HOST_MULTIARCH}/qt6/examples/quickcontrols/wearable/WearableSettings/libwearablesettings.so
+usr/lib/${DEB_HOST_MULTIARCH}/qt6/examples/quickcontrols/wearable/lib/${DEB_HOST_MULTIARCH}/qt6/examples/quickcontrols/wearable/WearableSettings/qmldir
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/examples/quickcontrols/wearable/lib/${DEB_HOST_MULTIARCH}/qt6/examples/quickcontrols/wearable/WearableStyle/libwearablestyle.so
+usr/lib/${DEB_HOST_MULTIARCH}/qt6/examples/quickcontrols/wearable/lib/${DEB_HOST_MULTIARCH}/qt6/examples/quickcontrols/wearable/WearableStyle/qmldir
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/examples/quickcontrols/wearable/wearableexample
+

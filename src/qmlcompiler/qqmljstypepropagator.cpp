@@ -621,7 +621,7 @@ void QQmlJSTypePropagator::generate_StoreNameCommon(int nameIndex)
         return;
     }
 
-    if (!type.isWritable() && !m_function->qmlScope->hasOwnProperty(name)) {
+    if (!type.isWritable()) {
         setError(u"Can't assign to read-only property %1"_s.arg(name));
 
         m_logger->log(u"Cannot assign to read-only property %1"_s.arg(name), qmlReadOnlyProperty,
@@ -786,6 +786,20 @@ void QQmlJSTypePropagator::propagatePropertyLookup(const QString &propertyName)
                 u"Cannot access singleton as a property of an object. Did you want to access an attached object?"_s,
                 qmlAccessSingleton, getCurrentSourceLocation());
         setAccumulator(QQmlJSRegisterContent());
+    } else if (m_state.accumulatorOut().isEnumeration()) {
+        switch (m_state.accumulatorIn().variant()) {
+        case QQmlJSRegisterContent::ExtensionObjectEnum:
+        case QQmlJSRegisterContent::MetaType:
+        case QQmlJSRegisterContent::ObjectAttached:
+        case QQmlJSRegisterContent::ObjectEnum:
+        case QQmlJSRegisterContent::ObjectModulePrefix:
+        case QQmlJSRegisterContent::ScopeAttached:
+        case QQmlJSRegisterContent::ScopeModulePrefix:
+        case QQmlJSRegisterContent::Singleton:
+            break; // OK, can look up enums on that thing
+        default:
+            setAccumulator(QQmlJSRegisterContent());
+        }
     }
 
     if (checkForEnumProblems(m_state.accumulatorIn(), propertyName))
@@ -923,7 +937,13 @@ void QQmlJSTypePropagator::generate_StoreProperty(int nameIndex, int base)
         return;
     }
 
-    if (!property.isWritable()) {
+    if (property.storedType().isNull()) {
+        setError(u"Cannot determine type for property %1 of type %2"_s.arg(
+                propertyName, callBase.descriptiveName()));
+        return;
+    }
+
+    if (!property.isWritable() && !property.storedType()->isListProperty()) {
         setError(u"Can't assign to read-only property %1"_s.arg(propertyName));
 
         m_logger->log(u"Cannot assign to read-only property %1"_s.arg(propertyName),
@@ -1144,6 +1164,8 @@ QQmlJSMetaMethod QQmlJSTypePropagator::bestMatchForCall(const QList<QQmlJSMetaMe
 {
     QQmlJSMetaMethod javascriptFunction;
     QQmlJSMetaMethod candidate;
+    bool hasMultipleCandidates = false;
+
     for (const auto &method : methods) {
 
         // If we encounter a JavaScript function, use this as a fallback if no other method matches
@@ -1185,19 +1207,32 @@ QQmlJSMetaMethod QQmlJSTypePropagator::bestMatchForCall(const QList<QQmlJSMetaMe
             if (canConvertFromTo(content, m_typeResolver->globalType(argumentType)))
                 continue;
 
+            // We can try to call a method that expects a derived type.
+            if (argumentType->isReferenceType()
+                    && m_typeResolver->inherits(
+                        argumentType->baseType(), m_typeResolver->containedType(content))) {
+                continue;
+            }
+
             errors->append(
                     u"argument %1 contains %2 but is expected to contain the type %3"_s.arg(i).arg(
-                            m_state.registers[argv + i].content.descriptiveName(),
-                            arguments[i].typeName()));
+                            content.descriptiveName(), arguments[i].typeName()));
             fuzzyMatch = false;
             break;
         }
 
-        if (exactMatch)
+        if (exactMatch) {
             return method;
-        else if (fuzzyMatch && !candidate.isValid())
-            candidate = method;
+        } else if (fuzzyMatch) {
+            if (!candidate.isValid())
+                candidate = method;
+            else
+                hasMultipleCandidates = true;
+        }
     }
+
+    if (hasMultipleCandidates)
+        return QQmlJSMetaMethod();
 
     return candidate.isValid() ? candidate : javascriptFunction;
 }
@@ -1277,11 +1312,15 @@ void QQmlJSTypePropagator::propagateCall(
     const QQmlJSMetaMethod match = bestMatchForCall(methods, argc, argv, &errors);
 
     if (!match.isValid()) {
-        Q_ASSERT(errors.size() == methods.size());
-        if (methods.size() == 1)
+        if (methods.size() == 1) {
+            // Cannot have multiple fuzzy matches if there is only one method
+            Q_ASSERT(errors.size() == 1);
             setError(errors.first());
-        else
+        } else if (errors.size() < methods.size()) {
+            setError(u"Multiple matching overrides found. Cannot determine the right one."_s);
+        } else {
             setError(u"No matching override found. Candidates:\n"_s + errors.join(u'\n'));
+        }
         return;
     }
 
@@ -2021,36 +2060,17 @@ void QQmlJSTypePropagator::recordEqualsType(int lhs)
         return content.isEnumeration() || m_typeResolver->isNumeric(content);
     };
 
-    const auto isIntCompatible = [this](const QQmlJSRegisterContent &content) {
-        auto contained = m_typeResolver->containedType(content);
-        if (contained->scopeType() == QQmlSA::ScopeType::EnumScope)
-            contained = contained->baseType();
-        return m_typeResolver->isIntegral(contained)
-                && !m_typeResolver->equals(contained, m_typeResolver->uint32Type());
-    };
-
     const auto accumulatorIn = m_state.accumulatorIn();
     const auto lhsRegister = m_state.registers[lhs].content;
 
     // If the types are primitive, we compare directly ...
     if (m_typeResolver->isPrimitive(accumulatorIn) || accumulatorIn.isEnumeration()) {
         if (m_typeResolver->registerContains(
-                    accumulatorIn, m_typeResolver->containedType(lhsRegister))) {
-            addReadRegister(lhs, accumulatorIn);
+                    accumulatorIn, m_typeResolver->containedType(lhsRegister))
+                || (isNumericOrEnum(accumulatorIn) && isNumericOrEnum(lhsRegister))
+                || m_typeResolver->isPrimitive(lhsRegister)) {
+            addReadRegister(lhs, lhsRegister);
             addReadAccumulator(accumulatorIn);
-            return;
-        } else if (isNumericOrEnum(accumulatorIn) && isNumericOrEnum(lhsRegister)) {
-            const auto targetType = isIntCompatible(accumulatorIn) && isIntCompatible(lhsRegister)
-                    ? m_typeResolver->globalType(m_typeResolver->int32Type())
-                    : m_typeResolver->globalType(m_typeResolver->realType());
-            addReadRegister(lhs, targetType);
-            addReadAccumulator(targetType);
-            return;
-        } else if (m_typeResolver->isPrimitive(lhsRegister)) {
-            const QQmlJSRegisterContent primitive = m_typeResolver->globalType(
-                        m_typeResolver->jsPrimitiveType());
-            addReadRegister(lhs, primitive);
-            addReadAccumulator(primitive);
             return;
         }
     }
