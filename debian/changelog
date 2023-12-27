@@ -1,3 +1,9 @@
+qt6-declarative (6.6.1+dfsg-1deepin1) unstable; urgency=medium
+
+  * Drop patch introduced by git-rebase.
+
+ -- Tianyu Chen <sweetyfish@deepin.org>  Wed, 27 Dec 2023 10:25:26 +0800
+
 qt6-declarative (6.6.1+dfsg-1) experimental; urgency=medium
 
   [ Patrick Franz ]
