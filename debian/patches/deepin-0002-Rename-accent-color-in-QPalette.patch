@@ -1,0 +1,41 @@
+From 4ebb07698d2cd30c824232c1eeb88d91e2d1dac8 Mon Sep 17 00:00:00 2001
+From: Santhosh Kumar <santhosh.kumar.selvaraj@qt.io>
+Date: Wed, 16 Aug 2023 14:06:51 +0200
+Subject: [PATCH] Rename accent color in QPalette
+
+Follow up patch set for 334e1fe2c3da710c821f3c0c98ceb2b7a857838b.
+
+Synchronized accent color role name change in qtdeclarative.
+
+Fixes: QTBUG-116107
+Pick-to: 6.6
+Change-Id: Idd2a4bcf16f7df839d5a7c283dc7f152d4f5fe92
+Reviewed-by: Mitch Curtis <mitch.curtis@qt.io>
+---
+ src/quick/items/qquickpalettecolorprovider.cpp | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/src/quick/items/qquickpalettecolorprovider.cpp b/src/quick/items/qquickpalettecolorprovider.cpp
+index b92a31c930b..1354a20749b 100644
+--- a/src/quick/items/qquickpalettecolorprovider.cpp
++++ b/src/quick/items/qquickpalettecolorprovider.cpp
+@@ -20,7 +20,7 @@ static QPalette::ColorGroup adjustCg(QPalette::ColorGroup group)
+ static constexpr QPalette::ResolveMask colorRoleOffset(QPalette::ColorGroup colorGroup)
+ {
+     Q_ASSERT(colorGroup < QPalette::NColorGroups);
+-    // Exclude NoRole; that bit is used for AccentColor
++    // Exclude NoRole; that bit is used for Accent
+     return (qToUnderlying(QPalette::NColorRoles) - 1) * qToUnderlying(colorGroup);
+ }
+ 
+@@ -28,8 +28,8 @@ static constexpr QPalette::ResolveMask colorRoleOffset(QPalette::ColorGroup colo
+ static constexpr QPalette::ResolveMask bitPosition(QPalette::ColorGroup colorGroup,
+                                                    QPalette::ColorRole colorRole)
+ {
+-    // Map AccentColor into NoRole for resolving purposes
+-    if (colorRole == QPalette::AccentColor)
++    // Map Accent into NoRole for resolving purposes
++    if (colorRole == QPalette::Accent)
+         colorRole = QPalette::NoRole;
+ 
+     return colorRole + colorRoleOffset(colorGroup);

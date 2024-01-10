@@ -1,0 +1,351 @@
+From 4e7a83156d47683f777e92d2790cb617f0bb09d5 Mon Sep 17 00:00:00 2001
+From: JiDe Zhang <zhangjide@uniontech.com>
+Date: Sun, 5 Jun 2022 13:53:14 +0800
+Subject: [PATCH] Add the reset function for properties of QQuickPalette
+
+Allow reset the group colors of QQuickPalette, and ensure ResolveMask
+value of QPalette is right.
+
+Pick-to: 6.5 6.6
+Fixes: QTBUG-104008
+Change-Id: I57d71f6be73286b78bf0c31927993e39f9fab8d3
+Reviewed-by: Axel Spoerl <axel.spoerl@qt.io>
+---
+ src/quick/items/qquickpalette.cpp                  | 18 +++++
+ src/quick/items/qquickpalette_p.h                  | 11 ++--
+ src/quick/items/qquickpalettecolorprovider.cpp     | 76 +++++++++++++++++++++-
+ src/quick/items/qquickpalettecolorprovider_p.h     |  1 +
+ .../quickcontrols/palette/data/reset-color.qml     | 52 +++++++++++++++
+ tests/auto/quickcontrols/palette/tst_palette.cpp   | 71 ++++++++++++++++++++
+ 6 files changed, 222 insertions(+), 7 deletions(-)
+ create mode 100644 tests/auto/quickcontrols/palette/data/reset-color.qml
+
+diff --git a/src/quick/items/qquickpalette.cpp b/src/quick/items/qquickpalette.cpp
+index 824a0bf0961..79b22bd8a07 100644
+--- a/src/quick/items/qquickpalette.cpp
++++ b/src/quick/items/qquickpalette.cpp
+@@ -153,6 +153,24 @@ QQuickColorGroup *QQuickPalette::disabled() const
+     return colorGroup(QPalette::Disabled);
+ }
+ 
++void QQuickPalette::resetActive()
++{
++    if (colorProvider().resetColor(QPalette::Active))
++        Q_EMIT changed();
++}
++
++void QQuickPalette::resetInactive()
++{
++    if (colorProvider().resetColor(QPalette::Inactive))
++        Q_EMIT changed();
++}
++
++void QQuickPalette::resetDisabled()
++{
++    if (colorProvider().resetColor(QPalette::Disabled))
++        Q_EMIT changed();
++}
++
+ /*!
+     \internal
+ 
+diff --git a/src/quick/items/qquickpalette_p.h b/src/quick/items/qquickpalette_p.h
+index 6586d17a27f..641646c403e 100644
+--- a/src/quick/items/qquickpalette_p.h
++++ b/src/quick/items/qquickpalette_p.h
+@@ -26,10 +26,9 @@ class Q_QUICK_PRIVATE_EXPORT QQuickPalette : public QQuickColorGroup
+ {
+     Q_OBJECT
+ 
+-    Q_PROPERTY(QQuickColorGroup *active READ active WRITE setActive NOTIFY activeChanged FINAL)
+-    Q_PROPERTY(QQuickColorGroup *inactive READ inactive WRITE setInactive NOTIFY inactiveChanged FINAL)
+-    Q_PROPERTY(QQuickColorGroup *disabled READ disabled WRITE setDisabled NOTIFY disabledChanged FINAL)
+-
++    Q_PROPERTY(QQuickColorGroup *active READ active WRITE setActive RESET resetActive NOTIFY activeChanged FINAL)
++    Q_PROPERTY(QQuickColorGroup *inactive READ inactive WRITE setInactive RESET resetInactive NOTIFY inactiveChanged FINAL)
++    Q_PROPERTY(QQuickColorGroup *disabled READ disabled WRITE setDisabled RESET resetDisabled NOTIFY disabledChanged FINAL)
+     QML_NAMED_ELEMENT(Palette)
+     QML_ADDED_IN_VERSION(6, 0)
+ 
+@@ -43,6 +42,9 @@ public:
+     QQuickColorGroup *active() const;
+     QQuickColorGroup *inactive() const;
+     QQuickColorGroup *disabled() const;
++    void resetActive();
++    void resetInactive();
++    void resetDisabled();
+ 
+     QPalette::ColorGroup currentColorGroup() const override;
+     void setCurrentGroup(QPalette::ColorGroup currentGroup);
+@@ -71,6 +73,7 @@ private:
+     void setColorGroup(QPalette::ColorGroup groupTag,
+                        const QQuickColorGroup::GroupPtr &group,
+                        void (QQuickPalette::*notifier)());
++
+     QQuickColorGroup::GroupPtr colorGroup(QPalette::ColorGroup groupTag) const;
+     QQuickColorGroup::GroupPtr findColorGroup(QPalette::ColorGroup groupTag) const;
+ 
+diff --git a/src/quick/items/qquickpalettecolorprovider.cpp b/src/quick/items/qquickpalettecolorprovider.cpp
+index 2d36ff01c54..b92a31c930b 100644
+--- a/src/quick/items/qquickpalettecolorprovider.cpp
++++ b/src/quick/items/qquickpalettecolorprovider.cpp
+@@ -16,6 +16,31 @@ static QPalette::ColorGroup adjustCg(QPalette::ColorGroup group)
+     return group == QPalette::All ? QPalette::Active : group;
+ }
+ 
++// Begin copy from qpalette.cpp
++static constexpr QPalette::ResolveMask colorRoleOffset(QPalette::ColorGroup colorGroup)
++{
++    Q_ASSERT(colorGroup < QPalette::NColorGroups);
++    // Exclude NoRole; that bit is used for AccentColor
++    return (qToUnderlying(QPalette::NColorRoles) - 1) * qToUnderlying(colorGroup);
++}
++
++// TODO: Share the function by private interface in qtbase
++static constexpr QPalette::ResolveMask bitPosition(QPalette::ColorGroup colorGroup,
++                                                   QPalette::ColorRole colorRole)
++{
++    // Map AccentColor into NoRole for resolving purposes
++    if (colorRole == QPalette::AccentColor)
++        colorRole = QPalette::NoRole;
++
++    return colorRole + colorRoleOffset(colorGroup);
++}
++
++static_assert(bitPosition(QPalette::ColorGroup(QPalette::NColorGroups - 1),
++                          QPalette::ColorRole(QPalette::NColorRoles - 1))
++                  < sizeof(QPalette::ResolveMask) * CHAR_BIT,
++              "The resolve mask type is not wide enough to fit the entire bit mask.");
++// End copy from qpalette.cpp
++
+ class DefaultPalettesProvider : public QQuickAbstractPaletteProvider
+ {
+ public:
+@@ -44,10 +69,55 @@ bool QQuickPaletteColorProvider::setColor(QPalette::ColorGroup g, QPalette::Colo
+ 
+ bool QQuickPaletteColorProvider::resetColor(QPalette::ColorGroup group, QPalette::ColorRole role)
+ {
+-    const auto &defaultPalette = paletteProvider()->defaultPalette() ;
+-    const auto &defaultColor = defaultPalette.color(adjustCg(group), role);
++    if (!m_requestedPalette.isAllocated())
++        return false;
++
++    QPalette::ResolveMask unsetResolveMask = 0;
++
++    if (group == QPalette::Current)
++        group = m_requestedPalette->currentColorGroup();
++
++    if (group == QPalette::All) {
++        for (int g = QPalette::Active; g < QPalette::NColorGroups; ++g)
++            unsetResolveMask |= (QPalette::ResolveMask(1) << bitPosition(QPalette::ColorGroup(g), role));
++    } else {
++        unsetResolveMask = (QPalette::ResolveMask(1) << bitPosition(group, role));
++    }
++
++    m_requestedPalette->setResolveMask(m_requestedPalette->resolveMask() & ~unsetResolveMask);
++
++    return updateInheritedPalette();
++}
++
++bool QQuickPaletteColorProvider::resetColor(QPalette::ColorGroup group)
++{
++    if (!m_requestedPalette.isAllocated())
++        return false;
++
++    QPalette::ResolveMask unsetResolveMask = 0;
+ 
+-    return setColor(group, role, defaultColor);
++    auto getResolveMask = [] (QPalette::ColorGroup group) {
++        QPalette::ResolveMask mask = 0;
++        for (int roleIndex = QPalette::WindowText; roleIndex < QPalette::NColorRoles; ++roleIndex) {
++            const auto cr = QPalette::ColorRole(roleIndex);
++            mask |= (QPalette::ResolveMask(1) << bitPosition(group, cr));
++        }
++        return mask;
++    };
++
++    if (group == QPalette::Current)
++        group = m_requestedPalette->currentColorGroup();
++
++    if (group == QPalette::All) {
++        for (int g = QPalette::Active; g < QPalette::NColorGroups; ++g)
++            unsetResolveMask |= getResolveMask(QPalette::ColorGroup(g));
++    } else {
++        unsetResolveMask = getResolveMask(group);
++    }
++
++    m_requestedPalette->setResolveMask(m_requestedPalette->resolveMask() & ~unsetResolveMask);
++
++    return updateInheritedPalette();
+ }
+ 
+ bool QQuickPaletteColorProvider::fromQPalette(QPalette p)
+diff --git a/src/quick/items/qquickpalettecolorprovider_p.h b/src/quick/items/qquickpalettecolorprovider_p.h
+index ff715219dc2..d5c8fc744fb 100644
+--- a/src/quick/items/qquickpalettecolorprovider_p.h
++++ b/src/quick/items/qquickpalettecolorprovider_p.h
+@@ -34,6 +34,7 @@ public:
+     const QColor &color(QPalette::ColorGroup group, QPalette::ColorRole role) const;
+     bool setColor(QPalette::ColorGroup group, QPalette::ColorRole role, QColor color);
+     bool resetColor(QPalette::ColorGroup group, QPalette::ColorRole role);
++    bool resetColor(QPalette::ColorGroup group);
+ 
+     bool fromQPalette(QPalette p);
+     QPalette palette() const;
+diff --git a/tests/auto/quickcontrols/palette/data/reset-color.qml b/tests/auto/quickcontrols/palette/data/reset-color.qml
+new file mode 100644
+index 00000000000..d09faed39f8
+--- /dev/null
++++ b/tests/auto/quickcontrols/palette/data/reset-color.qml
+@@ -0,0 +1,52 @@
++// Copyright (C) 2022 zccrs <zccrs@live.com>, JiDe Zhang <zhangjide@uniontech.com>.
++// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
++
++import QtQuick
++import QtQuick.Controls
++
++ApplicationWindow {
++    id: window
++    property alias control: control
++    property alias item1Palette: item1.palette
++    property alias item2Palette: item2.palette
++
++    palette {
++        disabled {
++            windowText: "blue"
++        }
++    }
++
++    Item {
++        id: item1
++
++        palette.disabled {
++            text: "yellow"
++        }
++
++        Item {
++            id: item2
++
++            palette.disabled {
++                window: "yellow"
++            }
++        }
++    }
++
++    Control {
++        id: control
++        objectName: "Control"
++
++        palette {
++            window: "red"
++            disabled: item2.palette.disabled
++        }
++    }
++
++    function resetColor() {
++        control.palette.window = undefined
++    }
++
++    function resetGroup() {
++        control.palette.disabled = undefined
++    }
++}
+diff --git a/tests/auto/quickcontrols/palette/tst_palette.cpp b/tests/auto/quickcontrols/palette/tst_palette.cpp
+index e3a53f0c21e..27b65618096 100644
+--- a/tests/auto/quickcontrols/palette/tst_palette.cpp
++++ b/tests/auto/quickcontrols/palette/tst_palette.cpp
+@@ -16,6 +16,7 @@
+ #include <QtQuickTemplates2/private/qquicktheme_p_p.h>
+ #include <QtQuickTemplates2/private/qquickbutton_p.h>
+ #include <QtQuickControls2/qquickstyle.h>
++#include <QSignalSpy>
+ 
+ using namespace QQuickControlsTestUtils;
+ 
+@@ -52,6 +53,8 @@ private slots:
+     void updateBindings();
+ 
+     void resolve();
++
++    void resetColor();
+ };
+ 
+ tst_palette::tst_palette()
+@@ -427,6 +430,74 @@ void tst_palette::resolve()
+              control->property("palette").value<QQuickPalette*>()->windowText());
+ }
+ 
++void tst_palette::resetColor()
++{
++    QQmlEngine engine;
++    QQmlComponent component(&engine);
++    component.loadUrl(testFileUrl("reset-color.qml"));
++
++    QScopedPointer<QQuickApplicationWindow> window(qobject_cast<QQuickApplicationWindow*>(component.create()));
++    QVERIFY2(!window.isNull(), qPrintable(component.errorString()));
++    auto windowPalette = window->property("palette").value<QQuickPalette*>();
++    QVERIFY(windowPalette);
++
++    auto control = window->property("control").value<QQuickControl*>();
++    QVERIFY(control);
++    auto controlPalette = control->property("palette").value<QQuickPalette*>();
++    QVERIFY(controlPalette);
++    auto item1Palette = window->property("item1Palette").value<QQuickPalette*>();
++    QVERIFY(item1Palette);
++    auto item2Palette = window->property("item2Palette").value<QQuickPalette*>();
++    QVERIFY(item2Palette);
++
++    QCOMPARE(controlPalette->disabled()->window(), item2Palette->disabled()->window());
++    QCOMPARE(controlPalette->disabled()->text(), item1Palette->disabled()->text());
++    QCOMPARE(controlPalette->disabled()->windowText(), windowPalette->disabled()->windowText());
++
++    {
++        QSignalSpy spy(controlPalette, &QQuickPalette::changed);
++        item1Palette->disabled()->setText(Qt::red);
++        QVERIFY(spy.count() == 1 || spy.wait());
++        QCOMPARE(controlPalette->disabled()->text(), QColor(Qt::red));
++    }
++
++    {
++        QSignalSpy spy(controlPalette, &QQuickPalette::changed);
++        item1Palette->disabled()->setWindowText(Qt::red);
++        QVERIFY(spy.count() == 1 || spy.wait());
++        QCOMPARE(controlPalette->disabled()->windowText(), QColor(Qt::red));
++    }
++
++    {
++        QSignalSpy spy(controlPalette, &QQuickPalette::changed);
++        item2Palette->disabled()->setWindowText(Qt::blue);
++        QVERIFY(spy.count() == 1 || spy.wait());
++        QCOMPARE(controlPalette->disabled()->windowText(), QColor(Qt::blue));
++    }
++
++    {
++        QSignalSpy spy(controlPalette, &QQuickPalette::changed);
++        QMetaObject::invokeMethod(window.get(), "resetColor", Qt::DirectConnection);
++        QCOMPARE(controlPalette->window(), windowPalette->window());
++        windowPalette->setWindow(Qt::green);
++        QCOMPARE(controlPalette->window(), QColor(Qt::green));
++        QVERIFY(spy.count() >= 2);
++    }
++
++    {
++        QSignalSpy spy(controlPalette, &QQuickPalette::changed);
++        QMetaObject::invokeMethod(window.get(), "resetGroup", Qt::DirectConnection);
++        QCOMPARE(controlPalette->disabled()->windowText(), windowPalette->disabled()->windowText());
++        windowPalette->disabled()->setWindow(Qt::blue);
++        QCOMPARE(controlPalette->disabled()->window(), QColor(Qt::blue));
++        item2Palette->disabled()->setWindow(Qt::red);
++        QCOMPARE(controlPalette->disabled()->window(), QColor(Qt::blue));
++        if (spy.count() == 0)
++            spy.wait();
++        QCOMPARE(spy.count(), 2);
++    }
++}
++
+ QTEST_MAIN(tst_palette)
+ 
+ #include "tst_palette.moc"
+-- 
+2.16.3
+
