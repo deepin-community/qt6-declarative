@@ -1,0 +1,71 @@
+From ae2df32f7921f33925602025173163f9903d2d55 Mon Sep 17 00:00:00 2001
+From: Laszlo Agocs <laszlo.agocs@qt.io>
+Date: Wed, 15 Nov 2023 14:31:22 +0100
+Subject: [PATCH] Fix corrupt rendering when toggling rendernode-based items
+
+Meaning the toggling of visibility. Having a QSGRenderNode come and
+go in the scenegraph leads to visual problems, in case the adding
+and removal of the node toggles the m_forceNoUseDepthBuffer flag,
+which in turn makes useDepthBuffer() return a different value
+than before (so disables and then enables doing the opaque
+pass in the renderer). Changing this value needs a full rebuild
+of the render lists. When adding a node, this is done (regardless
+of toggling the flag). When removing, it was not done at all.
+Now we do it when resetting the no-Z flag back to false.
+
+Add a button to the customrendernode example to toggle visibility
+since this is useful for example's purposes anyways. However, this
+on its own is not sufficient to reproduce the issue. For that,
+the DepthAwareRendering flag needs to be removed from the
+QSGRenderNode subclass.
+
+Pick-to: 6.5
+Fixes: QTBUG-119160
+Change-Id: I232354d88f5a4fe5f9f2d6102d0d5439d92782fb
+Reviewed-by: Qt CI Bot <qt_ci_bot@qt-project.org>
+Reviewed-by: Andy Nichols <andy.nichols@qt.io>
+(cherry picked from commit d70b847f776f0d0382c3b2ee1c7549a8a1edc1c1)
+Reviewed-by: Qt Cherry-pick Bot <cherrypick_bot@qt-project.org>
+---
+ examples/quick/scenegraph/customrendernode/main.qml | 5 +++++
+ src/quick/scenegraph/coreapi/qsgbatchrenderer.cpp   | 7 ++++++-
+ 2 files changed, 11 insertions(+), 1 deletion(-)
+
+diff --git a/examples/quick/scenegraph/customrendernode/main.qml b/examples/quick/scenegraph/customrendernode/main.qml
+index a0b62c4bf81..6a098e47f7c 100644
+--- a/examples/quick/scenegraph/customrendernode/main.qml
++++ b/examples/quick/scenegraph/customrendernode/main.qml
+@@ -102,6 +102,11 @@ Item {
+             }
+ 
+ 
++            Button {
++                text: qsTr("Toggle custom item visibility")
++                onClicked: custom.visible = !custom.visible
++            }
++
+             CustomRender {
+                 id: custom
+                 width: Math.min(parent.width, parent.height)
+diff --git a/src/quick/scenegraph/coreapi/qsgbatchrenderer.cpp b/src/quick/scenegraph/coreapi/qsgbatchrenderer.cpp
+index a034906c4c0..4baa1f0f608 100644
+--- a/src/quick/scenegraph/coreapi/qsgbatchrenderer.cpp
++++ b/src/quick/scenegraph/coreapi/qsgbatchrenderer.cpp
+@@ -1222,8 +1222,13 @@ void Renderer::nodeWasRemoved(Node *node)
+         if (e) {
+             e->removed = true;
+             m_elementsToDelete.add(e);
+-            if (m_renderNodeElements.isEmpty())
++            if (m_renderNodeElements.isEmpty()) {
+                 m_forceNoDepthBuffer = false;
++                // Must have a full rebuild given useDepthBuffer() now returns
++                // a different value than before, meaning there can once again
++                // be an opaque pass.
++                m_rebuild |= FullRebuild;
++            }
+ 
+             if (e->batch != nullptr)
+                 e->batch->needsPurge = true;
+-- 
+2.16.3
+

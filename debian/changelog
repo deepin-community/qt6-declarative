@@ -1,3 +1,11 @@
+qt6-declarative (6.6.1+dfsg-1deepin3) unstable; urgency=medium
+
+  * Import patch from upstream:
+    - Fix-corrupt-rendering-when-toggling-rendernode-based-items.patch
+    https://codereview.qt-project.org/c/qt/qtdeclarative/+/521190
+
+ -- Tianyu Chen <sweetyfish@deepin.org>  Wed, 17 Jan 2024 10:44:07 +0800
+
 qt6-declarative (6.6.1+dfsg-1deepin2) unstable; urgency=medium
 
   * Import three patches:
