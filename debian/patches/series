@@ -1,7 +1,0 @@
-deepin-0001-Add-the-reset-function-for-properties-of-QQuickPalet.patch
-deepin-0002-Rename-accent-color-in-QPalette.patch
-deepin-0003-Palette-Remove-redundant-code.patch
-deepin-0004-Fix-corrupt-rendering-when-toggling-rendernode-based-items.patch
-
-# https://codereview.qt-project.org/c/qt/qtdeclarative/+/535176
-deepin-0005-TextField-Only-enable-paste-action-if-clipboard-has-text.patch

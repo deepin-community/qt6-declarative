@@ -1,3 +1,0 @@
-# libQt6QmlWorkerScript6 is a private library installed in a public path
-qml6-module-qtqml-workerscript: package-name-doesnt-match-sonames libQt6QmlWorkerScript6
-qml6-module-qtqml-workerscript: no-symbols-control-file usr/lib/*/libQt6QmlWorkerScript.so.6.*

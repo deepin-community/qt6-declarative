@@ -5,5 +5,5 @@ Abstract: This is the HTML documentation for Qt 6 Qt QML Compiler
 Section: Programming/C++
 
 Format: HTML
-Index: /usr/share/doc/qt6-declarative-doc-html/html/qtqmlcompiler/qtqtqmlcompiler.index
+Index: /usr/share/doc/qt6-declarative-doc-html/html/qtqmlcompiler/qtqmlcompiler.index
 Files: /usr/share/doc/qt6-declarative-doc-html/html/qtqmlcompiler/*.html

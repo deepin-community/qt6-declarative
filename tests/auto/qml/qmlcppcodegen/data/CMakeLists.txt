@@ -55,6 +55,7 @@ set(qml_files
     SelectionRectangle.qml
     ShadowedObjectName.qml
     ShadowedObjectNameDerived.qml
+    StoreMetaEnum.qml
     Test.qml
     TestCase.qml
     WindowDerived.qml
@@ -193,10 +194,13 @@ set(qml_files
     popContextAfterRet.qml
     prefixedMetaType.qml
     pressAndHoldButton.qml
+    reduceWithNullThis.qml
     readEnumFromInstance.qml
     registerPropagation.qml
     registerelimination.qml
+    renameAdjust.qml
     revisions.qml
+    scopeIdLookup.qml
     scopeVsObject.qml
     script.js
     script.mjs

@@ -159,10 +159,13 @@ private slots:
     void popContextAfterRet();
     void prefixedType();
     void propertyOfParent();
+    void reduceWithNullThis();
     void readEnumFromInstance();
     void registerElimination();
     void registerPropagation();
+    void renameAdjust();
     void revisions();
+    void scopeIdLookup();
     void scopeObjectDestruction();
     void scopeVsObject();
     void sequenceToIterable();
@@ -176,6 +179,7 @@ private slots:
     void signatureIgnored();
     void simpleBinding();
     void storeElementSideEffects();
+    void storeMetaEnum();
     void stringArg();
     void stringLength();
     void stringToByteArray();
@@ -616,6 +620,16 @@ void tst_QmlCppCodegen::asCast()
     QCOMPARE(qvariant_cast<QObject *>(root->property("dummyAsItem")), dummy);
     QCOMPARE(qvariant_cast<QObject *>(root->property("dummyAsRectangle")), nullptr);
     QCOMPARE(qvariant_cast<QObject *>(root->property("dummyAsDummy")), dummy);
+
+    QCOMPARE(qvariant_cast<QObject *>(root->property("nullAsObject")), nullptr);
+    QCOMPARE(qvariant_cast<QObject *>(root->property("nullAsItem")), nullptr);
+    QCOMPARE(qvariant_cast<QObject *>(root->property("nullAsRectangle")), nullptr);
+    QCOMPARE(qvariant_cast<QObject *>(root->property("nullAsDummy")), nullptr);
+
+    QCOMPARE(qvariant_cast<QObject *>(root->property("undefinedAsObject")), nullptr);
+    QCOMPARE(qvariant_cast<QObject *>(root->property("undefinedAsItem")), nullptr);
+    QCOMPARE(qvariant_cast<QObject *>(root->property("undefinedAsRectangle")), nullptr);
+    QCOMPARE(qvariant_cast<QObject *>(root->property("undefinedAsDummy")), nullptr);
 }
 
 void tst_QmlCppCodegen::attachedBaseEnum()
@@ -1320,6 +1334,7 @@ void tst_QmlCppCodegen::enumConversion()
     QVERIFY(o);
     QCOMPARE(o->property("test").toInt(), 0x04);
     QCOMPARE(o->property("test_1").toBool(), true);
+    QCOMPARE(o->objectName(), u"0m"_s);
 }
 
 void tst_QmlCppCodegen::enumFromBadSingleton()
@@ -3357,6 +3372,18 @@ void tst_QmlCppCodegen::propertyOfParent()
     }
 }
 
+void tst_QmlCppCodegen::reduceWithNullThis()
+{
+    QQmlEngine engine;
+    QQmlComponent component(&engine, QUrl(u"qrc:/qt/qml/TestTypes/reduceWithNullThis.qml"_s));
+    QVERIFY2(component.isReady(), component.errorString().toUtf8());
+    QScopedPointer<QObject> object(component.create());
+    QVERIFY(!object.isNull());
+
+    QCOMPARE(object->property("preferredHeight").toDouble(), 28.0);
+    QCOMPARE(object->property("preferredHeight2").toDouble(), 28.0);
+}
+
 void tst_QmlCppCodegen::readEnumFromInstance()
 {
     QQmlEngine engine;
@@ -3422,6 +3449,19 @@ void tst_QmlCppCodegen::registerPropagation()
     QCOMPARE(undefined, u"undefined"_s);
 }
 
+void tst_QmlCppCodegen::renameAdjust()
+{
+    QQmlEngine engine;
+    QQmlComponent c(&engine, QUrl(u"qrc:/qt/qml/TestTypes/renameAdjust.qml"_s));
+    QVERIFY2(c.isReady(), qPrintable(c.errorString()));
+
+    QTest::ignoreMessage(QtDebugMsg, "success");
+    QTest::ignoreMessage(QtCriticalMsg, "failed 10 11");
+
+    QScopedPointer<QObject> o(c.create());
+    QVERIFY(o);
+}
+
 void tst_QmlCppCodegen::revisions()
 {
     QQmlEngine engine;
@@ -3432,6 +3472,16 @@ void tst_QmlCppCodegen::revisions()
 
     QCOMPARE(o->property("delayed").toBool(), true);
     QCOMPARE(o->property("gotten").toInt(), 5);
+}
+
+void tst_QmlCppCodegen::scopeIdLookup()
+{
+    QQmlEngine engine;
+    QQmlComponent component(&engine, QUrl(u"qrc:/qt/qml/TestTypes/scopeIdLookup.qml"_s));
+    QVERIFY2(!component.isError(), component.errorString().toUtf8());
+    QScopedPointer<QObject> object(component.create());
+    QVERIFY(!object.isNull());
+    QCOMPARE(object->property("objectName").toString(), u"outer"_s);
 }
 
 void tst_QmlCppCodegen::scopeObjectDestruction()
@@ -3655,6 +3705,20 @@ void tst_QmlCppCodegen::storeElementSideEffects()
     const QJSValue prop = o->property("myItem").value<QJSValue>();
     QVERIFY(prop.isArray());
     QCOMPARE(prop.property(0).toInt(), 10);
+}
+
+void tst_QmlCppCodegen::storeMetaEnum()
+{
+    QQmlEngine engine;
+
+    QQmlComponent c(&engine, QUrl(u"qrc:/qt/qml/TestTypes/StoreMetaEnum.qml"_s));
+    QVERIFY2(c.isReady(), qPrintable(c.errorString()));
+
+    QScopedPointer<QObject> o(c.create());
+    QVERIFY(o);
+
+    QCOMPARE(o->property("bar").toInt(), 0);
+    QCOMPARE(o->property("baz").toInt(), 1);
 }
 
 void tst_QmlCppCodegen::stringArg()
@@ -3985,6 +4049,7 @@ void tst_QmlCppCodegen::urlString()
     QCOMPARE(qvariant_cast<QUrl>(rootObject->property("c")), QUrl(u"http://dddddd.com"_s));
     QCOMPARE(qvariant_cast<QUrl>(rootObject->property("d")), QUrl(u"http://aaaaaa.com"_s));
     QCOMPARE(qvariant_cast<QUrl>(rootObject->property("e")), QUrl(u"http://a112233.de"_s));
+    QCOMPARE(rootObject->objectName(), QLatin1String("http://dddddd.com"));
 }
 
 void tst_QmlCppCodegen::valueTypeBehavior()
