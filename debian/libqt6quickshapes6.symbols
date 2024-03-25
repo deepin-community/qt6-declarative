@@ -1,0 +1,19 @@
+# SymbolsHelper-Confirmed: 6.6.0 amd64
+libQt6QuickShapes.so.6 libqt6quickshapes6 #MINVER#
+| libqt6quickshapes6 #MINVER#, qt6-declarative-private-abi (= 6.6.2)
+* Build-Depends-Packages: qt6-declarative-dev, qt6-declarative-private-dev
+ Qt_6@Qt_6 6.6.0
+ (symver)Qt_6_PRIVATE_API 0
+ _Z29QQuickShapes_initializeModulev@Qt_6 6.6.0
+ _Z33qml_register_types_QtQuick_Shapesv@Qt_6 6.6.0
+ _ZGVZN9QMetaType21registerConverterImplI5QListIdE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Qt_6 6.6.0
+ _ZGVZN9QMetaType23registerMutableViewImplI5QListIdE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS7_EES_S_E10unregister@Qt_6 6.6.0
+ _ZN13QMetaSequence12MetaSequenceI5QListIdEE5valueE@Qt_6 6.6.0
+ _ZTI17QQuickPathPrivate@Qt_6 6.6.0
+ _ZTIZN9QMetaType17registerConverterI5QListIdE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS2_EEEEbT1_EUlPKvPvE_@Qt_6 6.6.0
+ _ZTIZN9QMetaType19registerMutableViewI5QListIdE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS2_EEEEbT1_EUlPvSA_E_@Qt_6 6.6.0
+ _ZTS17QQuickPathPrivate@Qt_6 6.6.0
+ _ZTSZN9QMetaType17registerConverterI5QListIdE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS2_EEEEbT1_EUlPKvPvE_@Qt_6 6.6.0
+ _ZTSZN9QMetaType19registerMutableViewI5QListIdE9QIterableI13QMetaSequenceEN9QtPrivate37QSequentialIterableMutableViewFunctorIS2_EEEEbT1_EUlPvSA_E_@Qt_6 6.6.0
+ (optional=templinst)_ZZN9QMetaType21registerConverterImplI5QListIdE9QIterableI13QMetaSequenceEEEbSt8functionIFbPKvPvEES_S_E10unregister@Qt_6 6.6.0
+ (optional=templinst)_ZZN9QMetaType23registerMutableViewImplI5QListIdE9QIterableI13QMetaSequenceEEEbSt8functionIFbPvS7_EES_S_E10unregister@Qt_6 6.6.0

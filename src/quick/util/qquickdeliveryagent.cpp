@@ -1686,7 +1686,13 @@ void QQuickDeliveryAgentPrivate::flushFrameSynchronousEvents(QQuickWindow *win)
     if (frameSynchronousHoverEnabled && !win->mouseGrabberItem() &&
             !lastMousePosition.isNull() && QQuickWindowPrivate::get(win)->dirtyItemList) {
         qCDebug(lcHoverTrace) << q << "delivering frame-sync hover to root @" << lastMousePosition;
-        deliverHoverEvent(lastMousePosition, lastMousePosition, QGuiApplication::keyboardModifiers(), 0);
+        if (deliverHoverEvent(lastMousePosition, lastMousePosition, QGuiApplication::keyboardModifiers(), 0)) {
+#if QT_CONFIG(cursor)
+            QQuickWindowPrivate::get(rootItem->window())->updateCursor(
+                    sceneTransform ? sceneTransform->map(lastMousePosition) : lastMousePosition, rootItem);
+#endif
+        }
+
         qCDebug(lcHoverTrace) << q << "frame-sync hover delivery done";
     }
 #else
@@ -2023,6 +2029,16 @@ void QQuickDeliveryAgentPrivate::deliverUpdatedPoints(QPointerEvent *event)
         }
         if (!relevantPassiveGrabbers.isEmpty())
             deliverToPassiveGrabbers(relevantPassiveGrabbers, event);
+
+        // Ensure that HoverHandlers are updated, in case no items got dirty so far and there's no update request
+        if (event->type() == QEvent::TouchUpdate) {
+            for (auto hoverItem : hoverItems) {
+                if (auto item = hoverItem.first) {
+                    deliverHoverEventToItem(item, point.scenePosition(), point.sceneLastPosition(),
+                                            event->modifiers(), event->timestamp(), false);
+                }
+            }
+        }
     }
 
     if (done)

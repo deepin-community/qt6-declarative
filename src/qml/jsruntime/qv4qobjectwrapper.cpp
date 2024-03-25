@@ -1085,13 +1085,15 @@ struct QObjectSlotDispatcher : public QtPrivate::QSlotObjectBase
 
     static void impl(int which, QSlotObjectBase *this_, QObject *receiver, void **metaArgs, bool *ret)
     {
-        Q_UNUSED(receiver);
         switch (which) {
         case Destroy: {
             delete static_cast<QObjectSlotDispatcher*>(this_);
         }
         break;
         case Call: {
+            if (QQmlData::wasDeleted(receiver))
+                break;
+
             QObjectSlotDispatcher *This = static_cast<QObjectSlotDispatcher*>(this_);
             ExecutionEngine *v4 = This->function.engine();
             // Might be that we're still connected to a signal that's emitted long
@@ -1100,7 +1102,7 @@ struct QObjectSlotDispatcher : public QtPrivate::QSlotObjectBase
             if (!v4)
                 break;
 
-            QQmlMetaObject::ArgTypeStorage storage;
+            QQmlMetaObject::ArgTypeStorage<9> storage;
             QQmlMetaObject::methodParameterTypes(This->signal, &storage, nullptr);
 
             int argCount = storage.size();
@@ -1240,7 +1242,16 @@ ReturnedValue QObjectWrapper::method_connect(const FunctionObject *b, const Valu
     }
 
     QPair<QObject *, int> functionData = QObjectMethod::extractQtMethod(f); // align with disconnect
-    if (QObject *receiver = functionData.first) {
+    QObject *receiver = nullptr;
+
+    if (functionData.first)
+        receiver = functionData.first;
+    else if (auto qobjectWrapper = object->as<QV4::QObjectWrapper>())
+        receiver = qobjectWrapper->object();
+    else if (auto typeWrapper = object->as<QV4::QQmlTypeWrapper>())
+        receiver = typeWrapper->object();
+
+    if (receiver) {
         QObjectPrivate::connect(signalObject, signalIndex, receiver, slot, Qt::AutoConnection);
     } else {
         qCInfo(lcObjectConnect,
@@ -1298,7 +1309,16 @@ ReturnedValue QObjectWrapper::method_disconnect(const FunctionObject *b, const V
         &functionData.second
     };
 
-    if (QObject *receiver = functionData.first) {
+    QObject *receiver = nullptr;
+
+    if (functionData.first)
+        receiver = functionData.first;
+    else if (auto qobjectWrapper = functionThisValue->as<QV4::QObjectWrapper>())
+        receiver = qobjectWrapper->object();
+    else if (auto typeWrapper = functionThisValue->as<QV4::QQmlTypeWrapper>())
+        receiver = typeWrapper->object();
+
+    if (receiver) {
         QObjectPrivate::disconnect(signalObject, signalIndex, receiver,
                                    reinterpret_cast<void **>(&a));
     } else {
@@ -1803,7 +1823,7 @@ static ReturnedValue CallPrecise(const QQmlObjectOrGadget &object, const QQmlPro
 
     if (data.hasArguments()) {
 
-        QQmlMetaObject::ArgTypeStorage storage;
+        QQmlMetaObject::ArgTypeStorage<9> storage;
 
         bool ok = false;
         if (data.isConstructor())
@@ -1884,7 +1904,7 @@ static const QQmlPropertyData *ResolveOverloaded(
         int sumMethodMatchScore = bestSumMatchScore;
 
         if (!attempt->isV4Function()) {
-            QQmlMetaObject::ArgTypeStorage storage;
+            QQmlMetaObject::ArgTypeStorage<9> storage;
             int methodArgumentCount = 0;
             if (attempt->hasArguments()) {
                 if (attempt->isConstructor()) {

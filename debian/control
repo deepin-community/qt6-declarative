@@ -11,14 +11,14 @@ Build-Depends: cmake (>= 3.24~),
                libssl-dev,
                libvulkan-dev [linux-any],
                ninja-build,
-               pkg-config,
+               pkgconf,
                pkg-kde-tools,
-               qt6-base-dev (>= 6.6.1+dfsg~),
-               qt6-base-private-dev (>= 6.6.1+dfsg~),
+               qt6-base-dev (>= 6.6.2+dfsg~),
+               qt6-base-private-dev (>= 6.6.2+dfsg~),
                qt6-declarative-dev:native <cross>,
-               qt6-languageserver-private-dev (>= 6.6.1~),
-               qt6-shadertools-dev (>= 6.6.1~),
-               qt6-svg-dev (>= 6.6.1~),
+               qt6-languageserver-private-dev (>= 6.6.2~),
+               qt6-shadertools-dev (>= 6.6.2~),
+               qt6-svg-dev (>= 6.6.2~),
 Build-Depends-Indep: qt6-base-dev (>= 6.6~) <!nodoc>,
                      qt6-documentation-tools (>= 6.6~) <!nodoc>,
 Standards-Version: 4.6.2
@@ -31,7 +31,7 @@ Package: libqt6qml6
 Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends},
-Provides: qt6-declarative-private-abi (= 6.6.1),
+Provides: qt6-declarative-private-abi (= 6.6.2),
 Depends: ${misc:Depends}, ${shlibs:Depends},
 Recommends: libgl1, libglx-mesa0,
 Suggests: qt6-qmltooling-plugins,
@@ -65,6 +65,16 @@ Description: Qt 6 QML Models library
  .
  This package contains the Qt QML Models support library.
 
+Package: libqt6qmlworkerscript6
+Architecture: any
+Multi-Arch: same
+Depends: ${misc:Depends}, ${shlibs:Depends},
+Description: Qt 6 QML WorkerScript library
+ Qt is a cross-platform C++ application framework. Qt's primary feature
+ is its rich set of widgets that provide standard GUI functionality.
+ .
+ This package contains the Qt QML WorkerScript support library.
+
 Package: libqt6quick6
 Architecture: any
 Multi-Arch: same
@@ -89,6 +99,17 @@ Description: Qt 6 Quick Controls 2 library
  is its rich set of widgets that provide standard GUI functionality.
  .
  This package contains the Qt Quick Controls 2 support library.
+
+Package: libqt6quickshapes6
+Architecture: any
+Multi-Arch: same
+Pre-Depends: ${misc:Pre-Depends},
+Depends: ${misc:Depends}, ${shlibs:Depends},
+Description: Qt 6 Quick Shapes library
+ Qt is a cross-platform C++ application framework. Qt's primary feature
+ is its rich set of widgets that provide standard GUI functionality.
+ .
+ This package contains the Qt Quick Shapes support library.
 
 Package: libqt6quicktemplates2-6
 Architecture: any
@@ -298,8 +319,6 @@ Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends},
 Depends: ${misc:Depends}, ${shlibs:Depends},
-Breaks: libqt6qmlworkerscript6
-Replaces: libqt6qmlworkerscript6
 Description: Qt 6 QtQml Workerscript QML module
  Qt is a cross-platform C++ application framework. Qt's primary feature
  is its rich set of widgets that provide standard GUI functionality.
@@ -425,8 +444,6 @@ Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends},
 Depends: ${misc:Depends}, ${shlibs:Depends},
-Breaks: libqt6quickshapes6
-Replaces: libqt6quickshapes6
 Description: Qt 6 Quick Shapes QML module
  Qt is a cross-platform C++ application framework. Qt's primary feature
  is its rich set of widgets that provide standard GUI functionality.
@@ -486,15 +503,17 @@ Multi-Arch: same
 Depends: libqt6qml6 (= ${binary:Version}),
          libqt6qmlcompiler6 (= ${binary:Version}),
          libqt6qmlmodels6 (= ${binary:Version}),
+         libqt6qmlworkerscript6 (= ${binary:Version}),
          libqt6quick6 (= ${binary:Version}),
          libqt6quickcontrols2-6 (= ${binary:Version}),
+         libqt6quickshapes6 (= ${binary:Version}),
          libqt6quicktemplates2-6 (= ${binary:Version}),
          libqt6quicktest6 (= ${binary:Version}),
          libqt6quickwidgets6 (= ${binary:Version}),
          qt6-base-dev,
-         qt6-declarative-dev-tools,
-         qt6-qmllint-plugins,
-         qt6-qmltooling-plugins,
+         qt6-declarative-dev-tools (= ${binary:Version}),
+         qt6-qmllint-plugins (= ${binary:Version}),
+         qt6-qmltooling-plugins (= ${binary:Version}),
          ${misc:Depends},
 Description: Qt 6 declarative development files
  Qt is a cross-platform C++ application framework. Qt's primary feature

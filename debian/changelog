@@ -1,35 +1,38 @@
-qt6-declarative (6.6.1+dfsg-1deepin4) unstable; urgency=medium
+qt6-declarative (6.6.2+dfsg-2) experimental; urgency=medium
 
-  * Import patch from upstream:
-    - TextField-Only-enable-paste-action-if-clipboard-has-text.patch
-    https://codereview.qt-project.org/c/qt/qtdeclarative/+/535176
+  [ Patrick Franz ]
+  * Re-introduce package libqt6qmlworkerscript6.
 
- -- Tianyu Chen <sweetyfish@deepin.org>  Fri, 01 Mar 2024 10:16:35 +0800
+ -- Patrick Franz <deltaone@debian.org>  Tue, 12 Mar 2024 19:15:55 +0100
 
-qt6-declarative (6.6.1+dfsg-1deepin3) unstable; urgency=medium
+qt6-declarative (6.6.2+dfsg-1) experimental; urgency=medium
 
-  * Import patch from upstream:
-    - Fix-corrupt-rendering-when-toggling-rendernode-based-items.patch
-    https://codereview.qt-project.org/c/qt/qtdeclarative/+/521190
+  [ Patrick Franz ]
+  * New upstream release (6.6.2).
+  * Bump Qt B-Ds to 6.6.2.
+  * Build-depend on pkgconf instead of pkg-config as the latter has been
+    superseded by the former.
+  * Update ABI to 6.6.2.
 
- -- Tianyu Chen <sweetyfish@deepin.org>  Wed, 17 Jan 2024 10:44:07 +0800
+ -- Patrick Franz <deltaone@debian.org>  Thu, 15 Feb 2024 20:55:06 +0100
 
-qt6-declarative (6.6.1+dfsg-1deepin2) unstable; urgency=medium
+qt6-declarative (6.6.1+dfsg-3) experimental; urgency=medium
 
-  * Import three patches:
-    - Add-the-reset-function-for-properties-of-QQuickPalet.patch.
-    - Rename-accent-color-in-QPalette.patch
-    - Palette-Remove-redundant-code.patch
-    https://codereview.qt-project.org/c/qt/qtdeclarative/+/414503
+  [ Lisandro Damián Nicanor Pérez Meyer ]
+  * qt6-declarative-dev: add versioned depends on packages produced by this
+    source. This avoids mixed installed versions as reported by Stuart
+    Prescott on IRC.
 
+ -- Patrick Franz <deltaone@debian.org>  Sun, 14 Jan 2024 18:00:35 +0100
 
- -- Tianyu Chen <sweetyfish@deepin.org>  Wed, 10 Jan 2024 14:30:45 +0800
+qt6-declarative (6.6.1+dfsg-2) experimental; urgency=medium
 
-qt6-declarative (6.6.1+dfsg-1deepin1) unstable; urgency=medium
+  [ Patrick Franz ]
+  * Re-introduce package libqt6quickshapes6.
+  * Update symbols from buildlogs.
+  * Fix typos in documentation.
 
-  * Drop patch introduced by git-rebase.
-
- -- Tianyu Chen <sweetyfish@deepin.org>  Wed, 27 Dec 2023 10:25:26 +0800
+ -- Patrick Franz <deltaone@debian.org>  Tue, 09 Jan 2024 00:01:55 +0100
 
 qt6-declarative (6.6.1+dfsg-1) experimental; urgency=medium
 

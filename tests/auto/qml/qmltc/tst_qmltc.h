@@ -95,4 +95,6 @@ private slots:
     void cppNamespaces();
     void namespacedName();
     void checkExportsAreCompiling();
+    void checkExportsNoFileName();
+    void signalConnections();
 };
