@@ -1,3 +1,11 @@
+qt6-declarative (6.6.1+dfsg-1deepin5) unstable; urgency=medium
+
+  * Import patch from upstream:
+    - QQuickItemGrabResult-Grab-with-window-devicePixelRatio.patch
+    https://github.com/qt/qtdeclarative/commit/91e75fc3478f4cbef1a1e5449e8f9236af7397ab
+
+ -- Zhang Kun <zhangkun2@uniontech.com>  Thu, 11 Jul 2024 16:22:50 +0800
+
 qt6-declarative (6.6.1+dfsg-1deepin4) unstable; urgency=medium
 
   * Import patch from upstream:
