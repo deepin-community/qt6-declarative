@@ -1,0 +1,103 @@
+From 4d0c341492261d0eb309da90e67a62141b07be60 Mon Sep 17 00:00:00 2001
+From: Kai Uwe Broulik <kde@privat.broulik.de>
+Date: Wed, 2 Aug 2023 22:47:40 +0200
+Subject: [PATCH] QQuickItemGrabResult: Grab with window devicePixelRatio
+
+Ensures the grabbed image has the same device pixel ratio
+as the original item.
+
+[ChangeLog][QtQuick][Item][Important Behavior Change] grabToImage
+now grabs the item taking into account its devicePixelRatio.
+
+Task-number: QTBUG-50693
+Change-Id: I63518438c8c9a84c2feee82119c47ea4a6b4a88e
+Reviewed-by: Qt CI Bot <qt_ci_bot@qt-project.org>
+Reviewed-by: Laszlo Agocs <laszlo.agocs@qt.io>
+---
+ src/quick/items/qquickitemgrabresult.cpp             | 12 +++++++++---
+ .../tst_qquickninepatchimage.cpp                     | 11 ++++++++---
+ 2 files changed, 17 insertions(+), 6 deletions(-)
+
+diff --git a/src/quick/items/qquickitemgrabresult.cpp b/src/quick/items/qquickitemgrabresult.cpp
+index bcd1afc19d..17ea8ef3c6 100644
+--- a/src/quick/items/qquickitemgrabresult.cpp
++++ b/src/quick/items/qquickitemgrabresult.cpp
+@@ -30,6 +30,7 @@ public:
+         : cacheEntry(nullptr)
+         , qmlEngine(nullptr)
+         , texture(nullptr)
++        , devicePixelRatio(1.0)
+     {
+     }
+ 
+@@ -63,6 +64,7 @@ public:
+     QSGLayer *texture;
+     QSizeF itemSize;
+     QSize textureSize;
++    qreal devicePixelRatio;
+ };
+ 
+ /*!
+@@ -235,7 +237,9 @@ void QQuickItemGrabResult::setup()
+     }
+ 
+     QSGRenderContext *rc = QQuickWindowPrivate::get(d->window.data())->context;
++    d->devicePixelRatio = d->window->effectiveDevicePixelRatio();
+     d->texture = rc->sceneGraphContext()->createLayer(rc);
++    d->texture->setDevicePixelRatio(d->devicePixelRatio);
+     d->texture->setItem(QQuickItemPrivate::get(d->item)->itemNode());
+     d->itemSize = QSizeF(d->item->width(), d->item->height());
+ }
+@@ -248,11 +252,13 @@ void QQuickItemGrabResult::render()
+ 
+     d->texture->setRect(QRectF(0, d->itemSize.height(), d->itemSize.width(), -d->itemSize.height()));
+     const QSize minSize = QQuickWindowPrivate::get(d->window.data())->context->sceneGraphContext()->minimumFBOSize();
+-    d->texture->setSize(QSize(qMax(minSize.width(), d->textureSize.width()),
+-                              qMax(minSize.height(), d->textureSize.height())));
++    const QSize effectiveTextureSize = d->textureSize * d->devicePixelRatio;
++    d->texture->setSize(QSize(qMax(minSize.width(), effectiveTextureSize.width()),
++                              qMax(minSize.height(), effectiveTextureSize.height())));
+     d->texture->scheduleUpdate();
+     d->texture->updateTexture();
+-    d->image =  d->texture->toImage();
++    d->image = d->texture->toImage();
++    d->image.setDevicePixelRatio(d->devicePixelRatio);
+ 
+     delete d->texture;
+     d->texture = nullptr;
+diff --git a/tests/auto/quickcontrols/qquickninepatchimage/tst_qquickninepatchimage.cpp b/tests/auto/quickcontrols/qquickninepatchimage/tst_qquickninepatchimage.cpp
+index dc88d0c5ed..7699f59135 100644
+--- a/tests/auto/quickcontrols/qquickninepatchimage/tst_qquickninepatchimage.cpp
++++ b/tests/auto/quickcontrols/qquickninepatchimage/tst_qquickninepatchimage.cpp
+@@ -95,20 +95,25 @@ void tst_qquickninepatchimage::ninePatch()
+ 
+     // Generate an image to compare against the actual 9-patch image.
+     QImage generatedImage(size * dpr, ninePatchImageGrab.format());
++    generatedImage.setDevicePixelRatio(dpr);
+     generatedImage.fill(Qt::red);
+ 
+     QImage blueRect(4 * dpr, 4 * dpr, ninePatchImageGrab.format());
++    blueRect.setDevicePixelRatio(dpr);
+     blueRect.fill(Qt::blue);
+ 
++    const QSizeF generatedPaintedSize = generatedImage.deviceIndependentSize();
++    const QSizeF blueRectPaintedSize = blueRect.deviceIndependentSize();
++
+     QPainter painter(&generatedImage);
+     // Top-left
+     painter.drawImage(0, 0, blueRect);
+     // Top-right
+-    painter.drawImage(generatedImage.width() - blueRect.width(), 0, blueRect);
++    painter.drawImage(generatedPaintedSize.width() - blueRectPaintedSize.width(), 0, blueRect);
+     // Bottom-right
+-    painter.drawImage(generatedImage.width() - blueRect.width(), generatedImage.height() - blueRect.height(), blueRect);
++    painter.drawImage(generatedPaintedSize.width() - blueRectPaintedSize.width(), generatedPaintedSize.height() - blueRectPaintedSize.height(), blueRect);
+     // Bottom-left
+-    painter.drawImage(0, generatedImage.height() - blueRect.height(), blueRect);
++    painter.drawImage(0, generatedPaintedSize.height() - blueRectPaintedSize.height(), blueRect);
+ 
+     if ((QGuiApplication::platformName() == QLatin1String("offscreen"))
+         || (QGuiApplication::platformName() == QLatin1String("minimal")))
+-- 
+2.43.4
+

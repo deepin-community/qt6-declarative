@@ -5,3 +5,5 @@ deepin-0004-Fix-corrupt-rendering-when-toggling-rendernode-based-items.patch
 
 # https://codereview.qt-project.org/c/qt/qtdeclarative/+/535176
 deepin-0005-TextField-Only-enable-paste-action-if-clipboard-has-text.patch
+# https://github.com/qt/qtdeclarative/commit/91e75fc3478f4cbef1a1e5449e8f9236af7397ab
+deepin-0006-QQuickItemGrabResult-Grab-with-window-devicePixelRatio.patch
