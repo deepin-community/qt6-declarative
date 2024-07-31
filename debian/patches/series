@@ -7,3 +7,6 @@ deepin-0004-Fix-corrupt-rendering-when-toggling-rendernode-based-items.patch
 deepin-0005-TextField-Only-enable-paste-action-if-clipboard-has-text.patch
 # https://github.com/qt/qtdeclarative/commit/91e75fc3478f4cbef1a1e5449e8f9236af7397ab
 deepin-0006-QQuickItemGrabResult-Grab-with-window-devicePixelRatio.patch
+# https://github.com/qt/qtdeclarative/commit/62014e9cecc633a046754e5f76cae66f052ae17b
+# https://github.com/linuxdeepin/developer-center/issues/10004
+deepin-0007-Remove-bounding-behavior-of-popup-for-negative-margins.patch
