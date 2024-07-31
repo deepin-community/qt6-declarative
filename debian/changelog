@@ -1,3 +1,11 @@
+qt6-declarative (6.6.1+dfsg-1deepin6) unstable; urgency=medium
+
+  * Import patch from upstream:
+    - deepin-0007-Remove-bounding-behavior-of-popup-for-negative-margins.patch
+    https://github.com/qt/qtdeclarative/commit/62014e9cecc633a046754e5f76cae66f052ae17b
+
+ -- Wang Zichong <wangzichong@deepin.org>  Wed, 31 Jul 2024 14:07:00 +0800
+
 qt6-declarative (6.6.1+dfsg-1deepin5) unstable; urgency=medium
 
   * Import patch from upstream:

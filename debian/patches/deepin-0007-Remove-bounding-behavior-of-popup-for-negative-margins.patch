@@ -1,0 +1,125 @@
+From 62014e9cecc633a046754e5f76cae66f052ae17b Mon Sep 17 00:00:00 2001
+From: Santhosh Kumar <santhosh.kumar.selvaraj@qt.io>
+Date: Tue, 11 Jul 2023 15:56:52 +0200
+Subject: [PATCH] Remove bounding behavior of popup for negative margins
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The popup behavior is inconsistent when its moved or repositioned over
+the edges of the bounding window. This happens for negative margins,
+as its made to bound within the window (while respositioning using
+QQuickPopupPositioner::reposition) only on left and top edges of
+the window during resize, but its allowed to move outside the bounding
+window on right and bottom edges. This pushing of popup within the bound
+can also sometimes leads to infinite polish issues (for the qml
+configuration as mentioned in the bug report QTBUG-107473).
+
+This patch set removes this constraints for popup to move beyond edges of
+the window (through QQuickPopupPrivate::relaxEdgeConstraint) during
+resize. By default, this flag is disabled, means those controls which
+inherits from popup restricts by itself not to move beyond the edges
+during resize.
+
+[ChangeLog][Qt Quick Controls][Popup][Important Behavior Changes] The popup
+default margins (-1) earlier was constrained on left and top edges, but
+allowed to move beyond right and bottom edges. The behavior changed now to
+relax this constraint and move beyond all edges. Also to be noted, edge
+constraints has been relaxed only for Popup and controls inheriting from
+popup (such as drawer, menu) still follows earlier behavior.
+
+Fixes: QTBUG-107473
+Fixes: QTBUG-77647
+Change-Id: Icf0dc909559b5059a7371a6455a15ffc84e9b77d
+Reviewed-by: Jan Arve Sæther <jan-arve.saether@qt.io>
+---
+ src/quicktemplates/qquickpopup.cpp             |  2 ++
+ src/quicktemplates/qquickpopup_p_p.h           |  1 +
+ src/quicktemplates/qquickpopuppositioner.cpp   | 18 ++++++++++++++----
+ .../quickcontrols/controls/data/tst_popup.qml  |  4 ++--
+ 4 files changed, 19 insertions(+), 6 deletions(-)
+
+diff --git a/src/quicktemplates/qquickpopup.cpp b/src/quicktemplates/qquickpopup.cpp
+index 2ece1b73083..04a586a7cdd 100644
+--- a/src/quicktemplates/qquickpopup.cpp
++++ b/src/quicktemplates/qquickpopup.cpp
+@@ -937,6 +937,8 @@ QQuickPopup::QQuickPopup(QObject *parent)
+ {
+     Q_D(QQuickPopup);
+     d->init();
++    // By default, allow popup to move beyond window edges
++    d->relaxEdgeConstraint = true;
+ }
+ 
+ QQuickPopup::QQuickPopup(QQuickPopupPrivate &dd, QObject *parent)
+diff --git a/src/quicktemplates/qquickpopup_p_p.h b/src/quicktemplates/qquickpopup_p_p.h
+index eabe2df0017..b71d5bde777 100644
+--- a/src/quicktemplates/qquickpopup_p_p.h
++++ b/src/quicktemplates/qquickpopup_p_p.h
+@@ -154,6 +154,7 @@ class Q_QUICKTEMPLATES2_PRIVATE_EXPORT QQuickPopupPrivate
+     bool outsidePressed = false;
+     bool outsideParentPressed = false;
+     bool inDestructor = false;
++    bool relaxEdgeConstraint = false;
+     int touchId = -1;
+     qreal x = 0;
+     qreal y = 0;
+diff --git a/src/quicktemplates/qquickpopuppositioner.cpp b/src/quicktemplates/qquickpopuppositioner.cpp
+index aecbc7373c8..bde827b2f71 100644
+--- a/src/quicktemplates/qquickpopuppositioner.cpp
++++ b/src/quicktemplates/qquickpopuppositioner.cpp
+@@ -170,12 +170,17 @@ void QQuickPopupPositioner::reposition()
+                 }
+ 
+                 // as a last resort, adjust the width to fit the window
++                // Negative margins don't require resize as popup not pushed within
++                // the boundary. But otherwise, retain existing behavior of resizing
++                // for items, such as menus, which enables flip.
+                 if (p->allowHorizontalResize) {
+-                    if (rect.left() < bounds.left()) {
++                    if ((margins.left() >= 0 || !p->relaxEdgeConstraint)
++                            && (rect.left() < bounds.left())) {
+                         rect.setLeft(bounds.left());
+                         widthAdjusted = true;
+                     }
+-                    if (rect.right() > bounds.right()) {
++                    if ((margins.right() >= 0 || !p->relaxEdgeConstraint)
++                            && (rect.right() > bounds.right())) {
+                         rect.setRight(bounds.right());
+                         widthAdjusted = true;
+                     }
+@@ -198,12 +203,17 @@ void QQuickPopupPositioner::reposition()
+                 }
+ 
+                 // as a last resort, adjust the height to fit the window
++                // Negative margins don't require resize as popup not pushed within
++                // the boundary. But otherwise, retain existing behavior of resizing
++                // for items, such as menus, which enables flip.
+                 if (p->allowVerticalResize) {
+-                    if (rect.top() < bounds.top()) {
++                    if ((margins.top() >= 0 || !p->relaxEdgeConstraint)
++                            && (rect.top() < bounds.top())) {
+                         rect.setTop(bounds.top());
+                         heightAdjusted = true;
+                     }
+-                    if (rect.bottom() > bounds.bottom()) {
++                    if ((margins.bottom() >= 0 || !p->relaxEdgeConstraint)
++                            && (rect.bottom() > bounds.bottom())) {
+                         rect.setBottom(bounds.bottom());
+                         heightAdjusted = true;
+                     }
+diff --git a/tests/auto/quickcontrols/controls/data/tst_popup.qml b/tests/auto/quickcontrols/controls/data/tst_popup.qml
+index 48484f588ce..f8032c76c32 100644
+--- a/tests/auto/quickcontrols/controls/data/tst_popup.qml
++++ b/tests/auto/quickcontrols/controls/data/tst_popup.qml
+@@ -319,8 +319,8 @@ TestCase {
+ 
+         control.x = -10
+         control.y = -10
+-        compare(control.x, 0)
+-        compare(control.y, 0)
++        compare(control.x, -10)
++        compare(control.y, -10)
+     }
+ 
+     function test_margins() {
