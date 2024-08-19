@@ -10,3 +10,4 @@ deepin-0006-QQuickItemGrabResult-Grab-with-window-devicePixelRatio.patch
 # https://github.com/qt/qtdeclarative/commit/62014e9cecc633a046754e5f76cae66f052ae17b
 # https://github.com/linuxdeepin/developer-center/issues/10004
 deepin-0007-Remove-bounding-behavior-of-popup-for-negative-margins.patch
+deepin-0008-Fix-multi-screen-menu-popup-location.patch

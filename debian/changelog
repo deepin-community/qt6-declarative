@@ -1,3 +1,10 @@
+qt6-declarative (6.6.1+dfsg-1deepin7) unstable; urgency=medium
+
+  * Fix multi-screen menu pop-up location
+    - deepin-0008-Fix-multi-screen-menu-popup-location.patch
+
+ -- Lu YaNing <luyaning@uniontech.com>  Mon, 19 Aug 2024 19:51:25 +0800
+
 qt6-declarative (6.6.1+dfsg-1deepin6) unstable; urgency=medium
 
   * Import patch from upstream:

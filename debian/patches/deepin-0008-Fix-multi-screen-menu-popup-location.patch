@@ -1,0 +1,29 @@
+From 39ee31cc09ce1f0084f84aaa0596adb2d578af3b Mon Sep 17 00:00:00 2001
+From: Lu YaNing <luyaning@uniontech.com>
+Date: Fri, 09 Aug 2024 17:42:02 +0800
+Subject: [PATCH] Fix multi-screen menu pop-up location
+
+According to f8cf17166c9af147f0b8fea72f5b4a8a6098a5d7
+
+When QT_SCALE_FACTOR is greater than 1, the Popup menu pops up
+incorrectly on the second screen.
+
+Replace the toNativePixels with toNativeLocalPosition.
+
+Fixes: QTBUG-127906
+Pick-to: 6.5 6.7 6.8
+Change-Id: Id320063afccfd3a391426bc6419cbe8855c57b98
+
+Index: qt6-declarative-6.6.1+dfsg/src/labs/platform/qquicklabsplatformmenu.cpp
+===================================================================
+--- qt6-declarative-6.6.1+dfsg.orig/src/labs/platform/qquicklabsplatformmenu.cpp
++++ qt6-declarative-6.6.1+dfsg/src/labs/platform/qquicklabsplatformmenu.cpp
+@@ -695,7 +695,7 @@ void QQuickLabsPlatformMenu::open(QQmlV4
+ #endif
+     }
+     m_handle->showPopup(window,
+-                        QHighDpi::toNativePixels(targetRect, window),
++                        QHighDpi::toNativeLocalPosition(targetRect, window),
+                         menuItem ? menuItem->handle() : nullptr);
+ }
+ 
