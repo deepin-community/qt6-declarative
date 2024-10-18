@@ -9,6 +9,9 @@ usr/lib/qt6/bin/qmlprofiler
 usr/lib/qt6/bin/qmltc
 usr/lib/qt6/bin/qmltestrunner
 usr/lib/qt6/bin/qmltime
+usr/lib/qt6/bin/svgtoqml
+usr/lib/qt6/libexec/qmlaotstats
 usr/lib/qt6/libexec/qmlcachegen
 usr/lib/qt6/libexec/qmlimportscanner
+usr/lib/qt6/libexec/qmljsrootgen
 usr/lib/qt6/libexec/qmltyperegistrar
