@@ -272,17 +272,6 @@ Description: Qt 6 QtQml QML module
  .
  This QML module contains basic QML types.
 
-Package: qml6-module-qtqml-base
-Architecture: any
-Multi-Arch: same
-Pre-Depends: ${misc:Pre-Depends},
-Depends: ${misc:Depends}, ${shlibs:Depends},
-Description: Qt 6 QtQml Base QML module
- Qt is a cross-platform C++ application framework. Qt's primary feature
- is its rich set of widgets that provide standard GUI functionality.
- .
- This QML module contains QML base types.
-
 Package: qml6-module-qtqml-models
 Architecture: any
 Multi-Arch: same
@@ -590,13 +579,3 @@ Description: Qt 6 declarative tags files
  This package contains the doxygen tags files for the qt declarative
  documentation.
 
-Package: qt6-declarative-examples
-Architecture: any
-Multi-Arch: same
-Section: misc
-Depends: ${misc:Depends}, ${shlibs:Depends},
-Description: Qt 6 declarative examples
- Qt is a cross-platform C++ application framework. Qt's primary feature
- is its rich set of widgets that provide standard GUI functionality.
- .
- This package contains the examples for the Qt declarative submodule.

@@ -72,7 +72,6 @@ usr/include/${DEB_HOST_MULTIARCH}/qt6/QtQml/QQmlScriptString
 usr/include/${DEB_HOST_MULTIARCH}/qt6/QtQml/QQmlTypeInfo
 usr/include/${DEB_HOST_MULTIARCH}/qt6/QtQml/QQmlTypeNotAvailable
 usr/include/${DEB_HOST_MULTIARCH}/qt6/QtQml/QQmlTypesExtensionInterface
-usr/include/${DEB_HOST_MULTIARCH}/qt6/QtQml/QmlTypeAndRevisionsRegistration
 usr/include/${DEB_HOST_MULTIARCH}/qt6/QtQml/QtQml
 usr/include/${DEB_HOST_MULTIARCH}/qt6/QtQml/QtQmlDepends
 usr/include/${DEB_HOST_MULTIARCH}/qt6/QtQml/QtQmlVersion
@@ -393,12 +392,6 @@ usr/lib/${DEB_HOST_MULTIARCH}/cmake/Qt6PacketProtocolPrivate/Qt6PacketProtocolPr
 usr/lib/${DEB_HOST_MULTIARCH}/cmake/Qt6PacketProtocolPrivate/Qt6PacketProtocolPrivateTargets-none.cmake
 usr/lib/${DEB_HOST_MULTIARCH}/cmake/Qt6PacketProtocolPrivate/Qt6PacketProtocolPrivateTargets.cmake
 usr/lib/${DEB_HOST_MULTIARCH}/cmake/Qt6PacketProtocolPrivate/Qt6PacketProtocolPrivateVersionlessTargets.cmake
-usr/lib/${DEB_HOST_MULTIARCH}/cmake/Qt6Qml/QmlPlugins/Qt6QmlMetaAdditionalTargetInfo.cmake
-usr/lib/${DEB_HOST_MULTIARCH}/cmake/Qt6Qml/QmlPlugins/Qt6QmlMetaConfig.cmake
-usr/lib/${DEB_HOST_MULTIARCH}/cmake/Qt6Qml/QmlPlugins/Qt6QmlMetaConfigVersion.cmake
-usr/lib/${DEB_HOST_MULTIARCH}/cmake/Qt6Qml/QmlPlugins/Qt6QmlMetaConfigVersionImpl.cmake
-usr/lib/${DEB_HOST_MULTIARCH}/cmake/Qt6Qml/QmlPlugins/Qt6QmlMetaTargets-none.cmake
-usr/lib/${DEB_HOST_MULTIARCH}/cmake/Qt6Qml/QmlPlugins/Qt6QmlMetaTargets.cmake
 usr/lib/${DEB_HOST_MULTIARCH}/cmake/Qt6Qml/QmlPlugins/Qt6effectspluginAdditionalTargetInfo.cmake
 usr/lib/${DEB_HOST_MULTIARCH}/cmake/Qt6Qml/QmlPlugins/Qt6effectspluginConfig.cmake
 usr/lib/${DEB_HOST_MULTIARCH}/cmake/Qt6Qml/QmlPlugins/Qt6effectspluginConfigVersion.cmake
