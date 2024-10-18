@@ -1,6 +1,6 @@
 # SymbolsHelper-Confirmed: 6.6.0 amd64
 libQt6QuickTemplates2.so.6 libqt6quicktemplates2-6 #MINVER#
-| libqt6quicktemplates2-6 #MINVER#, qt6-declarative-private-abi (= 6.6.1)
+| libqt6quicktemplates2-6 #MINVER#, qt6-declarative-private-abi (= 6.8.0)
 * Build-Depends-Packages: qt6-declarative-dev, qt6-declarative-private-dev
  Qt_6@Qt_6 6.6.0
  (symver)Qt_6_PRIVATE_API 0
