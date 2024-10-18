@@ -1,5 +1,5 @@
 // Copyright (C) 2016 The Qt Company Ltd.
-// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only WITH Qt-GPL-exception-1.0
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only
 #ifndef TESTTYPES_H
 #define TESTTYPES_H
 
@@ -33,8 +33,10 @@ struct ConstructibleValueType
 public:
     ConstructibleValueType() = default;
     Q_INVOKABLE ConstructibleValueType(int foo) : m_foo(foo) {}
+    Q_INVOKABLE ConstructibleValueType(double foo) : m_foo(foo * 4.0) {}
     Q_INVOKABLE ConstructibleValueType(QObject *) : m_foo(67) {}
     Q_INVOKABLE ConstructibleValueType(const QUrl &) : m_foo(68) {}
+    Q_INVOKABLE ConstructibleValueType(const QString &) : m_foo(69) {}
 
     int foo() const { return m_foo; }
 
@@ -309,7 +311,7 @@ public:
     {
         return m_aDate;
     }
-    void setADate(const QDate &newADate)
+    void setADate(QDate newADate)
     {
         if (m_aDate == newADate)
             return;
@@ -321,7 +323,7 @@ public:
     {
         return m_aTime;
     }
-    void setATime(const QTime &newATime)
+    void setATime(QTime newATime)
     {
         if (m_aTime == newATime)
             return;

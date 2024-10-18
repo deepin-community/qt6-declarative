@@ -17,7 +17,9 @@
 
 #include <private/qqmladaptormodelenginedata_p.h>
 #include <private/qqmldelegatemodel_p_p.h>
+
 #include <private/qobject_p.h>
+#include <QtCore/qpointer.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -25,8 +27,8 @@ class VDMObjectDelegateDataType;
 class QQmlDMObjectData : public QQmlDelegateModelItem, public QQmlAdaptorModelProxyInterface
 {
     Q_OBJECT
-    Q_PROPERTY(QObject *modelData READ modelData NOTIFY modelDataChanged FINAL)
-    QT_ANONYMOUS_PROPERTY(QObject * READ modelData NOTIFY modelDataChanged)
+    Q_PROPERTY(QObject *modelData READ modelData NOTIFY modelDataChanged)
+    QT_ANONYMOUS_PROPERTY(QObject * READ modelData NOTIFY modelDataChanged FINAL)
     Q_INTERFACES(QQmlAdaptorModelProxyInterface)
 public:
     QQmlDMObjectData(
@@ -53,7 +55,7 @@ Q_SIGNALS:
     void modelDataChanged();
 };
 
-class VDMObjectDelegateDataType
+class VDMObjectDelegateDataType final
     : public QQmlRefCounted<VDMObjectDelegateDataType>,
       public QQmlAdaptorModel::Accessors
 {

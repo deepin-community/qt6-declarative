@@ -15,16 +15,16 @@
 // We mean it.
 //
 #include "qquickparticleextruder_p.h"
-#include <private/qquickpixmapcache_p.h>
+#include <private/qquickpixmap_p.h>
 #include <QUrl>
 #include <QImage>
 
 QT_BEGIN_NAMESPACE
 
-class Q_QUICKPARTICLES_PRIVATE_EXPORT QQuickMaskExtruder : public QQuickParticleExtruder
+class Q_QUICKPARTICLES_EXPORT QQuickMaskExtruder : public QQuickParticleExtruder
 {
     Q_OBJECT
-    Q_PROPERTY(QUrl source READ source WRITE setSource NOTIFY sourceChanged FINAL)
+    Q_PROPERTY(QUrl source READ source WRITE setSource NOTIFY sourceChanged)
     QML_NAMED_ELEMENT(MaskShape)
     QML_ADDED_IN_VERSION(2, 0)
 public:

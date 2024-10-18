@@ -22,6 +22,9 @@ set(cpp_sources
     cpptypes/singletontype.h cpptypes/singletontype.cpp
     cpptypes/typewithnamespace.h cpptypes/typewithnamespace.cpp
     cpptypes/typewithsignal.h
+    cpptypes/custominitialization.h
+    cpptypes/typewithrequiredproperties.h
+    cpptypes/hpp.hpp
 )
 
 set(qml_sources
@@ -49,6 +52,10 @@ set(qml_sources
     qtbug103956/SubComponent.qml
     qtbug103956/MainComponent.qml
     qtbug103956/qtbug103956_main.qml
+
+    qtbug120700_main.qml
+
+    qtbug123476.qml
 
     signalHandlers.qml
     javaScriptFunctions.qml
@@ -109,7 +116,9 @@ set(qml_sources
     inlineComponentsFromDifferentFiles.qml
     singletons.qml
     mySignals.qml
+    stringToUrl.qml
     myCheckBox.qml
+    signalConnections.qml
 
     # support types:
     DefaultPropertySingleChild.qml
@@ -127,6 +136,10 @@ set(qml_sources
     NamespacedTypes.qml
 
     badFile.qml
+
+    requiredProperties.qml
+
+    hpp.qml
 )
 
 set(js_sources
@@ -141,6 +154,11 @@ set(common_libraries
     Qt::TestPrivate
     Qt::Gui # QColor, QMatrix4x4, ...
 )
+
+if (QT_FEATURE_qml_table_model)
+    list(APPEND qml_sources QmlTableModel.qml)
+    list(APPEND common_libraries Qt::LabsQmlModelsPrivate)
+endif()
 
 set_source_files_properties(NameConflict.qml PROPERTIES
     QT_QMLTC_FILE_BASENAME ResolvedNameConflict)

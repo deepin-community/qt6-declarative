@@ -1,6 +1,12 @@
 # Copyright (C) 2022 The Qt Company Ltd.
 # SPDX-License-Identifier: BSD-3-Clause
 
+if(NOT QT_BUILD_STANDALONE_TESTS AND NOT QT_BUILDING_QT)
+    cmake_minimum_required(VERSION 3.16)
+    project(tst_qmltc_qprocess LANGUAGES CXX)
+    find_package(Qt6BuildInternals REQUIRED COMPONENTS STANDALONE_TEST)
+endif()
+
 qt_internal_add_test(tst_qmltc_qprocess
     SOURCES
         tst_qmltc_qprocess.cpp
@@ -21,6 +27,7 @@ qt6_add_qml_module(tst_qmltc_qprocess
     URI QmltcQProcessTests
     SOURCES
         cpptypes/testtype.h
+        cpptypes/typewithrequiredproperty.h
     DEPENDENCIES
         QtQuick/auto
     QML_FILES
@@ -34,6 +41,13 @@ qt6_add_qml_module(tst_qmltc_qprocess
         data/singletonUncreatable.qml
         data/uncreatable.qml
         data/invalidSignalHandlers.qml
+        data/QmlBaseFromAnotherModule.qml
+        data/invalidTypeAnnotation.qml
+        data/constructFromString.qml
+        data/unboundRequiredPropertyInInlineComponent.qml
+        data/componentDefinitionInnerRequiredProperty.qml
+        data/componentDefinitionInnerRequiredPropertyFromOutside.qml
+        data/innerLevelRequiredProperty.qml
 )
 
 set(common_libraries

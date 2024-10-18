@@ -1,3 +1,9 @@
+qt6-declarative (6.8.0+dfsg-0deepin1) UNRELEASED; urgency=medium
+
+  * New upstream release (6.8.0).
+
+ -- Tianyu Chen <sweetyfish@deepin.org>  Fri, 18 Oct 2024 16:14:21 +0800
+
 qt6-declarative (6.6.1+dfsg-1deepin3) unstable; urgency=medium
 
   * Import patch from upstream:

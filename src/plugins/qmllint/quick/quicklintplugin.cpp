@@ -37,7 +37,7 @@ bool ForbiddenChildrenPropertyValidatorPass::shouldRun(const QQmlSA::Element &el
     if (!element.parentScope())
         return false;
 
-    for (const auto pair : m_types.asKeyValueRange()) {
+    for (const auto &pair : std::as_const(m_types).asKeyValueRange()) {
         if (element.parentScope().inherits(pair.first))
             return true;
     }
@@ -47,7 +47,7 @@ bool ForbiddenChildrenPropertyValidatorPass::shouldRun(const QQmlSA::Element &el
 
 void ForbiddenChildrenPropertyValidatorPass::run(const QQmlSA::Element &element)
 {
-    for (const auto elementPair : m_types.asKeyValueRange()) {
+    for (const auto &elementPair : std::as_const(m_types).asKeyValueRange()) {
         const QQmlSA::Element &type = elementPair.first;
         if (!element.parentScope().inherits(type))
             continue;
@@ -134,10 +134,15 @@ void AttachedPropertyTypeValidatorPass::onBinding(const QQmlSA::Element &element
                                                   const QQmlSA::Element &bindingScope,
                                                   const QQmlSA::Element &value)
 {
-    Q_UNUSED(element)
-    Q_UNUSED(propertyName)
-    Q_UNUSED(bindingScope)
     Q_UNUSED(value)
+
+    // We can only analyze simple attached bindings since we don't see
+    // the grouped and attached properties that lead up to this here.
+    //
+    // TODO: This is very crude.
+    //       We should add API for grouped and attached properties.
+    if (propertyName.count(QLatin1Char('.')) > 1)
+        return;
 
     checkWarnings(bindingScope.baseType(), element, binding.sourceLocation());
 }
@@ -429,7 +434,7 @@ VarBindingTypeValidatorPass::VarBindingTypeValidatorPass(
 {
     QMultiHash<QString, QQmlSA::Element> propertyTypes;
 
-    for (const auto pair : expectedPropertyTypes.asKeyValueRange()) {
+    for (const auto &pair : expectedPropertyTypes.asKeyValueRange()) {
         const QQmlSA::Element propType = pair.second.module.isEmpty()
                 ? resolveBuiltinType(pair.second.name)
                 : resolveType(pair.second.module, pair.second.name);
@@ -537,7 +542,7 @@ void AttachedPropertyReuse::onRead(const QQmlSA::Element &element, const QString
                                                            attachedLocation.startLine(),
                                                            attachedLocation.startColumn() };
             QQmlSA::FixSuggestion suggestion{ "Reference it by id instead:"_L1, idInsertLocation,
-                                              id.isEmpty() ? "<id>."_L1 : (id + '.'_L1) };
+                                              id.isEmpty() ? u"<id>."_s : (id + '.'_L1) };
 
             if (id.isEmpty())
                 suggestion.setHint("You first have to give the element an id"_L1);
@@ -547,6 +552,7 @@ void AttachedPropertyReuse::onRead(const QQmlSA::Element &element, const QString
             emitWarning("Using attached type %1 already initialized in a parent scope."_L1.arg(
                                 element.name()),
                         category, attachedLocation, suggestion);
+            return;
         }
 
         return;
@@ -670,10 +676,10 @@ void QmlLintQuickPlugin::registerPasses(QQmlSA::PassManager *manager,
                              { { "columnWidthProvider", { "", "function" } },
                                { "rowHeightProvider", { "", "function" } } });
         addAttachedWarning({ "QtQuick", "Accessible" }, { { "QtQuick", "Item" } },
-                           "Accessible must be attached to an Item");
+                           "Accessible must be attached to an Item or an Action");
         addAttachedWarning({ "QtQuick", "LayoutMirroring" },
                            { { "QtQuick", "Item" }, { "QtQuick", "Window" } },
-                           "LayoutDirection attached property only works with Items and Windows");
+                           "LayoutMirroring attached property only works with Items and Windows");
         addAttachedWarning({ "QtQuick", "EnterKey" }, { { "QtQuick", "Item" } },
                            "EnterKey attached property only works with Items");
     }
@@ -708,10 +714,6 @@ void QmlLintQuickPlugin::registerPasses(QQmlSA::PassManager *manager,
                            "Attached properties of SwipeDelegate must be accessed through an Item");
         addAttachedWarning({ "QtQuick.Templates", "SwipeView" }, { { "QtQuick", "Item" } },
                            "SwipeView must be attached to an Item");
-        addAttachedWarning(
-                { "QtQuick.Templates", "Tumbler" }, { { "QtQuick", "Tumbler" } },
-                "Tumbler: attached properties of Tumbler must be accessed through a delegate item",
-                true);
         addVarBindingWarning("QtQuick.Templates", "Tumbler",
                              { { "contentItem", { "QtQuick", "PathView" } },
                                { "contentItem", { "QtQuick", "ListView" } } });
@@ -750,11 +752,13 @@ void PropertyChangesValidatorPass::run(const QQmlSA::Element &element)
         return;
 
     QString targetId = u"<id>"_s;
-    const QString targetBinding = sourceCode(target.value().sourceLocation());
+    const auto targetLocation = target.value().sourceLocation();
+    const QString targetBinding = sourceCode(targetLocation);
     const QQmlSA::Element targetElement = resolveIdToElement(targetBinding, element);
     if (!targetElement.isNull())
         targetId = targetBinding;
 
+    bool hadCustomParsedBindings = false;
     for (auto it = bindings.constBegin(); it != bindings.constEnd(); ++it) {
         const auto &propertyName = it.key();
         const auto &propertyBinding = it.value();
@@ -773,10 +777,17 @@ void PropertyChangesValidatorPass::run(const QQmlSA::Element &element)
         if (binding.length() > 16)
             binding = binding.left(13) + "..."_L1;
 
+        hadCustomParsedBindings = true;
         emitWarning("Property \"%1\" is custom-parsed in PropertyChanges. "
                     "You should phrase this binding as \"%2.%1: %3\""_L1.arg(propertyName, targetId,
                                                                              binding),
                     quickPropertyChangesParsed, bindingLocation);
+    }
+
+    if (hadCustomParsedBindings && !targetElement.isNull()) {
+        emitWarning("You should remove any bindings on the \"target\" property and avoid "
+                    "custom-parsed bindings in PropertyChanges.",
+                    quickPropertyChangesParsed, targetLocation);
     }
 }
 

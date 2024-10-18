@@ -1,6 +1,7 @@
 // Copyright (C) 2017 Crimson AS <info@crimson.no>
 // Copyright (C) 2021 The Qt Company Ltd.
-// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only WITH Qt-GPL-exception-1.0
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only
+
 #include <QtTest/QtTest>
 #include <QtQml/qqmlcomponent.h>
 #include <QtQml/qqmlengine.h>
@@ -400,6 +401,7 @@ private slots:
     void sequenceConversionMethod();
     void proxyIteration();
     void proxyHandlerTraps();
+    void lookupsDoNotBypassProxy();
     void gcCrashRegressionTest();
     void cmpInThrows();
     void frozenQObject();
@@ -420,9 +422,12 @@ private slots:
 
     void doNotCrashOnReadOnlyBindable();
 
-    void resetGadet();
+    void resetGadget();
+    void assignListPropertyByIndexOnGadget();
 
     void methodCallOnDerivedSingleton();
+
+    void proxyMetaObject();
 
 private:
 //    static void propertyVarWeakRefCallback(v8::Persistent<v8::Value> object, void* parameter);
@@ -439,14 +444,6 @@ private:
                 || userType == QMetaType::Double;
     }
 };
-
-static void gc(QQmlEngine &engine)
-{
-    engine.collectGarbage();
-    QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
-    QCoreApplication::processEvents();
-}
-
 
 tst_qqmlecmascript::tst_qqmlecmascript()
     : QQmlDataTest(QT_QMLTEST_DATADIR)
@@ -921,7 +918,9 @@ void tst_qqmlecmascript::bindingLoop()
 {
     QQmlEngine engine;
     QQmlComponent component(&engine, testFileUrl("bindingLoop.qml"));
-    QString warning = component.url().toString() + ":9:9: QML MyQmlObject: Binding loop detected for property \"stringProperty\"";
+    const auto urlString = component.url().toString();
+    const QString warning = urlString + ":9:9: QML MyQmlObject: Binding loop detected for property \"stringProperty\":\n"
+        + urlString + ":11:13";
     QTest::ignoreMessage(QtWarningMsg, warning.toLatin1().constData());
     QScopedPointer<QObject> object(component.create());
     QVERIFY2(object, qPrintable(component.errorString()));
@@ -3858,6 +3857,82 @@ void tst_qqmlecmascript::scriptConnect()
         QScopedPointer<QObject> root { component.create() };
         QVERIFY2(root, qPrintable(component.errorString()));
     }
+
+    {
+        QQmlComponent component(&engine, testFileUrl("scriptConnect.8.qml"));
+
+        QScopedPointer<QObject> obj(component.create());
+        QVERIFY2(obj, qPrintable(component.errorString()));
+        QVERIFY(obj.data() != nullptr);
+
+        QCOMPARE(obj.data()->property("count"), 0);
+
+        QMetaObject::invokeMethod(obj.data(), "someSignal");
+        QCOMPARE(obj.data()->property("count"), 1);
+
+        QMetaObject::invokeMethod(obj.data(), "itemDestroy");
+        QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+        QCoreApplication::processEvents();
+
+        QMetaObject::invokeMethod(obj.data(), "someSignal");
+        QCOMPARE(obj.data()->property("count"), 1);
+    }
+
+    {
+        QQmlComponent component(&engine, testFileUrl("scriptConnect.9.qml"));
+
+        QScopedPointer<QObject> obj(component.create());
+        QVERIFY2(obj, qPrintable(component.errorString()));
+        QVERIFY(obj.data() != nullptr);
+
+        MyQmlObject *object = qobject_cast<MyQmlObject *>(obj.data());
+
+        QCOMPARE(object->property("a"), 0);
+
+        QMetaObject::invokeMethod(object, "someSignal");
+        QCOMPARE(object->property("a"), 1);
+
+        QMetaObject::invokeMethod(object, "destroyObj", Qt::DirectConnection);
+        QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+        QCoreApplication::processEvents();
+
+        QMetaObject::invokeMethod(object, "someSignal");
+
+        QCOMPARE(object->property("a"), 1);
+    }
+
+    {
+        QQmlComponent component(&engine, testFileUrl("scriptConnectSingleton.qml"));
+
+        QScopedPointer<QObject> obj(component.create());
+        QVERIFY2(obj, qPrintable(component.errorString()));
+        QVERIFY(obj.data() != nullptr);
+
+        QMetaObject::invokeMethod(obj.data(), "mySignal", Qt::DirectConnection);
+        QCOMPARE(obj.data()->property("a").toInt(), 1);
+        engine.clearSingletons();
+        QMetaObject::invokeMethod(obj.data(), "mySignal", Qt::DirectConnection);
+        QCOMPARE(obj.data()->property("a").toInt(), 1);
+    }
+
+    {
+        QQmlComponent component(&engine, testFileUrl("scriptConnect.deletion.qml"));
+
+        QScopedPointer<QObject> obj(component.create());
+        QVERIFY2(obj, qPrintable(component.errorString()));
+        QVERIFY(!obj.isNull());
+
+        QCOMPARE(obj->property("a"), 0);
+
+        QMetaObject::invokeMethod(obj.data(), "someSignal");
+        QCOMPARE(obj->property("a"), 1);
+
+        QCOMPARE(obj->property("b"), 0);
+        QMetaObject::invokeMethod(obj.data(), "destroyObj", Qt::DirectConnection);
+
+        QTRY_COMPARE(obj->property("b"), 1);
+        QCOMPARE(obj->property("a"), 1);
+    }
 }
 
 void tst_qqmlecmascript::scriptDisconnect()
@@ -3938,6 +4013,60 @@ void tst_qqmlecmascript::scriptDisconnect()
         emit object->argumentSignal(19, "Hello world!", 10.25, MyQmlObject::EnumValue4, Qt::RightButton);
         QCOMPARE(object->property("test").toInt(), 3);
     }
+
+    {
+        QQmlComponent component(&engine, testFileUrl("scriptDisconnect.5.qml"));
+
+        QScopedPointer<QObject> obj(component.create());
+        QVERIFY2(obj, qPrintable(component.errorString()));
+        QVERIFY(obj.data() != nullptr);
+
+        QCOMPARE(obj.data()->property("count"), 0);
+
+        QMetaObject::invokeMethod(obj.data(), "someSignal");
+        QCOMPARE(obj.data()->property("count"), 1);
+
+        QMetaObject::invokeMethod(obj.data(), "disconnectSignal");
+
+        QMetaObject::invokeMethod(obj.data(), "someSignal");
+        QCOMPARE(obj.data()->property("count"), 1);
+    }
+
+    {
+        QQmlComponent component(&engine, testFileUrl("scriptConnect.9.qml"));
+
+        QScopedPointer<QObject> obj(component.create());
+        QVERIFY2(obj, qPrintable(component.errorString()));
+        QVERIFY(obj.data() != nullptr);
+
+        MyQmlObject *object = qobject_cast<MyQmlObject *>(obj.data());
+
+        QCOMPARE(object->property("a"), 0);
+
+        QMetaObject::invokeMethod(object, "someSignal");
+        QCOMPARE(object->property("a"), 1);
+
+        QMetaObject::invokeMethod(object, "disconnectSignal", Qt::DirectConnection);
+
+        QMetaObject::invokeMethod(object, "someSignal");
+
+        QCOMPARE(object->property("a"), 1);
+    }
+
+    {
+        QQmlComponent component(&engine, testFileUrl("scriptConnectSingleton.qml"));
+
+        QScopedPointer<QObject> obj(component.create());
+        QVERIFY2(obj, qPrintable(component.errorString()));
+        QVERIFY(obj.data() != nullptr);
+
+        QMetaObject::invokeMethod(obj.data(), "mySignal", Qt::DirectConnection);
+        QCOMPARE(obj.data()->property("a").toInt(), 1);
+
+        QMetaObject::invokeMethod(obj.data(), "disconnectSingleton", Qt::DirectConnection);
+        QMetaObject::invokeMethod(obj.data(), "mySignal", Qt::DirectConnection);
+        QCOMPARE(obj.data()->property("a").toInt(), 1);
+    }
 }
 
 class OwnershipObject : public QObject
@@ -3966,10 +4095,7 @@ void tst_qqmlecmascript::ownership()
 
         QScopedPointer<QObject> object(component.create(context.data()));
 
-        engine.collectGarbage();
-
-        QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
-        QCoreApplication::processEvents();
+        gc(engine);
 
         QVERIFY(own.object.isNull());
     }
@@ -3983,10 +4109,7 @@ void tst_qqmlecmascript::ownership()
 
         QScopedPointer<QObject> object(component.create(context.data()));
 
-        engine.collectGarbage();
-
-        QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
-        QCoreApplication::processEvents();
+        gc(engine);
 
         QVERIFY(own.object != nullptr);
     }
@@ -4062,9 +4185,7 @@ void tst_qqmlecmascript::ownershipCustomReturnValue()
     QVERIFY(source.value != nullptr);
     }
 
-    engine.collectGarbage();
-    QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
-    QCoreApplication::processEvents();
+    gc(engine);
 
     QVERIFY(source.value.isNull());
 }
@@ -4095,10 +4216,7 @@ void tst_qqmlecmascript::ownershipRootObject()
     QScopedPointer<QObject> object(component.create(context.data()));
     QVERIFY2(object, qPrintable(component.errorString()));
 
-    engine.collectGarbage();
-
-    QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
-    QCoreApplication::processEvents();
+    gc(engine);
 
     QVERIFY(own.object != nullptr);
 }
@@ -4123,10 +4241,7 @@ void tst_qqmlecmascript::ownershipConsistency()
     QScopedPointer<QObject> object(component.create(context.data()));
     QVERIFY2(object, qPrintable(component.errorString()));
 
-    engine.collectGarbage();
-
-    QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
-    QCoreApplication::processEvents();
+    gc(engine);
 
     QVERIFY(own.object != nullptr);
 }
@@ -4656,6 +4771,7 @@ void tst_qqmlecmascript::verifyContextLifetime(const QQmlRefPointer<QQmlContextD
             }
 
             ctxt->engine()->collectGarbage();
+            QTRY_VERIFY(gcDone(ctxt->engine()));
             qml = scripts->get(i);
             newContext = qml ? qml->getContext() : nullptr;
             QCOMPARE(scriptContext.data(), newContext.data());
@@ -5300,6 +5416,7 @@ void tst_qqmlecmascript::propertyChangeSlots()
     QQmlComponent component(&engine, testFileUrl("changeslots/propertyChangeSlots.qml"));
     QScopedPointer<QObject> object(component.create());
     QVERIFY2(object, qPrintable(component.errorString()));
+    QCOMPARE(object->property("changeCount"), 15);
 
     // ensure that invalid property names fail properly.
     QTest::ignoreMessage(QtWarningMsg, "QQmlComponent: Component is not ready");
@@ -5314,20 +5431,6 @@ void tst_qqmlecmascript::propertyChangeSlots()
     expectedErrorString = e2.url().toString() + QLatin1String(":9:5: Cannot assign to non-existent property \"on____nameWithUnderscoresChanged\"");
     QCOMPARE(e2.errors().at(0).toString(), expectedErrorString);
     object.reset(e2.create());
-    QVERIFY(!object);
-
-    QTest::ignoreMessage(QtWarningMsg, "QQmlComponent: Component is not ready");
-    QQmlComponent e3(&engine, testFileUrl("changeslots/propertyChangeSlotErrors.3.qml"));
-    expectedErrorString = e3.url().toString() + QLatin1String(":9:5: Cannot assign to non-existent property \"on$NameWithDollarsignChanged\"");
-    QCOMPARE(e3.errors().at(0).toString(), expectedErrorString);
-    object.reset(e3.create());
-    QVERIFY(!object);
-
-    QTest::ignoreMessage(QtWarningMsg, "QQmlComponent: Component is not ready");
-    QQmlComponent e4(&engine, testFileUrl("changeslots/propertyChangeSlotErrors.4.qml"));
-    expectedErrorString = e4.url().toString() + QLatin1String(":9:5: Cannot assign to non-existent property \"on_6NameWithUnderscoreNumberChanged\"");
-    QCOMPARE(e4.errors().at(0).toString(), expectedErrorString);
-    object.reset(e4.create());
     QVERIFY(!object);
 }
 
@@ -5496,7 +5599,9 @@ void tst_qqmlecmascript::propertyVarOwnership()
     QScopedPointer<QObject> object(component.create());
     QVERIFY2(object, qPrintable(component.errorString()));
     QMetaObject::invokeMethod(object.data(), "createComponent");
-    engine.collectGarbage();
+    // This test only works if we don't deliver the pending delete later event
+    // that collectGarbage will post before calling runTest
+    gc(engine, GCFlags::DontSendPostedEvents);
     QMetaObject::invokeMethod(object.data(), "runTest");
     QCOMPARE(object->property("test").toBool(), true);
     }
@@ -5512,8 +5617,7 @@ void tst_qqmlecmascript::propertyVarImplicitOwnership()
     QScopedPointer<QObject> object(component.create());
     QVERIFY2(object, qPrintable(component.errorString()));
     QMetaObject::invokeMethod(object.data(), "assignCircular");
-    QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete); // process deleteLater() events from QV8QObjectWrapper.
-    QCoreApplication::processEvents();
+    gc(engine);
     QObject *rootObject = object->property("vp").value<QObject*>();
     QVERIFY(rootObject != nullptr);
     QObject *childObject = rootObject->findChild<QObject*>("text");
@@ -5522,6 +5626,8 @@ void tst_qqmlecmascript::propertyVarImplicitOwnership()
     QCOMPARE(childObject->property("textCanary").toInt(), 10);
     // Creates a reference to a constructed QObject:
     QMetaObject::invokeMethod(childObject, "constructQObject");
+    // Don't send delete later events yet, we do it manually later
+    gc(engine, GCFlags::DontSendPostedEvents);
     QPointer<QObject> qobjectGuard(childObject->property("vp").value<QObject*>()); // get the pointer prior to processing deleteLater events.
     QVERIFY(!qobjectGuard.isNull());
     QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete); // process deleteLater() events from QV8QObjectWrapper.
@@ -5540,8 +5646,7 @@ void tst_qqmlecmascript::propertyVarReparent()
     QScopedPointer<QObject> object(component.create());
     QVERIFY2(object, qPrintable(component.errorString()));
     QMetaObject::invokeMethod(object.data(), "assignVarProp");
-    QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete); // process deleteLater() events from QV8QObjectWrapper.
-    QCoreApplication::processEvents();
+    gc(engine);
     QObject *rect = object->property("vp").value<QObject*>();
     QObject *text = rect->findChild<QObject*>("textOne");
     QObject *text2 = rect->findChild<QObject*>("textTwo");
@@ -5555,6 +5660,7 @@ void tst_qqmlecmascript::propertyVarReparent()
     QCOMPARE(text2->property("textCanary").toInt(), 12);
     // now construct an image which we will reparent.
     QMetaObject::invokeMethod(text2, "constructQObject");
+    gc(engine, GCFlags::DontSendPostedEvents);
     QObject *image = text2->property("vp").value<QObject*>();
     QPointer<QObject> imageGuard(image);
     QVERIFY(!imageGuard.isNull());
@@ -5582,8 +5688,7 @@ void tst_qqmlecmascript::propertyVarReparentNullContext()
     QScopedPointer<QObject> object(component.create());
     QVERIFY2(object, qPrintable(component.errorString()));
     QMetaObject::invokeMethod(object.data(), "assignVarProp");
-    QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete); // process deleteLater() events from QV8QObjectWrapper.
-    QCoreApplication::processEvents();
+    gc(engine);
     QObject *rect = object->property("vp").value<QObject*>();
     QObject *text = rect->findChild<QObject*>("textOne");
     QObject *text2 = rect->findChild<QObject*>("textTwo");
@@ -5597,6 +5702,7 @@ void tst_qqmlecmascript::propertyVarReparentNullContext()
     QCOMPARE(text2->property("textCanary").toInt(), 12);
     // now construct an image which we will reparent.
     QMetaObject::invokeMethod(text2, "constructQObject");
+    gc(engine);
     QObject *image = text2->property("vp").value<QObject*>();
     QPointer<QObject> imageGuard(image);
     QVERIFY(!imageGuard.isNull());
@@ -5823,9 +5929,7 @@ void tst_qqmlecmascript::handleReferenceManagement()
         gc(hrmEngine);
         QCOMPARE(dtorCount, 0); // second has JS ownership, kept alive by first's reference
         object.reset();
-        hrmEngine.collectGarbage();
-        QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
-        QCoreApplication::processEvents();
+        gc(hrmEngine);
         QCOMPARE(dtorCount, 3);
     }
 
@@ -5842,9 +5946,7 @@ void tst_qqmlecmascript::handleReferenceManagement()
         gc(hrmEngine);
         QCOMPARE(dtorCount, 2); // both should be cleaned up, since circular references shouldn't keep alive.
         object.reset();
-        hrmEngine.collectGarbage();
-        QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
-        QCoreApplication::processEvents();
+        gc(hrmEngine);
         QCOMPARE(dtorCount, 3);
     }
 
@@ -6142,9 +6244,8 @@ void tst_qqmlecmascript::sequenceConversionBindings()
     }
 
     {
+        // This is not an error anymore. Lists are converted element-by-element now.
         QUrl qmlFile = testFileUrl("sequenceConversion.bindings.error.qml");
-        QString warning = QString(QLatin1String("%1:17:9: Unable to assign QList<int> to QList<bool>")).arg(qmlFile.toString());
-        QTest::ignoreMessage(QtWarningMsg, warning.toLatin1().constData());
         QQmlComponent component(&engine, qmlFile);
         QScopedPointer<QObject> object(component.create());
         QVERIFY2(object, qPrintable(component.errorString()));
@@ -8023,12 +8124,9 @@ void tst_qqmlecmascript::onDestructionViaGC()
         v4->memoryManager->allocate<QV4::WeakReferenceSentinel>(weakRef.data(), &sentinelResult);
     }
     gc(engine);
-
+    QVERIFY2(weakRef->isNullOrUndefined(), "The weak value was not cleared");
     QVERIFY2(mutatorResult, "We failed to re-assign the weak reference a new value during GC");
-    QVERIFY2(!sentinelResult, "The weak value was cleared on first GC run");
-    QVERIFY2(!weakRef->isNullOrUndefined(), "The weak value was cleared on first GC run");
-    gc(engine);
-    QVERIFY2(weakRef->isNullOrUndefined(), "The weak value was not cleared on second gc run");
+    QVERIFY2(sentinelResult, "The weak reference was not cleared properly");
 }
 
 struct EventProcessor : public QObject
@@ -8121,7 +8219,9 @@ void tst_qqmlecmascript::qqmldataDestroyed()
         QVERIFY2(object, qPrintable(c.errorString()));
         // now gc causing the collection of the dynamically constructed object.
         engine.collectGarbage();
+        QTRY_VERIFY(gcDone(&engine));
         engine.collectGarbage();
+        QTRY_VERIFY(gcDone(&engine));
         // now process events to allow deletion (calling qqmldata::destroyed())
         QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
         QCoreApplication::processEvents();
@@ -10056,6 +10156,17 @@ void tst_qqmlecmascript::proxyHandlerTraps()
     QVERIFY(value.isString() && value.toString() == QStringLiteral("SUCCESS"));
 }
 
+void tst_qqmlecmascript::lookupsDoNotBypassProxy()
+{
+    QQmlEngine engine;
+    // we need a component to have a proper compilation to byte code;
+    // otherwise, we don't actually end up with lookups
+    QQmlComponent comp(&engine, testFileUrl("lookupsDoNotBypassProxy.qml"));
+    QVERIFY(comp.isReady());
+    std::unique_ptr<QObject> obj { comp.create() };
+    QCOMPARE(obj->property("result").toInt(), 3);
+}
+
 void tst_qqmlecmascript::cmpInThrows()
 {
     QJSEngine engine;
@@ -10466,7 +10577,7 @@ void tst_qqmlecmascript::doNotCrashOnReadOnlyBindable()
     QCOMPARE(o->property("x").toInt(), 7);
 }
 
-void tst_qqmlecmascript::resetGadet()
+void tst_qqmlecmascript::resetGadget()
 {
     QQmlEngine engine;
     QQmlComponent c(&engine, testFileUrl("resetGadget.qml"));
@@ -10480,6 +10591,31 @@ void tst_qqmlecmascript::resetGadet()
     QCOMPARE(resettableGadgetHolder->g().value(), 42);
 }
 
+void tst_qqmlecmascript::assignListPropertyByIndexOnGadget()
+{
+    QQmlEngine engine;
+    QQmlComponent c(&engine, testFile("AssignListPropertyByIndexOnGadget.qml"));
+    QVERIFY2(c.isReady(), qPrintable(c.errorString()));
+    QScopedPointer<QObject> o(c.create());
+    QVERIFY(o);
+
+    const auto &gadget = o->property("gadget").value<ListPropertyAssignment_Gadget>();
+    const auto *object = o->property("object").value<ListPropertyAssignment_Object *>();
+    QVERIFY(object);
+
+    QStringList expected{ "Completely new Element", "Element2", "Element3" };
+    QVariantList variants {
+        u"Completely new Element"_s,
+        u"foo"_s,
+        QVariant::fromValue<std::nullptr_t>(nullptr),
+        QVariant::fromValue<bool>(true)
+    };
+
+    QCOMPARE(gadget.gadgetStringList(), expected);
+    QCOMPARE(gadget.gadgetVariantList(), variants);
+    QCOMPARE(object->qobjectStringList(), expected);
+}
+
 void tst_qqmlecmascript::methodCallOnDerivedSingleton()
 {
     QQmlEngine engine;
@@ -10490,6 +10626,29 @@ void tst_qqmlecmascript::methodCallOnDerivedSingleton()
     auto singleton = engine.singletonInstance<SingletonBase *>("Qt.test", "SingletonInheritanceTest");
     QVERIFY(singleton);
     QVERIFY(singleton->m_okay);
+}
+
+void tst_qqmlecmascript::proxyMetaObject()
+{
+    // Verify that TypeWithCustomMetaObject, that extends another type,
+    // thereby triggering a QQmlProxyMetaObject, is still proxied the
+    // QDynamicMetaObjectData::objectDestroyed callback.
+
+    QQmlEngine engine;
+    QQmlComponent component(&engine);
+    component.setData(R"(
+        import QtQuick
+        import QtQml
+        import Qt.test
+        Rectangle {
+            TypeWithCustomMetaObject {}
+        }
+    )", QUrl("testData"));
+    QScopedPointer<QObject> o(component.create());
+    QVERIFY(o);
+    QVERIFY(!MetaCallInterceptor::didGetObjectDestroyedCallback);
+    o.reset(nullptr);
+    QVERIFY(MetaCallInterceptor::didGetObjectDestroyedCallback);
 }
 
 QTEST_MAIN(tst_qqmlecmascript)

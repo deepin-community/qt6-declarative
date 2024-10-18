@@ -6,7 +6,7 @@
 if (NOT QT_BUILD_STANDALONE_TESTS AND NOT QT_BUILDING_QT)
     cmake_minimum_required(VERSION 3.16)
     project(tst_qquickmaterialstyle LANGUAGES C CXX ASM)
-    find_package(Qt6BuildInternals COMPONENTS STANDALONE_TEST)
+    find_package(Qt6BuildInternals REQUIRED COMPONENTS STANDALONE_TEST)
 endif()
 
 #####################################################################
@@ -26,6 +26,9 @@ qt_internal_add_test(tst_qquickmaterialstyle
         tst_qquickmaterialstyle.cpp
     LIBRARIES
         Qt::Gui
+        Qt::GuiPrivate
+        Qt::QuickControls2MaterialPrivate
+        Qt::QmlPrivate
     TESTDATA ${test_data}
 )
 
@@ -41,7 +44,8 @@ qt_internal_add_resource(tst_qquickmaterialstyle "qmake_immediate"
         ${qmake_immediate_resource_files}
 )
 
-
-#### Keys ignored in scope 1:.:.:qquickmaterialstyle.pro:<TRUE>:
-# OTHER_FILES = "$$PWD/data/*.qml"
-# TEMPLATE = "app"
+# Make the QML files available to Creator's locator.
+target_sources(tst_qquickmaterialstyle
+    PRIVATE
+        ${test_data}
+)

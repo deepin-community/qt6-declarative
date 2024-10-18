@@ -43,6 +43,18 @@ qt_internal_add_qml_module(QuickParticlesPrivate
         qquickv4particledata.cpp qquickv4particledata_p.h
         qquickwander.cpp qquickwander_p.h
         qtquickparticlesglobal_p.h
+    NO_PCH_SOURCES
+        # these undef QT_NO_FOREACH
+        qquickcumulativedirection.cpp
+        qquickimageparticle.cpp
+        qquickitemparticle.cpp
+        qquickparticleaffector.cpp
+        qquickparticleemitter.cpp
+        qquickparticlegroup.cpp
+        qquickparticlepainter.cpp
+        qquicktrailemitter.cpp
+        qquickturbulence.cpp
+        # end undef QT_NO_FOREACH
     DEFINES
         QT_NO_INTEGER_EVENT_COORDINATES
         QT_NO_URL_CAST_FROM_STRING
@@ -51,9 +63,7 @@ qt_internal_add_qml_module(QuickParticlesPrivate
         Qt::GuiPrivate
         Qt::QmlPrivate
         Qt::QuickPrivate
-    GENERATE_CPP_EXPORTS
-    GENERATE_PRIVATE_CPP_EXPORTS
-)
+    )
 
 # Resources:
 set(particles_resource_files
@@ -75,6 +85,7 @@ qt_internal_add_shaders(QuickParticlesPrivate "particles_shaders1"
     BATCHABLE
     PRECOMPILE
     OPTIMIZED
+    MULTIVIEW
     GLSL
         "150,120,100es,300es"
     PREFIX
@@ -94,6 +105,7 @@ qt_internal_add_shaders(QuickParticlesPrivate "particles_shaders2"
     BATCHABLE
     PRECOMPILE
     OPTIMIZED
+    MULTIVIEW
     GLSL
         "150,120,100es,300es"
     PREFIX
@@ -114,6 +126,7 @@ qt_internal_add_shaders(QuickParticlesPrivate "particles_shaders3"
     BATCHABLE
     PRECOMPILE
     OPTIMIZED
+    MULTIVIEW
     GLSL
         "150,120,100es,300es"
     PREFIX
@@ -153,6 +166,7 @@ qt_internal_add_shaders(QuickParticlesPrivate "particles_shaders5"
     BATCHABLE
     PRECOMPILE
     OPTIMIZED
+    MULTIVIEW
     GLSL
         "150,120,100es,300es"
     PREFIX
@@ -174,6 +188,7 @@ qt_internal_add_shaders(QuickParticlesPrivate "particles_shaders6"
     BATCHABLE
     PRECOMPILE
     OPTIMIZED
+    MULTIVIEW
     GLSL
         "150,120,100es,300es"
     PREFIX

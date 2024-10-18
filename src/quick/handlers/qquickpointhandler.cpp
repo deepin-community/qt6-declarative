@@ -3,13 +3,15 @@
 
 #include "qquickpointhandler_p.h"
 #include <private/qquickwindow_p.h>
+
 #include <QDebug>
+#include <QtCore/qpointer.h>
 
 QT_BEGIN_NAMESPACE
 
 /*!
     \qmltype PointHandler
-    \instantiates QQuickPointHandler
+    \nativetype QQuickPointHandler
     \inherits SinglePointHandler
     \inqmlmodule QtQuick
     \ingroup qtquick-input-handlers

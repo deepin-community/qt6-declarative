@@ -1,5 +1,5 @@
 // Copyright (C) 2021 The Qt Company Ltd.
-// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only WITH Qt-GPL-exception-1.0
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only
 
 #include "tst_qmltc.h"
 
@@ -21,6 +21,7 @@
 #include "qjsvalueassignments.h"
 #include "extensiontypebindings.h"
 #include "qtbug103956_main.h"
+#include "qtbug120700_main.h"
 #include "nonstandardinclude.h"
 #include "specialproperties.h"
 #include "regexpbindings.h"
@@ -79,12 +80,19 @@
 #include "aliases.h"
 #include "inlinecomponentsfromdifferentfiles.h"
 #include "helloexportedworld.h"
+#include "helloexportedworldnofilename.h"
 
 #include "testprivateproperty.h"
 #include "singletons.h"
 #include "mysignals.h"
 #include "namespacedtypes.h"
 #include "type.h"
+#include "qmltablemodel.h"
+#include "stringtourl.h"
+#include "signalconnections.h"
+#include "requiredproperties.h"
+
+#include "hpp.h"
 
 // Qt:
 #include <QtCore/qstring.h>
@@ -155,6 +163,8 @@ void tst_qmltc::initTestCase()
         QUrl("qrc:/qt/qml/QmltcTests/qtbug103956/MainComponent.qml"),
         QUrl("qrc:/qt/qml/QmltcTests/qtbug103956/qtbug103956_main.qml"),
 
+        QUrl("qrc:/qt/qml/QmltcTests/qtbug120700_main.qml"),
+
         QUrl("qrc:/qt/qml/QmltcTests/signalHandlers.qml"),
         QUrl("qrc:/qt/qml/QmltcTests/javaScriptFunctions.qml"),
         QUrl("qrc:/qt/qml/QmltcTests/changingBindings.qml"),
@@ -195,6 +205,7 @@ void tst_qmltc::initTestCase()
         QUrl("qrc:/qt/qml/QmltcTests/calqlatrBits.qml"),
         QUrl("qrc:/qt/qml/QmltcTests/valueTypeListProperty.qml"),
         QUrl("qrc:/qt/qml/QmltcTests/appendToQQmlListProperty.qml"),
+        QUrl("qrc:/qt/qml/QmltcTests/requiredProperties.qml"),
     };
 
     QQmlEngine e;
@@ -377,7 +388,14 @@ void tst_qmltc::properties()
     QCOMPARE(created.intP(), 42);
     QCOMPARE(created.realP(), 2.32);
     QCOMPARE(created.stringP(), u"hello, world"_s);
-    QCOMPARE(created.urlP(), u"https://www.qt.io/"_s);
+    QCOMPARE(created.urlP(), QUrl(u"https://www.qt.io/"_s));
+    QCOMPARE(created.pointP(), QPoint(100, 200));
+    QCOMPARE(created.quatP(), QQuaternion(400, 100, 200, 300));
+    QCOMPARE(created.rectP(), QRectF(100, 200, 300, 400));
+    QCOMPARE(created.sizeP(), QSizeF(100, 200));
+    QCOMPARE(created.vec2dP(), QVector2D(100, 200));
+    QCOMPARE(created.vec3dP(), QVector3D(100, 200, 300));
+    QCOMPARE(created.vec4dP(), QVector4D(100, 200, 300, 400));
     QCOMPARE(created.varP(), 42.42);
 
     QCOMPARE(created.boolP(), true);
@@ -821,6 +839,103 @@ void tst_qmltc::visibleAliasMethods()
     QCOMPARE(created.firstComponent()->setMe(), true);
 }
 
+// QTBUG-120700
+void tst_qmltc::customInitialization()
+{
+    int valueToTest = 10;
+
+    QQuickItem firstItem;
+    QQuickItem secondItem;
+
+    QQmlEngine e;
+    PREPEND_NAMESPACE(qtbug120700_main)
+    created(&e, {valueToTest} ,nullptr, [valueToTest, &firstItem, &secondItem](auto& component) {
+        component.setSomeComplexValueThatWillBeSet(valueToTest);
+        component.setPropertyFromExtension(static_cast<double>(valueToTest));
+        component.setDefaultedBindable(static_cast<double>(valueToTest));
+        component.setValueTypeList({1, 2, 3, 4});
+        component.setObjectTypeList({&firstItem, &secondItem});
+        component.setExtensionObjectList({&firstItem, &secondItem});
+        component.setCppObjectList({&firstItem, &secondItem});
+    });
+
+    // QTBUG-114403: onValueChanged should have not been triggered
+    // when setting the initial value for the property.
+    // If this is true then the handler was called.
+    QCOMPARE(created.wasSomeValueChanged(), false);
+
+    // someComplexValueThatWillBeSet is set through a binding in the
+    // QML code, but is initialized when the instance is created.
+    // The bindings, which is generally set after the custom
+    // initialization was perfomed, should not overwrite the initial
+    // value that the user provided.
+    // On the other side, someComplexValueThatWillNotBeSet should
+    // still respect the original binding as an initial value for it
+    // was not provided.
+    QCOMPARE(created.someComplexValueThatWillBeSet(), valueToTest);
+    QCOMPARE(created.someComplexValueThatWillNotBeSet(), 5);
+
+    QCOMPARE(created.someValue(), valueToTest);
+    QCOMPARE(created.someValueAlias(), valueToTest);
+    QCOMPARE(created.someValueBinding(), valueToTest + 1);
+    QCOMPARE(created.property("propertyFromExtension").toDouble(), static_cast<double>(valueToTest));
+    QCOMPARE(created.bindableDefaultedBindable().value(), static_cast<double>(valueToTest));
+    QCOMPARE(created.valueTypeList(), QList({1, 2, 3, 4}));
+    QCOMPARE(created.objectTypeList().toList<QList<QQuickItem*>>(), QList({&firstItem, &secondItem}));
+    QCOMPARE(
+        created.property("extensionObjectList").value<QQmlListProperty<QQuickItem>>().toList<QList<QQuickItem*>>(),
+        QList({&firstItem, &secondItem})
+    );
+    QCOMPARE(created.getCppObjectList().toList<QList<QQuickItem*>>(), QList({&firstItem, &secondItem}));
+}
+
+void tst_qmltc::requiredPropertiesInitialization()
+{
+    QQuickItem item{};
+
+    int aliasToInnerThatWillBeMarkedRequired = 10;
+    int aliasToPropertyThatShadows = 42;
+    int aliasToRequiredInner = 11;
+    QQuickItem inheritedRequiredProperty{};
+    int nonRequiredInheritedPropertyThatWillBeMarkedRequired = 12;
+    QList<QQuickItem*> objectList{&item};
+    int primitiveType = 13;
+    int propertyThatWillBeMarkedRequired = 14;
+    int requiredAliasToUnrequiredProperty = 15;
+    double requiredPropertyFromExtension = 16.0;
+    QList<int> valueList{1, 2, 3, 4};
+
+    QQmlEngine e;
+    PREPEND_NAMESPACE(requiredProperties) created(
+        &e,
+        {
+            aliasToInnerThatWillBeMarkedRequired,
+            aliasToPropertyThatShadows,
+            aliasToRequiredInner,
+            &inheritedRequiredProperty,
+            nonRequiredInheritedPropertyThatWillBeMarkedRequired,
+            objectList,
+            primitiveType,
+            propertyThatWillBeMarkedRequired,
+            requiredAliasToUnrequiredProperty,
+            requiredPropertyFromExtension,
+            valueList
+        }
+    );
+
+    QCOMPARE(created.aliasToInnerThatWillBeMarkedRequired(), aliasToInnerThatWillBeMarkedRequired);
+    QCOMPARE(created.aliasToPropertyThatShadows(), aliasToPropertyThatShadows);
+    QCOMPARE(created.aliasToRequiredInner(), aliasToRequiredInner);
+    QCOMPARE(created.getInheritedRequiredProperty(), &inheritedRequiredProperty);
+    QCOMPARE(created.getNonRequiredInheritedPropertyThatWillBeMarkedRequired(), nonRequiredInheritedPropertyThatWillBeMarkedRequired);
+    QCOMPARE(created.objectList().toList<QList<QQuickItem*>>(), objectList);
+    QCOMPARE(created.primitiveType(), primitiveType);
+    QCOMPARE(created.propertyThatWillBeMarkedRequired(), propertyThatWillBeMarkedRequired);
+    QCOMPARE(created.requiredAliasToUnrequiredProperty(), requiredAliasToUnrequiredProperty);
+    QCOMPARE(created.property("requiredPropertyFromExtension").toDouble(), requiredPropertyFromExtension);
+    QCOMPARE(created.valueList(), valueList);
+}
+
 // QTBUG-104094
 void tst_qmltc::nonStandardIncludesInsideModule()
 {
@@ -1067,7 +1182,7 @@ void tst_qmltc::propertyAlias_external()
 void tst_qmltc::propertyAliasAttribute()
 {
     QQmlEngine e;
-    PREPEND_NAMESPACE(propertyAliasAttributes) fromQmltc(&e);
+    PREPEND_NAMESPACE(propertyAliasAttributes) fromQmltc(&e, {""});
 
     QQmlComponent c(&e);
     c.loadUrl(QUrl("qrc:/qt/qml/QmltcTests/propertyAliasAttributes.qml"));
@@ -3223,6 +3338,71 @@ void tst_qmltc::checkExportsAreCompiling()
     QQmlEngine e;
     QmltcExportedTests::HelloExportedWorld w(&e);
     QCOMPARE(w.myString(), u"Hello! I should be exported by qmltc"_s);
+}
+
+void tst_qmltc::checkExportsNoFileName()
+{
+    QQmlEngine e;
+    QmltcExportedNoFileNameTest::HelloExportedWorldNoFileName w(&e);
+    QCOMPARE(w.myString(), u"Hello! I should be exported by qmltc"_s);
+}
+
+#if QT_CONFIG(qml_table_model)
+void tst_qmltc::qmlTableModel()
+{
+    QQmlEngine e;
+    PREPEND_NAMESPACE(QmlTableModel) createdByQmltc(&e);
+    // check that the tableModel is not default constructed
+    QVariant model = createdByQmltc.model();
+    QVERIFY(model.isValid());
+    QQmlTableModel *tableModel = model.value<QQmlTableModel *>();
+    QVERIFY(tableModel);
+    QCOMPARE(tableModel->property("testName").toString(), u"MyTableModel"_s);
+}
+#endif
+
+void tst_qmltc::urlToString()
+{
+    QQmlEngine e;
+    PREPEND_NAMESPACE(stringToUrl) createdByQmltc(&e);
+    // check that the tableModel is not default constructed
+    QUrl first = createdByQmltc.iconLoader()->source();
+    QUrl second = createdByQmltc.iconLoader2()->source();
+    QCOMPARE(first, QUrl("qrc:/qt/qml/path/to/font.ttf"));
+    QCOMPARE(second, QUrl("qrc:/qt/qml/path/to/font2.ttf"));
+}
+
+void tst_qmltc::signalConnections()
+{
+    QQmlEngine e;
+    PREPEND_NAMESPACE(signalConnections) createdByQmltc(&e);
+
+    QVERIFY(createdByQmltc.objectName().isEmpty());
+    createdByQmltc.setCycleFirst(true);
+    QTRY_VERIFY(!createdByQmltc.cycleFirst());
+    QCOMPARE(createdByQmltc.objectName(), QLatin1String("first"));
+
+    createdByQmltc.setObjectName(QLatin1String("none"));
+    createdByQmltc.setCycleEnabled(true);
+    QTRY_VERIFY(!createdByQmltc.cycleEnabled());
+
+    createdByQmltc.setCycleFirst(true);
+    QTRY_VERIFY(!createdByQmltc.cycleFirst());
+    QCOMPARE(createdByQmltc.objectName(), QLatin1String("none"));
+
+    createdByQmltc.setCycleEnabled(true);
+    QTRY_VERIFY(!createdByQmltc.cycleEnabled());
+
+    createdByQmltc.setCycleSecond(true);
+    QTRY_VERIFY(!createdByQmltc.cycleSecond());
+    QCOMPARE(createdByQmltc.objectName(), QLatin1String("second"));
+}
+
+void tst_qmltc::hpp()
+{
+    QQmlEngine e;
+    PREPEND_NAMESPACE(hpp) createdByQmltc(&e);
+    QCOMPARE(createdByQmltc.objectName(), QLatin1String("hpp"));
 }
 
 QTEST_MAIN(tst_qmltc)
