@@ -1,1 +1,12 @@
 usr/lib/${DEB_HOST_MULTIARCH}/libQt6QuickControls2.so.*
+usr/lib/${DEB_HOST_MULTIARCH}/libQt6QuickControls2Basic.so.*
+usr/lib/${DEB_HOST_MULTIARCH}/libQt6QuickControls2BasicStyleImpl.so.*
+usr/lib/${DEB_HOST_MULTIARCH}/libQt6QuickControls2FluentWinUI3StyleImpl.so.*
+usr/lib/${DEB_HOST_MULTIARCH}/libQt6QuickControls2Fusion.so.*
+usr/lib/${DEB_HOST_MULTIARCH}/libQt6QuickControls2FusionStyleImpl.so.*
+usr/lib/${DEB_HOST_MULTIARCH}/libQt6QuickControls2Imagine.so.*
+usr/lib/${DEB_HOST_MULTIARCH}/libQt6QuickControls2ImagineStyleImpl.so.*
+usr/lib/${DEB_HOST_MULTIARCH}/libQt6QuickControls2Material.so.*
+usr/lib/${DEB_HOST_MULTIARCH}/libQt6QuickControls2MaterialStyleImpl.so.*
+usr/lib/${DEB_HOST_MULTIARCH}/libQt6QuickControls2Universal.so.*
+usr/lib/${DEB_HOST_MULTIARCH}/libQt6QuickControls2UniversalStyleImpl.so.*
