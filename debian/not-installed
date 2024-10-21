@@ -258,8 +258,6 @@ usr/lib/${DEB_HOST_MULTIARCH}/libQt6QuickControls2Universal.so.6
 usr/lib/${DEB_HOST_MULTIARCH}/libQt6QuickControls2Universal.so.6.8.0
 usr/lib/${DEB_HOST_MULTIARCH}/libQt6QuickControls2UniversalStyleImpl.so.6
 usr/lib/${DEB_HOST_MULTIARCH}/libQt6QuickControls2UniversalStyleImpl.so.6.8.0
-usr/lib/${DEB_HOST_MULTIARCH}/libQt6QuickVectorImageGenerator.so.6
-usr/lib/${DEB_HOST_MULTIARCH}/libQt6QuickVectorImageGenerator.so.6.8.0
 usr/lib/${DEB_HOST_MULTIARCH}/libQt6QuickVectorImage.so.6
 usr/lib/${DEB_HOST_MULTIARCH}/libQt6QuickVectorImage.so.6.8.0
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/examples/qml/tutorials/extending-qml/chapter1-basics/bin/chapter1-basics

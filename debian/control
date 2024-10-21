@@ -113,6 +113,17 @@ Description: Qt 6 Quick Test library
  .
  This package contains the Qt Quick Test library for QtDeclarative module.
 
+Package: libqt6quickvectorimagegenerator6
+Architecture: any
+Multi-Arch: same
+Pre-Depends: ${misc:Pre-Depends},
+Depends: ${misc:Depends}, ${shlibs:Depends},
+Description: Qt 6 Quick Vector Image Generator library
+ Qt is a cross-platform C++ application framework. Qt's primary feature
+ is its rich set of widgets that provide standard GUI functionality.
+ .
+ This package contains the Quick Vector Image Generator library for QtDeclarative module.
+
 Package: libqt6quickwidgets6
 Architecture: any
 Multi-Arch: same
