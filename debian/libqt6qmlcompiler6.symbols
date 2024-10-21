@@ -1,7 +1,8 @@
-# SymbolsHelper-Confirmed: 6.6.0 amd64 armel armhf hppa i386 powerpc riscv64
+# SymbolsHelper-Confirmed: 6.8.0 amd64 arm64 i386 loong64 riscv64
 libQt6QmlCompiler.so.6 libqt6qmlcompiler6 #MINVER#
 | libqt6qmlcompiler6 #MINVER#, qt6-declarative-private-abi (= 6.8.0)
 * Build-Depends-Packages: qt6-declarative-dev, qt6-declarative-private-dev
+ NonQt@NonQt 6.8.0
  Qt_6@Qt_6 6.6.0
  (symver)Qt_6_PRIVATE_API 0
  _Z13lcAotCompilerv@Qt_6 6.6.0
@@ -28,6 +29,8 @@ libQt6QmlCompiler.so.6 libqt6qmlcompiler6 #MINVER#
  _ZN6QQmlSA11PassManager19registerElementPassESt10unique_ptrINS_11ElementPassESt14default_deleteIS2_EE@Qt_6 6.6.0
  _ZN6QQmlSA11PassManager20registerPropertyPassESt10shared_ptrINS_12PropertyPassEE14QAnyStringViewS4_S4_b@Qt_6 6.6.0
  _ZN6QQmlSA11PassManager7analyzeERKNS_7ElementE@Qt_6 6.6.0
+ _ZN6QQmlSA11PassManagerC1Ev@Qt_6 6.8.0
+ _ZN6QQmlSA11PassManagerC2Ev@Qt_6 6.8.0
  _ZN6QQmlSA11PassManagerD1Ev@Qt_6 6.6.0
  _ZN6QQmlSA11PassManagerD2Ev@Qt_6 6.6.0
  _ZN6QQmlSA12PropertyPass6onReadERKNS_7ElementERK7QStringS3_NS_14SourceLocationE@Qt_6 6.6.0
@@ -142,6 +145,7 @@ libQt6QmlCompiler.so.6 libqt6qmlcompiler6 #MINVER#
  _ZNK6QQmlSA14SourceLocation9startLineEv@Qt_6 6.6.0
  _ZNK6QQmlSA6Method10methodNameEv@Qt_6 6.6.0
  _ZNK6QQmlSA6Method10methodTypeEv@Qt_6 6.6.0
+ _ZNK6QQmlSA6Method14sourceLocationEv@Qt_6 6.8.0
  _ZNK6QQmlSA6Method7Methods10constBeginEv@Qt_6 6.6.0
  _ZNK6QQmlSA6Method7Methods8constEndEv@Qt_6 6.6.0
  _ZNK6QQmlSA7Binding10objectTypeEv@Qt_6 6.6.0
@@ -163,10 +167,9 @@ libQt6QmlCompiler.so.6 libqt6qmlcompiler6 #MINVER#
  _ZNK6QQmlSA7Element11isCompositeEv@Qt_6 6.6.0
  _ZNK6QQmlSA7Element11parentScopeEv@Qt_6 6.6.0
  _ZNK6QQmlSA7Element12baseTypeNameEv@Qt_6 6.6.0
- _ZNK6QQmlSA7Element14childScopesEndEv@Qt_6 6.6.0
+ _ZNK6QQmlSA7Element14hasOwnPropertyERK7QString@Qt_6 6.8.0
  _ZNK6QQmlSA7Element14sourceLocationEv@Qt_6 6.6.0
  _ZNK6QQmlSA7Element15accessSemanticsEv@Qt_6 6.6.0
- _ZNK6QQmlSA7Element16childScopesBeginEv@Qt_6 6.6.0
  _ZNK6QQmlSA7Element16propertyBindingsERK7QString@Qt_6 6.6.0
  _ZNK6QQmlSA7Element18isPropertyRequiredERK7QString@Qt_6 6.6.0
  _ZNK6QQmlSA7Element19defaultPropertyNameEv@Qt_6 6.6.0
@@ -184,6 +187,8 @@ libQt6QmlCompiler.so.6 libqt6qmlcompiler6 #MINVER#
  _ZNK6QQmlSA7Element9scopeTypeEv@Qt_6 6.6.0
  _ZNK6QQmlSA7ElementcvbEv@Qt_6 6.6.0
  _ZNK6QQmlSA7ElementntEv@Qt_6 6.6.0
+ _ZNK6QQmlSA8Property10isReadonlyEv@Qt_6 6.8.0
+ _ZNK6QQmlSA8Property4typeEv@Qt_6 6.8.0
  _ZNK6QQmlSA8Property7isValidEv@Qt_6 6.6.0
  _ZNK6QQmlSA8Property8typeNameEv@Qt_6 6.6.0
  _ZTIN6QQmlJS3AST7VisitorE@Qt_6 6.6.0
@@ -193,11 +198,7 @@ libQt6QmlCompiler.so.6 libqt6qmlcompiler6 #MINVER#
  _ZTIN6QQmlSA16DebugElementPassE@Qt_6 6.6.0
  _ZTIN6QQmlSA17DebugPropertyPassE@Qt_6 6.6.0
  (arch=armel riscv64)_ZTIN9__gnu_cxx7__mutexE@Qt_6 6.6.0
- (arch=armel riscv64)_ZTISt11_Mutex_baseILN9__gnu_cxx12_Lock_policyE1EE@Qt_6 6.6.0
- (arch=!armel !riscv64)_ZTISt11_Mutex_baseILN9__gnu_cxx12_Lock_policyE2EE@Qt_6 6.6.0
  (arch=armel armhf)_ZTISt14default_deleteIN6QQmlSA11ElementPassEE@Qt_6 6.6.0
- (arch=armel riscv64)_ZTISt16_Sp_counted_baseILN9__gnu_cxx12_Lock_policyE1EE@Qt_6 6.6.0
- (arch=!armel !riscv64)_ZTISt16_Sp_counted_baseILN9__gnu_cxx12_Lock_policyE2EE@Qt_6 6.6.0
  _ZTSN5QmlIR9JSCodeGenE@Qt_6 6.6.0
  _ZTSN6QQmlJS3AST7VisitorE@Qt_6 6.6.0
  _ZTSN6QQmlSA11ElementPassE@Qt_6 6.6.0
@@ -206,13 +207,6 @@ libQt6QmlCompiler.so.6 libqt6qmlcompiler6 #MINVER#
  _ZTSN6QQmlSA16DebugElementPassE@Qt_6 6.6.0
  _ZTSN6QQmlSA17DebugPropertyPassE@Qt_6 6.6.0
  (arch=armel riscv64)_ZTSN9__gnu_cxx7__mutexE@Qt_6 6.6.0
- (arch=armel riscv64)_ZTSSt11_Mutex_baseILN9__gnu_cxx12_Lock_policyE1EE@Qt_6 6.6.0
- (arch=!armel !riscv64)_ZTSSt11_Mutex_baseILN9__gnu_cxx12_Lock_policyE2EE@Qt_6 6.6.0
- _ZTSSt14default_deleteIN6QQmlSA11ElementPassEE@Qt_6 6.6.0
- (arch=armel riscv64)_ZTSSt16_Sp_counted_baseILN9__gnu_cxx12_Lock_policyE1EE@Qt_6 6.6.0
- (arch=!armel !riscv64)_ZTSSt16_Sp_counted_baseILN9__gnu_cxx12_Lock_policyE2EE@Qt_6 6.6.0
- (arch=armel riscv64)_ZTSSt19_Sp_counted_deleterIPN6QQmlSA11ElementPassESt14default_deleteIS1_ESaIvELN9__gnu_cxx12_Lock_policyE1EE@Qt_6 6.6.0
- (arch=!armel !riscv64)_ZTSSt19_Sp_counted_deleterIPN6QQmlSA11ElementPassESt14default_deleteIS1_ESaIvELN9__gnu_cxx12_Lock_policyE2EE@Qt_6 6.6.0
  _ZTVN6QQmlSA11ElementPassE@Qt_6 6.6.0
  _ZTVN6QQmlSA11GenericPassE@Qt_6 6.6.0
  _ZTVN6QQmlSA12PropertyPassE@Qt_6 6.6.0

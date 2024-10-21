@@ -1,7 +1,8 @@
-# SymbolsHelper-Confirmed: 6.6.0 amd64
+# SymbolsHelper-Confirmed: 6.8.0 amd64 arm64 i386 loong64 riscv64
 libQt6QuickTemplates2.so.6 libqt6quicktemplates2-6 #MINVER#
 | libqt6quicktemplates2-6 #MINVER#, qt6-declarative-private-abi (= 6.8.0)
 * Build-Depends-Packages: qt6-declarative-dev, qt6-declarative-private-dev
+ NonQt@NonQt 6.8.0
  Qt_6@Qt_6 6.6.0
  (symver)Qt_6_PRIVATE_API 0
  _Z32QQuickTemplates_initializeModulev@Qt_6 6.6.0
@@ -46,6 +47,7 @@ libQt6QuickTemplates2.so.6 libqt6quicktemplates2-6 #MINVER#
  _ZN30QQuickApplicationWindowPrivate21itemVisibilityChangedEP10QQuickItem@Qt_6 6.6.0
  _ZN30QQuickApplicationWindowPrivate21setActiveFocusControlEP10QQuickItem@Qt_6 6.6.0
  _ZN30QQuickApplicationWindowPrivate24itemImplicitWidthChangedEP10QQuickItem@Qt_6 6.6.0
+ _ZN30QQuickApplicationWindowPrivate24updateHasBackgroundFlagsEv@Qt_6 6.8.0
  _ZN30QQuickApplicationWindowPrivate25itemImplicitHeightChangedEP10QQuickItem@Qt_6 6.6.0
  _ZN30QQuickApplicationWindowPrivate8relayoutEv@Qt_6 6.6.0
  _ZNK22QQuickSplitViewPrivate12isHorizontalEv@Qt_6 6.6.0

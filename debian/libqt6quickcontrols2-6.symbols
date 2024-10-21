@@ -1,7 +1,8 @@
-# SymbolsHelper-Confirmed: 6.6.0 amd64
+# SymbolsHelper-Confirmed: 6.8.0 amd64 arm64 i386 loong64 riscv64
 libQt6QuickControls2.so.6 libqt6quickcontrols2-6 #MINVER#
 | libqt6quickcontrols2-6 #MINVER#, qt6-declarative-private-abi (= 6.8.0)
 * Build-Depends-Packages: qt6-declarative-dev, qt6-declarative-private-dev
+ NonQt@NonQt 6.8.0
  Qt_6@Qt_6 6.6.0
  (symver)Qt_6_PRIVATE_API 0
  _Z35qml_register_types_QtQuick_Controlsv@Qt_6 6.6.0
@@ -24,3 +25,4 @@ libQt6QuickControls2.so.6 libqt6quickcontrols2-6 #MINVER#
  _ZTI32QQuickAttachedPropertyPropagator@Qt_6 6.6.0
  _ZTS32QQuickAttachedPropertyPropagator@Qt_6 6.6.0
  _ZTV32QQuickAttachedPropertyPropagator@Qt_6 6.6.0
+ _Zls6QDebugPK32QQuickAttachedPropertyPropagator@Qt_6 6.8.0

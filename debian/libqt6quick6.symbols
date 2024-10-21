@@ -1,7 +1,8 @@
-# SymbolsHelper-Confirmed: 6.6.0 amd64 arm64 armel armhf hppa i386 loong64 powerpc ppc64 ppc64el riscv64 s390x
+# SymbolsHelper-Confirmed: 6.8.0 amd64 arm64 i386 loong64 riscv64
 libQt6Quick.so.6 libqt6quick6 #MINVER#
 | libqt6quick6 #MINVER#, qt6-declarative-private-abi (= 6.8.0)
 * Build-Depends-Packages: qt6-declarative-dev, qt6-declarative-private-dev
+ NonQt@NonQt 6.8.0
  Qt_6@Qt_6 6.6.0
  (symver)Qt_6_PRIVATE_API 0
  _Z20qt_color_from_stringRKN3QV45ValueE@Qt_6 6.6.0
@@ -94,6 +95,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN10QQuickItem14opacityChangedEv@Qt_6 6.6.0
  _ZN10QQuickItem14paletteChangedEv@Qt_6 6.6.0
  _ZN10QQuickItem14paletteCreatedEv@Qt_6 6.6.0
+ _ZN10QQuickItem14setFocusPolicyEN2Qt11FocusPolicyE@Qt_6 6.8.0
  _ZN10QQuickItem14visibleChangedEv@Qt_6 6.6.0
  _ZN10QQuickItem15childrenChangedEv@Qt_6 6.6.0
  _ZN10QQuickItem15grabTouchPointsERK5QListIiE@Qt_6 6.6.0
@@ -123,6 +125,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN10QQuickItem17ungrabTouchPointsEv@Qt_6 6.6.0
  _ZN10QQuickItem17updateInputMethodE6QFlagsIN2Qt16InputMethodQueryEE@Qt_6 6.6.0
  _ZN10QQuickItem18activeFocusChangedEb@Qt_6 6.6.0
+ _ZN10QQuickItem18focusPolicyChangedEN2Qt11FocusPolicyE@Qt_6 6.8.0
  _ZN10QQuickItem18setContainmentMaskEP7QObject@Qt_6 6.6.0
  _ZN10QQuickItem18setTransformOriginENS_15TransformOriginE@Qt_6 6.6.0
  _ZN10QQuickItem19UpdatePaintNodeDataC1Ev@Qt_6 6.6.0
@@ -185,6 +188,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN10QQuickView13keyPressEventEP9QKeyEvent@Qt_6 6.6.0
  _ZN10QQuickView13setResizeModeENS_10ResizeModeE@Qt_6 6.6.0
  _ZN10QQuickView13statusChangedENS_6StatusE@Qt_6 6.6.0
+ _ZN10QQuickView14loadFromModuleE14QAnyStringViewS0_@Qt_6 6.8.0
  _ZN10QQuickView14mouseMoveEventEP11QMouseEvent@Qt_6 6.6.0
  _ZN10QQuickView15continueExecuteEv@Qt_6 6.6.0
  _ZN10QQuickView15keyReleaseEventEP9QKeyEvent@Qt_6 6.6.0
@@ -193,10 +197,12 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN10QQuickView17mouseReleaseEventEP11QMouseEvent@Qt_6 6.6.0
  _ZN10QQuickView20setInitialPropertiesERK4QMapI7QString8QVariantE@Qt_6 6.6.0
  _ZN10QQuickView9setSourceERK4QUrl@Qt_6 6.6.0
+ _ZN10QQuickViewC1E14QAnyStringViewS0_P7QWindow@Qt_6 6.8.0
  _ZN10QQuickViewC1EP10QQmlEngineP7QWindow@Qt_6 6.6.0
  _ZN10QQuickViewC1EP7QWindow@Qt_6 6.6.0
  _ZN10QQuickViewC1ERK4QUrlP19QQuickRenderControl@Qt_6 6.6.0
  _ZN10QQuickViewC1ERK4QUrlP7QWindow@Qt_6 6.6.0
+ _ZN10QQuickViewC2E14QAnyStringViewS0_P7QWindow@Qt_6 6.8.0
  _ZN10QQuickViewC2EP10QQmlEngineP7QWindow@Qt_6 6.6.0
  _ZN10QQuickViewC2EP7QWindow@Qt_6 6.6.0
  _ZN10QQuickViewC2ERK4QUrlP19QQuickRenderControl@Qt_6 6.6.0
@@ -258,6 +264,9 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN11QSGRootNodeD0Ev@Qt_6 6.6.0
  _ZN11QSGRootNodeD1Ev@Qt_6 6.6.0
  _ZN11QSGRootNodeD2Ev@Qt_6 6.6.0
+ _ZN11QSGTextNodeD0Ev@Qt_6 6.8.0
+ _ZN11QSGTextNodeD1Ev@Qt_6 6.8.0
+ _ZN11QSGTextNodeD2Ev@Qt_6 6.8.0
  _ZN12QQuickWindow10closeEventEP11QCloseEvent@Qt_6 6.6.0
  _ZN12QQuickWindow10grabWindowEv@Qt_6 6.6.0
  _ZN12QQuickWindow10wheelEventEP11QWheelEvent@Qt_6 6.6.0
@@ -317,7 +326,6 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN12QQuickWindow24setGraphicsConfigurationERK27QQuickGraphicsConfiguration@Qt_6 6.6.0
  _ZN12QQuickWindow25beforeRenderPassRecordingEv@Qt_6 6.6.0
  _ZN12QQuickWindow25handleFontDatabaseChangedEv@Qt_6 6.6.0
- _ZN12QQuickWindow25setTransientParent_helperEPS_@Qt_6 6.6.0
  _ZN12QQuickWindow29handleApplicationStateChangedEN2Qt16ApplicationStateE@Qt_6 6.6.0
  _ZN12QQuickWindow5eventEP6QEvent@Qt_6 6.6.0
  _ZN12QQuickWindow6updateEv@Qt_6 6.6.0
@@ -333,6 +341,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN12QQuickWindowD2Ev@Qt_6 6.6.0
  _ZN12QSGImageNode15rebuildGeometryEP11QSGGeometryP10QSGTextureRK6QRectFS4_6QFlagsINS_31TextureCoordinatesTransformFlagEE@Qt_6 6.6.0
  _ZN13QMetaSequence12MetaSequenceI5QListI10QMatrix4x4EE5valueE@Qt_6 6.6.0
+ _ZN13QMetaSequence12MetaSequenceI5QListI10QTextBlockEE5valueE@Qt_6 6.8.0
  _ZN13QMetaSequence12MetaSequenceI5QListI11QColorSpaceEE5valueE@Qt_6 6.6.0
  _ZN13QMetaSequence12MetaSequenceI5QListI11QEventPointEE5valueE@Qt_6 6.6.0
  _ZN13QMetaSequence12MetaSequenceI5QListI11QQuaternionEE5valueE@Qt_6 6.6.0
@@ -349,6 +358,34 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN13QMetaSequence12MetaSequenceI5QListIP7QObjectEE5valueE@Qt_6 6.6.0
  _ZN13QMetaSequence12MetaSequenceI5QListIS1_I7QPointFEEE5valueE@Qt_6 6.6.0
  _ZN13QMetaSequence12MetaSequenceI5QListIiEE5valueE@Qt_6 6.6.0
+ _ZN13QQuickRhiItem11qt_metacallEN11QMetaObject4CallEiPPv@Qt_6 6.8.0
+ _ZN13QQuickRhiItem11qt_metacastEPKc@Qt_6 6.8.0
+ _ZN13QQuickRhiItem14geometryChangeERK6QRectFS2_@Qt_6 6.8.0
+ _ZN13QQuickRhiItem14setSampleCountEi@Qt_6 6.8.0
+ _ZN13QQuickRhiItem15updatePaintNodeEP7QSGNodePN10QQuickItem19UpdatePaintNodeDataE@Qt_6 6.8.0
+ _ZN13QQuickRhiItem16releaseResourcesEv@Qt_6 6.8.0
+ _ZN13QQuickRhiItem16setAlphaBlendingEb@Qt_6 6.8.0
+ _ZN13QQuickRhiItem16staticMetaObjectE@Qt_6 6.8.0
+ _ZN13QQuickRhiItem18sampleCountChangedEv@Qt_6 6.8.0
+ _ZN13QQuickRhiItem19setAutoRenderTargetEb@Qt_6 6.8.0
+ _ZN13QQuickRhiItem19setMirrorVerticallyEb@Qt_6 6.8.0
+ _ZN13QQuickRhiItem20alphaBlendingChangedEv@Qt_6 6.8.0
+ _ZN13QQuickRhiItem20invalidateSceneGraphEv@Qt_6 6.8.0
+ _ZN13QQuickRhiItem20setColorBufferFormatENS_13TextureFormatE@Qt_6 6.8.0
+ _ZN13QQuickRhiItem23autoRenderTargetChangedEv@Qt_6 6.8.0
+ _ZN13QQuickRhiItem23mirrorVerticallyChangedEv@Qt_6 6.8.0
+ _ZN13QQuickRhiItem24colorBufferFormatChangedEv@Qt_6 6.8.0
+ _ZN13QQuickRhiItem24setFixedColorBufferWidthEi@Qt_6 6.8.0
+ _ZN13QQuickRhiItem25setFixedColorBufferHeightEi@Qt_6 6.8.0
+ _ZN13QQuickRhiItem28fixedColorBufferWidthChangedEv@Qt_6 6.8.0
+ _ZN13QQuickRhiItem29fixedColorBufferHeightChangedEv@Qt_6 6.8.0
+ _ZN13QQuickRhiItem31effectiveColorBufferSizeChangedEv@Qt_6 6.8.0
+ _ZN13QQuickRhiItem5eventEP6QEvent@Qt_6 6.8.0
+ _ZN13QQuickRhiItemC1EP10QQuickItem@Qt_6 6.8.0
+ _ZN13QQuickRhiItemC2EP10QQuickItem@Qt_6 6.8.0
+ _ZN13QQuickRhiItemD0Ev@Qt_6 6.8.0
+ _ZN13QQuickRhiItemD1Ev@Qt_6 6.8.0
+ _ZN13QQuickRhiItemD2Ev@Qt_6 6.8.0
  _ZN13QSGRenderNode11RenderStateD0Ev@Qt_6 6.6.0
  _ZN13QSGRenderNode11RenderStateD1Ev@Qt_6 6.6.0
  _ZN13QSGRenderNode11RenderStateD2Ev@Qt_6 6.6.0
@@ -447,7 +484,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN16QSGBatchRenderer8Renderer24updateMaterialStaticDataEPNS_19ShaderManagerShaderERN17QSGMaterialShader11RenderStateEP11QSGMaterialPNS_5BatchEPb@Qt_6 6.6.0
  _ZN16QSGBatchRenderer8Renderer25invalidateAndRecycleBatchEPNS_5BatchE@Qt_6 6.6.0
  _ZN16QSGBatchRenderer8Renderer25removeBatchRootFromParentEPNS_4NodeE@Qt_6 6.6.0
- _ZN16QSGBatchRenderer8Renderer25updateMaterialDynamicDataEPNS_19ShaderManagerShaderERN17QSGMaterialShader11RenderStateEP11QSGMaterialPKNS_5BatchEPNS_7ElementEii@Qt_6 6.6.0
+ _ZN16QSGBatchRenderer8Renderer25updateMaterialDynamicDataEPNS_19ShaderManagerShaderERN17QSGMaterialShader11RenderStateEP11QSGMaterialPKNS_5BatchEPNS_7ElementEiiPc@Qt_6 6.8.0
  _ZN16QSGBatchRenderer8Renderer26prepareRenderUnmergedBatchEPNS_5BatchEPNS0_19PreparedRenderBatchE@Qt_6 6.6.0
  _ZN16QSGBatchRenderer8Renderer27buildRenderListsFromScratchEv@Qt_6 6.6.0
  _ZN16QSGBatchRenderer8Renderer29applyClipStateToGraphicsStateEv@Qt_6 6.6.0
@@ -507,6 +544,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN17QSGMaterialShader11RenderState19resourceUpdateBatchEv@Qt_6 6.6.0
  _ZN17QSGMaterialShader11RenderState3rhiEv@Qt_6 6.6.0
  _ZN17QSGMaterialShader17setShaderFileNameENS_5StageERK7QString@Qt_6 6.6.0
+ _ZN17QSGMaterialShader17setShaderFileNameENS_5StageERK7QStringi@Qt_6 6.8.0
  _ZN17QSGMaterialShader17updateUniformDataERNS_11RenderStateEP11QSGMaterialS3_@Qt_6 6.6.0
  _ZN17QSGMaterialShader18updateSampledImageERNS_11RenderStateEiPP10QSGTextureP11QSGMaterialS6_@Qt_6 6.6.0
  _ZN17QSGMaterialShader27updateGraphicsPipelineStateERNS_11RenderStateEPNS_21GraphicsPipelineStateEP11QSGMaterialS5_@Qt_6 6.6.0
@@ -526,10 +564,14 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN17QSGSimpleRectNodeC2Ev@Qt_6 6.6.0
  _ZN18QQuickRenderTarget15fromPaintDeviceEP12QPaintDevice@Qt_6 6.6.0
  (arch=amd64 arm64 loong64 ppc64 ppc64el riscv64 s390x)_ZN18QQuickRenderTarget15fromVulkanImageEP9VkImage_T13VkImageLayout8VkFormatRK5QSizei@Qt_6 6.6.0
+ (arch=!i386)_ZN18QQuickRenderTarget15fromVulkanImageEP9VkImage_T13VkImageLayout8VkFormatS3_5QSizeii6QFlagsINS_4FlagEE@Qt_6 6.8.0
  (arch=amd64 arm64 loong64 ppc64 ppc64el riscv64 s390x)_ZN18QQuickRenderTarget15fromVulkanImageEP9VkImage_T13VkImageLayoutRK5QSizei@Qt_6 6.6.0
  (arch=!amd64 !arm64 !loong64 !ppc64 !ppc64el !riscv64 !s390x)_ZN18QQuickRenderTarget15fromVulkanImageEy13VkImageLayout8VkFormatRK5QSizei@Qt_6 6.6.0
+ (arch=i386)_ZN18QQuickRenderTarget15fromVulkanImageEy13VkImageLayout8VkFormatS1_5QSizeii6QFlagsINS_4FlagEE@Qt_6 6.8.0
  (arch=!amd64 !arm64 !loong64 !ppc64 !ppc64el !riscv64 !s390x)_ZN18QQuickRenderTarget15fromVulkanImageEy13VkImageLayoutRK5QSizei@Qt_6 6.6.0
+ _ZN18QQuickRenderTarget15setDepthTextureEP11QRhiTexture@Qt_6 6.8.0
  _ZN18QQuickRenderTarget17fromOpenGLTextureEjRK5QSizei@Qt_6 6.6.0
+ _ZN18QQuickRenderTarget17fromOpenGLTextureEjj5QSizeii6QFlagsINS_4FlagEE@Qt_6 6.8.0
  _ZN18QQuickRenderTarget17fromOpenGLTextureEjjRK5QSizei@Qt_6 6.6.0
  _ZN18QQuickRenderTarget19fromRhiRenderTargetEP16QRhiRenderTarget@Qt_6 6.6.0
  _ZN18QQuickRenderTarget19setDevicePixelRatioEd@Qt_6 6.6.0
@@ -545,7 +587,17 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN18QQuickRenderTargetaSERKS_@Qt_6 6.6.0
  _ZN18QQuickTextDocument11qt_metacallEN11QMetaObject4CallEiPPv@Qt_6 6.6.0
  _ZN18QQuickTextDocument11qt_metacastEPKc@Qt_6 6.6.0
+ _ZN18QQuickTextDocument11setModifiedEb@Qt_6 6.8.0
+ _ZN18QQuickTextDocument13sourceChangedEv@Qt_6 6.8.0
+ _ZN18QQuickTextDocument13statusChangedEv@Qt_6 6.8.0
+ _ZN18QQuickTextDocument15modifiedChangedEv@Qt_6 6.8.0
+ _ZN18QQuickTextDocument15setTextDocumentEP13QTextDocument@Qt_6 6.8.0
  _ZN18QQuickTextDocument16staticMetaObjectE@Qt_6 6.6.0
+ _ZN18QQuickTextDocument18errorStringChangedEv@Qt_6 6.8.0
+ _ZN18QQuickTextDocument19textDocumentChangedEv@Qt_6 6.8.0
+ _ZN18QQuickTextDocument4saveEv@Qt_6 6.8.0
+ _ZN18QQuickTextDocument6saveAsERK4QUrl@Qt_6 6.8.0
+ _ZN18QQuickTextDocument9setSourceERK4QUrl@Qt_6 6.8.0
  _ZN18QQuickTextDocumentC1EP10QQuickItem@Qt_6 6.6.0
  _ZN18QQuickTextDocumentC2EP10QQuickItem@Qt_6 6.6.0
  _ZN18QSGTextureProvider11qt_metacallEN11QMetaObject4CallEiPPv@Qt_6 6.6.0
@@ -648,6 +700,12 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZN20QSGSimpleTextureNodeD1Ev@Qt_6 6.6.0
  _ZN20QSGSimpleTextureNodeD2Ev@Qt_6 6.6.0
  _ZN21QQuickColorSpaceEnums16staticMetaObjectE@Qt_6 6.6.0
+ _ZN21QQuickRhiItemRenderer6updateEv@Qt_6 6.8.0
+ _ZN21QQuickRhiItemRendererC1Ev@Qt_6 6.8.0
+ _ZN21QQuickRhiItemRendererC2Ev@Qt_6 6.8.0
+ _ZN21QQuickRhiItemRendererD0Ev@Qt_6 6.8.0
+ _ZN21QQuickRhiItemRendererD1Ev@Qt_6 6.8.0
+ _ZN21QQuickRhiItemRendererD2Ev@Qt_6 6.8.0
  _ZN22QSGVertexColorMaterialC1Ev@Qt_6 6.6.0
  _ZN22QSGVertexColorMaterialC2Ev@Qt_6 6.6.0
  _ZN23QQuickFramebufferObject11qt_metacallEN11QMetaObject4CallEiPPv@Qt_6 6.6.0
@@ -722,6 +780,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZNK10QQuickItem10metaObjectEv@Qt_6 6.6.0
  _ZNK10QQuickItem10parentItemEv@Qt_6 6.6.0
  _ZNK10QQuickItem10widthValidEv@Qt_6 6.6.0
+ _ZNK10QQuickItem11focusPolicyEv@Qt_6 6.8.0
  _ZNK10QQuickItem11heightValidEv@Qt_6 6.6.0
  _ZNK10QQuickItem11mapFromItemEP14QQmlV4Function@Qt_6 6.6.0
  _ZNK10QQuickItem11mapFromItemEPKS_RK6QRectF@Qt_6 6.6.0
@@ -815,11 +874,13 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZNK11QSGGeometry9indexDataEv@Qt_6 6.6.0
  _ZNK11QSGGeometry9lineWidthEv@Qt_6 6.6.0
  _ZNK11QSGMaterial7compareEPKS_@Qt_6 6.6.0
+ _ZNK11QSGMaterial9viewCountEv@Qt_6 6.8.0
  _ZNK12QQuickWindow10metaObjectEv@Qt_6 6.6.0
  _ZNK12QQuickWindow11contentItemEv@Qt_6 6.6.0
  _ZNK12QQuickWindow11focusObjectEv@Qt_6 6.6.0
  _ZNK12QQuickWindow12renderTargetEv@Qt_6 6.6.0
  _ZNK12QQuickWindow14accessibleRootEv@Qt_6 6.6.0
+ _ZNK12QQuickWindow14createTextNodeEv@Qt_6 6.8.0
  _ZNK12QQuickWindow14graphicsDeviceEv@Qt_6 6.6.0
  _ZNK12QQuickWindow15activeFocusItemEv@Qt_6 6.6.0
  _ZNK12QQuickWindow15createImageNodeEv@Qt_6 6.6.0
@@ -839,12 +900,24 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZNK12QQuickWindow3rhiEv@Qt_6 6.6.0
  _ZNK12QQuickWindow5colorEv@Qt_6 6.6.0
  _ZNK12QQuickWindow9swapChainEv@Qt_6 6.6.0
+ _ZNK13QQuickRhiItem10metaObjectEv@Qt_6 6.8.0
+ _ZNK13QQuickRhiItem11sampleCountEv@Qt_6 6.8.0
+ _ZNK13QQuickRhiItem13alphaBlendingEv@Qt_6 6.8.0
+ _ZNK13QQuickRhiItem15textureProviderEv@Qt_6 6.8.0
+ _ZNK13QQuickRhiItem17colorBufferFormatEv@Qt_6 6.8.0
+ _ZNK13QQuickRhiItem17isTextureProviderEv@Qt_6 6.8.0
+ _ZNK13QQuickRhiItem21fixedColorBufferWidthEv@Qt_6 6.8.0
+ _ZNK13QQuickRhiItem22fixedColorBufferHeightEv@Qt_6 6.8.0
+ _ZNK13QQuickRhiItem24effectiveColorBufferSizeEv@Qt_6 6.8.0
+ _ZNK13QQuickRhiItem25isAutoRenderTargetEnabledEv@Qt_6 6.8.0
+ _ZNK13QQuickRhiItem25isMirrorVerticallyEnabledEv@Qt_6 6.8.0
  _ZNK13QSGRenderNode11RenderState3getEPKc@Qt_6 6.6.0
  _ZNK13QSGRenderNode12renderTargetEv@Qt_6 6.6.0
  _ZNK13QSGRenderNode13changedStatesEv@Qt_6 6.6.0
  _ZNK13QSGRenderNode13commandBufferEv@Qt_6 6.6.0
  _ZNK13QSGRenderNode16inheritedOpacityEv@Qt_6 6.6.0
  _ZNK13QSGRenderNode16projectionMatrixEv@Qt_6 6.6.0
+ (subst)_ZNK13QSGRenderNode16projectionMatrixE{qptrdiff}@Qt_6 6.8.0
  _ZNK13QSGRenderNode4rectEv@Qt_6 6.6.0
  _ZNK13QSGRenderNode5flagsEv@Qt_6 6.6.0
  _ZNK13QSGRenderNode6matrixEv@Qt_6 6.6.0
@@ -871,20 +944,28 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZNK17QSGMaterialShader11RenderState11determinantEv@Qt_6 6.6.0
  _ZNK17QSGMaterialShader11RenderState12viewportRectEv@Qt_6 6.6.0
  _ZNK17QSGMaterialShader11RenderState14combinedMatrixEv@Qt_6 6.6.0
+ (subst)_ZNK17QSGMaterialShader11RenderState14combinedMatrixE{qptrdiff}@Qt_6 6.8.0
  _ZNK17QSGMaterialShader11RenderState15modelViewMatrixEv@Qt_6 6.6.0
  _ZNK17QSGMaterialShader11RenderState16devicePixelRatioEv@Qt_6 6.6.0
  _ZNK17QSGMaterialShader11RenderState16projectionMatrixEv@Qt_6 6.6.0
+ (subst)_ZNK17QSGMaterialShader11RenderState16projectionMatrixE{qptrdiff}@Qt_6 6.8.0
+ _ZNK17QSGMaterialShader11RenderState21projectionMatrixCountEv@Qt_6 6.8.0
  _ZNK17QSGMaterialShader11RenderState7opacityEv@Qt_6 6.6.0
  _ZNK17QSGMaterialShader25combinedImageSamplerCountEi@Qt_6 6.6.0
  _ZNK17QSGMaterialShader5flagsEv@Qt_6 6.6.0
  _ZNK17QSGSimpleRectNode4rectEv@Qt_6 6.6.0
  _ZNK17QSGSimpleRectNode5colorEv@Qt_6 6.6.0
+ _ZNK18QQuickRenderTarget12depthTextureEv@Qt_6 6.8.0
  _ZNK18QQuickRenderTarget16devicePixelRatioEv@Qt_6 6.6.0
  _ZNK18QQuickRenderTarget16mirrorVerticallyEv@Qt_6 6.6.0
  _ZNK18QQuickRenderTarget6isNullEv@Qt_6 6.6.0
  _ZNK18QQuickRenderTarget7isEqualERKS_@Qt_6 6.6.0
+ _ZNK18QQuickTextDocument10isModifiedEv@Qt_6 6.8.0
  _ZNK18QQuickTextDocument10metaObjectEv@Qt_6 6.6.0
+ _ZNK18QQuickTextDocument11errorStringEv@Qt_6 6.8.0
  _ZNK18QQuickTextDocument12textDocumentEv@Qt_6 6.6.0
+ _ZNK18QQuickTextDocument6sourceEv@Qt_6 6.8.0
+ _ZNK18QQuickTextDocument6statusEv@Qt_6 6.8.0
  _ZNK18QSGTextureMaterial12createShaderEN20QSGRendererInterface10RenderModeE@Qt_6 6.6.0
  _ZNK18QSGTextureMaterial4typeEv@Qt_6 6.6.0
  _ZNK18QSGTextureProvider10metaObjectEv@Qt_6 6.6.0
@@ -917,6 +998,12 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZNK20QSGSimpleTextureNode4rectEv@Qt_6 6.6.0
  _ZNK20QSGSimpleTextureNode7textureEv@Qt_6 6.6.0
  _ZNK20QSGSimpleTextureNode9filteringEv@Qt_6 6.6.0
+ _ZNK21QQuickRhiItemRenderer12colorTextureEv@Qt_6 6.8.0
+ _ZNK21QQuickRhiItemRenderer12renderTargetEv@Qt_6 6.8.0
+ _ZNK21QQuickRhiItemRenderer14resolveTextureEv@Qt_6 6.8.0
+ _ZNK21QQuickRhiItemRenderer15msaaColorBufferEv@Qt_6 6.8.0
+ _ZNK21QQuickRhiItemRenderer18depthStencilBufferEv@Qt_6 6.8.0
+ _ZNK21QQuickRhiItemRenderer3rhiEv@Qt_6 6.8.0
  _ZNK22QSGVertexColorMaterial12createShaderEN20QSGRendererInterface10RenderModeE@Qt_6 6.6.0
  _ZNK22QSGVertexColorMaterial4typeEv@Qt_6 6.6.0
  _ZNK22QSGVertexColorMaterial7compareEPK11QSGMaterial@Qt_6 6.6.0
@@ -941,7 +1028,6 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZNK7QSGNode10childCountEv@Qt_6 6.6.0
  _ZNK7QSGNode12childAtIndexEi@Qt_6 6.6.0
  _ZNK7QSGNode16isSubtreeBlockedEv@Qt_6 6.6.0
- _ZSt19piecewise_construct@Qt_6 6.6.0
  _ZTI10QQuickItem@Qt_6 6.6.0
  _ZTI10QQuickView@Qt_6 6.6.0
  _ZTI10QSGTexture@Qt_6 6.6.0
@@ -949,9 +1035,10 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZTI11QSGGeometry@Qt_6 6.6.0
  _ZTI11QSGMaterial@Qt_6 6.6.0
  _ZTI11QSGRootNode@Qt_6 6.6.0
- _ZTI12QQmlRefCount@Qt_6 6.6.0
+ _ZTI11QSGTextNode@Qt_6 6.8.0
  _ZTI12QQuickWindow@Qt_6 6.6.0
  _ZTI12QSGImageNode@Qt_6 6.6.0
+ _ZTI13QQuickRhiItem@Qt_6 6.8.0
  _ZTI13QSGRenderNode@Qt_6 6.6.0
  _ZTI14QSGNodeVisitor@Qt_6 6.6.0
  _ZTI14QSGOpacityNode@Qt_6 6.6.0
@@ -978,6 +1065,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZTI20QSGFlatColorMaterial@Qt_6 6.6.0
  _ZTI20QSGRendererInterface@Qt_6 6.6.0
  _ZTI20QSGSimpleTextureNode@Qt_6 6.6.0
+ _ZTI21QQuickRhiItemRenderer@Qt_6 6.8.0
  _ZTI22QSGVertexColorMaterial@Qt_6 6.6.0
  _ZTI23QQuickFramebufferObject@Qt_6 6.6.0
  _ZTI24QQuickAsyncImageProvider@Qt_6 6.6.0
@@ -992,10 +1080,6 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZTIN3QV415ExecutionEngine9DeletableE@Qt_6 6.6.0
  (arch=armel riscv64)_ZTIN9__gnu_cxx7__mutexE@Qt_6 6.6.0
  _ZTIPFP7QObjectP10QQmlEngineP9QJSEngineE@Qt_6 6.6.0
- (arch=armel riscv64)_ZTISt11_Mutex_baseILN9__gnu_cxx12_Lock_policyE1EE@Qt_6 6.6.0
- (arch=!armel !riscv64)_ZTISt11_Mutex_baseILN9__gnu_cxx12_Lock_policyE2EE@Qt_6 6.6.0
- (arch=armel riscv64)_ZTISt16_Sp_counted_baseILN9__gnu_cxx12_Lock_policyE1EE@Qt_6 6.6.0
- (arch=!armel !riscv64)_ZTISt16_Sp_counted_baseILN9__gnu_cxx12_Lock_policyE2EE@Qt_6 6.6.0
  (arch=armel armhf)_ZTISt19_Sp_make_shared_tag@Qt_6 6.6.0
  _ZTIZN9QMetaType17registerConverterI5QListI10QMatrix4x4E9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS3_EEEEbT1_EUlPKvPvE_@Qt_6 6.6.0
  _ZTIZN9QMetaType17registerConverterI5QListI11QColorSpaceE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS3_EEEEbT1_EUlPKvPvE_@Qt_6 6.6.0
@@ -1038,9 +1122,10 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZTS11QSGGeometry@Qt_6 6.6.0
  _ZTS11QSGMaterial@Qt_6 6.6.0
  _ZTS11QSGRootNode@Qt_6 6.6.0
- _ZTS12QQmlRefCount@Qt_6 6.6.0
+ _ZTS11QSGTextNode@Qt_6 6.8.0
  _ZTS12QQuickWindow@Qt_6 6.6.0
  _ZTS12QSGImageNode@Qt_6 6.6.0
+ _ZTS13QQuickRhiItem@Qt_6 6.8.0
  _ZTS13QSGRenderNode@Qt_6 6.6.0
  _ZTS14QSGNodeVisitor@Qt_6 6.6.0
  _ZTS14QSGOpacityNode@Qt_6 6.6.0
@@ -1067,6 +1152,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZTS20QSGFlatColorMaterial@Qt_6 6.6.0
  _ZTS20QSGRendererInterface@Qt_6 6.6.0
  _ZTS20QSGSimpleTextureNode@Qt_6 6.6.0
+ _ZTS21QQuickRhiItemRenderer@Qt_6 6.8.0
  _ZTS22QSGVertexColorMaterial@Qt_6 6.6.0
  _ZTS23QQuickFramebufferObject@Qt_6 6.6.0
  _ZTS24QQuickAsyncImageProvider@Qt_6 6.6.0
@@ -1081,11 +1167,6 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZTSN3QV415ExecutionEngine9DeletableE@Qt_6 6.6.0
  (arch=armel riscv64)_ZTSN9__gnu_cxx7__mutexE@Qt_6 6.6.0
  _ZTSPFP7QObjectP10QQmlEngineP9QJSEngineE@Qt_6 6.6.0
- (arch=armel riscv64)_ZTSSt11_Mutex_baseILN9__gnu_cxx12_Lock_policyE1EE@Qt_6 6.6.0
- (arch=!armel !riscv64)_ZTSSt11_Mutex_baseILN9__gnu_cxx12_Lock_policyE2EE@Qt_6 6.6.0
- (arch=armel riscv64)_ZTSSt16_Sp_counted_baseILN9__gnu_cxx12_Lock_policyE1EE@Qt_6 6.6.0
- (arch=!armel !riscv64)_ZTSSt16_Sp_counted_baseILN9__gnu_cxx12_Lock_policyE2EE@Qt_6 6.6.0
- _ZTSSt19_Sp_make_shared_tag@Qt_6 6.6.0
  _ZTSZN9QMetaType17registerConverterI5QListI10QMatrix4x4E9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS3_EEEEbT1_EUlPKvPvE_@Qt_6 6.6.0
  _ZTSZN9QMetaType17registerConverterI5QListI11QColorSpaceE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS3_EEEEbT1_EUlPKvPvE_@Qt_6 6.6.0
  _ZTSZN9QMetaType17registerConverterI5QListI11QEventPointE9QIterableI13QMetaSequenceEN9QtPrivate33QSequentialIterableConvertFunctorIS3_EEEEbT1_EUlPKvPvE_@Qt_6 6.6.0
@@ -1127,7 +1208,9 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZTV11QSGGeometry@Qt_6 6.6.0
  _ZTV11QSGMaterial@Qt_6 6.6.0
  _ZTV11QSGRootNode@Qt_6 6.6.0
+ _ZTV11QSGTextNode@Qt_6 6.8.0
  _ZTV12QQuickWindow@Qt_6 6.6.0
+ _ZTV13QQuickRhiItem@Qt_6 6.8.0
  _ZTV13QSGRenderNode@Qt_6 6.6.0
  _ZTV14QSGNodeVisitor@Qt_6 6.6.0
  _ZTV14QSGOpacityNode@Qt_6 6.6.0
@@ -1149,6 +1232,7 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  _ZTV20QSGFlatColorMaterial@Qt_6 6.6.0
  _ZTV20QSGRendererInterface@Qt_6 6.6.0
  _ZTV20QSGSimpleTextureNode@Qt_6 6.6.0
+ _ZTV21QQuickRhiItemRenderer@Qt_6 6.8.0
  _ZTV22QSGVertexColorMaterial@Qt_6 6.6.0
  _ZTV23QQuickFramebufferObject@Qt_6 6.6.0
  _ZTV24QQuickAsyncImageProvider@Qt_6 6.6.0
@@ -1206,5 +1290,6 @@ libQt6Quick.so.6 libqt6quick6 #MINVER#
  (c++)"non-virtual thunk to QQuickItem::componentComplete()@Qt_6" 6.6.0
  (c++)"non-virtual thunk to QQuickItem::~QQuickItem()@Qt_6" 6.6.0
  (c++)"non-virtual thunk to QQuickPaintedItem::~QQuickPaintedItem()@Qt_6" 6.6.0
+ (c++)"non-virtual thunk to QQuickRhiItem::~QQuickRhiItem()@Qt_6" 6.8.0
  (c++)"non-virtual thunk to QQuickView::~QQuickView()@Qt_6" 6.6.0
  (c++)"non-virtual thunk to QQuickWindow::~QQuickWindow()@Qt_6" 6.6.0
