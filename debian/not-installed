@@ -275,7 +275,7 @@ usr/lib/${DEB_HOST_MULTIARCH}/qt6/examples/quick/canvas/bin/canvasexample
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/examples/quickcontrols/attachedstyleproperties/bin/attachedstylepropertiesexample
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/examples/quickcontrols/attachedstyleproperties/bin/MyStyle/libMyStyleplugin.so
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/examples/quickcontrols/attachedstyleproperties/bin/MyStyle/qmldir
-usr/lib/${DEB_HOST_MULTIARCH}/qt6/examples/quickcontrols/attachedstyleproperties/lib/x86_64-linux-gnu/libMyStyle.so
+usr/lib/${DEB_HOST_MULTIARCH}/qt6/examples/quickcontrols/attachedstyleproperties/lib/${DEB_HOST_MULTIARCH}/libMyStyle.so
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/examples/quickcontrols/chattutorial/chapter1/bin/chattutorial-chapter1
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/examples/quickcontrols/chattutorial/chapter2/bin/chattutorial-chapter2
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/examples/quickcontrols/chattutorial/chapter3/bin/chattutorial-chapter3
@@ -303,8 +303,8 @@ usr/lib/${DEB_HOST_MULTIARCH}/qt6/examples/quick/customitems/painteditem/bin/Tex
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/examples/quick/draganddrop/bin/draganddropexample
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/examples/quick/embeddedinwidgets/bin/embeddedinwidgetsexample
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/examples/quick/imageelements/bin/imageelementsexample
-usr/lib/${DEB_HOST_MULTIARCH}/qt6/examples/quick/imageprovider/lib/x86_64-linux-gnu/libqmlimageproviderplugin.so
-usr/lib/${DEB_HOST_MULTIARCH}/qt6/examples/quick/imageresponseprovider/lib/x86_64-linux-gnu/libqmlimageresponseproviderplugin.so
+usr/lib/${DEB_HOST_MULTIARCH}/qt6/examples/quick/imageprovider/lib/${DEB_HOST_MULTIARCH}/libqmlimageproviderplugin.so
+usr/lib/${DEB_HOST_MULTIARCH}/qt6/examples/quick/imageresponseprovider/lib/${DEB_HOST_MULTIARCH}/libqmlimageresponseproviderplugin.so
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/examples/quick/itemvariablerefreshrate/bin/itemvariablerefreshrateexample
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/examples/quick/keyinteraction/bin/keyinteractionexample
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/examples/quick/layouts/bin/layoutsexample
