@@ -230,8 +230,6 @@ usr/lib/${DEB_HOST_MULTIARCH}/cmake/Qt6Qml/QmlPlugins/Qt6QuickControlsTestUtilsP
 usr/lib/${DEB_HOST_MULTIARCH}/cmake/Qt6Qml/QmlPlugins/Qt6QuickControlsTestUtilsPrivatepluginConfigVersionImpl.cmake
 usr/lib/${DEB_HOST_MULTIARCH}/cmake/Qt6Qml/QmlPlugins/Qt6QuickControlsTestUtilsPrivatepluginTargets-none.cmake
 usr/lib/${DEB_HOST_MULTIARCH}/cmake/Qt6Qml/QmlPlugins/Qt6QuickControlsTestUtilsPrivatepluginTargets.cmake
-usr/lib/${DEB_HOST_MULTIARCH}/libQt6QmlNetwork.so.6
-usr/lib/${DEB_HOST_MULTIARCH}/libQt6QmlNetwork.so.6.8.0
 usr/lib/${DEB_HOST_MULTIARCH}/libQt6QuickVectorImage.so.6
 usr/lib/${DEB_HOST_MULTIARCH}/libQt6QuickVectorImage.so.6.8.0
 usr/lib/${DEB_HOST_MULTIARCH}/qt6/examples/qml/qml-i18n/bin/qmli18n 

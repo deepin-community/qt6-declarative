@@ -1,3 +1,9 @@
+qt6-declarative (6.8.0+dfsg-0deepin3) UNRELEASED; urgency=medium
+
+  * update debian/*install 
+
+ -- lichenggang <lichenggang@deepin.org>  Thu, 07 Nov 2024 19:32:17 +0800
+
 qt6-declarative (6.8.0+dfsg-0deepin2) unstable; urgency=medium
 
   [ Tianyu Chen ]

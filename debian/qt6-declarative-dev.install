@@ -1086,7 +1086,7 @@ usr/lib/${DEB_HOST_MULTIARCH}/libQt6QmlMeta.so
 usr/lib/${DEB_HOST_MULTIARCH}/libQt6QmlModels.prl
 usr/lib/${DEB_HOST_MULTIARCH}/libQt6QmlModels.so
 usr/lib/${DEB_HOST_MULTIARCH}/libQt6QmlNetwork.prl
-usr/lib/${DEB_HOST_MULTIARCH}/libQt6QmlNetwork.so
+usr/lib/${DEB_HOST_MULTIARCH}/libQt6QmlNetwork.so*
 usr/lib/${DEB_HOST_MULTIARCH}/libQt6QmlToolingSettings.a
 usr/lib/${DEB_HOST_MULTIARCH}/libQt6QmlToolingSettings.prl
 usr/lib/${DEB_HOST_MULTIARCH}/libQt6QmlTypeRegistrar.a
