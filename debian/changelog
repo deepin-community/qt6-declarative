@@ -1,8 +1,12 @@
-qt6-declarative (6.8.0+dfsg-0deepin1) UNRELEASED; urgency=medium
+qt6-declarative (6.8.0+dfsg-0deepin2) unstable; urgency=medium
 
+  [ Tianyu Chen ]
   * New upstream release (6.8.0).
 
- -- Tianyu Chen <sweetyfish@deepin.org>  Fri, 18 Oct 2024 16:14:21 +0800
+  [ lichenggang ]
+  * update debian/*.install
+
+ -- lichenggang <lichenggang@deepin.org>  Thu, 07 Nov 2024 14:44:22 +0800
 
 qt6-declarative (6.6.1+dfsg-1deepin3) unstable; urgency=medium
 
