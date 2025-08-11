@@ -1,8 +1,15 @@
-qt6-declarative (6.8.0+dfsg-0deepin3) UNRELEASED; urgency=medium
+qt6-declarative (6.8.0+dfsg-0deepin4) unstable; urgency=medium
 
+  [ lichenggang ]
   * update debian/*install 
 
- -- lichenggang <lichenggang@deepin.org>  Thu, 07 Nov 2024 19:32:17 +0800
+  [ qaqland ]
+  * Enable dh_qmldeps.
+  * Install all qml modules within the dev package for dh_qmldeps.
+  * Add qml6:depends for all qml modules with dependencies.
+  * Ignore "import QML" in qml files.
+
+ -- qaqland <anguoli@uniontech.com>  Wed, 30 Jul 2025 17:39:29 +0800
 
 qt6-declarative (6.8.0+dfsg-0deepin2) unstable; urgency=medium
 

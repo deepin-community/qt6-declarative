@@ -22,6 +22,9 @@ override_dh_auto_configure:
 		-DCMAKE_LIBRARY_PATH=$(DEB_HOST_MULTIARCH) \
 		$(extra_cmake_args)
 
+override_dh_qmldeps:
+	LD_LIBRARY_PATH=debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/ dh_qmldeps
+
 override_dh_auto_build-indep:
 	dh_auto_build -- docs
 
