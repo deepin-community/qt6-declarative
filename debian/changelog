@@ -1,4 +1,10 @@
-qt6-declarative (6.8.0+dfsg-0deepin3) UNRELEASED; urgency=medium
+qt6-declarative (6.8.0+dfsg-0deepin4) unstable; urgency=medium
+
+  * add Package: libqt6quickvectorimage6 
+
+ -- lichenggang <lichenggang@deepin.org>  Mon, 01 Sep 2025 13:21:49 +0800
+
+qt6-declarative (6.8.0+dfsg-0deepin3) unstable; urgency=medium
 
   * update debian/*install 
 
