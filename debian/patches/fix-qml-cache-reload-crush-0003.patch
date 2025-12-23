@@ -1,0 +1,61 @@
+Index: qt6-declarative/src/qml/qml/qqmlpropertycachecreator_p.h
+===================================================================
+--- qt6-declarative.orig/src/qml/qml/qqmlpropertycachecreator_p.h
++++ qt6-declarative/src/qml/qml/qqmlpropertycachecreator_p.h
+@@ -289,11 +289,12 @@ inline QQmlError QQmlPropertyCacheCreato
+     };
+ 
+     const CompiledObject *obj = objectContainer->objectAt(objectIndex);
++    auto *inheritedTypeRef = objectContainer->resolvedType(obj->inheritedTypeNameIndex);
+     bool needVMEMetaObject = isVMERequired == VMEMetaObjectIsRequired::Always || obj->propertyCount() != 0 || obj->aliasCount() != 0
+             || obj->signalCount() != 0 || obj->functionCount() != 0 || obj->enumCount() != 0
+             || ((obj->hasFlag(QV4::CompiledData::Object::IsComponent)
+                  || (objectIndex == 0 && isAddressable(objectContainer->url())))
+-                && !objectContainer->resolvedType(obj->inheritedTypeNameIndex)->isFullyDynamicType());
++                && inheritedTypeRef && !inheritedTypeRef->isFullyDynamicType());
+ 
+     if (!needVMEMetaObject) {
+         auto binding = obj->bindingsBegin();
+@@ -309,7 +310,10 @@ inline QQmlError QQmlPropertyCacheCreato
+                     if (!propertyCaches->needsVMEMetaObject(context.referencingObjectIndex)) {
+                         const CompiledObject *obj = objectContainer->objectAt(context.referencingObjectIndex);
+                         auto *typeRef = objectContainer->resolvedType(obj->inheritedTypeNameIndex);
+-                        Q_ASSERT(typeRef);
++                        if (!typeRef) {
++                            return qQmlCompileError(binding->location, QQmlPropertyCacheCreatorBase::tr(
++                                    "Type not found, cache may be stale"));
++                        }
+                         QQmlPropertyCache::ConstPtr baseTypeCache = typeRef->createPropertyCache();
+                         QQmlError error = baseTypeCache
+                             ? createMetaObject(context.referencingObjectIndex, obj, baseTypeCache)
+@@ -387,7 +391,14 @@ inline QQmlPropertyCache::ConstPtr QQmlP
+         return context.instantiatingPropertyCache();
+     } else if (obj->inheritedTypeNameIndex != 0) {
+         auto *typeRef = objectContainer->resolvedType(obj->inheritedTypeNameIndex);
+-        Q_ASSERT(typeRef);
++        if (!typeRef) {
++            // Type not found - likely stale cache referencing a removed/renamed type
++            *error = qQmlCompileError(
++                obj->location,
++                QQmlPropertyCacheCreatorBase::tr("Type '%1' not found, cache may be stale.")
++                    .arg(stringAt(obj->inheritedTypeNameIndex)));
++            return nullptr;
++        }
+ 
+         if (typeRef->isFullyDynamicType()) {
+             if (obj->propertyCount() > 0 || obj->aliasCount() > 0) {
+@@ -415,7 +426,13 @@ inline QQmlPropertyCache::ConstPtr QQmlP
+         if (binding->isAttachedProperty()) {
+             auto *typeRef = objectContainer->resolvedType(
+                     binding->propertyNameIndex);
+-            Q_ASSERT(typeRef);
++            if (!typeRef) {
++                *error = qQmlCompileError(
++                    binding->location,
++                    QQmlPropertyCacheCreatorBase::tr("Attached type '%1' not found, cache may be stale.")
++                        .arg(stringAt(binding->propertyNameIndex)));
++                return nullptr;
++            }
+             QQmlType qmltype = typeRef->type();
+             if (!qmltype.isValid()) {
+                 imports->resolveType(
