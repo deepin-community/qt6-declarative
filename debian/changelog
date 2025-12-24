@@ -1,3 +1,9 @@
+qt6-declarative (6.8.0+dfsg-0deepin7) unstable; urgency=medium
+
+  * update cve patch. 
+
+ -- Tian ShiLin <tianshilin@uniontech.com>  Wed, 24 Dec 2025 14:29:46 +0800
+
 qt6-declarative (6.8.0+dfsg-0deepin6) unstable; urgency=medium
 
   * chore: Update version to 6.8.0+dfsg-0deepin6
