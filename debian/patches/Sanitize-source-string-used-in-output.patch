@@ -1,0 +1,41 @@
+Author: Tian Shilin<tianshilin@uniontech.com>
+Date:   Wed Dec 24 14:32:00 2025
+Subject: VectorImage: Sanitize source string used in output
+Upstream: https://codereview.qt-project.org/c/qt/qtdeclarative/+/697273
+
+---
+
+Index: qt6-declarative/src/quickvectorimage/generator/qsvgvisitorimpl.cpp
+===================================================================
+--- qt6-declarative.orig/src/quickvectorimage/generator/qsvgvisitorimpl.cpp
++++ qt6-declarative/src/quickvectorimage/generator/qsvgvisitorimpl.cpp
+@@ -1041,9 +1041,28 @@ void QSvgVisitorImpl::visitDocumentNodeE
+     m_generator->generateRootNode(info);
+ }
+ 
++static QString scrub(const QString &raw)
++{
++    QString res(raw.left(80));
++
++    if (!res.isEmpty()) {
++        constexpr QLatin1StringView legalSymbols("_-.:"); // Only valid SVG id characters
++        qsizetype i = 0;
++        do {
++            if (res.at(i).isLetterOrNumber() || legalSymbols.contains(res.at(i)))
++                i++;
++            else
++                res.remove(i, 1);
++        } while (i < res.size());
++    }
++
++    return res;
++}
++
+ void QSvgVisitorImpl::fillCommonNodeInfo(const QSvgNode *node, NodeInfo &info)
+ {
+-    info.nodeId = node->nodeId();
++    const QString nodeId = scrub(node->nodeId());
++    info.nodeId = nodeId;
+     info.typeName = node->typeName();
+     info.isDefaultTransform = node->style().transform.isDefault();
+     info.transform = !info.isDefaultTransform ? node->style().transform->qtransform() : QTransform();
