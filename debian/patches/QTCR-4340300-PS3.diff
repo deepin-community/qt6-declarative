@@ -1,0 +1,81 @@
+From 43403002cf67303db45d0ac0165b0f974b9c7a1b Mon Sep 17 00:00:00 2001
+From: Lu YaNing <luyaning@uniontech.com>
+Date: Tue, 02 Dec 2025 21:11:29 +0800
+Subject: [PATCH] ListView: fix item positioning during add transition
+
+When adding items with dynamic delegate sizes (e.g., implicitWidth bound
+to model.count), a race condition between layout calculation and binding
+updates can cause incorrect positioning. The sequence is:
+
+1. Item added, AddTransition scheduled
+2. Layout calculates position using outdated delegate size
+3. Delegate size binding updates
+4. Layout recalculates correct position, but update is blocked by
+   the running AddTransition
+
+This results in items appearing at wrong positions during the animation.
+
+This patch adds a forceItemPosition() helper that directly updates the
+item's visual position when:
+- A transition is running (blocking normal position updates)
+- Position is significantly wrong (diff > 0.5 pixels)
+
+This approach follows the existing pattern where section positioning
+bypasses the transitioner to ensure layout correctness. The fix ensures
+items animate at the correct position while preserving the AddTransition
+effects (opacity, scale).
+
+Fixes: QTBUG-133953
+Change-Id: Ia721dae6fb901313c7ed53b1d843d50a2b30e9e3
+---
+
+diff --git a/src/quick/items/qquicklistview.cpp b/src/quick/items/qquicklistview.cpp
+index 66be1b0..168d6fd 100644
+--- a/src/quick/items/qquicklistview.cpp
++++ b/src/quick/items/qquicklistview.cpp
+@@ -72,6 +72,7 @@
+     bool movingFromHighlight() override;
+ 
+     void setPosition(qreal pos) override;
++    void forceItemPosition(FxListItemSG *item, qreal pos);
+     void layoutVisibleItems(int fromModelIndex = 0) override;
+ 
+     bool applyInsertionChange(const QQmlChangeSet::Change &insert, ChangeResult *changeResult, QList<FxViewItem *> *addedItems, QList<MovedItem> *movingIntoView) override;
+@@ -904,6 +905,13 @@
+             FxListItemSG *item = static_cast<FxListItemSG*>(visibleItems.at(i));
+             if (item->index >= fromModelIndex) {
+                 item->setPosition(pos);
++
++                // If position is still wrong after setPosition (blocked by transitioner),
++                // force it directly. This handles the race condition where layout happens
++                // before delegate size bindings update, causing incorrect initial positioning.
++                if (item->transitionScheduledOrRunning() && qAbs(item->position() - pos) > 0.5) {
++                    forceItemPosition(item, pos);
++                }
+                 item->setVisible(item->endPosition() >= from && item->position() <= to);
+             }
+             pos += item->size() + spacing;
+@@ -4121,6 +4129,23 @@
+     return ret;
+ }
+ 
++void QQuickListViewPrivate::forceItemPosition(FxListItemSG *item, qreal pos)
++{
++    // Force item position directly, bypassing transitioner lock.
++    // This is similar to how section positioning works (which also bypasses transitions).
++    if (layoutOrientation() == Qt::Vertical) {
++        if (isBottomToTop())
++            item->item->setY(-pos - item->size());
++        else
++            item->item->setY(pos);
++    } else {
++        if (isRightToLeft())
++            item->item->setX(-pos - item->size());
++        else
++            item->item->setX(pos);
++    }
++}
++
+ QT_END_NAMESPACE
+ 
+ #include "moc_qquicklistview_p.cpp"
