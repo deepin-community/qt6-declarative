@@ -4,3 +4,4 @@ CVE-2025-12385-qtdeclarative-6.8-0002.patch
 fix-qml-cache-reload-crush-0003.patch
 Sanitize-source-string-used-in-output.patch
 QTCR-4340300-PS3.diff
+fix-qml-cache-invalid-timestamp-handle.patch
