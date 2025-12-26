@@ -1,3 +1,10 @@
+qt6-declarative (6.8.0+dfsg-0deepin9) unstable; urgency=medium
+
+  * chore: Update version to 6.8.0+dfsg-0deepin9
+  * fix: add error handling for invalid timestamp in verifyHeader
+
+ -- zhanghongyuan <zhanghongyuan@uniontech.com>  Fri, 26 Dec 2025 13:29:34 +0800
+
 qt6-declarative (6.8.0+dfsg-0deepin8) unstable; urgency=medium
 
   * update cve patch. 

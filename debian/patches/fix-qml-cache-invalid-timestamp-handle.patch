@@ -1,0 +1,23 @@
+Index: qt6-declarative/src/qml/common/qv4compileddata.cpp
+===================================================================
+--- qt6-declarative.orig/src/qml/common/qv4compileddata.cpp
++++ qt6-declarative/src/qml/common/qv4compileddata.cpp
+@@ -58,11 +58,14 @@ bool Unit::verifyHeader(QDateTime expect
+     if (sourceTimeStamp) {
+         // Files from the resource system do not have any time stamps, so fall back to the application
+         // executable.
+-        if (!expectedSourceTimeStamp.isValid())
++        if (!expectedSourceTimeStamp.isValid()) {
+             expectedSourceTimeStamp = QFileInfo(QCoreApplication::applicationFilePath()).lastModified();
+-
+-        if (expectedSourceTimeStamp.isValid()
+-            && expectedSourceTimeStamp.toMSecsSinceEpoch() != sourceTimeStamp) {
++            if (!expectedSourceTimeStamp.isValid()) {
++                *errorString = QStringLiteral("Failed to get valid timestamp from application executable");
++                return false;
++            }
++        }
++        if (expectedSourceTimeStamp.toMSecsSinceEpoch() != sourceTimeStamp) {
+             *errorString = QStringLiteral("QML source file has a different time stamp than cached file.");
+             return false;
+         }
