@@ -1,0 +1,62 @@
+Index: qt6-declarative/src/quick/items/qquickflickable.cpp
+===================================================================
+--- qt6-declarative.orig/src/quick/items/qquickflickable.cpp
++++ qt6-declarative/src/quick/items/qquickflickable.cpp
+@@ -1375,14 +1375,13 @@ void QQuickFlickablePrivate::handleMoveE
+     const QVector2D velocity = firstPointLocalVelocity(event);
+     bool overThreshold = false;
+ 
+-    if (event->pointCount() == 1) {
+-        if (q->yflick())
+-            overThreshold |= QQuickDeliveryAgentPrivate::dragOverThreshold(deltas.y(), Qt::YAxis, firstPoint);
+-        if (q->xflick())
+-            overThreshold |= QQuickDeliveryAgentPrivate::dragOverThreshold(deltas.x(), Qt::XAxis, firstPoint);
+-    } else {
+-        qCDebug(lcFilter) << q->objectName() << "ignoring multi-touch" << event;
+-    }
++    // Always calculate drag threshold based on the first (primary) touch point,
++    // regardless of how many fingers are touching. This matches Qt5 behavior where
++    // synthesized mouse events only tracked the primary touch point.
++    if (q->yflick())
++        overThreshold |= QQuickDeliveryAgentPrivate::dragOverThreshold(deltas.y(), Qt::YAxis, firstPoint);
++    if (q->xflick())
++        overThreshold |= QQuickDeliveryAgentPrivate::dragOverThreshold(deltas.x(), Qt::XAxis, firstPoint);
+ 
+     drag(currentTimestamp, event->type(), pos, deltas, overThreshold, false, false, velocity);
+ }
+@@ -2694,17 +2693,20 @@ bool QQuickFlickable::filterPointerEvent
+     // If a touch event contains a new press point, don't steal right away: watch the movements for a while
+     if (isTouch && static_cast<QTouchEvent *>(event)->touchPointStates().testFlag(QEventPoint::State::Pressed))
+         d->stealMouse = false;
+-    // If multiple touchpoints are within bounds, don't grab: it's probably meant for multi-touch interaction in some child
+-    if (event->pointCount() > 1) {
+-        qCDebug(lcFilter) << objectName() << "ignoring multi-touch" << event << "for" << receiver;
+-        d->stealMouse = false;
++    // Continue filtering based on the first (primary) touch point even during multi-touch,
++    // to allow two-finger scrolling (matching Qt5 behavior where synthesized mouse events
++    // always tracked the primary touch point). Child items that need multi-touch gestures
++    // (e.g. PinchArea) are still protected via the receiverKeepsGrab mechanism below.
++    const bool isMultiTouch = event->pointCount() > 1;
++    if (isMultiTouch) {
++        qCDebug(lcFilter) << objectName() << "filtering multi-touch (primary point)" << event << "for" << receiver;
+     } else {
+         qCDebug(lcFilter) << objectName() << "filtering" << event << "for" << receiver;
+     }
+ 
+     const auto &firstPoint = event->points().first();
+ 
+-    if (event->pointCount() == 1 && event->exclusiveGrabber(firstPoint) == this) {
++    if (event->exclusiveGrabber(firstPoint) == this) {
+         // We have an exclusive grab (since we're e.g dragging), but at the same time, we have
+         // a child with a passive grab (which is why this filter is being called). And because
+         // of that, we end up getting the same pointer events twice; First in our own event
+@@ -2767,7 +2769,8 @@ bool QQuickFlickable::filterPointerEvent
+             event->setExclusiveGrabber(firstPoint, this);
+         }
+ 
+-        const bool filtered = !receiverRelinquishGrab && (stealThisEvent || d->delayedPressEvent || receiverDisabled);
++        const bool filtered = !receiverRelinquishGrab && (stealThisEvent || d->delayedPressEvent || receiverDisabled
++                                                          || (isMultiTouch && !receiverKeepsGrab));
+         if (filtered) {
+             event->setAccepted(true);
+         }

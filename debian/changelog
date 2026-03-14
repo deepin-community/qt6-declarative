@@ -1,3 +1,10 @@
+qt6-declarative (6.8.0+dfsg-0deepin10) unstable; urgency=medium
+
+  * chore: Update version to 6.8.0+dfsg-0deepin10
+  * fix: Fix QML touchscreen multi-finger swipe not working
+
+ -- lvpeilong <lvpeilong@uniontech.com>  Sat, 27 Dec 2025 09:15:42 +0800
+
 qt6-declarative (6.8.0+dfsg-0deepin9) unstable; urgency=medium
 
   * chore: Update version to 6.8.0+dfsg-0deepin9
