@@ -6,3 +6,4 @@ Sanitize-source-string-used-in-output.patch
 QTCR-4340300-PS3.diff
 fix-qml-cache-invalid-timestamp-handle.patch
 Fix-QML-touchscreen-multi-finger-swipe-not-working.patch
+fix-gc-Assume-less-if-hasConstWrapper-is-set.path

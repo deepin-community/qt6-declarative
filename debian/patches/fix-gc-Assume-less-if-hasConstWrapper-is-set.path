@@ -1,0 +1,125 @@
+Author: caixiangrong <caixiangrong@uniontech.com>
+Date:   Fri Mar 27 10:45:36 2026
+Subject: gc: Assume less if hasConstWrapper is set
+Upstream: https://codereview.qt-project.org/c/qt/qtdeclarative/+/652103
+
+---
+
+Index: qt6-declarative/src/qml/jsruntime/qv4qobjectwrapper.cpp
+===================================================================
+--- qt6-declarative.orig/src/qml/jsruntime/qv4qobjectwrapper.cpp
++++ qt6-declarative/src/qml/jsruntime/qv4qobjectwrapper.cpp
+@@ -867,10 +867,8 @@ void QObjectWrapper::markWrapper(QObject
+         ddata->jsWrapper.markOnce(markStack);
+     else if (engine->m_multiplyWrappedQObjects && ddata->hasTaintedV4Object)
+         engine->m_multiplyWrappedQObjects->mark(object, markStack);
+-    if (ddata->hasConstWrapper) {
+-        Q_ASSERT(engine->m_multiplyWrappedQObjects);
++    if (ddata->hasConstWrapper && engine->m_multiplyWrappedQObjects)
+         engine->m_multiplyWrappedQObjects->mark(static_cast<const QObject *>(object), markStack);
+-    }
+ }
+ 
+ void QObjectWrapper::setProperty(ExecutionEngine *engine, int propertyIndex, const Value &value)
+@@ -1473,26 +1471,26 @@ void Heap::QObjectWrapper::markObjects(H
+                 }
+             }
+ 
+-            if (ddata->hasConstWrapper) {
++            // mark the const wrapper if our engine has interacted with it at some point
++            if (ddata->hasConstWrapper && that->internalClass->engine->m_multiplyWrappedQObjects) {
+                 Scope scope(that->internalClass->engine);
+-                Q_ASSERT(scope.engine->m_multiplyWrappedQObjects);
+ 
+                 Scoped<QV4::QObjectWrapper> constWrapper(
+                         scope,
+                         scope.engine->m_multiplyWrappedQObjects->value(
+                                 static_cast<const QObject *>(o)));
+ 
+-                Q_ASSERT(constWrapper);
+-
+-                if (This == constWrapper->d()) {
+-                    // We've got the const wrapper. Also mark the non-const one
+-                    if (ddata->jsEngineId == scope.engine->m_engineId)
+-                        ddata->jsWrapper.markOnce(markStack);
+-                    else
+-                        scope.engine->m_multiplyWrappedQObjects->mark(o, markStack);
+-                } else {
+-                    // We've got the non-const wrapper. Also mark the const one.
+-                    constWrapper->mark(markStack);
++                if (constWrapper) {
++                    if (This == constWrapper->d()) {
++                        // We've got the const wrapper. Also mark the non-const one
++                        if (ddata->jsEngineId == scope.engine->m_engineId)
++                            ddata->jsWrapper.markOnce(markStack);
++                        else
++                            scope.engine->m_multiplyWrappedQObjects->mark(o, markStack);
++                    } else {
++                        // We've got the non-const wrapper. Also mark the const one.
++                        constWrapper->mark(markStack);
++                    }
+                 }
+             }
+         }
+Index: qt6-declarative/src/qml/qml/qqmldata_p.h
+===================================================================
+--- qt6-declarative.orig/src/qml/qml/qqmldata_p.h
++++ qt6-declarative/src/qml/qml/qqmldata_p.h
+@@ -105,7 +105,11 @@ public:
+     // set when at least one of the object's properties is intercepted
+     quint32 hasInterceptorMetaObject:1;
+     quint32 hasVMEMetaObject:1;
+-    // If we have another wrapper for a const QObject * in the multiply wrapped QObjects.
++    /* If we have another wrapper for a const QObject * in the multiply wrapped QObjects,
++     * in one of the engines. If multiple engines are used, we might not actually have
++     * a const wrapper. However, if the flag is not set, we can avoid some additional
++     * lookups in the map.
++     */
+     quint32 hasConstWrapper: 1;
+     quint32 dummy:7;
+ 
+Index: qt6-declarative/tests/auto/qml/qv4mm/tst_qv4mm.cpp
+===================================================================
+--- qt6-declarative.orig/tests/auto/qml/qv4mm/tst_qv4mm.cpp
++++ qt6-declarative/tests/auto/qml/qv4mm/tst_qv4mm.cpp
+@@ -44,6 +44,7 @@ private slots:
+     void weakValuesAssignedAfterThePhaseThatShouldHandleWeakValues();
+     void mapAndSetKeepValuesAlive();
+     void jittedStoreLocalMarksValue();
++    void constObjectWrapperOnlyConstInSingleEngine();
+ };
+ 
+ tst_qv4mm::tst_qv4mm()
+@@ -730,6 +731,32 @@ void tst_qv4mm::jittedStoreLocalMarksVal
+     QCOMPARE(result, 0);
+ }
+ 
++void tst_qv4mm::constObjectWrapperOnlyConstInSingleEngine()
++{
++    auto myObject = new QObject(this);
++    QV4::ExecutionEngine e1 {};
++    // prevent the gc from running too early
++    e1.memoryManager->gcBlocked = QV4::MemoryManager::NormalBlocked;
++    // create a non-const wrapper in the first engine
++    QV4::QObjectWrapper::ensureWrapper(&e1, myObject);
++    {
++        QV4::ExecutionEngine e2 {};
++        QV4::Scope scope(&e2);
++        // create a const wrapper in the second engine
++        QV4::ScopedValue val(scope, QV4::QObjectWrapper::wrapConst(&e2, myObject));
++    }
++    QVERIFY(!e1.m_multiplyWrappedQObjects);
++    auto ddata = QQmlData::get(myObject, false);
++    QVERIFY(ddata);
++    QVERIFY(ddata->hasConstWrapper);
++    e1.memoryManager->gcBlocked = QV4::MemoryManager::Unblocked;
++    gc(e1); // should not trigger an assert
++    // hasConstWrapper only tells us that at some point, some engine created one;
++    // the const wrappers are not actually shared, but we can't know when the last
++    // one is gone
++    QVERIFY(ddata->hasConstWrapper);
++}
++
+ QTEST_MAIN(tst_qv4mm)
+ 
+ #include "tst_qv4mm.moc"
