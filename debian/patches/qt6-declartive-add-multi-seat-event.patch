@@ -1,0 +1,257 @@
+Author: Tian Shilin<tianshilin@uniontech.com>
+Date:   Mon Jun 15 15:26:49 2026
+Subject: add multi-seat event support for QQuickDeliveryAgent
+
+
+---
+
+Index: qt6-declarative/src/quick/util/qquickdeliveryagent.cpp
+===================================================================
+--- qt6-declarative.orig/src/quick/util/qquickdeliveryagent.cpp
++++ qt6-declarative/src/quick/util/qquickdeliveryagent.cpp
+@@ -681,7 +681,8 @@ bool QQuickDeliveryAgentPrivate::clearHo
+ 
+     for (const auto &[item, id] : hoverItems) {
+         if (item) {
+-            deliverHoverEventToItem(item, lastPos, lastPos, modifiers, timestamp, HoverChange::Clear);
++            const QPointingDevice *device = lastMouseDevice.data() ? lastMouseDevice.data() : QPointingDevice::primaryPointingDevice();
++            deliverHoverEventToItem(item, lastPos, lastPos, modifiers, timestamp, HoverChange::Clear, device);
+             Q_ASSERT(id == 0);
+         }
+     }
+@@ -818,10 +819,18 @@ bool QQuickDeliveryAgent::event(QEvent *
+     case QEvent::HoverLeave:
+     case QEvent::HoverMove: {
+         QHoverEvent *he = static_cast<QHoverEvent*>(ev);
++
++        const QPointingDevice *device = nullptr;
++        if (he->device() && he->device()->type() != QInputDevice::DeviceType::Keyboard) {
++            device = qobject_cast<const QPointingDevice*>(he->device());
++        }
++
+         bool accepted = d->deliverHoverEvent(he->scenePosition(),
+                                               he->points().first().sceneLastPosition(),
+-                                              he->modifiers(), he->timestamp());
++                                              he->modifiers(), he->timestamp(),
++                                              device);
+         d->lastMousePosition = he->scenePosition();
++        d->lastMouseDevice = device;
+         he->setAccepted(accepted);
+ #if QT_CONFIG(cursor)
+         QQuickWindowPrivate::get(d->rootItem->window())->updateCursor(d->sceneTransform ?
+@@ -850,10 +859,18 @@ bool QQuickDeliveryAgent::event(QEvent *
+             return false;
+         QEnterEvent *enter = static_cast<QEnterEvent*>(ev);
+         const auto scenePos = enter->scenePosition();
++
++        const QPointingDevice *device = nullptr;
++        if (enter->device() && enter->device()->type() != QInputDevice::DeviceType::Keyboard) {
++            device = qobject_cast<const QPointingDevice*>(enter->device());
++        }
++
+         bool accepted = d->deliverHoverEvent(scenePos,
+                                               enter->points().first().sceneLastPosition(),
+-                                              enter->modifiers(), enter->timestamp());
++                                              enter->modifiers(), enter->timestamp(),
++                                              device);
+         d->lastMousePosition = scenePos;
++        d->lastMouseDevice = device;
+         // deliverHoverEvent() constructs QHoverEvents: check that EPD didn't end up with corrupted scenePos
+         Q_ASSERT(enter->scenePosition() == scenePos);
+         enter->setAccepted(accepted);
+@@ -1055,14 +1072,19 @@ void QQuickDeliveryAgentPrivate::deliver
+ 
+ bool QQuickDeliveryAgentPrivate::sendHoverEvent(QEvent::Type type, QQuickItem *item,
+                                       const QPointF &scenePos, const QPointF &lastScenePos,
+-                                      Qt::KeyboardModifiers modifiers, ulong timestamp)
++                                      Qt::KeyboardModifiers modifiers, ulong timestamp,
++                                      const QPointingDevice *device)
+ {
+     auto itemPrivate = QQuickItemPrivate::get(item);
+     const auto transform = itemPrivate->windowToItemTransform();
+     auto globalPos = item->mapToGlobal(scenePos);
+-    QHoverEvent hoverEvent(type, scenePos, globalPos, transform.map(lastScenePos), modifiers);
++
++    bool isHoverEvent = (type == QEvent::HoverEnter || type == QEvent::HoverMove || type == QEvent::HoverLeave);
++    const QPointingDevice *actualDevice = device ? device : QPointingDevice::primaryPointingDevice();
++
++    QHoverEvent hoverEvent(type, scenePos, globalPos, transform.map(lastScenePos), modifiers, actualDevice);
+     hoverEvent.setTimestamp(timestamp);
+-    hoverEvent.setAccepted(true);
++    hoverEvent.setAccepted(isHoverEvent);
+     QEventPoint &point = hoverEvent.point(0);
+     QMutableEventPoint::setPosition(point, transform.map(scenePos));
+     QMutableEventPoint::setGlobalLastPosition(point, item->mapToGlobal(lastScenePos));
+@@ -1084,7 +1106,8 @@ bool QQuickDeliveryAgentPrivate::sendHov
+ // TODO later: specify the device in case of multi-mouse scenario, or mouse and tablet both in use
+ bool QQuickDeliveryAgentPrivate::deliverHoverEvent(
+         const QPointF &scenePos, const QPointF &lastScenePos,
+-        Qt::KeyboardModifiers modifiers, ulong timestamp)
++        Qt::KeyboardModifiers modifiers, ulong timestamp,
++        const QPointingDevice *device)
+ {
+     // The first time this function is called, hoverItems is empty.
+     // We then call deliverHoverEventRecursive from the rootItem, and
+@@ -1112,7 +1135,7 @@ bool QQuickDeliveryAgentPrivate::deliver
+ 
+     if (subtreeHoverEnabled) {
+         hoveredLeafItemFound = false;
+-        deliverHoverEventRecursive(rootItem, scenePos, lastScenePos, modifiers, timestamp);
++        deliverHoverEventRecursive(rootItem, scenePos, lastScenePos, modifiers, timestamp, device);
+     }
+ 
+     // Prune the list for items that are no longer hovered
+@@ -1126,7 +1149,7 @@ bool QQuickDeliveryAgentPrivate::deliver
+             // event to the item already, and it can just be removed from the list. Note that
+             // the item can have been deleted as well.
+             if (item && hoverId != 0)
+-                deliverHoverEventToItem(item, scenePos, lastScenePos, modifiers, timestamp, HoverChange::Clear);
++                deliverHoverEventToItem(item, scenePos, lastScenePos, modifiers, timestamp, HoverChange::Clear, device);
+             it = hoverItems.erase(it);
+         }
+     }
+@@ -1173,7 +1196,8 @@ bool QQuickDeliveryAgentPrivate::deliver
+ */
+ bool QQuickDeliveryAgentPrivate::deliverHoverEventRecursive(
+         QQuickItem *item, const QPointF &scenePos, const QPointF &lastScenePos,
+-        Qt::KeyboardModifiers modifiers, ulong timestamp)
++        Qt::KeyboardModifiers modifiers, ulong timestamp,
++        const QPointingDevice *device)
+ {
+ 
+     const QQuickItemPrivate *itemPrivate = QQuickItemPrivate::get(item);
+@@ -1194,7 +1218,7 @@ bool QQuickDeliveryAgentPrivate::deliver
+         }
+ 
+         // Recurse into the child
+-        const bool accepted = deliverHoverEventRecursive(child, scenePos, lastScenePos, modifiers, timestamp);
++        const bool accepted = deliverHoverEventRecursive(child, scenePos, lastScenePos, modifiers, timestamp, device);
+         if (accepted) {
+             // Stop propagation / recursion
+             return true;
+@@ -1207,7 +1231,7 @@ bool QQuickDeliveryAgentPrivate::deliver
+ 
+     // All decendants have been visited.
+     // Now deliver the event to the item
+-    return deliverHoverEventToItem(item, scenePos, lastScenePos, modifiers, timestamp, HoverChange::Set);
++    return deliverHoverEventToItem(item, scenePos, lastScenePos, modifiers, timestamp, HoverChange::Set, device);
+ }
+ 
+ /*! \internal
+@@ -1220,7 +1244,8 @@ bool QQuickDeliveryAgentPrivate::deliver
+ */
+ bool QQuickDeliveryAgentPrivate::deliverHoverEventToItem(
+         QQuickItem *item, const QPointF &scenePos, const QPointF &lastScenePos,
+-        Qt::KeyboardModifiers modifiers, ulong timestamp, HoverChange hoverChange)
++        Qt::KeyboardModifiers modifiers, ulong timestamp, HoverChange hoverChange,
++        const QPointingDevice *device)
+ {
+     QQuickItemPrivate *itemPrivate = QQuickItemPrivate::get(item);
+     const QPointF localPos = item->mapFromScene(scenePos);
+@@ -1249,13 +1274,13 @@ bool QQuickDeliveryAgentPrivate::deliver
+             hoverItems[item] = currentHoverId;
+ 
+         if (wasHovering)
+-            accepted = sendHoverEvent(QEvent::HoverMove, item, scenePos, lastScenePos, modifiers, timestamp);
++            accepted = sendHoverEvent(QEvent::HoverMove, item, scenePos, lastScenePos, modifiers, timestamp, device);
+         else
+-            accepted = sendHoverEvent(QEvent::HoverEnter, item, scenePos, lastScenePos, modifiers, timestamp);
++            accepted = sendHoverEvent(QEvent::HoverEnter, item, scenePos, lastScenePos, modifiers, timestamp, device);
+     } else if (wasHovering) {
+         // A leave should never stop propagation
+         hoverItemIterator.value() = 0;
+-        sendHoverEvent(QEvent::HoverLeave, item, scenePos, lastScenePos, modifiers, timestamp);
++        sendHoverEvent(QEvent::HoverLeave, item, scenePos, lastScenePos, modifiers, timestamp, device);
+     }
+ 
+     if (!itemPrivate->hasPointerHandlers())
+@@ -1270,7 +1295,8 @@ bool QQuickDeliveryAgentPrivate::deliver
+ 
+     if (hoverChange == HoverChange::Clear) {
+         // Note: a leave should never stop propagation
+-        QHoverEvent hoverEvent(QEvent::HoverLeave, scenePos, globalPos, lastScenePos, modifiers);
++        const QPointingDevice *actualDevice = device ? device : QPointingDevice::primaryPointingDevice();
++        QHoverEvent hoverEvent(QEvent::HoverLeave, scenePos, globalPos, lastScenePos, modifiers, actualDevice);
+         hoverEvent.setTimestamp(timestamp);
+ 
+         for (QQuickPointerHandler *h : itemPrivate->extra->pointerHandlers) {
+@@ -1282,15 +1308,16 @@ bool QQuickDeliveryAgentPrivate::deliver
+             }
+         }
+     } else {
+-        QMouseEvent hoverEvent(QEvent::MouseMove, localPos, scenePos, globalPos, Qt::NoButton, Qt::NoButton, modifiers);
+-        hoverEvent.setTimestamp(timestamp);
++        const QPointingDevice *actualDevice = device ? device : QPointingDevice::primaryPointingDevice();
++        QMouseEvent mouseEvent(QEvent::MouseMove, localPos, scenePos, globalPos, Qt::NoButton, Qt::NoButton, modifiers, actualDevice);
++        mouseEvent.setTimestamp(timestamp);
+ 
+         for (QQuickPointerHandler *h : itemPrivate->extra->pointerHandlers) {
+             if (QQuickHoverHandler *hh = qmlobject_cast<QQuickHoverHandler *>(h)) {
+                 if (!hh->enabled())
+                     continue;
+-                hoverEvent.setAccepted(true);
+-                hh->handlePointerEvent(&hoverEvent);
++                mouseEvent.setAccepted(true);
++                hh->handlePointerEvent(&mouseEvent);
+                 if (hh->isHovered()) {
+                     // Mark the whole item as updated, even if only the handler is
+                     // actually in a hovered state (because of HoverHandler.margins)
+@@ -1766,9 +1793,14 @@ void QQuickDeliveryAgentPrivate::handleM
+ 
+         const QPointF last = lastMousePosition.isNull() ? event->scenePosition() : lastMousePosition;
+         lastMousePosition = event->scenePosition();
++
++        const QPointingDevice *device = qobject_cast<const QPointingDevice*>(event->device());
++        lastMouseDevice = device;
++
+         qCDebug(lcHoverTrace) << q << "mouse pos" << last << "->" << lastMousePosition;
+         if (!event->points().size() || !event->exclusiveGrabber(event->point(0))) {
+-            bool accepted = deliverHoverEvent(event->scenePosition(), last, event->modifiers(), event->timestamp());
++            bool accepted = deliverHoverEvent(event->scenePosition(), last, event->modifiers(),
++                                             event->timestamp(), device);
+             event->setAccepted(accepted);
+         }
+         deliverPointerEvent(event);
+@@ -1824,8 +1856,10 @@ void QQuickDeliveryAgentPrivate::flushFr
+     // TODO do this for each known mouse device or come up with a different strategy
+     if (frameSynchronousHoverEnabled && !win->mouseGrabberItem() &&
+             !lastMousePosition.isNull() && QQuickWindowPrivate::get(win)->dirtyItemList) {
+-        qCDebug(lcHoverTrace) << q << "delivering frame-sync hover to root @" << lastMousePosition;
+-        if (deliverHoverEvent(lastMousePosition, lastMousePosition, QGuiApplication::keyboardModifiers(), 0)) {
++        const QPointingDevice *device = lastMouseDevice.data() ? lastMouseDevice.data() : QPointingDevice::primaryPointingDevice();
++        qCDebug(lcHoverTrace) << q << "delivering frame-sync hover to root @" << lastMousePosition << "device:" << (device ? device->name() : QLatin1StringView("primary"));
++        if (deliverHoverEvent(lastMousePosition, lastMousePosition, QGuiApplication::keyboardModifiers(), 
++                              0, device)) {
+ #if QT_CONFIG(cursor)
+             QQuickWindowPrivate::get(rootItem->window())->updateCursor(
+                     sceneTransform ? sceneTransform->map(lastMousePosition) : lastMousePosition, rootItem);
+Index: qt6-declarative/src/quick/util/qquickdeliveryagent_p_p.h
+===================================================================
+--- qt6-declarative.orig/src/quick/util/qquickdeliveryagent_p_p.h
++++ qt6-declarative/src/quick/util/qquickdeliveryagent_p_p.h
+@@ -118,6 +118,7 @@ public:
+ 
+     // Mouse positions are saved in widget coordinates
+     QPointF lastMousePosition;
++    QPointer<const QPointingDevice> lastMouseDevice;
+     bool deliverTouchAsMouse(QQuickItem *item, QTouchEvent *pointerEvent);
+     void translateTouchEvent(QTouchEvent *touchEvent);
+     void removeGrabber(QQuickItem *grabber, bool mouse = true, bool touch = true, bool cancel = false);
+@@ -175,12 +176,12 @@ public:
+         Clear,
+         Set,
+     };
+-    bool deliverHoverEvent(const QPointF &scenePos, const QPointF &lastScenePos, Qt::KeyboardModifiers modifiers, ulong timestamp);
+-    bool deliverHoverEventRecursive(QQuickItem *, const QPointF &scenePos, const QPointF &lastScenePos, Qt::KeyboardModifiers modifiers, ulong timestamp);
++    bool deliverHoverEvent(const QPointF &scenePos, const QPointF &lastScenePos, Qt::KeyboardModifiers modifiers, ulong timestamp, const QPointingDevice *device = nullptr);
++    bool deliverHoverEventRecursive(QQuickItem *, const QPointF &scenePos, const QPointF &lastScenePos, Qt::KeyboardModifiers modifiers, ulong timestamp, const QPointingDevice *device = nullptr);
+     bool deliverHoverEventToItem(QQuickItem *item, const QPointF &scenePos, const QPointF &lastScenePos, Qt::KeyboardModifiers modifiers, ulong timestamp,
+-                                 HoverChange hoverChange);
+-    bool sendHoverEvent(QEvent::Type, QQuickItem *, const QPointF &scenePos, const QPointF &lastScenePos,
+-                        Qt::KeyboardModifiers modifiers, ulong timestamp);
++                                 HoverChange hoverChange, const QPointingDevice *device = nullptr);
++    bool sendHoverEvent(QEvent::Type type, QQuickItem *item, const QPointF &scenePos, const QPointF &lastScenePos,
++                        Qt::KeyboardModifiers modifiers, ulong timestamp, const QPointingDevice *device = nullptr);
+     bool clearHover(ulong timestamp = 0);
+ 
+ #if QT_CONFIG(quick_draganddrop)
