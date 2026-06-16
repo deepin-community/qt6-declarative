@@ -1,3 +1,9 @@
+qt6-declarative (6.8.0+dfsg-0deepin13) unstable; urgency=medium
+
+  * fix: restore focus after closing popup window
+
+ -- lvpeilong <lvpeilong@uniontech.com>  Tue, 16 Jun 2026 13:51:17 +0800
+
 qt6-declarative (6.8.0+dfsg-0deepin12) unstable; urgency=medium
 
   * fix: add multi-seat event support for QQuickDeliveryAgent

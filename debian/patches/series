@@ -8,3 +8,4 @@ fix-qml-cache-invalid-timestamp-handle.patch
 Fix-QML-touchscreen-multi-finger-swipe-not-working.patch
 fix-gc-Assume-less-if-hasConstWrapper-is-set.path
 qt6-declarative-add-multi-seat-event.patch
+fix-popup-focus-restoration-for-focused-child.patch

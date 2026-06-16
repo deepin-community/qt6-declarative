@@ -1,0 +1,38 @@
+Author: Robertkill <lvpeilong@uniontech.com>
+Date:   Tue Jun 16 13:21:37 2026
+Subject: fix popup focus restoration when a popup child owns focus
+
+When a Popup.Window is closed while focus is held by a child item,
+QQuickPopup only checks the popup item itself and misses the focused
+descendant. As a result the original window focus is not restored after
+the popup closes.
+
+Record focus ownership for focused descendants and reactivate the window
+before restoring the previous focus item.
+
+---
+
+Index: qt6-declarative/src/quicktemplates/qquickpopup.cpp
+===================================================================
+--- qt6-declarative.orig/src/quicktemplates/qquickpopup.cpp
++++ qt6-declarative/src/quicktemplates/qquickpopup.cpp
+@@ -800,5 +800,8 @@ bool QQuickPopupPrivate::prepareExitTransition()
+         // able to check it in finalizeExitTransition.
+         if (!hadActiveFocusBeforeExitTransition) {
+             const auto *da = QQuickItemPrivate::get(popupItem)->deliveryAgentPrivate();
+-            hadActiveFocusBeforeExitTransition = popupItem->hasActiveFocus() || (da && da->focusTargetItem() == popupItem);
++            QQuickItem *focusTarget = da ? da->focusTargetItem() : nullptr;
++            hadActiveFocusBeforeExitTransition = popupItem->hasActiveFocus()
++                    || focusTarget == popupItem
++                    || (focusTarget && popupItem->isAncestorOf(focusTarget));
+         }
+@@ -852,6 +855,8 @@ void QQuickPopupPrivate::finalizeExitTransition()
+             auto *contentItem = appWindow ? appWindow->contentItem() : window->contentItem();
+             auto *overlay = QQuickOverlay::overlay(window);
+             auto *overlayPrivate = QQuickOverlayPrivate::get(overlay);
++            if (usePopupWindow())
++                window->requestActivate();
+             if (!contentItem->scopedFocusItem()
+                 && !overlayPrivate->lastActiveFocusItem.isNull()) {
+                 overlayPrivate->lastActiveFocusItem->setFocus(true, Qt::OtherFocusReason);
+         }
