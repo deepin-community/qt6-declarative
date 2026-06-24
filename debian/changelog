@@ -1,3 +1,9 @@
+qt6-declarative (6.8.0+dfsg-0deepin13) unstable; urgency=medium
+
+  * fix: add multi-seat event support for QQuickDeliveryAgent
+
+ -- Kun Zhang <zhangkun2@uniontech.com>  Wed, 15 Jun 2026 15:18:45 +0800
+
 qt6-declarative (6.8.0+dfsg-0deepin12) unstable; urgency=medium
 
   * fix: add multi-seat event support for QQuickDeliveryAgent

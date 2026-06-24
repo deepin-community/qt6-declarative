@@ -1,0 +1,40 @@
+From: Wang Chuan <ouchuanm@outlook.com>
+Date: Mon, 2 Jun 2025 20:18:38 +0800
+Subject: QQuickFlickable: fix jump back when scrolling to edge
+
+Since de591d440c2f43a7e94ef4c93db757d254fa7947, vMoved/hMoved are used
+to check if it is the first move in dragging. However they can be reset
+to false during dragging, causing the content to jump back when scrolling
+to the edge of the Flickable.
+
+Check the dragging state as well before resetting dragStartOffset.
+
+Origin: upstream, https://github.com/qt/qtdeclarative/commit/de1e849d09466aed10822077012789a0f2f126c1
+Bug: https://bugreports.qt.io/browse/QTBUG-137323
+Applied-Upstream: de1e849d09466aed10822077012789a0f2f126c1
+---
+ src/quick/items/qquickflickable.cpp | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/quick/items/qquickflickable.cpp b/src/quick/items/qquickflickable.cpp
+index b5ab2ab7a..6c45de69a 100644
+--- a/src/quick/items/qquickflickable.cpp
++++ b/src/quick/items/qquickflickable.cpp
+@@ -1182,7 +1182,7 @@ void QQuickFlickablePrivate::drag(qint64 currentTimestamp, QEvent::Type eventTyp
+     if (q->yflick()) {
+         qreal dy = deltas.y();
+         if (overThreshold || elapsedSincePress > 200) {
+-            if (!vMoved)
++            if (!vMoved && !vData.dragging)
+                 vData.dragStartOffset = dy;
+             qreal newY = dy + vData.pressPos - (syncDrag ? 0 : vData.dragStartOffset);
+             // Recalculate bounds in case margins have changed, but use the content
+@@ -1258,7 +1258,7 @@ void QQuickFlickablePrivate::drag(qint64 currentTimestamp, QEvent::Type eventTyp
+     if (q->xflick()) {
+         qreal dx = deltas.x();
+         if (overThreshold || elapsedSincePress > 200) {
+-            if (!hMoved)
++            if (!hMoved && !hData.dragging)
+                 hData.dragStartOffset = dx;
+             qreal newX = dx + hData.pressPos - (syncDrag ? 0 : hData.dragStartOffset);
+             const qreal minX = hData.dragMinBound + hData.startMargin;
