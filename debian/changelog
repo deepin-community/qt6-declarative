@@ -1,3 +1,11 @@
+qt6-declarative (6.8.0+dfsg-0deepin14) unstable; urgency=medium
+
+  * Add patch: CVE-2026-79616 - fix out-of-bounds read in
+    QQuickSvgParser when parsing SVG path data ending with whitespace or
+    digits by respecting the end iterator sentinel (QTBUG-148526).
+
+ -- Tian ShiLin <tianshilin@uniontech.com>  Fri, 28 Aug 2026 14:46:11 +0800
+
 qt6-declarative (6.8.0+dfsg-0deepin13) unstable; urgency=medium
 
   * fix: add multi-seat event support for QQuickDeliveryAgent
