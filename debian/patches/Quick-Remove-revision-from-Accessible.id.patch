@@ -1,0 +1,32 @@
+From: Ulf Hermann <ulf.hermann@qt.io>
+Date: Mon, 03 Mar 2025 15:20:23 +0100
+Subject: Quick: Remove revision from Accessible.id
+
+We don't need revisions on attached properties, they are always
+qualified anyway.
+
+Amends commit 94d736fa94d62632e065e9b919413090f3454546
+
+Origin: upstream, https://codereview.qt-project.org/c/qt/qtdeclarative/+/628705
+Bug: https://bugreports.qt.io/browse/QTBUG-134269
+Applied-Upstream: 314f843cb4ebeebb55797b04dc923d8e14403019
+---
+ src/quick/items/qquickaccessibleattached_p.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/quick/items/qquickaccessibleattached_p.h b/src/quick/items/qquickaccessibleattached_p.h
+index 2d44000..9f3883b 100644
+--- a/src/quick/items/qquickaccessibleattached_p.h
++++ b/src/quick/items/qquickaccessibleattached_p.h
+@@ -53,7 +53,7 @@
+     Q_PROPERTY(QAccessible::Role role READ role WRITE setRole NOTIFY roleChanged FINAL)
+     Q_PROPERTY(QString name READ name WRITE setName NOTIFY nameChanged FINAL)
+     Q_PROPERTY(QString description READ description WRITE setDescription NOTIFY descriptionChanged FINAL)
+-    Q_PROPERTY(QString id READ id WRITE setId NOTIFY idChanged REVISION(6, 8) FINAL)
++    Q_PROPERTY(QString id READ id WRITE setId NOTIFY idChanged FINAL)
+     Q_PROPERTY(bool ignored READ ignored WRITE setIgnored NOTIFY ignoredChanged FINAL)
+ 
+     QML_NAMED_ELEMENT(Accessible)
+     QML_ADDED_IN_VERSION(2, 0)
+     QML_UNCREATABLE("Accessible is only available via attached properties.")
+     QML_EXTENDED_NAMESPACE(QAccessible)
