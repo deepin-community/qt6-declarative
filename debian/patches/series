@@ -11,3 +11,4 @@ qt6-declarative-add-multi-seat-event.patch
 QQuickFlickable-fix-jump-back-when-scrolling-to-edge.patch
 CVE-2026-79616_fix-oob-read-in-QQuickSvgParser.patch
 Quick-Remove-revision-from-Accessible.id.patch
+QQuickFlickable-use-pixelDelta-for-real-touchpads.patch

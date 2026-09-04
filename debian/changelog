@@ -1,3 +1,13 @@
+qt6-declarative (6.8.0+dfsg-0deepin16) unstable; urgency=medium
+
+  * Add patch: QQuickFlickable - fix Flickable stuttering when scrolling
+    slowly with a touchpad and continuing to move after the fingers are
+    lifted, by keeping scroll updates whose pixelDelta rounded to (0, 0) on
+    the drag path instead of treating them as mouse wheel clicks
+    (QTBUG-149567)
+
+ -- Kun Zhang <zhangkun2@uniontech.com>  Fri, 04 Sep 2026 10:53:23 +0800
+
 qt6-declarative (6.8.0+dfsg-0deepin15) unstable; urgency=medium
 
   * fix: Quick - Remove revision from Accessible.id, attached properties
