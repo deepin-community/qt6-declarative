@@ -1,0 +1,62 @@
+From: Kun Zhang <zhangkun2@uniontech.com>
+Date: Thu, 27 Aug 2026 16:39:32 +0800
+Subject: QQuickFlickable: keep using pixelDelta on touchpads with rounded deltas
+
+Scrolling a Flickable slowly with a two-finger touchpad gesture stutters:
+the content stops following the fingers, jerks ahead of them and springs
+back, and when the fingers are lifted it keeps travelling on its own.
+Scrolling at normal speed is fine, and the slower the gesture, the worse
+it gets.
+
+QQuickFlickable::wheelEvent falls back to the angleDelta (mouse wheel)
+code path whenever QWheelEvent::pixelDelta() is null.  That test inspects
+one event, not the device, so it is also met in the middle of a touchpad
+gesture: while the fingers move slowly they travel less than one pixel
+between two frames, so the Wayland QPA rounds that motion down to (0, 0)
+in QWaylandInputDevice::Pointer::FrameData::pixelDeltaAndError() and carries
+the remainder over to the next frame, while angleDelta stays non-null because
+it is derived from the same continuous motion.
+
+Those updates then feed the velocity buffer and call flickX()/flickY()
+while the drag started by ScrollBegin is still in progress, so a flick
+animation and the remaining drag updates write to contentX/contentY at
+once.  In a captured trace of one slow scroll, 13 of 98 ScrollUpdate
+frames were affected, the first one as early as the third update.
+
+Keep such an update on the pixelDelta path instead.  Dragging by its
+(0, 0) delta holds the content still until the accumulated rounding error
+produces the next whole pixel, which is exactly what the fingers did.
+
+The three existing conditions are unchanged, so only touchpad updates
+that have an angleDelta but no pixelDelta change behaviour.  Mouse wheels
+keep taking the angleDelta path: their events are MouseEventNotSynthesized
+and their phase is NoScrollPhase, and either term alone is enough.  Mouse
+press-drag-release does not go through wheelEvent() at all.
+
+Bug: https://bugreports.qt.io/browse/QTBUG-149567
+Forwarded: https://codereview.qt-project.org/c/qt/qtdeclarative/+/764706
+---
+ src/quick/items/qquickflickable.cpp | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/src/quick/items/qquickflickable.cpp b/src/quick/items/qquickflickable.cpp
+index b5ab2ab7a..136a5eebb 100644
+--- a/src/quick/items/qquickflickable.cpp
++++ b/src/quick/items/qquickflickable.cpp
+@@ -1661,7 +1661,15 @@ void QQuickFlickable::wheelEvent(QWheelEvent *event)
+         return;
+     }
+ 
+-    if (event->source() == Qt::MouseEventNotSynthesized || event->pixelDelta().isNull() || event->phase() == Qt::NoScrollPhase) {
++    // Within a touchpad gesture, pixelDelta rounds down to (0, 0) whenever the fingers
++    // moved less than one pixel since the previous frame. Keep such a frame on the
++    // pixelDelta path: falling back to angleDelta would start a wheel flick in the
++    // middle of the ongoing drag.
++    const bool isTouchpadFrameWithLostPixelDelta =
++            event->deviceType() == QInputDevice::DeviceType::TouchPad
++            && !event->angleDelta().isNull();
++    if (event->source() == Qt::MouseEventNotSynthesized || event->phase() == Qt::NoScrollPhase
++        || (event->pixelDelta().isNull() && !isTouchpadFrameWithLostPixelDelta)) {
+         // no pixel delta (physical mouse wheel, or "dumb" touchpad), so use angleDelta
+         int xDelta = event->angleDelta().x();
+         int yDelta = event->angleDelta().y();
