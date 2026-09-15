@@ -1,3 +1,15 @@
+qt6-declarative (6.8.0+dfsg-0deepin17) unstable; urgency=medium
+
+  * Add patch: fix QSvgFontEngine::glyphIndex signature to match the
+    QFontEngine 6.8 private API (now takes an additional
+    variationSelector argument). The old single-argument override did
+    not actually override the base class pure virtual, leaving
+    QSvgFontEngine abstract and causing build failures when
+    instantiating it in the Quick vector image generator
+    (QTBUG-148526).
+
+ -- Liu Zheng <liuzheng@uniontech.com>  Mon, 15 Sep 2026 10:00:00 +0800
+
 qt6-declarative (6.8.0+dfsg-0deepin16) unstable; urgency=medium
 
   * Add patch: QQuickFlickable - fix Flickable stuttering when scrolling

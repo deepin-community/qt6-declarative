@@ -1,0 +1,43 @@
+Author: Liu Zheng <liuzheng@uniontech.com>
+Date:   Mon Sep 15 10:00:00 2026
+Subject: Fix QSvgFontEngine::glyphIndex signature to match QFontEngine 6.8
+
+The base class QFontEngine::glyphIndex in QtGui 6.8 private header has
+the signature:
+    virtual glyph_t glyphIndex(uint ucs4, uint variationSelector = 0) const = 0;
+The QSvgFontEngine override used the old single-argument signature, so
+the `override` did not actually override the pure virtual function.
+As a result QSvgFontEngine remained abstract and could not be
+instantiated, causing build failures:
+  - error: 'glyphIndex' marked 'override', but does not override
+  - error: invalid new-expression of abstract class type 'QSvgFontEngine'
+
+Align the override with the base class signature so the class is
+concrete and compiles against QtGui 6.8.
+
+---
+
+Index: qt6-declarative/src/quickvectorimage/generator/qsvgvisitorimpl.cpp
+===================================================================
+--- qt6-declarative.orig/src/quickvectorimage/generator/qsvgvisitorimpl.cpp
++++ qt6-declarative/src/quickvectorimage/generator/qsvgvisitorimpl.cpp
+@@ -452,7 +452,7 @@ namespace {
+
+         QFontEngine *cloneWithSize(qreal size) const override;
+
+-        glyph_t glyphIndex(uint ucs4) const override;
++        glyph_t glyphIndex(uint ucs4, uint variationSelector = 0) const override;
+         int stringToCMap(const QChar *str,
+                          int len,
+                          QGlyphLayout *glyphs,
+@@ -495,8 +495,9 @@ namespace {
+         return QFixed::fromReal(m_font->m_unitsPerEm);
+     }
+
+-    glyph_t QSvgFontEngine::glyphIndex(uint ucs4) const
++    glyph_t QSvgFontEngine::glyphIndex(uint ucs4, uint variationSelector) const
+     {
++        Q_UNUSED(variationSelector);
+         if (ucs4 < USHRT_MAX && m_font->m_glyphs.contains(QChar(ushort(ucs4))))
+             return glyph_t(ucs4);
+
