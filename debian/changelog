@@ -1,3 +1,15 @@
+qt6-declarative (6.8.0+dfsg-0deepin18) unstable; urgency=medium
+
+  * Add patch: Quick - skip the size request in
+    QQuickDragAttachedPrivate::loadPixmap() for itemgrabber URLs
+    (Drag.imageSource produced by Item::grabToImage()), which emitted a
+    spurious "Ignoring sourceSize request for image url that came from
+    grabToImage" warning whenever no explicit imageSourceSize was set:
+    the getter falls back to the previous loader size, while grabbed
+    images are already fully rendered and cached under a size-less key.
+
+ -- Ivy233 <wangjinrun@uniontech.com>  Sun, 04 Oct 2026 19:21:03 +0800
+
 qt6-declarative (6.8.0+dfsg-0deepin17) unstable; urgency=medium
 
   * Add patch: fix QSvgFontEngine::glyphIndex signature to match the

@@ -13,3 +13,4 @@ CVE-2026-79616_fix-oob-read-in-QQuickSvgParser.patch
 Quick-Remove-revision-from-Accessible.id.patch
 QQuickFlickable-use-pixelDelta-for-real-touchpads.patch
 fix-QSvgFontEngine-glyphIndex-signature.patch
+fix-grabToImage-sourceSize-request-warning.patch
