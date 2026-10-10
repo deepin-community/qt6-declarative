@@ -1,0 +1,56 @@
+Author: Ivy233 <wangjinrun@uniontech.com>
+Date: Sat Oct 3 21:40:34 2026 +0800
+Subject: fix: skip size request for grabbed drag images
+
+QQuickDragAttachedPrivate::loadPixmap() always passed imageSourceSize()
+to QQuickPixmap::load(). When Drag.imageSource holds an itemgrabber URL
+(produced by Item::grabToImage()) and no explicit imageSourceSize is
+set, the getter falls back to the loader's current size (0x0 for a fresh
+loader, or the previous image's size afterwards). QQuickPixmapCache
+rightfully warns that a sourceSize request on a grabToImage URL is
+ignored, so every drag whose image comes from grabToImage() - the
+documented usage pattern - prints a spurious
+"Ignoring sourceSize request for image url that came from grabToImage"
+warning.
+
+Grabbed images are already fully rendered and are cached under a key
+without any size, so the size request is meaningless for them. Only
+request a size for non-grabber URLs and when imageSourceSize was
+explicitly set.
+
+修复 grabToImage 拖拽图片的 sourceSize 误报：
+
+loadPixmap() 此前无条件把 imageSourceSize() 传给 QQuickPixmap::load()。
+当 Drag.imageSource 为 itemgrabber URL（Item::grabToImage() 的结果）且
+未显式设置 imageSourceSize 时，回退取 loader 当前尺寸（空 loader 为
+0x0，之后为上一张图的尺寸），触发 QQuickPixmapCache 的 "Ignoring
+sourceSize request for image url that came from grabToImage" 告警。而
+grab 结果已完整渲染且以无尺寸键缓存，尺寸请求对其无意义。现仅对非
+grabber URL 请求尺寸。
+
+PMS: TASK-394335
+---
+Index: qt6-declarative/src/quick/items/qquickdrag.cpp
+===================================================================
+diff --git qt6-declarative.orig/src/quick/items/qquickdrag.cpp qt6-declarative/src/quick/items/qquickdrag.cpp
+index 8095e9b49..7371eab2f 100644
+--- qt6-declarative.orig/src/quick/items/qquickdrag.cpp
++++ qt6-declarative/src/quick/items/qquickdrag.cpp
+@@ -817,7 +817,16 @@ void QQuickDragAttachedPrivate::loadPixmap()
+     const QQmlContext *context = qmlContext(q->parent());
+     if (context)
+         loadUrl = context->resolvedUrl(imageSource);
+-    pixmapLoader.load(context ? context->engine() : nullptr, loadUrl, QRect(), q->imageSourceSize());
++    // A request size is meaningless for itemgrabber URLs (results of
++    // Item::grabToImage()): those images are already fully rendered and are
++    // cached under a size-less key. imageSourceSize() falls back to the size
++    // of the previously loaded image (0x0 for a fresh loader) when no
++    // explicit size was set, which only triggers a spurious "Ignoring
++    // sourceSize request for image url that came from grabToImage" warning
++    // in QQuickPixmapCache. Skip the size request for grabbed images.
++    const bool isGrabbedImage = loadUrl.scheme() == QQuickPixmap::itemGrabberScheme;
++    pixmapLoader.load(context ? context->engine() : nullptr, loadUrl, QRect(),
++                      isGrabbedImage ? QSize() : q->imageSourceSize());
+ }
+ 
+ Qt::DropAction QQuickDragAttachedPrivate::startDrag(Qt::DropActions supportedActions)
