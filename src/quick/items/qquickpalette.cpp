@@ -1,5 +1,6 @@
 // Copyright (C) 2020 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+// Qt-Security score:significant reason:default
 
 #include "qquickpalette_p.h"
 
@@ -45,7 +46,7 @@ static constexpr bool is_valid(QPalette::ColorGroup cg) noexcept
 /*!
     \qmltype Palette
     \nativetype QQuickPalette
-    \inherits QQuickColorGroup
+    \inherits ColorGroup
     \inqmlmodule QtQuick
     \ingroup qtquick-visual
     \brief Contains color groups for each QML item state.

@@ -1,5 +1,6 @@
 // Copyright (C) 2021 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+// Qt-Security score:significant reason:default
 
 #ifndef QQUICKSELECTABLE_P_H
 #define QQUICKSELECTABLE_P_H
@@ -28,8 +29,11 @@ public:
         SelectionRectangleChanged
     };
 
+    virtual ~QQuickSelectable();
+
     virtual QQuickItem *selectionPointerHandlerTarget() const = 0;
 
+    virtual bool hasSelection() const = 0;
     virtual bool startSelection(const QPointF &pos, Qt::KeyboardModifiers modifiers) = 0;
     virtual void setSelectionStartPos(const QPointF &pos) = 0;
     virtual void setSelectionEndPos(const QPointF &pos) = 0;

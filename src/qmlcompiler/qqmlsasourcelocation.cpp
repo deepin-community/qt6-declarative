@@ -1,8 +1,11 @@
 // Copyright (C) 2023 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only WITH Qt-GPL-exception-1.0
+// Qt-Security score:significant
 
 #include "qqmlsasourcelocation.h"
 #include "qqmlsasourcelocation_p.h"
+
+#include <private/qqmljssourcelocation_p.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -18,16 +21,45 @@ static_assert(SourceLocationPrivate::sizeOfSourceLocation() == sizeof(SourceLoca
 
     \brief Represents a location or region in the source code.
  */
+
+/*!
+    Constructs a new SourceLocation with values given by \a offset, \a length,
+    \a line, and \a column.
+ */
 QQmlSA::SourceLocation::SourceLocation(quint32 offset, quint32 length, quint32 line, quint32 column)
 {
     new (m_data) QQmlJS::SourceLocation{ offset, length, line, column };
 }
 
 // explicitly defaulted out-of-line for PIMPL
+/*!
+    Creates a copy of \a other.
+ */
 QQmlSA::SourceLocation::SourceLocation(const SourceLocation &other) = default;
+
+/*!
+    \fn SourceLocation::SourceLocation(SourceLocation &&other) noexcept
+    Move-Constructs a SourceLocation from \a other.
+ */
+
+/*!
+    Assigns \a other to this SourceLocation.
+ */
 QQmlSA::SourceLocation & QQmlSA::SourceLocation::operator=(const QQmlSA::SourceLocation &other) = default;
+
+/*!
+    \fn SourceLocation &SourceLocation::operator=(SourceLocation &&other) noexcept
+    Move-assigns \a other to this SourceLocation.
+ */
+
+/*!
+    Destructs this SourceLocation instance.
+ */
 SourceLocation::~SourceLocation() = default;
 
+/*!
+    Returns \c true is this SourceLocation is valid, \c false otherwise.
+ */
 bool QQmlSA::SourceLocation::isValid() const
 {
     return QQmlSA::SourceLocationPrivate::sourceLocation(*this).isValid();
@@ -38,7 +70,7 @@ bool QQmlSA::SourceLocation::isValid() const
  */
 quint32 QQmlSA::SourceLocation::begin() const
 {
-    return QQmlSA::SourceLocationPrivate::sourceLocation(*this).begin();
+    return offset();
 }
 
 /*!
@@ -46,7 +78,7 @@ quint32 QQmlSA::SourceLocation::begin() const
  */
 quint32 QQmlSA::SourceLocation::end() const
 {
-    return QQmlSA::SourceLocationPrivate::sourceLocation(*this).end();
+    return offset() + length();
 }
 
 /*!
@@ -108,6 +140,23 @@ QQmlSA::SourceLocation QQmlSA::SourceLocation::endZeroLengthLocation(QStringView
     return saLocation;
 }
 
+/*!
+    \fn friend qsizetype SourceLocation::qHash(const SourceLocation &location, qsizetype seed)
+    Returns the hash value for \a location, using \a seed to seed the calculation.
+ */
+
+/*!
+    \fn friend bool SourceLocation::operator==(const SourceLocation &lhs, const SourceLocation &rhs)
+    Returns true if \a lhs equals \a rhs, and \c false otherwise.
+    Two SourceLocations are considered equal if they have the same values for
+    their offset, length, line, and column members.
+ */
+/*!
+    \fn friend bool SourceLocation::operator!=(const SourceLocation &lhs, const SourceLocation &rhs)
+    Returns true if \a lhs does not equal \a rhs, and \c false otherwise.
+    See \l {SourceLocation::operator==} for when two source locations are considered equal.
+ */
+
 qsizetype QQmlSA::SourceLocation::qHashImpl(const SourceLocation &location, qsizetype seed)
 {
     return qHash(QQmlSA::SourceLocationPrivate::sourceLocation(location), seed);
@@ -118,6 +167,15 @@ bool QQmlSA::SourceLocation::operatorEqualsImpl(const SourceLocation &lhs,
 {
     return QQmlSA::SourceLocationPrivate::sourceLocation(lhs)
             == QQmlSA::SourceLocationPrivate::sourceLocation(rhs);
+}
+
+/*!
+    \since 6.12
+    Returns the source location of the origin of any QML document.
+ */
+SourceLocation SourceLocation::documentOrigin()
+{
+    return QQmlSA::SourceLocationPrivate::createQQmlSASourceLocation(QQmlJS::s_documentOrigin);
 }
 
 } // namespace QQmlSA

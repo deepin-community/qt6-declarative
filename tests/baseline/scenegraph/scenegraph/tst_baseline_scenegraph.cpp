@@ -37,6 +37,7 @@ private Q_SLOTS:
     void initTestCase();
     void init();
     void cleanup();
+    void cleanupTestCase();
 #ifdef TEXTLESS_TEST
     void testNoTextRendering_data();
     void testNoTextRendering();
@@ -109,6 +110,10 @@ void tst_Scenegraph::initTestCase()
     QByteArray msg;
     if (!QBaselineTest::connectToBaselineServer(&msg))
         QSKIP(msg);
+
+    const char *freezeEnv = "QT_QUICKVECTORIMAGE_FREEZE";
+    if (!qEnvironmentVariableIsSet(freezeEnv))
+        qputenv(freezeEnv, "-1");
 }
 
 void tst_Scenegraph::init()
@@ -122,6 +127,11 @@ void tst_Scenegraph::cleanup()
     // Allow subsystems time to settle
     if (!aborted)
         QTest::qWait(grabberTimeout / 100);
+}
+
+void tst_Scenegraph::cleanupTestCase()
+{
+    QBaselineTest::finalizeAndDisconnect();
 }
 
 #ifdef TEXTLESS_TEST

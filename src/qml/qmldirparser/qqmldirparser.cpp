@@ -1,5 +1,6 @@
 // Copyright (C) 2016 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+// Qt-Security score:critical reason:data-parser
 
 #include "qqmldirparser_p.h"
 
@@ -62,14 +63,61 @@ inline static void scanToEnd(const QChar *&ch) {
         ++ch;
 }
 
-inline static void scanWord(const QChar *&ch) {
+inline static QString scanWord(const QChar *&ch) {
+    const QChar *begin = ch;
     while (!ch->isSpace() && !ch->isNull())
         ++ch;
+    return QString(begin, ch - begin);
 }
 
-/*!
-\a url is used for generating errors.
-*/
+QString QQmlDirParser::scanQuotedWord(const QChar *&ch, quint16 lineNumber, quint16 columnNumber)
+{
+    Q_ASSERT(*ch == QLatin1Char('"'));
+    ++ch;
+
+    QString result;
+
+    const QChar *begin = ch;
+    while (*ch != QLatin1Char('"')) {
+        if (ch->isNull()) {
+            reportError(lineNumber, columnNumber,
+                        QStringLiteral("file ends inside a quoted string"));
+            result.append(begin, ch - begin);
+            return result;
+        }
+
+        if (*ch == QLatin1Char('\n') || *ch == QLatin1Char('\r')) {
+            reportError(lineNumber, columnNumber,
+                        QStringLiteral("line breaks in quoted strings are not supported as they "
+                                       "are not portable between different operating systems"));
+            result.append(begin, ch - begin);
+            return result;
+        }
+
+        if (*ch == QLatin1Char('\\')) {
+            result.append(begin, ch - begin);
+            ++ch;
+            ++columnNumber;
+            if (*ch != QLatin1Char('"') && *ch != QLatin1Char('\\')) {
+                reportError(lineNumber, columnNumber,
+                            QStringLiteral("only '\"' and '\\' can be escaped"));
+                return result;
+            }
+            begin = ch;
+        }
+
+        ++ch;
+        ++columnNumber;
+    }
+
+    result.append(begin, ch - begin);
+
+    Q_ASSERT(*ch == QLatin1Char('"'));
+    ++ch;
+
+    return result;
+}
+
 bool QQmlDirParser::parse(const QString &source)
 {
     quint16 lineNumber = 0;
@@ -142,16 +190,18 @@ bool QQmlDirParser::parse(const QString &source)
                 scanToEnd(ch);
                 break;
             }
-            const QChar *start = ch;
-            scanWord(ch);
-            if (sectionCount < 4) {
-                sections[sectionCount++] = source.mid(start-source.constData(), ch-start);
-            } else {
-                reportError(lineNumber, start-lineStart, QLatin1String("unexpected token"));
+
+            if (sectionCount >= 4) {
+                reportError(lineNumber, ch - lineStart, QLatin1String("unexpected token"));
                 scanToEnd(ch);
                 invalidLine = true;
                 break;
             }
+
+            sections[sectionCount++] = (*ch == QLatin1Char('"'))
+                    ? scanQuotedWord(ch, lineNumber, ch - lineStart)
+                    : scanWord(ch);
+
             scanSpace(ch);
         } while (*ch != QLatin1Char('\n') && !ch->isNull());
 
@@ -347,23 +397,16 @@ bool QQmlDirParser::parse(const QString &source)
             _linkTarget = sections[1];
         } else if (sectionCount == 2) {
             // No version specified (should only be used for relative qmldir files)
-            const Component entry(sections[0], sections[1], QTypeRevision());
-            _components.insert(entry.typeName, entry);
+            insertComponentOrScript(sections[0], sections[1], QTypeRevision());
         } else if (sectionCount == 3) {
             const QTypeRevision version = parseVersion(sections[1]);
             if (version.isValid()) {
-                const QString &fileName = sections[2];
-
-                if (fileName.endsWith(QLatin1String(".js")) || fileName.endsWith(QLatin1String(".mjs"))) {
-                    // A 'js' extension indicates a namespaced script import
-                    const Script entry(sections[0], fileName, version);
-                    _scripts.append(entry);
-                } else {
-                    const Component entry(sections[0], fileName, version);
-                    _components.insert(entry.typeName, entry);
-                }
+                insertComponentOrScript(sections[0], sections[2], version);
             } else {
-                reportError(lineNumber, 0, QStringLiteral("invalid version %1, expected <major>.<minor>").arg(sections[1]));
+                reportError(
+                        lineNumber, 0,
+                        QStringLiteral("invalid version %1, expected <major>.<minor>")
+                                .arg(sections[1]));
             }
         } else {
             reportError(lineNumber, 0,
@@ -373,7 +416,7 @@ bool QQmlDirParser::parse(const QString &source)
         firstLine = false;
     }
 
-    return hasError();
+    return !hasError();
 }
 
 /* removes all file selector occurrences in path
@@ -506,6 +549,16 @@ void QQmlDirParser::reportError(quint16 line, quint16 column, const QString &des
     error.loc.startColumn = column;
     error.message = description;
     _errors.append(error);
+}
+
+void QQmlDirParser::insertComponentOrScript(
+        const QString &name, const QString &fileName, QTypeRevision version)
+{
+    // A 'js' extension indicates a namespaced script import
+    if (fileName.endsWith(QLatin1String(".js")) || fileName.endsWith(QLatin1String(".mjs")))
+        _scripts.append(Script(name, fileName, version));
+    else
+        _components.insert(name, Component(name, fileName, version));
 }
 
 void QQmlDirParser::setError(const QQmlJS::DiagnosticMessage &e)

@@ -1,10 +1,11 @@
 // Copyright (C) 2022 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only
 
-#include <QtTest/QtTest>
+#include <QtTest/QTest>
 #include <QtTest/QSignalSpy>
 #include <QtQuick/qquickwindow.h>
 #include <QtQuick/private/qquickdrag_p_p.h>
+#include <QtQml/qqmlcontext.h>
 
 #include <QtQuickTestUtils/private/qmlutils_p.h>
 
@@ -121,7 +122,7 @@ void tst_QQuickDragAttached::imageSourceSize_data()
 
     QTest::addRow("size first: default size") << true << QSize() << QSize(462, 339) << QSize(462, 339);
     QTest::addRow("size first: shrunken elongated") << true << QSize(214, 114) << QSize(214, 114) << QSize(214, 114);
-    QTest::addRow("size first: width, neg height") << true << QSize(154, -1) << QSize(154, 113) << QSize(154, 113);
+    QTest::addRow("size first: width, neg height") << true << QSize(154, -1) << QSize(154, 339) << QSize(462, 339);
     QTest::addRow("size first: width, zero height") << true << QSize(154, 0) << QSize(154, 0) << QSize(154, 113);
 }
 
@@ -132,7 +133,11 @@ void tst_QQuickDragAttached::imageSourceSize()
     QFETCH(QSize, expectedSourceSize);
     QFETCH(QSize, expectedImageSize);
 
-    QQuickDragAttached attached(nullptr);
+    QQmlEngine engine;
+    QQmlContext ctx(&engine);
+    QQuickItem attachee;
+    QQuickDragAttached attached(&attachee);
+    engine.setContextForObject(&attachee, &ctx);
     QSignalSpy spy(&attached, &QQuickDragAttached::imageSourceSizeChanged);
 
     if (sizeFirst)

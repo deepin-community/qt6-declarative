@@ -1,5 +1,6 @@
 // Copyright (C) 2019 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+// Qt-Security score:significant reason:default
 
 #include "qquickpointerdevicehandler_p_p.h"
 #include <private/qquickitem_p.h>
@@ -272,9 +273,9 @@ bool QQuickPointerDeviceHandler::wantsPointerEvent(QPointerEvent *event)
         return false;
     if (d->acceptedModifiers != Qt::KeyboardModifierMask && event->modifiers() != d->acceptedModifiers)
         return false;
-    // Some handlers (HoverHandler, PinchHandler) set acceptedButtons to Qt::NoButton to indicate that button state is irrelevant.
-    if (event->pointingDevice()->type() != QPointingDevice::DeviceType::TouchScreen &&
-            acceptedButtons() != Qt::NoButton && event->type() != QEvent::Wheel &&
+    // Some handlers (HoverHandler, PinchHandler, PointHandler) set
+    // acceptedButtons to Qt::NoButton to indicate that button state is irrelevant.
+    if (event->isSinglePointEvent() && acceptedButtons() != Qt::NoButton && event->type() != QEvent::Wheel &&
             (static_cast<QSinglePointEvent *>(event)->buttons() & acceptedButtons()) == 0 &&
             (static_cast<QSinglePointEvent *>(event)->button() & acceptedButtons()) == 0)
         return false;

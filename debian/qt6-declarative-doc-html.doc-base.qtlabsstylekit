@@ -1,0 +1,9 @@
+Document: qt6-qtlabsstylekit-manual
+Title: Qt 6 Qt Labs StyleKit
+Author: The Qt Company Ltd
+Abstract: This is the HTML documentation for Qt 6 Qt Labs StyleKit
+Section: Programming/C++
+
+Format: HTML
+Index: /usr/share/doc/qt6-declarative-doc-html/html/qtlabsstylekit/qtlabsstylekit.index
+Files: /usr/share/doc/qt6-declarative-doc-html/html/qtlabsstylekit/*.html

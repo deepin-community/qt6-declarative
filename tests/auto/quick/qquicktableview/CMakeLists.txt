@@ -21,6 +21,7 @@ list(APPEND test_data ${test_data_glob})
 
 qt_internal_add_test(tst_qquicktableview
     SOURCES
+        delegatechoosermodel.h
         testmodel.h
         tst_qquicktableview.cpp
     LIBRARIES
@@ -28,10 +29,12 @@ qt_internal_add_test(tst_qquicktableview
         Qt::Gui
         Qt::GuiPrivate
         Qt::QmlModelsPrivate
+        Qt::Qml
         Qt::QmlPrivate
         Qt::QuickPrivate
         Qt::QuickTest
         Qt::QuickTestUtilsPrivate
+        Qt::QuickTemplates2Private
     TESTDATA ${test_data}
 )
 

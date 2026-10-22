@@ -1,5 +1,6 @@
 // Copyright (C) 2023 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+// Qt-Security score:significant reason:default
 
 #include "qquickmaterialplaceholdertext_p.h"
 
@@ -59,10 +60,7 @@ void QQuickMaterialPlaceholderText::setControlHasActiveFocus(bool controlHasActi
         return;
 
     m_controlHasActiveFocus = controlHasActiveFocus;
-    if (m_controlHasActiveFocus)
-        controlGotActiveFocus();
-    else
-        controlLostActiveFocus();
+    controlActiveFocusChanged();
     emit controlHasActiveFocusChanged();
 }
 
@@ -77,7 +75,7 @@ void QQuickMaterialPlaceholderText::setControlHasText(bool controlHasText)
         return;
 
     m_controlHasText = controlHasText;
-    maybeSetFocusAnimationProgress();
+    updateFocusAnimation();
     emit controlHasTextChanged();
 }
 
@@ -105,6 +103,11 @@ bool QQuickMaterialPlaceholderText::shouldAnimate() const
 void QQuickMaterialPlaceholderText::updateY()
 {
     setY(shouldFloat() ? floatingTargetY() : normalTargetY());
+}
+
+void QQuickMaterialPlaceholderText::updateX()
+{
+    setX(shouldFloat() ? floatingTargetX() : normalTargetX());
 }
 
 qreal controlTopInset(QQuickItem *textControl)
@@ -149,6 +152,16 @@ qreal QQuickMaterialPlaceholderText::floatingTargetY() const
     return (-m_largestHeight / 2.0) + controlTopInset(textControl());
 }
 
+qreal QQuickMaterialPlaceholderText::normalTargetX() const
+{
+    return m_leftPadding;
+}
+
+qreal QQuickMaterialPlaceholderText::floatingTargetX() const
+{
+    return m_floatingLeftPadding;
+}
+
 /*!
     \internal
 
@@ -170,7 +183,7 @@ void QQuickMaterialPlaceholderText::setControlImplicitBackgroundHeight(qreal con
         return;
 
     m_controlImplicitBackgroundHeight = controlImplicitBackgroundHeight;
-    updateY();
+    updateFocusAnimation();
     emit controlImplicitBackgroundHeightChanged();
 }
 
@@ -195,7 +208,7 @@ void QQuickMaterialPlaceholderText::setControlHeight(qreal controlHeight)
         return;
 
     m_controlHeight = controlHeight;
-    updateY();
+    updateFocusAnimation();
 }
 
 qreal QQuickMaterialPlaceholderText::verticalPadding() const
@@ -209,7 +222,26 @@ void QQuickMaterialPlaceholderText::setVerticalPadding(qreal verticalPadding)
         return;
 
     m_verticalPadding = verticalPadding;
+    updateFocusAnimation();
     emit verticalPaddingChanged();
+}
+
+void QQuickMaterialPlaceholderText::setLeftPadding(int leftPadding)
+{
+    if (leftPadding == m_leftPadding)
+        return;
+
+    m_leftPadding = leftPadding;
+    updateFocusAnimation();
+}
+
+void QQuickMaterialPlaceholderText::setFloatingLeftPadding(int floatingLeftPadding)
+{
+    if (floatingLeftPadding == m_floatingLeftPadding)
+        return;
+
+    m_floatingLeftPadding = floatingLeftPadding;
+    updateFocusAnimation();
 }
 
 void QQuickMaterialPlaceholderText::adjustTransformOrigin()
@@ -229,76 +261,62 @@ void QQuickMaterialPlaceholderText::adjustTransformOrigin()
     }
 }
 
-void QQuickMaterialPlaceholderText::controlGotActiveFocus()
+void QQuickMaterialPlaceholderText::controlActiveFocusChanged()
 {
-    if (m_focusOutAnimation) {
+    if (m_focusAnimation) {
         // Focus changes can happen before the animations finish.
         // In that case, stop the animation, which will eventually delete it.
         // Until it's deleted, we clear the pointer so that our asserts don't fail
         // for the wrong reason.
-        m_focusOutAnimation->stop();
-        m_focusOutAnimation.clear();
+        m_focusAnimation->stop();
+        m_focusAnimation.clear();
     }
-
-    Q_ASSERT(!m_focusInAnimation);
-    if (shouldAnimate()) {
-        m_focusInAnimation = new QParallelAnimationGroup(this);
-
-        QPropertyAnimation *yAnimation = new QPropertyAnimation(this, "y", this);
-        yAnimation->setDuration(300);
-        yAnimation->setStartValue(y());
-        yAnimation->setEndValue(floatingTargetY());
-        yAnimation->setEasingCurve(*animationEasingCurve);
-        m_focusInAnimation->addAnimation(yAnimation);
-
-        auto *scaleAnimation = new QPropertyAnimation(this, "scale", this);
-        scaleAnimation->setDuration(300);
-        scaleAnimation->setStartValue(1);
-        scaleAnimation->setEndValue(floatingScale);
-        yAnimation->setEasingCurve(*animationEasingCurve);
-        m_focusInAnimation->addAnimation(scaleAnimation);
-
-        m_focusInAnimation->start(QAbstractAnimation::DeleteWhenStopped);
-    } else {
-        updateY();
-    }
+    updateFocusAnimation(true);
 }
 
-void QQuickMaterialPlaceholderText::controlLostActiveFocus()
+void QQuickMaterialPlaceholderText::updateFocusAnimation(bool createIfNeeded)
 {
-    if (m_focusInAnimation) {
-        m_focusInAnimation->stop();
-        m_focusInAnimation.clear();
-    }
+    if (shouldAnimate() && (m_focusAnimation || createIfNeeded)) {
+        int duration = 300;
+        if (m_focusAnimation) {
+            duration = m_focusAnimation->totalDuration() - m_focusAnimation->currentTime();
+            m_focusAnimation->stop();
+            m_focusAnimation.clear();
+        }
 
-    Q_ASSERT(!m_focusOutAnimation);
-    if (shouldAnimate()) {
-        m_focusOutAnimation = new QParallelAnimationGroup(this);
+        m_focusAnimation = new QParallelAnimationGroup(this);
 
         auto *yAnimation = new QPropertyAnimation(this, "y", this);
-        yAnimation->setDuration(300);
+        yAnimation->setDuration(duration);
         yAnimation->setStartValue(y());
-        yAnimation->setEndValue(normalTargetY());
+        yAnimation->setEndValue(shouldFloat() ? floatingTargetY() : normalTargetY());
         yAnimation->setEasingCurve(*animationEasingCurve);
-        m_focusOutAnimation->addAnimation(yAnimation);
+        m_focusAnimation->addAnimation(yAnimation);
+
+        QPropertyAnimation *xAnimation = new QPropertyAnimation(this, "x", this);
+        xAnimation->setDuration(duration);
+        xAnimation->setStartValue(x());
+        xAnimation->setEndValue(shouldFloat() ? floatingTargetX() : normalTargetX());
+        xAnimation->setEasingCurve(*animationEasingCurve);
+        m_focusAnimation->addAnimation(xAnimation);
 
         auto *scaleAnimation = new QPropertyAnimation(this, "scale", this);
-        scaleAnimation->setDuration(300);
-        scaleAnimation->setStartValue(floatingScale);
-        scaleAnimation->setEndValue(1);
+        scaleAnimation->setDuration(duration);
+        scaleAnimation->setStartValue(scale());
+        scaleAnimation->setEndValue(shouldFloat() ? floatingScale : 1.0);
         yAnimation->setEasingCurve(*animationEasingCurve);
-        m_focusOutAnimation->addAnimation(scaleAnimation);
+        m_focusAnimation->addAnimation(scaleAnimation);
 
-        m_focusOutAnimation->start(QAbstractAnimation::DeleteWhenStopped);
+        m_focusAnimation->start(QAbstractAnimation::DeleteWhenStopped);
     } else {
+        if (m_focusAnimation) {
+            m_focusAnimation->stop();
+            m_focusAnimation.clear();
+        }
         updateY();
+        updateX();
+        setScale(shouldFloat() ? floatingScale : 1.0);
     }
-}
-
-void QQuickMaterialPlaceholderText::maybeSetFocusAnimationProgress()
-{
-    updateY();
-    setScale(shouldFloat() ? floatingScale : 1.0);
 }
 
 void QQuickMaterialPlaceholderText::componentComplete()
@@ -315,7 +333,7 @@ void QQuickMaterialPlaceholderText::componentComplete()
             << "to be greater than 0 by component completion!";
     }
 
-    maybeSetFocusAnimationProgress();
+    updateFocusAnimation();
 }
 
 QT_END_NAMESPACE

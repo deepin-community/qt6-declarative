@@ -1,5 +1,6 @@
 // Copyright (C) 2016 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+// Qt-Security score:significant
 
 #include "qqmlbinding_p.h"
 
@@ -26,7 +27,7 @@
 
 #include <QVariant>
 #include <QtCore/qdebug.h>
-#include <QVector>
+#include <QList>
 
 QT_BEGIN_NAMESPACE
 
@@ -218,7 +219,9 @@ protected:
         }
 
         // If the type didn't match, we need to do JavaScript conversion. This should be rare.
-        return write(engine()->handle()->metaTypeToJS(type, result), isUndefined, flags);
+        QV4::Scope scope(engine()->handle());
+        QV4::ScopedValue value(scope, engine()->handle()->metaTypeToJS(type, result));
+        return write(value, isUndefined, flags);
     }
 
     // Returns true if successful, false if an error description was set on expression
@@ -408,7 +411,6 @@ QQmlBinding *QQmlBinding::createTranslationBinding(
     b->setScopeObject(obj);
 
 #if QT_CONFIG(translation) && QT_CONFIG(qml_debug)
-    QString originString;
     if (QQmlDebugTranslationService *service =
                 QQmlDebugConnector::service<QQmlDebugTranslationService>()) {
         service->foundTranslationBinding({ unit, b->scopeObject(), ctxt,
@@ -441,8 +443,10 @@ bool QQmlBinding::slowWrite(
     if (core.isVarProperty()) {
         QQmlVMEMetaObject *vmemo = QQmlVMEMetaObject::get(m_target.data());
         Q_ASSERT(vmemo);
+        QV4::Scope scope(qmlEngine->handle());
+        QV4::ScopedValue value(scope, qmlEngine->handle()->metaTypeToJS(resultType, result));
         vmemo->setVMEProperty(core.coreIndex(),
-                              qmlEngine->handle()->metaTypeToJS(resultType, result));
+                              value);
     } else if (isUndefined && core.isResettable()) {
         void *args[] = { nullptr };
         QMetaObject::metacall(m_target.data(), QMetaObject::ResetProperty, core.coreIndex(), args);
@@ -634,9 +638,9 @@ QString QQmlBinding::expression() const
     return QStringLiteral("function() { [native code] }");
 }
 
-QVector<QQmlProperty> QQmlBinding::dependencies() const
+QList<QQmlProperty> QQmlBinding::dependencies() const
 {
-    QVector<QQmlProperty> dependencies;
+    QList<QQmlProperty> dependencies;
     if (!m_target.data())
         return dependencies;
 
@@ -676,6 +680,7 @@ bool QQmlBinding::hasDependencies() const
 
 void QQmlBinding::doUpdate(const DeleteWatcher &watcher, QQmlPropertyData::WriteFlags flags, QV4::Scope &scope)
 {
+    Q_ALLOCA_INIT();
     auto ep = QQmlEnginePrivate::get(scope.engine);
     ep->referenceScarceResources();
 
@@ -701,7 +706,7 @@ void QQmlBinding::doUpdate(const DeleteWatcher &watcher, QQmlPropertyData::Write
                 if (returnType.flags() & QMetaType::NeedsDestruction)
                     returnType.destruct(result);
             } else if (canWrite()) {
-                error = !write(QV4::Encode::undefined(), true, flags);
+                error = !write(QV4::Value::undefined(), true, flags);
             }
         }
     } else {
@@ -730,12 +735,27 @@ void QQmlBinding::doUpdate(const DeleteWatcher &watcher, QQmlPropertyData::Write
 
 class QObjectPointerBinding: public QQmlBinding
 {
-    QQmlMetaObject targetMetaObject;
+    QBiPointer<const QtPrivate::QMetaTypeInterface, const QMetaObject> targetMeta;
+
+    const QMetaObject *targetMetaObject() {
+        // lazily produce the targetMetaObject as needed. At the point when we want to set
+        // the property, we either have the right type. Then the metaobject has to exist. Or we
+        // don't. Then the object given can't be of the right type.
+
+        if (targetMeta.isT2())
+            return targetMeta.asT2();
+
+        const QMetaObject *metaObject = QQmlPropertyPrivate::rawMetaObjectForType(
+                                                QMetaType(targetMeta.asT1())).metaObject();
+
+        if (metaObject)
+            targetMeta = metaObject;
+
+        return metaObject;
+    }
 
 public:
-    QObjectPointerBinding(QMetaType propertyType)
-        : targetMetaObject(QQmlPropertyPrivate::rawMetaObjectForType(propertyType))
-    {}
+    QObjectPointerBinding(QMetaType propertyType) : targetMeta(propertyType.iface()) {}
 
 protected:
     Q_ALWAYS_INLINE bool write(void *result, QMetaType type, bool isUndefined,
@@ -821,11 +841,15 @@ private:
 
     template<typename SlowWrite>
     bool compareAndSet(const QQmlMetaObject &resultMo, QObject *resultObject, const QQmlPropertyData *pd,
-                       QQmlPropertyData::WriteFlags flags, const SlowWrite &slowWrite) const
+                       QQmlPropertyData::WriteFlags flags, const SlowWrite &slowWrite)
     {
-        if (QQmlMetaObject::canConvert(resultMo, targetMetaObject)) {
+        const QMetaObject *propertyMo = targetMetaObject();
+        if (!propertyMo)
+            return slowWrite();
+
+        if (QQmlMetaObject::canConvert(resultMo, propertyMo)) {
             return pd->writeProperty(targetObject(), &resultObject, flags);
-        } else if (!resultObject && QQmlMetaObject::canConvert(targetMetaObject, resultMo)) {
+        } else if (!resultObject && QQmlMetaObject::canConvert(propertyMo, resultMo)) {
             // In the case of a null QObject, we assign the null if there is
             // any change that the null variant type could be up or down cast to
             // the property type.

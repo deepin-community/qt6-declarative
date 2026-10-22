@@ -1,5 +1,6 @@
 // Copyright (C) 2019 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+// Qt-Security score:significant reason:default
 
 #include "qquickboundaryrule_p.h"
 
@@ -13,7 +14,7 @@
 
 QT_BEGIN_NAMESPACE
 
-Q_LOGGING_CATEGORY(lcBR, "qt.quick.boundaryrule")
+Q_STATIC_LOGGING_CATEGORY(lcBR, "qt.quick.boundaryrule")
 
 class QQuickBoundaryReturnJob;
 class QQuickBoundaryRulePrivate : public QObjectPrivate
@@ -152,7 +153,7 @@ void QQuickBoundaryRule::setEnabled(bool enabled)
 }
 
 /*!
-    \qmlproperty qreal Qt.labs.animation::BoundaryRule::minimum
+    \qmlproperty real Qt.labs.animation::BoundaryRule::minimum
 
     This property holds the smallest unconstrained value that the property is
     allowed to have.  If the property is set to a smaller value, it will be
@@ -176,7 +177,7 @@ void QQuickBoundaryRule::setMinimum(qreal minimum)
 }
 
 /*!
-    \qmlproperty qreal Qt.labs.animation::BoundaryRule::minimumOvershoot
+    \qmlproperty real Qt.labs.animation::BoundaryRule::minimumOvershoot
 
     This property holds the amount that the property is allowed to be
     less than \l minimum.  Whenever the value is less than \l minimum
@@ -202,7 +203,7 @@ void QQuickBoundaryRule::setMinimumOvershoot(qreal minimumOvershoot)
 }
 
 /*!
-    \qmlproperty qreal Qt.labs.animation::BoundaryRule::maximum
+    \qmlproperty real Qt.labs.animation::BoundaryRule::maximum
 
     This property holds the largest unconstrained value that the property is
     allowed to have.  If the property is set to a larger value, it will be
@@ -226,7 +227,7 @@ void QQuickBoundaryRule::setMaximum(qreal maximum)
 }
 
 /*!
-    \qmlproperty qreal Qt.labs.animation::BoundaryRule::maximumOvershoot
+    \qmlproperty real Qt.labs.animation::BoundaryRule::maximumOvershoot
 
     This property holds the amount that the property is allowed to be
     more than \l maximum.  Whenever the value is greater than \l maximum
@@ -252,7 +253,7 @@ void QQuickBoundaryRule::setMaximumOvershoot(qreal maximumOvershoot)
 }
 
 /*!
-    \qmlproperty qreal Qt.labs.animation::BoundaryRule::overshootScale
+    \qmlproperty real Qt.labs.animation::BoundaryRule::overshootScale
 
     This property holds the amount by which the \l easing is scaled during the
     overshoot condition. For example if an Item is restricted from moving more
@@ -284,7 +285,7 @@ void QQuickBoundaryRule::setOvershootScale(qreal overshootScale)
 }
 
 /*!
-    \qmlproperty qreal Qt.labs.animation::BoundaryRule::currentOvershoot
+    \qmlproperty real Qt.labs.animation::BoundaryRule::currentOvershoot
 
     This property holds the amount by which the most recently set value of the
     intercepted property exceeds \l maximum or is less than \l minimum.
@@ -300,7 +301,7 @@ qreal QQuickBoundaryRule::currentOvershoot() const
 }
 
 /*!
-    \qmlproperty qreal Qt.labs.animation::BoundaryRule::peakOvershoot
+    \qmlproperty real Qt.labs.animation::BoundaryRule::peakOvershoot
 
     This property holds the most-positive or most-negative value of
     \l currentOvershoot that has been seen, until \l returnToBounds() is called.
@@ -344,7 +345,7 @@ void QQuickBoundaryRule::setOvershootFilter(OvershootFilter overshootFilter)
 }
 
 /*!
-    \qmlmethod bool Qt.labs.animation::BoundaryRule::returnToBounds
+    \qmlmethod bool Qt.labs.animation::BoundaryRule::returnToBounds()
 
     Returns the intercepted property to a value between \l minimum and
     \l maximum, such that \l currentOvershoot and \l peakOvershoot are both

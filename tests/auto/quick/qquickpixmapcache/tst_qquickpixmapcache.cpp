@@ -1,7 +1,9 @@
 // Copyright (C) 2016 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only
 #include <qtest.h>
-#include <QtTest/QtTest>
+#include <QtTest/QTest>
+#include <QtTest/QTestEventLoop>
+#include <QtCore/QTimer>
 #include <QtQuick/private/qquickimage_p_p.h>
 #include <QtQuick/private/qquickpixmapcache_p.h>
 #include <QtQml/qqmlengine.h>
@@ -594,20 +596,24 @@ void tst_qquickpixmapcache::slowDeviceInterrupted()
         QVERIFY(QQuickTest::showView(window, testFileUrl("slowLoading.qml")));
         DeviceLoadingImage *dlimg = qobject_cast<DeviceLoadingImage *>(window.rootObject());
         QVERIFY(dlimg);
-        // the declared source: "image://slow/200" should take 200 ms to load
-        QTRY_COMPARE(dlimg->status(), QQuickImageBase::Loading);
-        QVERIFY(dlimg->connectSuccess);
+        if (dlimg->status() == QQuickImageBase::Ready) {
+            qCDebug(lcTests) << dlimg->source() << "loaded faster than expected";
+        } else {
+            // the declared source: "image://slow/200" should take 200 ms to load
+            QTRY_COMPARE(dlimg->status(), QQuickImageBase::Loading);
+            QVERIFY(dlimg->connectSuccess);
+        }
         dlimg->setSource(QUrl("image://slow/50"));
         QTRY_COMPARE(dlimg->requestsFinished, 2);
         QCOMPARE(provider->requestCount, 2);
         QCOMPARE(dlimg->status(), QQuickImageBase::Ready);
         auto *img_d = static_cast<QQuickImagePrivate *>(QQuickImagePrivate::get(dlimg));
         QCOMPARE(img_d->currentPix->image().pixelColor({1, 1}), secondExpectedColor);
-        QCOMPARE(QQuickPixmapCache::instance()->m_cache.size(), 2);
+        QCOMPARE_GE(QQuickPixmapCache::instance()->m_cache.size(), 2);
         // Unless CI paused at the wrong time for > 200 ms, we cancelled loading
         // the first image and switched to the second, so QQuickImageBase::requestFinished()
         // should have only called swap() once. But if this check ends up being flaky in CI,
-        // it can be be removed.
+        // it can be removed.
         QCOMPARE(img_d->currentPix, &img_d->pix2);
     } // window goes out of scope: all QQuickPixmapData instances should be eventually unreferenced
 

@@ -1,5 +1,6 @@
 // Copyright (C) 2016 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+// Qt-Security score:significant reason:default
 
 #include "qsgabstractsoftwarerenderer_p.h"
 
@@ -12,7 +13,7 @@
 #include <QtGui/QWindow>
 #include <QtQuick/QSGSimpleRectNode>
 
-Q_LOGGING_CATEGORY(lc2DRender, "qt.scenegraph.softwarecontext.abstractrenderer")
+Q_STATIC_LOGGING_CATEGORY(lc2DRender, "qt.scenegraph.softwarecontext.abstractrenderer")
 
 QT_BEGIN_NAMESPACE
 
@@ -42,7 +43,7 @@ QSGSoftwareRenderableNode *QSGAbstractSoftwareRenderer::renderableNode(QSGNode *
 }
 
 // Used by GammaRay
-const QVector<QSGSoftwareRenderableNode*> &QSGAbstractSoftwareRenderer::renderableNodes() const
+const QList<QSGSoftwareRenderableNode*> &QSGAbstractSoftwareRenderer::renderableNodes() const
 {
     return m_renderableNodes;
 }
@@ -95,8 +96,10 @@ QRegion QSGAbstractSoftwareRenderer::renderNodes(QPainter *painter)
 
     auto iterator = m_renderableNodes.begin();
     // First node is the background and needs to painted without blending
-    auto backgroundNode = *iterator;
-    dirtyRegion += backgroundNode->renderNode(painter, /*force opaque painting*/ true);
+    if (m_clearColorEnabled) {
+        auto backgroundNode = *iterator;
+        dirtyRegion += backgroundNode->renderNode(painter, /*force opaque painting*/ true);
+    }
     iterator++;
 
     for (; iterator != m_renderableNodes.end(); ++iterator) {
@@ -123,6 +126,10 @@ QRegion QSGAbstractSoftwareRenderer::optimizeRenderList()
     // Objective is to update the dirty status and rects.
     for (auto i = m_renderableNodes.rbegin(); i != m_renderableNodes.rend(); ++i) {
         auto node = *i;
+        // Track the original version of isDirty() as it can change if
+        // when we subtract dirty regions but still need to mark the previously
+        // dirty region as dirty.
+        const bool wasDirty = node->isDirty();
         if (!m_dirtyRegion.isEmpty()) {
             // See if the current dirty regions apply to the current node
             node->addDirtyRegion(m_dirtyRegion, true);
@@ -151,12 +158,21 @@ QRegion QSGAbstractSoftwareRenderer::optimizeRenderList()
             // Get the dirty region's to pass to the next nodes
             if (node->isOpaque()) {
                 // if isOpaque, subtract node's dirty rect from m_dirtyRegion
+                // node->boundingRectMax() is the area that might have been changed
+                // node->boundingRectMin() is the area that will have been changed
+                // This adding and subtracting will make sure that the "maybe" area is
+                // also marked dirty for the next nodes to prevent artifacts
+                m_dirtyRegion += node->boundingRectMax();
                 m_dirtyRegion -= node->boundingRectMin();
             } else {
                 // if isAlpha, add node's dirty rect to m_dirtyRegion
                 m_dirtyRegion += node->dirtyRegion();
             }
-            // if previousDirtyRegion has content outside of boundingRect add to m_dirtyRegion
+        }
+
+        if (wasDirty) {
+            // If this node started out dirty, make sure its previous region is
+            // added to the dirty region so that it gets cleared properly.
             QRegion prevDirty = node->previousDirtyRegion();
             if (!prevDirty.isNull())
                 m_dirtyRegion += prevDirty;
@@ -304,6 +320,16 @@ void QSGAbstractSoftwareRenderer::nodeOpacityUpdated(QSGNode *node)
 void QSGAbstractSoftwareRenderer::markDirty()
 {
     m_dirtyRegion = QRegion(m_background->rect().toRect());
+}
+
+void QSGAbstractSoftwareRenderer::setClearColorEnabled(bool enable)
+{
+    m_clearColorEnabled = enable;
+}
+
+bool QSGAbstractSoftwareRenderer::clearColorEnabled() const
+{
+    return m_clearColorEnabled;
 }
 
 QT_END_NAMESPACE

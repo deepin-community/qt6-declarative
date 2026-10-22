@@ -1,42 +1,41 @@
 Source: qt6-declarative
 Section: libs
-Priority: optional
 Maintainer: Debian Qt/KDE Maintainers <debian-qt-kde@lists.debian.org>
 Uploaders: Patrick Franz <deltaone@debian.org>,
-Build-Depends: cmake (>= 3.24~),
-               debhelper-compat (= 13),
-               dh-exec,
+Build-Depends: debhelper-compat (= 13),
+               dh-sequence-pkgkde-symbolshelper,
+               dh-sequence-qmldeps,
+               cmake (>= 3.24~),
                libgl-dev,
                liblttng-ust-dev [linux-any],
                libssl-dev,
                libvulkan-dev [linux-any],
                ninja-build,
-               pkg-config,
                pkg-kde-tools,
-               qt6-base-dev (>= 6.8.0+dfsg~),
-               qt6-base-private-dev (>= 6.8.0+dfsg~),
+               pkgconf,
+               qt6-base-dev (>= 6.11.2+dfsg~),
+               qt6-base-private-dev (>= 6.11.2+dfsg~),
                qt6-declarative-dev:native <cross>,
-               qt6-languageserver-private-dev (>= 6.8.0~),
-               qt6-shadertools-dev (>= 6.8.0~),
-               qt6-svg-dev (>= 6.8.0~),
-               qt6-svg-private-dev (>= 6.8.0~),
-Build-Depends-Indep: qt6-base-dev (>= 6.8~) <!nodoc>,
-                     qt6-documentation-tools (>= 6.8~) <!nodoc>,
-Standards-Version: 4.6.2
+               qt6-languageserver-private-dev (>= 6.11.2~),
+               qt6-shadertools-dev (>= 6.11.2~),
+               qt6-svg-dev (>= 6.11.2~),
+               qt6-svg-private-dev (>= 6.11.2~),
+Standards-Version: 4.7.4
 Homepage: https://www.qt.io/developers/
 Vcs-Git: https://salsa.debian.org/qt-kde-team/qt6/qt6-declarative.git
 Vcs-Browser: https://salsa.debian.org/qt-kde-team/qt6/qt6-declarative
-Rules-Requires-Root: no
 
 Package: libqt6qml6
 Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends},
-Provides: qt6-declarative-private-abi (= 6.8.0),
-Depends: ${misc:Depends}, ${shlibs:Depends},
-Recommends: libgl1, libglx-mesa0,
+Provides: qt6-declarative-private-abi (= 6.12.0)
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+Recommends: libgl1,
+            libglx-mesa0,
 Suggests: qt6-qmltooling-plugins,
-Description: Qt 6 QML module
+Description: Qt 6 QML library
  Qt is a cross-platform C++ application framework. Qt's primary feature
  is its rich set of widgets that provide standard GUI functionality.
  .
@@ -46,42 +45,100 @@ Description: Qt 6 QML module
  developers to extend the QML language with custom types and integrate
  QML code with JavaScript and C++.
 
+Package: libqt6labsplatform6
+Architecture: any
+Multi-Arch: same
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+Description: Qt 6 Labs Platform library
+ Qt is a cross-platform C++ application framework. Qt's primary feature
+ is its rich set of widgets that provide standard GUI functionality.
+ .
+ This package contains the Qt Labs Platform library.
+
+Package: libqt6labsstylekit6
+Architecture: any
+Multi-Arch: same
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+Description: Qt 6 Labs StyleKit library
+ Qt is a cross-platform C++ application framework. Qt's primary feature
+ is its rich set of widgets that provide standard GUI functionality.
+ .
+ This package contains the Qt Labs StyleKit library.
+
+Package: libqt6labssynchronizer6
+Architecture: any
+Multi-Arch: same
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+Description: Qt 6 Labs Synchronizer library
+ Qt is a cross-platform C++ application framework. Qt's primary feature
+ is its rich set of widgets that provide standard GUI functionality.
+ .
+ This package contains the Qt Labs Synchronizer library.
+
 Package: libqt6qmlcompiler6
 Architecture: any
 Multi-Arch: same
-Depends: ${misc:Depends}, ${shlibs:Depends},
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
 Description: Qt 6 QML Compiler library
  Qt is a cross-platform C++ application framework. Qt's primary feature
  is its rich set of widgets that provide standard GUI functionality.
  .
  This package contains the Qt QML Compiler library.
 
+Package: libqt6qmlmeta6
+Architecture: any
+Multi-Arch: same
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+Description: Qt 6 QML Meta library
+ Qt is a cross-platform C++ application framework. Qt's primary feature
+ is its rich set of widgets that provide standard GUI functionality.
+ .
+ This package contains the Qt QML Meta support library.
+
 Package: libqt6qmlmodels6
 Architecture: any
 Multi-Arch: same
-Depends: ${misc:Depends}, ${shlibs:Depends},
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
 Description: Qt 6 QML Models library
  Qt is a cross-platform C++ application framework. Qt's primary feature
  is its rich set of widgets that provide standard GUI functionality.
  .
  This package contains the Qt QML Models support library.
 
-Package: libqt6quickvectorimage6
+Package: libqt6qmlnetwork6
 Architecture: any
 Multi-Arch: same
-Pre-Depends: ${misc:Pre-Depends},
-Depends: ${misc:Depends}, ${shlibs:Depends},
-Description: Qt 6 Quick Vector Image library
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+Description: Qt 6 QML Network library
  Qt is a cross-platform C++ application framework. Qt's primary feature
  is its rich set of widgets that provide standard GUI functionality.
  .
- This package contains the Qt Quick Vector Image support library.
+ This package contains the Qt QML Network support library.
+
+Package: libqt6qmlworkerscript6
+Architecture: any
+Multi-Arch: same
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+Description: Qt 6 QML WorkerScript library
+ Qt is a cross-platform C++ application framework. Qt's primary feature
+ is its rich set of widgets that provide standard GUI functionality.
+ .
+ This package contains the Qt QML WorkerScript support library.
 
 Package: libqt6quick6
 Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends},
-Depends: ${misc:Depends}, ${shlibs:Depends},
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
 Description: Qt 6 Quick library
  Qt is a cross-platform C++ application framework. Qt's primary feature
  is its rich set of widgets that provide standard GUI functionality.
@@ -95,18 +152,48 @@ Package: libqt6quickcontrols2-6
 Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends},
-Depends: ${misc:Depends}, ${shlibs:Depends},
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+Breaks: libqt6quickcontrols2impl6,
+         qml6-module-qtquick-controls (<< 6.7.2~)
+Replaces: libqt6quickcontrols2impl6,
+         qml6-module-qtquick-controls (<< 6.7.2~)
 Description: Qt 6 Quick Controls 2 library
  Qt is a cross-platform C++ application framework. Qt's primary feature
  is its rich set of widgets that provide standard GUI functionality.
  .
  This package contains the Qt Quick Controls 2 support library.
 
+Package: libqt6quickshapes6
+Architecture: any
+Multi-Arch: same
+Pre-Depends: ${misc:Pre-Depends},
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+Description: Qt 6 Quick Shapes library
+ Qt is a cross-platform C++ application framework. Qt's primary feature
+ is its rich set of widgets that provide standard GUI functionality.
+ .
+ This package contains the Qt Quick Shapes support library.
+
+Package: libqt6quickshapesdesignhelpers6
+Architecture: any
+Multi-Arch: same
+Pre-Depends: ${misc:Pre-Depends},
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+Description: Qt 6 Quick Shapes Design Helpers library
+ Qt is a cross-platform C++ application framework. Qt's primary feature
+ is its rich set of widgets that provide standard GUI functionality.
+ .
+ This package contains the Qt Quick Shapes Design Helpers library.
+
 Package: libqt6quicktemplates2-6
 Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends},
-Depends: ${misc:Depends}, ${shlibs:Depends},
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
 Description: Qt 6 Quick Templates 2 library
  Qt is a cross-platform C++ application framework. Qt's primary feature
  is its rich set of widgets that provide standard GUI functionality.
@@ -117,29 +204,56 @@ Package: libqt6quicktest6
 Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends},
-Depends: ${misc:Depends}, ${shlibs:Depends},
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
 Description: Qt 6 Quick Test library
  Qt is a cross-platform C++ application framework. Qt's primary feature
  is its rich set of widgets that provide standard GUI functionality.
  .
  This package contains the Qt Quick Test library for QtDeclarative module.
 
+Package: libqt6quickvectorimage6
+Architecture: any
+Multi-Arch: same
+Pre-Depends: ${misc:Pre-Depends},
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+Description: Qt 6 Quick Vector Image library
+ Qt is a cross-platform C++ application framework. Qt's primary feature
+ is its rich set of widgets that provide standard GUI functionality.
+ .
+ This package contains the Qt Quick Vector Image support library.
+
 Package: libqt6quickvectorimagegenerator6
 Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends},
-Depends: ${misc:Depends}, ${shlibs:Depends},
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
 Description: Qt 6 Quick Vector Image Generator library
  Qt is a cross-platform C++ application framework. Qt's primary feature
  is its rich set of widgets that provide standard GUI functionality.
  .
- This package contains the Quick Vector Image Generator library for QtDeclarative module.
+ This package contains the Qt Quick Vector Image Generator support library.
+
+Package: libqt6quickvectorimagehelpers6
+Architecture: any
+Multi-Arch: same
+Pre-Depends: ${misc:Pre-Depends},
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+Description: Qt 6 Quick Vector Image Helper library
+ Qt is a cross-platform C++ application framework. Qt's primary feature
+ is its rich set of widgets that provide standard GUI functionality.
+ .
+ This package contains the Qt Quick Vector Image Helper library.
 
 Package: libqt6quickwidgets6
 Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends},
-Depends: ${misc:Depends}, ${shlibs:Depends},
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
 Description: Qt 6 Quick Widgets library
  Qt is a cross-platform C++ application framework. Qt's primary feature
  is its rich set of widgets that provide standard GUI functionality.
@@ -150,29 +264,58 @@ Package: qt6-qmllint-plugins
 Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends},
-Depends: ${misc:Depends}, ${shlibs:Depends},
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
 Description: Qt 6 qmllint plugins
  Qt is a cross-platform C++ application framework. Qt's primary feature
  is its rich set of widgets that provide standard GUI functionality.
  .
  This package contains the qmllint plugins.
 
+Package: qt6-qmlls-plugins
+Architecture: any
+Multi-Arch: same
+Pre-Depends: ${misc:Pre-Depends},
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+Description: Qt 6 qmlls plugins
+ Qt is a cross-platform C++ application framework. Qt's primary feature
+ is its rich set of widgets that provide standard GUI functionality.
+ .
+ This package contains the qmlls plugins.
+
 Package: qt6-qmltooling-plugins
 Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends},
-Depends: ${misc:Depends}, ${shlibs:Depends},
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
 Description: Qt 6 qmltooling plugins
  Qt is a cross-platform C++ application framework. Qt's primary feature
  is its rich set of widgets that provide standard GUI functionality.
  .
  This package contains the qmltooling plugins.
 
+Package: qml6-module-qml
+Architecture: any
+Multi-Arch: same
+Pre-Depends: ${misc:Pre-Depends},
+Depends: ${misc:Depends},
+         ${qml6:Depends},
+         ${shlibs:Depends},
+Description: Qt 6 QML module
+ Qt is a cross-platform C++ application framework. Qt's primary feature
+ is its rich set of widgets that provide standard GUI functionality.
+ .
+ This QML module contains the base QML types.
+
 Package: qml6-module-qmltime
 Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends},
-Depends: ${misc:Depends}, ${shlibs:Depends},
+Depends: ${misc:Depends},
+         ${qml6:Depends},
+         ${shlibs:Depends},
 Description: Qt 6 QmlTime QML module
  Qt is a cross-platform C++ application framework. Qt's primary feature
  is its rich set of widgets that provide standard GUI functionality.
@@ -183,7 +326,9 @@ Package: qml6-module-qt-labs-animation
 Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends},
-Depends: ${misc:Depends}, ${shlibs:Depends},
+Depends: ${misc:Depends},
+         ${qml6:Depends},
+         ${shlibs:Depends},
 Breaks: libqt6labsanimation6
 Replaces: libqt6labsanimation6
 Description: Qt 6 Animation QML module
@@ -196,7 +341,9 @@ Package: qml6-module-qt-labs-folderlistmodel
 Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends},
-Depends: ${misc:Depends}, ${shlibs:Depends},
+Depends: ${misc:Depends},
+         ${qml6:Depends},
+         ${shlibs:Depends},
 Breaks: libqt6labsfolderlistmodel6
 Replaces: libqt6labsfolderlistmodel6
 Description: Qt 6 FolderListModel QML module
@@ -209,7 +356,9 @@ Package: qml6-module-qt-labs-platform
 Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends},
-Depends: ${misc:Depends}, ${shlibs:Depends},
+Depends: ${misc:Depends},
+         ${qml6:Depends},
+         ${shlibs:Depends},
 Description: Qt 6 Platform QML module
  Qt is a cross-platform C++ application framework. Qt's primary feature
  is its rich set of widgets that provide standard GUI functionality.
@@ -221,7 +370,9 @@ Package: qml6-module-qt-labs-qmlmodels
 Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends},
-Depends: ${misc:Depends}, ${shlibs:Depends},
+Depends: ${misc:Depends},
+         ${qml6:Depends},
+         ${shlibs:Depends},
 Breaks: libqt6labsqmlmodels6
 Replaces: libqt6labsqmlmodels6
 Description: Qt 6 QML Models QML module
@@ -234,7 +385,9 @@ Package: qml6-module-qt-labs-settings
 Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends},
-Depends: ${misc:Depends}, ${shlibs:Depends},
+Depends: ${misc:Depends},
+         ${qml6:Depends},
+         ${shlibs:Depends},
 Breaks: libqt6labssettings6
 Replaces: libqt6labssettings6
 Description: Qt 6 Settings QML module
@@ -247,7 +400,9 @@ Package: qml6-module-qt-labs-sharedimage
 Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends},
-Depends: ${misc:Depends}, ${shlibs:Depends},
+Depends: ${misc:Depends},
+         ${qml6:Depends},
+         ${shlibs:Depends},
 Breaks: libqt6labssharedimage6
 Replaces: libqt6labssharedimage6
 Description: Qt 6 Shared Image Provider QML module
@@ -257,11 +412,42 @@ Description: Qt 6 Shared Image Provider QML module
  This module provides functionality to save memory in use cases where several
  Qt Quick applications use the same local image files.
 
+Package: qml6-module-qt-labs-stylekit
+Architecture: any
+Multi-Arch: same
+Pre-Depends: ${misc:Pre-Depends},
+Depends: ${misc:Depends},
+         ${qml6:Depends},
+         ${shlibs:Depends},
+Breaks: libqt6labssharedimage6
+Replaces: libqt6labssharedimage6
+Description: Qt 6 StyleKit QML module
+ Qt is a cross-platform C++ application framework. Qt's primary feature
+ is its rich set of widgets that provide standard GUI functionality.
+ .
+ This QML module is the module for StyleKit, a declarative styling system
+ for Qt Quick Controls, built on top of Qt Quick Templates.
+
+Package: qml6-module-qt-labs-synchronizer
+Architecture: any
+Multi-Arch: same
+Pre-Depends: ${misc:Pre-Depends},
+Depends: ${misc:Depends},
+         ${qml6:Depends},
+         ${shlibs:Depends},
+Description: Qt 6 Labs Synchronizer QML module
+ Qt is a cross-platform C++ application framework. Qt's primary feature
+ is its rich set of widgets that provide standard GUI functionality.
+ .
+ This QML module provides synchronization between two or more QML properties.
+
 Package: qml6-module-qt-labs-wavefrontmesh
 Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends},
-Depends: ${misc:Depends}, ${shlibs:Depends},
+Depends: ${misc:Depends},
+         ${qml6:Depends},
+         ${shlibs:Depends},
 Breaks: libqt6labswavefrontmesh6
 Replaces: libqt6labswavefrontmesh6
 Description: Qt 6 WavefrontMesh QML module
@@ -274,7 +460,9 @@ Package: qml6-module-qtcore
 Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends},
-Depends: ${misc:Depends}, ${shlibs:Depends},
+Depends: ${misc:Depends},
+         ${qml6:Depends},
+         ${shlibs:Depends},
 Breaks: libqt6qmlcore6
 Replaces: libqt6qmlcore6
 Description: Qt 6 QML Core QML module
@@ -283,11 +471,26 @@ Description: Qt 6 QML Core QML module
  .
  This QML module provides access to the standard system paths.
 
+Package: qml6-module-qtnetwork
+Architecture: any
+Multi-Arch: same
+Pre-Depends: ${misc:Pre-Depends},
+Depends: ${misc:Depends},
+         ${qml6:Depends},
+         ${shlibs:Depends},
+Description: Qt 6 QML Network QML module
+ Qt is a cross-platform C++ application framework. Qt's primary feature
+ is its rich set of widgets that provide standard GUI functionality.
+ .
+ This QML module contains the Qt Network QML module.
+
 Package: qml6-module-qtqml
 Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends},
-Depends: ${misc:Depends}, ${shlibs:Depends},
+Depends: ${misc:Depends},
+         ${qml6:Depends},
+         ${shlibs:Depends},
 Description: Qt 6 QtQml QML module
  Qt is a cross-platform C++ application framework. Qt's primary feature
  is its rich set of widgets that provide standard GUI functionality.
@@ -298,7 +501,9 @@ Package: qml6-module-qtqml-models
 Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends},
-Depends: ${misc:Depends}, ${shlibs:Depends},
+Depends: ${misc:Depends},
+         ${qml6:Depends},
+         ${shlibs:Depends},
 Description: Qt 6 QtQml Models QML module
  Qt is a cross-platform C++ application framework. Qt's primary feature
  is its rich set of widgets that provide standard GUI functionality.
@@ -309,9 +514,9 @@ Package: qml6-module-qtqml-workerscript
 Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends},
-Depends: ${misc:Depends}, ${shlibs:Depends},
-Breaks: libqt6qmlworkerscript6
-Replaces: libqt6qmlworkerscript6
+Depends: ${misc:Depends},
+         ${qml6:Depends},
+         ${shlibs:Depends},
 Description: Qt 6 QtQml Workerscript QML module
  Qt is a cross-platform C++ application framework. Qt's primary feature
  is its rich set of widgets that provide standard GUI functionality.
@@ -322,7 +527,9 @@ Package: qml6-module-qtqml-xmllistmodel
 Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends},
-Depends: ${misc:Depends}, ${shlibs:Depends},
+Depends: ${misc:Depends},
+         ${qml6:Depends},
+         ${shlibs:Depends},
 Breaks: libqt6qmlxmllistmodel6
 Replaces: libqt6qmlxmllistmodel6
 Description: Qt 6 QtQml XmlListModel QML module
@@ -335,7 +542,9 @@ Package: qml6-module-qtquick
 Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends},
-Depends: ${misc:Depends}, ${shlibs:Depends},
+Depends: ${misc:Depends},
+         ${qml6:Depends},
+         ${shlibs:Depends},
 Description: Qt 6 Quick QML module
  Qt is a cross-platform C++ application framework. Qt's primary feature
  is its rich set of widgets that provide standard GUI functionality.
@@ -346,7 +555,11 @@ Package: qml6-module-qtquick-controls
 Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends},
-Depends: ${misc:Depends}, ${shlibs:Depends},
+Depends: qml6-module-qtquick (= ${binary:Version}),
+         qml6-module-qtquick-templates (= ${binary:Version}),
+         ${misc:Depends},
+         ${qml6:Depends},
+         ${shlibs:Depends},
 Breaks: libqt6quickcontrols2impl6
 Replaces: libqt6quickcontrols2impl6
 Description: Qt 6 Quick Controls QML module
@@ -359,9 +572,15 @@ Package: qml6-module-qtquick-dialogs
 Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends},
-Depends: ${misc:Depends}, ${shlibs:Depends},
-Breaks: libqt6quickdialogs2utils6, libqt6quickdialogs2quickimpl6, libqt6quickdialogs2-6
-Replaces: libqt6quickdialogs2utils6, libqt6quickdialogs2quickimpl6, libqt6quickdialogs2-6
+Depends: ${misc:Depends},
+         ${qml6:Depends},
+         ${shlibs:Depends},
+Breaks: libqt6quickdialogs2-6,
+         libqt6quickdialogs2quickimpl6,
+         libqt6quickdialogs2utils6
+Replaces: libqt6quickdialogs2-6,
+         libqt6quickdialogs2quickimpl6,
+         libqt6quickdialogs2utils6
 Description: Qt 6 Quick Dialogs QML module
  Qt is a cross-platform C++ application framework. Qt's primary feature
  is its rich set of widgets that provide standard GUI functionality.
@@ -372,7 +591,9 @@ Package: qml6-module-qtquick-effects
 Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends},
-Depends: ${misc:Depends}, ${shlibs:Depends},
+Depends: ${misc:Depends},
+         ${qml6:Depends},
+         ${shlibs:Depends},
 Breaks: libqt6quickeffects6
 Replaces: libqt6quickeffects6
 Description: Qt 6 Quick Effects QML module
@@ -385,7 +606,9 @@ Package: qml6-module-qtquick-layouts
 Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends},
-Depends: ${misc:Depends}, ${shlibs:Depends},
+Depends: ${misc:Depends},
+         ${qml6:Depends},
+         ${shlibs:Depends},
 Breaks: libqt6quicklayouts6
 Replaces: libqt6quicklayouts6
 Description: Qt 6 Quick Layouts QML module
@@ -399,7 +622,9 @@ Package: qml6-module-qtquick-localstorage
 Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends},
-Depends: ${misc:Depends}, ${shlibs:Depends},
+Depends: ${misc:Depends},
+         ${qml6:Depends},
+         ${shlibs:Depends},
 Breaks: libqt6qmllocalstorage6
 Replaces: libqt6qmllocalstorage6
 Description: Qt 6 Quick Local Storage QML module
@@ -408,22 +633,13 @@ Description: Qt 6 Quick Local Storage QML module
  .
  This is a singleton type for reading and writing to SQLite databases.
 
-Package: qml6-module-qtquick-nativestyle
-Architecture: any
-Multi-Arch: same
-Pre-Depends: ${misc:Pre-Depends},
-Depends: ${misc:Depends}, ${shlibs:Depends},
-Description: Qt 6 Quick Native Style QML module
- Qt is a cross-platform C++ application framework. Qt's primary feature
- is its rich set of widgets that provide standard GUI functionality.
- .
- This package provides components to let controls appear in a native style.
-
 Package: qml6-module-qtquick-particles
 Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends},
-Depends: ${misc:Depends}, ${shlibs:Depends},
+Depends: ${misc:Depends},
+         ${qml6:Depends},
+         ${shlibs:Depends},
 Breaks: libqt6quickparticles6
 Replaces: libqt6quickparticles6
 Description: Qt 6 Quick Particle QML module
@@ -436,9 +652,9 @@ Package: qml6-module-qtquick-shapes
 Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends},
-Depends: ${misc:Depends}, ${shlibs:Depends},
-Breaks: libqt6quickshapes6
-Replaces: libqt6quickshapes6
+Depends: ${misc:Depends},
+         ${qml6:Depends},
+         ${shlibs:Depends},
 Description: Qt 6 Quick Shapes QML module
  Qt is a cross-platform C++ application framework. Qt's primary feature
  is its rich set of widgets that provide standard GUI functionality.
@@ -446,11 +662,27 @@ Description: Qt 6 Quick Shapes QML module
  The Shapes plugin allows adding stroked and filled paths composed of
  lines, quadratic curves, cubic curves, and arcs into Qt Quick scenes.
 
+Package: qml6-module-qtquick-shapes-designhelpers
+Architecture: any
+Multi-Arch: same
+Pre-Depends: ${misc:Pre-Depends},
+Depends: ${misc:Depends},
+         ${qml6:Depends},
+         ${shlibs:Depends},
+Description: Qt 6 Quick Shapes Design Helpers QML module
+ Qt is a cross-platform C++ application framework. Qt's primary feature
+ is its rich set of widgets that provide standard GUI functionality.
+ .
+ This QML module provides QML types for drawing shapes that work with
+ design tools such as Figma.
+
 Package: qml6-module-qtquick-templates
 Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends},
-Depends: ${misc:Depends}, ${shlibs:Depends},
+Depends: ${misc:Depends},
+         ${qml6:Depends},
+         ${shlibs:Depends},
 Description: Qt 6 Quick Templates QML module
  Qt is a cross-platform C++ application framework. Qt's primary feature
  is its rich set of widgets that provide standard GUI functionality.
@@ -461,18 +693,48 @@ Package: qml6-module-qtquick-tooling
 Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends},
-Depends: ${misc:Depends}, ${shlibs:Depends},
+Depends: ${misc:Depends},
+         ${qml6:Depends},
+         ${shlibs:Depends},
 Description: Qt 6 Quick Tooling QML module
  Qt is a cross-platform C++ application framework. Qt's primary feature
  is its rich set of widgets that provide standard GUI functionality.
  .
  This package contains the Qt Quick Tooling QML module.
 
+Package: qml6-module-qtquick-vectorimage
+Architecture: any
+Multi-Arch: same
+Pre-Depends: ${misc:Pre-Depends},
+Depends: ${misc:Depends},
+         ${qml6:Depends},
+         ${shlibs:Depends},
+Description: Qt 6 Quick Vector Image QML module
+ Qt is a cross-platform C++ application framework. Qt's primary feature
+ is its rich set of widgets that provide standard GUI functionality.
+ .
+ This package contains the Qt Quick Vector Image QML module.
+
+Package: qml6-module-qtquick-vectorimage-helpers
+Architecture: any
+Multi-Arch: same
+Pre-Depends: ${misc:Pre-Depends},
+Depends: ${misc:Depends},
+         ${qml6:Depends},
+         ${shlibs:Depends},
+Description: Qt 6 Quick Vector Image Helper QML module
+ Qt is a cross-platform C++ application framework. Qt's primary feature
+ is its rich set of widgets that provide standard GUI functionality.
+ .
+ This package contains the Qt Quick Vector Image Helper QML module.
+
 Package: qml6-module-qtquick-window
 Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends},
-Depends: ${misc:Depends}, ${shlibs:Depends},
+Depends: ${misc:Depends},
+         ${qml6:Depends},
+         ${shlibs:Depends},
 Description: Qt 6 Quick Window QML module
  Qt is a cross-platform C++ application framework. Qt's primary feature
  is its rich set of widgets that provide standard GUI functionality.
@@ -484,7 +746,9 @@ Package: qml6-module-qttest
 Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends},
-Depends: ${misc:Depends}, ${shlibs:Depends},
+Depends: ${misc:Depends},
+         ${qml6:Depends},
+         ${shlibs:Depends},
 Description: Qt 6 Quick Test QML module
  Qt is a cross-platform C++ application framework. Qt's primary feature
  is its rich set of widgets that provide standard GUI functionality.
@@ -495,19 +759,63 @@ Package: qt6-declarative-dev
 Section: libdevel
 Architecture: any
 Multi-Arch: same
-Depends: libqt6qml6 (= ${binary:Version}),
+Depends: libqt6labsplatform6 (= ${binary:Version}),
+         libqt6labsstylekit6 (= ${binary:Version}),
+         libqt6labssynchronizer6 (= ${binary:Version}),
+         libqt6qml6 (= ${binary:Version}),
          libqt6qmlcompiler6 (= ${binary:Version}),
+         libqt6qmlmeta6 (= ${binary:Version}),
          libqt6qmlmodels6 (= ${binary:Version}),
+         libqt6qmlnetwork6 (= ${binary:Version}),
+         libqt6qmlworkerscript6 (= ${binary:Version}),
          libqt6quick6 (= ${binary:Version}),
          libqt6quickcontrols2-6 (= ${binary:Version}),
+         libqt6quickshapes6 (= ${binary:Version}),
+         libqt6quickshapesdesignhelpers6 (= ${binary:Version}),
          libqt6quicktemplates2-6 (= ${binary:Version}),
          libqt6quicktest6 (= ${binary:Version}),
+         libqt6quickvectorimage6 (= ${binary:Version}),
+         libqt6quickvectorimagegenerator6 (= ${binary:Version}),
+         libqt6quickvectorimagehelpers6 (= ${binary:Version}),
          libqt6quickwidgets6 (= ${binary:Version}),
+         qml6-module-qml (= ${binary:Version}),
+         qml6-module-qmltime (= ${binary:Version}),
+         qml6-module-qt-labs-animation (= ${binary:Version}),
+         qml6-module-qt-labs-folderlistmodel (= ${binary:Version}),
+         qml6-module-qt-labs-platform (= ${binary:Version}),
+         qml6-module-qt-labs-qmlmodels (= ${binary:Version}),
+         qml6-module-qt-labs-settings (= ${binary:Version}),
+         qml6-module-qt-labs-sharedimage (= ${binary:Version}),
+         qml6-module-qt-labs-stylekit (= ${binary:Version}),
+         qml6-module-qt-labs-synchronizer (= ${binary:Version}),
+         qml6-module-qt-labs-wavefrontmesh (= ${binary:Version}),
+         qml6-module-qtcore (= ${binary:Version}),
+         qml6-module-qtnetwork (= ${binary:Version}),
+         qml6-module-qtqml (= ${binary:Version}),
+         qml6-module-qtqml-models (= ${binary:Version}),
+         qml6-module-qtqml-workerscript (= ${binary:Version}),
+         qml6-module-qtqml-xmllistmodel (= ${binary:Version}),
+         qml6-module-qtquick (= ${binary:Version}),
+         qml6-module-qtquick-controls (= ${binary:Version}),
+         qml6-module-qtquick-dialogs (= ${binary:Version}),
+         qml6-module-qtquick-effects (= ${binary:Version}),
+         qml6-module-qtquick-layouts (= ${binary:Version}),
+         qml6-module-qtquick-localstorage (= ${binary:Version}),
+         qml6-module-qtquick-particles (= ${binary:Version}),
+         qml6-module-qtquick-shapes (= ${binary:Version}),
+         qml6-module-qtquick-shapes-designhelpers (= ${binary:Version}),
+         qml6-module-qtquick-templates (= ${binary:Version}),
+         qml6-module-qtquick-tooling (= ${binary:Version}),
+         qml6-module-qtquick-vectorimage (= ${binary:Version}),
+         qml6-module-qtquick-vectorimage-helpers (= ${binary:Version}),
+         qml6-module-qtquick-window (= ${binary:Version}),
+         qml6-module-qttest (= ${binary:Version}),
          qt6-base-dev,
-         qt6-declarative-dev-tools,
-         qt6-qmllint-plugins,
-         qt6-qmltooling-plugins,
-         libqt6quickvectorimage6,
+         qt6-declarative-dev-tools (= ${binary:Version}),
+         qt6-qmllint-plugins (= ${binary:Version}),
+         qt6-qmlls-plugins (= ${binary:Version}),
+         qt6-qmltooling-plugins (= ${binary:Version}),
+         qt6-svg-dev,
          ${misc:Depends},
 Description: Qt 6 declarative development files
  Qt is a cross-platform C++ application framework. Qt's primary feature
@@ -536,7 +844,8 @@ Package: qt6-declarative-dev-tools
 Architecture: any
 Multi-Arch: foreign
 Section: devel
-Depends: ${misc:Depends}, ${shlibs:Depends},
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
 Description: Qt 6 declarative development programs
  Qt is a cross-platform C++ application framework. Qt's primary feature
  is its rich set of widgets that provide standard GUI functionality.
@@ -548,7 +857,8 @@ Package: qmlscene-qt6
 Architecture: any
 Multi-Arch: foreign
 Section: devel
-Depends: ${misc:Depends}, ${shlibs:Depends},
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
 Description: Qt 6 QML scene viewer
  Qt is a cross-platform C++ application framework. Qt's primary feature
  is its rich set of widgets that provide standard GUI functionality.
@@ -560,7 +870,8 @@ Package: qml-qt6
 Architecture: any
 Multi-Arch: foreign
 Section: devel
-Depends: ${misc:Depends}, ${shlibs:Depends},
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
 Description: Qt 6 QML viewer
  Qt is a cross-platform C++ application framework. Qt's primary feature
  is its rich set of widgets that provide standard GUI functionality.
@@ -569,9 +880,11 @@ Description: Qt 6 QML viewer
  'qml'.
 
 Package: qt6-declarative-doc
+Build-Profiles: <!nodoc>
 Architecture: all
 Section: doc
-Depends: qt6-base-doc, ${misc:Depends},
+Depends: qt6-base-doc,
+         ${misc:Depends},
 Multi-Arch: foreign
 Description: Qt 6 declarative documentation
  Qt is a cross-platform C++ application framework. Qt's primary feature
@@ -580,9 +893,11 @@ Description: Qt 6 declarative documentation
  This package contains the documentation for the Qt 6 declarative.
 
 Package: qt6-declarative-doc-html
+Build-Profiles: <!nodoc>
 Architecture: all
 Section: doc
-Depends: qt6-base-doc-html, ${misc:Depends},
+Depends: qt6-base-doc-html,
+         ${misc:Depends},
 Multi-Arch: foreign
 Description: Qt 6 declarative HTML documentation
  Qt is a cross-platform C++ application framework. Qt's primary feature
@@ -591,9 +906,11 @@ Description: Qt 6 declarative HTML documentation
  This package contains the HTML documentation for the Qt 6 declarative.
 
 Package: qt6-declarative-doc-dev
+Build-Profiles: <!nodoc>
 Architecture: all
 Section: libdevel
-Depends: qt6-base-doc-dev, ${misc:Depends},
+Depends: qt6-base-doc-dev,
+         ${misc:Depends},
 Multi-Arch: foreign
 Description: Qt 6 declarative tags files
  Qt is a cross-platform C++ application framework. Qt's primary feature
@@ -602,3 +919,15 @@ Description: Qt 6 declarative tags files
  This package contains the doxygen tags files for the qt declarative
  documentation.
 
+Package: qt6-declarative-examples
+Architecture: any
+Multi-Arch: same
+Section: misc
+Depends: ${misc:Depends},
+         ${qml6:Depends},
+         ${shlibs:Depends},
+Description: Qt 6 declarative examples
+ Qt is a cross-platform C++ application framework. Qt's primary feature
+ is its rich set of widgets that provide standard GUI functionality.
+ .
+ This package contains the examples for the Qt declarative submodule.

@@ -1,5 +1,6 @@
 // Copyright (C) 2016 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+// Qt-Security score:significant
 #ifndef QV4VALUE_P_H
 #define QV4VALUE_P_H
 
@@ -38,12 +39,14 @@ struct Q_QML_EXPORT Value : public StaticValue
 {
     using ManagedPtr = Managed *;
 
-    Value() = default;
-    constexpr Value(quint64 val) : StaticValue(val) {}
-
     static constexpr Value fromStaticValue(StaticValue staticValue)
     {
         return {staticValue._val};
+    }
+
+    static constexpr Value undefined()
+    {
+        return fromStaticValue(Encode::undefined());
     }
 
     inline bool isString() const;
@@ -227,8 +230,9 @@ struct Q_QML_EXPORT Value : public StaticValue
     template<typename T>
     Value &operator=(const Scoped<T> &t);
 };
-Q_STATIC_ASSERT(std::is_trivial_v<Value>);
-Q_STATIC_ASSERT(sizeof(Value) == sizeof(StaticValue));
+static_assert(std::is_trivially_copyable_v<Value>);
+static_assert(std::is_trivially_default_constructible_v<Value>);
+static_assert(sizeof(Value) == sizeof(StaticValue));
 
 template<>
 inline StaticValue &StaticValue::operator=<Value>(const Value &value)
@@ -414,6 +418,9 @@ struct HeapValue : Value {
     }
     void set(EngineBase *e, HeapBasePtr b) {
         WriteBarrier::write(e, base(), data_ptr(), b->asReturnedValue());
+    }
+    void set(EngineBase *e, ReturnedValue rv) {
+        WriteBarrier::write(e, base(), data_ptr(), rv);
     }
 };
 

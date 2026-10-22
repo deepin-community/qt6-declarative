@@ -1,5 +1,6 @@
 // Copyright (C) 2016 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+// Qt-Security score:significant
 
 #ifndef QQMLCONNECTIONS_H
 #define QQMLCONNECTIONS_H
@@ -72,7 +73,9 @@ private:
 class QQmlConnectionsParser : public QQmlCustomParser
 {
 public:
-    void verifyBindings(const QQmlRefPointer<QV4::ExecutableCompilationUnit> &compilationUnit, const QList<const QV4::CompiledData::Binding *> &props) override;
+    void verifyBindings(
+            const QQmlRefPointer<QV4::CompiledData::CompilationUnit> &compilationUnit,
+            const QList<const QV4::CompiledData::Binding *> &props) override;
     void applyBindings(QObject *object, const QQmlRefPointer<QV4::ExecutableCompilationUnit> &compilationUnit, const QList<const QV4::CompiledData::Binding *> &bindings) override;
 };
 

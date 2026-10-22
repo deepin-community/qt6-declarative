@@ -1,5 +1,6 @@
 // Copyright (C) 2017 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+// Qt-Security score:significant reason:default
 
 #include "qquickfusionbusyindicator_p.h"
 
@@ -33,10 +34,13 @@ bool QQuickFusionBusyIndicator::isRunning() const
 
 void QQuickFusionBusyIndicator::setRunning(bool running)
 {
-    if (running) {
+    m_running = running;
+
+    if (m_running) {
         setVisible(true);
         update();
     }
+    // Don't set visible to false if not running, because we use an opacity animation (in QML) to hide ourselves.
 }
 
 void QQuickFusionBusyIndicator::paint(QPainter *painter)
@@ -73,7 +77,12 @@ void QQuickFusionBusyIndicator::itemChange(ItemChange change, const ItemChangeDa
 
     switch (change) {
     case ItemOpacityHasChanged:
-        if (qFuzzyIsNull(data.realValue))
+        // If running is set to false and then true within a short period (QTBUG-85860), our
+        // OpacityAnimator cancels the 1 => 0 animation (which was for running being set to false),
+        // setting opacity to 0 and hence visible to false. This happens _after_ setRunning(true)
+        // was called, because the properties were set synchronously but the animation is
+        // asynchronous. To account for this situation, we only hide ourselves if we're not running.
+        if (qFuzzyIsNull(data.realValue) && !m_running)
             setVisible(false);
         break;
     case ItemVisibleHasChanged:

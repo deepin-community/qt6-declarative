@@ -1,5 +1,6 @@
 // Copyright (C) 2017 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+// Qt-Security score:significant
 
 #include "qv4engine_p.h"
 #include "qv4runtimecodegen_p.h"
@@ -8,14 +9,10 @@
 using namespace QV4;
 using namespace QQmlJS;
 
-void RuntimeCodegen::generateFromFunctionExpression(const QString &fileName,
-                                                    const QString &sourceCode,
-                                                    AST::FunctionExpression *ast,
-                                                    Compiler::Module *module)
+void RuntimeCodegen::generateFromFunctionExpression(
+        const QString &sourceCode, AST::FunctionExpression *ast, Compiler::Module *module)
 {
     _module = module;
-    _module->fileName = fileName;
-    _module->finalUrl = fileName;
     _context = nullptr;
 
     Compiler::ScanFunctions scan(this, sourceCode, Compiler::ContextType::Global);

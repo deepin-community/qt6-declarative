@@ -1,16 +1,24 @@
 // Copyright (C) 2016 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only
 
-#include <qtest.h>
-#include <QQmlEngine>
-#include <QQmlComponent>
-#include <QQmlContext>
-#include <QDebug>
-#include <QScopedPointer>
+#include "testtypes.h"
+
+#include <private/qmlutils_p.h>
 #include <private/qqmlglobal_p.h>
 #include <private/qquickvaluetypes_p.h>
-#include <QtQuickTestUtils/private/qmlutils_p.h>
-#include "testtypes.h"
+#include <private/qv4object_p.h>
+#include <private/qv4scopedvalue_p.h>
+
+#include <QtTest/qtest.h>
+
+#include <QtQml/qqmlengine.h>
+#include <QtQml/qqmlcomponent.h>
+#include <QtQml/qqmlcontext.h>
+
+#include <QtGui/qquaternion.h>
+
+#include <QtCore/qdebug.h>
+#include <QtCore/qscopedpointer.h>
 
 QT_BEGIN_NAMESPACE
 extern int qt_defaultDpi(void);
@@ -27,6 +35,9 @@ class tst_qqmlvaluetypeproviders : public QQmlDataTest
 public:
     tst_qqmlvaluetypeproviders() : QQmlDataTest(QT_QMLTEST_DATADIR) {}
 
+public:
+    Q_INVOKABLE void incompatibleStructuredValue();
+
 private slots:
     void initTestCase() override;
 
@@ -42,6 +53,11 @@ private slots:
     void recursive();
     void date();
     void constructors();
+    void constructFromJSValue();
+    void createValueTypeErrors();
+
+private:
+    QQmlEngine *m_engine = nullptr;
 };
 
 void tst_qqmlvaluetypeproviders::initTestCase()
@@ -562,6 +578,72 @@ void tst_qqmlvaluetypeproviders::constructors()
         QCOMPARE(Padding::log[2].left, 10);
         QCOMPARE(Padding::log[2].right, 20);
     }
+}
+
+void tst_qqmlvaluetypeproviders::constructFromJSValue()
+{
+    QQmlEngine engine;
+    QQmlComponent component(&engine);
+    component.setData(R"(
+        import QtQml
+        import Test
+        QtObject {
+            property fromJSValue js: "abcdefg"
+            property fromJSPrimitive primitive: "aaaa"
+            property fromJSManaged managed: "bbbb"
+        }
+    )", QUrl());
+
+    QVERIFY2(component.isReady(), qPrintable(component.errorString()));
+
+    FromJSValue::constructorCalls = 0;
+    FromJSManaged::constructorCalls = 0;
+    FromJSPrimitive::constructorCalls = 0;
+
+    QScopedPointer<QObject> o(component.create());
+    QVERIFY(!o.isNull());
+
+    QCOMPARE(FromJSValue::constructorCalls, 1);
+    QCOMPARE(FromJSPrimitive::constructorCalls, 1);
+    QCOMPARE(FromJSManaged::constructorCalls, 1);
+
+    const QVariant fromJSValue = o->property("js");
+    QCOMPARE(fromJSValue.metaType(), QMetaType::fromType<FromJSValue>());
+    QCOMPARE(fromJSValue.value<FromJSValue>().toString(), QStringLiteral("abcdefg"));
+
+    const QVariant fromJSPrimitive = o->property("primitive");
+    QCOMPARE(fromJSPrimitive.metaType(), QMetaType::fromType<FromJSPrimitive>());
+    QCOMPARE(fromJSPrimitive.value<FromJSPrimitive>().toString(), QStringLiteral("aaaa"));
+
+    const QVariant fromJSManaged = o->property("managed");
+    QCOMPARE(fromJSManaged.metaType(), QMetaType::fromType<FromJSManaged>());
+    QCOMPARE(fromJSManaged.value<FromJSManaged>().toString(), QStringLiteral("bbbb"));
+}
+
+void tst_qqmlvaluetypeproviders::incompatibleStructuredValue()
+{
+    QMetaType structuredValueTypeType = QMetaType::fromType<StructuredValueType>();
+    QVariantMap m;
+    m.insert(QLatin1String("i"), QVariant::fromValue(m_engine));
+    QVariant source = QVariant::fromValue(std::move(m));
+    QQmlValueTypeProvider::createValueType(source, structuredValueTypeType, m_engine->handle());
+}
+
+void tst_qqmlvaluetypeproviders::createValueTypeErrors()
+{
+    QQmlEngine engine;
+    m_engine = &engine;
+    auto url = testFileUrl("createValueTypeErrors.qml");
+    QTest::ignoreMessage(QtWarningMsg, QRegularExpression(url.toString()
+        + u":\\d+: Could not convert QVariant\\(QQmlEngine.*\\) to int for property i"
+    ));
+    QTest::ignoreMessage(QtWarningMsg, QRegularExpression(url.toString()
+        + u":\\d+: Could not convert QRectF\\(0, 0, 0, 0\\) to int for property i"
+    ));
+    QQmlComponent comp(&engine, url);
+    std::unique_ptr<QObject> rooot(comp.createWithInitialProperties(
+        {{QLatin1String("runner"), QVariant::fromValue(this)}}
+    ));
 }
 
 QTEST_MAIN(tst_qqmlvaluetypeproviders)

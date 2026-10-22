@@ -3,9 +3,9 @@
 
 /*!
     \page qml-changes-qt6.html
-    \title Changes to Qt QML
+    \title Changes to Qt Qml
     \ingroup changes-qt-5-to-6
-    \brief Migrate Qt QML to Qt 6.
+    \brief Migrate Qt Qml to Qt 6.
 
     Qt 6 is a result of the conscious effort to make the framework more
     efficient and easy to use.
@@ -14,7 +14,7 @@
     APIs in each release. But some changes were inevitable in an effort to
     make Qt a better framework.
 
-    In this topic we summarize those changes in Qt QML, and provide
+    In this topic we summarize those changes in Qt Qml, and provide
     guidance to handle them.
 
     \section1 QML language
@@ -46,6 +46,10 @@
     \endcode
 
     Qt.resolvedUrl can be used in both Qt 5 and 6.
+
+    As a porting aid, the \c{QML_COMPAT_RESOLVE_URLS_ON_ASSIGNMENT} environment variable can be set
+    to 1 to obtain the Qt 5 behavior. This is possible since Qt 6.2.2. However, it is recommended
+    to only use this to unblock a port, and to use \c Qt.resolvedUrl as explained above.
 
     \section2 Variant Properties
 
@@ -253,5 +257,5 @@
 
     \endlist
 
-
+    \sa {Modernizing QML Modules}, {Port QML modules to CMake}
 */

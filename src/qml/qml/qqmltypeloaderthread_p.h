@@ -1,5 +1,6 @@
 // Copyright (C) 2016 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+// Qt-Security score:significant
 
 #ifndef QQMLTYPELOADERTHREAD_P_H
 #define QQMLTYPELOADERTHREAD_P_H
@@ -42,6 +43,7 @@ class QQmlTypeLoaderThread : public QQmlThread
 
 public:
     QQmlTypeLoaderThread(QQmlTypeLoader *loader);
+    ~QQmlTypeLoaderThread();
 #if QT_CONFIG(qml_network)
     QNetworkAccessManager *networkAccessManager() const;
     QQmlTypeLoaderNetworkReplyProxy *networkReplyProxy() const;
@@ -56,6 +58,7 @@ public:
     void callDownloadProgressChanged(const QQmlDataBlob::Ptr &b, qreal p);
     void initializeEngine(QQmlExtensionInterface *, const char *);
     void initializeEngine(QQmlEngineExtensionInterface *, const char *);
+    void drop(const QQmlDataBlob::Ptr &b);
 
 private:
     void loadThread(const QQmlDataBlob::Ptr &b);
@@ -65,6 +68,7 @@ private:
     void callDownloadProgressChangedMain(const QQmlDataBlob::Ptr &b, qreal p);
     void initializeExtensionMain(QQmlExtensionInterface *iface, const char *uri);
     void initializeEngineExtensionMain(QQmlEngineExtensionInterface *iface, const char *uri);
+    void dropThread(const QQmlDataBlob::Ptr &b);
 
     QQmlTypeLoader *m_loader;
 #if QT_CONFIG(qml_network)

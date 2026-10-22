@@ -57,12 +57,13 @@ private slots:
     void resetColor();
     void updateBindingPalette();
 
-    void comboBoxPopup_data();
-    void comboBoxPopup();
     void comboBoxPopupWithThemeDefault_data();
     void comboBoxPopupWithThemeDefault();
+    void comboBoxPopup_data();
+    void comboBoxPopup();
 
     void toolTipPaletteUpdate();
+    void inheritPaletteForPopupWithinItemView();
 };
 
 tst_palette::tst_palette()
@@ -622,7 +623,8 @@ void tst_palette::comboBoxPopupWithThemeDefault_data()
     QTest::addColumn<QString>("style");
     QTest::addColumn<QColor>("expectedComboBoxPopupBackgroundColor");
 
-    QTest::newRow("Basic") << "Basic" << QColor::fromRgb(0xFFFFFF);
+    const bool isDark = qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
+    QTest::newRow("Basic") << "Basic" << QColor::fromRgb(isDark ? 0x000000 : 0xFFFFFF);
 
     // We can't test Fusion because it uses the default application palette,
     // which is the default-constructed QPalette, so the test would always pass.
@@ -674,6 +676,36 @@ void tst_palette::toolTipPaletteUpdate()
 
     QCOMPARE(toolTipPalette->toolTipBase(), windowPalette->toolTipBase());
     QCOMPARE(toolTipPalette->toolTipText(), windowPalette->toolTipText());
+}
+
+void tst_palette::inheritPaletteForPopupWithinItemView()
+{
+    QQuickApplicationHelper helper(this, "inheritPaletteForPopupWithinItemView.qml");
+    QVERIFY2(helper.ready, helper.failureMessage());
+    QQuickWindow *window = helper.window;
+    window->show();
+    QVERIFY(QTest::qWaitForWindowExposed(window));
+
+    QQuickItem *listView = window->property("listView").value<QQuickItem *>();
+    QVERIFY(listView);
+    QQuickItem *contentItem = listView->property("contentItem").value<QQuickItem *>();
+    QVERIFY(contentItem);
+    QQuickItem *item = contentItem->childItems().value(0);
+    QVERIFY(item);
+    auto *button = item->property("button").value<QQuickButton *>();
+    QVERIFY(button);
+
+    auto windowPalette = QQuickWindowPrivate::get(window)->palette();
+    auto buttonPalette = QQuickItemPrivate::get(button)->palette();
+
+    QCOMPARE(windowPalette->window(), buttonPalette->window());
+    QCOMPARE(windowPalette->buttonText(), buttonPalette->buttonText());
+
+    windowPalette->setWindow(Qt::red);
+    windowPalette->setButtonText(Qt::blue);
+
+    QCOMPARE(windowPalette->window(), buttonPalette->window());
+    QCOMPARE(windowPalette->buttonText(), buttonPalette->buttonText());
 }
 
 QTEST_MAIN(tst_palette)

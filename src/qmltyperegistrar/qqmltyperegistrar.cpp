@@ -1,5 +1,6 @@
 // Copyright (C) 2022 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only WITH Qt-GPL-exception-1.0
+// Qt-Security score:significant
 
 #include <QFile>
 #include <QCborArray>
@@ -81,7 +82,8 @@ bool QmlTypeRegistrar::argumentsFromCommandLineAndFile(QStringList &allArguments
     return true;
 }
 
-int QmlTypeRegistrar::runExtract(const QString &baseName, const MetaTypesJsonProcessor &processor)
+int QmlTypeRegistrar::runExtract(
+        const QString &baseName, const QString &nameSpace, const MetaTypesJsonProcessor &processor)
 {
     if (processor.types().isEmpty()) {
         error(baseName) << "No types to register found in library";
@@ -103,10 +105,17 @@ int QmlTypeRegistrar::runExtract(const QString &baseName, const MetaTypesJsonPro
             "#define %1_H\n"
             "#include <QtQml/qqml.h>\n"
             "#include <QtQml/qqmlmoduleregistration.h>\n").arg(includeGuard);
+    auto postfix = QString::fromLatin1("\n#endif // %1_H\n").arg(includeGuard);
+
     const QList<QString> includes = processor.includes();
     for (const QString &include: includes)
         prefix += u"\n#include <%1>"_s.arg(include);
-    headerFile.write((prefix + processor.extractRegisteredTypes()).toUtf8() + "\n#endif\n");
+    if (!nameSpace.isEmpty()) {
+        prefix += u"\nnamespace %1 {"_s.arg(nameSpace);
+        postfix.prepend(u"\n} // namespace %1"_s.arg(nameSpace));
+    }
+
+    headerFile.write((prefix + processor.extractRegisteredTypes() + postfix).toUtf8());
 
     QFile sourceFile(baseName + u".cpp");
     ok = sourceFile.open(QFile::WriteOnly);
@@ -235,7 +244,7 @@ void QmlTypeRegistrar::write(QTextStream &output, QAnyStringView outFileName) co
     output << uR"(
     QT_WARNING_PUSH QT_WARNING_DISABLE_DEPRECATED)"_s;
 
-    QVector<QAnyStringView> typesRegisteredAnonymously;
+    QList<QAnyStringView> typesRegisteredAnonymously;
 
     const auto fillTypesRegisteredAnonymously = [&](const auto &members, QAnyStringView typeName) {
         bool foundRevisionEntry = false;
@@ -314,10 +323,22 @@ void QmlTypeRegistrar::write(QTextStream &output, QAnyStringView outFileName) co
         }
 
         for (QString qmlElementName : std::as_const(qmlElementNames)) {
+
             if (qmlElementName == S_ANONYMOUS)
                 continue;
+
             if (qmlElementName == S_AUTO)
                 qmlElementName = className;
+
+            if (!qmlElementName.isEmpty()
+                && qmlElementName.front().isLower()
+                && !classDef.enums().empty()) {
+                warning(classDef.inputFile()).nospace()
+                << "QML type '" << qmlElementName
+                << "' starts with a lowercase letter and exports enums, "
+                   "which are not accessible from QML or JavaScript.";
+            }
+
             qmlElementInfos[qmlElementName].append({
                 classDef.inputFile(),
                 className,
@@ -334,6 +355,11 @@ void QmlTypeRegistrar::write(QTextStream &output, QAnyStringView outFileName) co
 
         const FoundType target = QmlTypesClassDescription::findType(
                 m_types, m_foreignTypes, targetName, namespaces);
+
+        // The target may be in a namespace we've resolved already.
+        // Update the targetName accordingly.
+        if (!target.native.isEmpty())
+            targetName = target.native.qualifiedClassName().toString();
 
         if (targetIsNamespace) {
             // We need to figure out if the _target_ is a namespace. If not, it already has a
@@ -411,6 +437,10 @@ void QmlTypeRegistrar::write(QTextStream &output, QAnyStringView outFileName) co
                 output << uR"(
     qmlRegisterTypesAndRevisions<%1>("%2", %3);)"_s.arg(className, m_module).arg(majorVersion);
 
+                // TODO it seems that we don't actually need to register the pointer version for gadgets (QTBUG-147142)
+                if (classDef.kind() == MetaType::Kind::Gadget)
+                    output << u"\n    QMetaType::fromType<%1 *>().id();"_s.arg(className);
+
                 const BaseType::Container superClasses = classDef.superClasses();
 
                 for (const BaseType &object : classDef.superClasses()) {
@@ -419,7 +449,7 @@ void QmlTypeRegistrar::write(QTextStream &output, QAnyStringView outFileName) co
 
                         QAnyStringView superClassName = object.name;
 
-                        QVector<QAnyStringView> classesToCheck;
+                        QList<QAnyStringView> classesToCheck;
 
                         auto checkForRevisions = [&](QAnyStringView typeName) -> void {
                             auto typeAsMap = findType(typeName);
@@ -452,6 +482,10 @@ void QmlTypeRegistrar::write(QTextStream &output, QAnyStringView outFileName) co
                     }
             } else {
                 Q_ASSERT(!className.isEmpty());
+
+                // Since we don't have a QML name for this type, it can't refer to another type.
+                Q_ASSERT(className == targetName);
+
                 output << uR"(
     QMetaType::fromType<%1%2>().id();)"_s.arg(
                         className, classDef.kind() == MetaType::Kind::Object ? u" *" : u"");
@@ -461,11 +495,11 @@ void QmlTypeRegistrar::write(QTextStream &output, QAnyStringView outFileName) co
         const auto enums = target.native.enums();
         for (const auto &enumerator : enums) {
             output << uR"(
-    QMetaType::fromType<%1::%2>().id();)"_s.arg(
+    qmlRegisterEnum<%1::%2>("%1::%2");)"_s.arg(
                     targetName, enumerator.name.toString());
             if (!enumerator.alias.isEmpty()) {
                 output << uR"(
-    QMetaType::fromType<%1::%2>().id();)"_s.arg(
+    qmlRegisterEnum<%1::%2>("%1::%2");)"_s.arg(
                         targetName, enumerator.alias.toString());
             }
         }
@@ -517,15 +551,17 @@ static const QQmlModuleRegistration %5("%1", %4);
         output << u"} // namespace %1\n"_s.arg(m_targetNamespace);
 }
 
-bool QmlTypeRegistrar::generatePluginTypes(const QString &pluginTypesFile)
+bool QmlTypeRegistrar::generatePluginTypes(const QString &pluginTypesFile, bool generatingJSRoot)
 {
     QmlTypesCreator creator;
     creator.setOwnTypes(m_types);
+    creator.setOpaqueTypes(m_opaqueTypes);
     creator.setForeignTypes(m_foreignTypes);
     creator.setReferencedTypes(m_referencedTypes);
     creator.setUsingDeclarations(m_usingDeclarations);
     creator.setModule(m_module.toUtf8());
     creator.setVersion(QTypeRevision::fromVersion(m_moduleVersion.majorVersion(), 0));
+    creator.setGeneratingJSRoot(generatingJSRoot);
 
     return creator.generate(pluginTypesFile);
 }
@@ -549,10 +585,11 @@ void QmlTypeRegistrar::setIncludes(const QList<QString> &includes)
     m_includes = includes;
 }
 void QmlTypeRegistrar::setTypes(
-        const QVector<MetaType> &types, const QVector<MetaType> &foreignTypes)
+        const QList<MetaType> &types, const QList<MetaType> &foreignTypes, const QList<MetaType> &opaqueTypes)
 {
     m_types = types;
     m_foreignTypes = foreignTypes;
+    m_opaqueTypes = opaqueTypes;
 }
 void QmlTypeRegistrar::setReferencedTypes(const QList<QAnyStringView> &referencedTypes)
 {

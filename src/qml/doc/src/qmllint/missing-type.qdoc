@@ -22,13 +22,13 @@ actually installed, and that their modules end up in an
 
 The warning might also indicate that the type of the property referenced by the alias does not have
 a QML counterpart. The referenced property type might be missing the
-\l{QQmlEngine::}{QML_ELEMENT} macro, for example. Refer to
+QML_ELEMENT macro, for example. Refer to
 \l{Defining QML Types from C++} or \l{Overview - QML and C++ Integration} in this case.
 
 \section2 Why is this bad?
 QML tooling is not able to find the QML counterpart of the C++ type: the
 \l{Qt Quick Compiler}{compiler} can't compile this property alias to
-C++ and \l{qmllint Reference}{qmllint} as well as \l{\QMLLS Reference}{\QMLLS}
+C++ and \l{qmllint} as well as \l{\QMLLS}
 can't analyze this property alias.
 
 \section2 Example
@@ -85,7 +85,7 @@ target_link_libraries(appmymodule
 \endcode
 
 The C++ dependency \c{Quick} was declared, such that this class can compile and the QQuickItem
-include can be found. Also, \c{mymodule} does not have any dependency on QtQuick.
+include can be found. Also, \c{mymodule} does not have any QML dependency on \l{Qt Quick}.
 
 Now, let's try to use \c{myProperty} in an alias in QML. The program will run but QML tooling like
 the \l{Qt Quick Compiler}{compiler}, for example, will complain about the usage of \c{myProperty}:
@@ -131,13 +131,13 @@ actually installed, and that their modules end up in an
 
 The warning might also indicate that the type of the property does not have
 a QML counterpart. The property type might be missing the
-\l{QQmlEngine::}{QML_ELEMENT} macro, for example. Refer to
+QML_ELEMENT macro, for example. Refer to
 \l{Defining QML Types from C++} or \l{Overview - QML and C++ Integration} in this case.
 
 \section2 Why is this bad?
 QML tooling is not able to find the QML counterpart of the C++ type: the
 \l{Qt Quick Compiler}{compiler} can't compile this property binding to
-C++ and \l{qmllint Reference}{qmllint} as well as \l{\QMLLS Reference}{\QMLLS} can't analyze this property binding.
+C++ and \l{qmllint} as well as \l{\QMLLS} can't analyze this property binding.
 
 \section2 Example
 Let our QML module have a C++ class with two properties, \c{myProperty} and \c{myProperty2}:
@@ -199,7 +199,7 @@ target_link_libraries(appmymodule
 \endcode
 
 The C++ dependency \c{Quick} was declared, such that this class can compile and the QQuickItem
-include can be found. Also, \c{mymodule} does not have any dependency on QtQuick.
+include can be found. Also, \c{mymodule} does not have any QML dependency on \l{Qt Quick}.
 
 Now, let's try to bind \c{myProperty2} to \c{myProperty} in an alias in QML. The program will run
 but QML tooling like the \l{Qt Quick Compiler}{compiler}, for example, will complain about the
@@ -215,7 +215,7 @@ MyCppObject {
 }
 \endqml
 The reason for the warning message is that in the QML code, the type \c{QQuickItem} of \c{myProperty}
-and its QML counterpart \c{Item} are not known: the dependency 'QtQuick' of mymodule was not
+and its QML counterpart \c{Item} are not known: the dependency \c QtQuick of mymodule was not
 declared in the \c{CMakeLists.txt}.
 
 To fix this warning, add the dependency in the \c{CMakeLists.txt}:

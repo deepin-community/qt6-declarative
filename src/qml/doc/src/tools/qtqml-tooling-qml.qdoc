@@ -4,8 +4,10 @@
 /*!
 \page qtqml-tooling-qml.html
 \title qml
-\brief Overview of the qml command line utility.
+\brief A tool that loads QML documents and creates a window to show the scene
+    if your QML document includes a visual item.
 \ingroup qtqml-tooling
+\ingroup qtqml-tooling-design
 
 \section1 The qml utility
 \c The qml utility tool loads QML documents and creates a window to show the scene
@@ -71,7 +73,7 @@ as described in \l {Prototyping with the QML Runtime Tool}{here}.
     \li Force use of OpenGL Core Profile.
 \row
     \li --disable-context-sharing
-    \li Disable the use of a shared GL context for QtQuick Windows
+    \li Disable the use of a shared GL context for \l [QML] {QtQuick} Windows
 \row
     \li --enable-shader-cache
     \li Enable persistent caching of generated shaders

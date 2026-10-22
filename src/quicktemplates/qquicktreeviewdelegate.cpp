@@ -1,5 +1,6 @@
 // Copyright (C) 2021 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+// Qt-Security score:significant reason:default
 
 #include "qquicktreeviewdelegate_p.h"
 
@@ -20,20 +21,21 @@ QT_BEGIN_NAMESPACE
     \brief A delegate that can be assigned to a TreeView.
 
     \image qtquickcontrols-treeviewdelegate.png
+           {Tree view displaying hierarchical data using a tree view delegate}
 
     A TreeViewDelegate is a delegate that can be assigned to the
     \l {TableView::delegate} {delegate property} of a \l TreeView.
     It renders the tree, as well as the other columns, in the view
     using the application style.
 
-    \code
+    \qml
     TreeView {
         anchors.fill: parent
         delegate: TreeViewDelegate {}
         // The model needs to be a QAbstractItemModel
         // model: yourTreeModel
     }
-    \endcode
+    \endqml
 
     TreeViewDelegate inherits \l ItemDelegate, which means that
     it's composed of three items: a \l[QML]{Control::}{background},
@@ -49,13 +51,13 @@ QT_BEGIN_NAMESPACE
     \l [QML] {Item::x}{x position} of the indicator, taking the \l depth and
     \l indentation into account. Below is an example of how to do that:
 
-    \code
+    \qml
     TreeViewDelegate {
         indicator: Item {
             x: leftMargin + (depth * indentation)
         }
     }
-    \endcode
+    \endqml
 
     The position of the contentItem is controlled with \l [QML]{Control::}{padding}.
     This means that you can change the contentItem without dealing with indentation.
@@ -77,7 +79,7 @@ QT_BEGIN_NAMESPACE
     click, or which modifiers are being held. If this is needed, a better approach would
     be to use pointer handlers, for example:
 
-    \code
+    \qml
     TreeView {
         id: treeView
         delegate: TreeViewDelegate {
@@ -97,7 +99,7 @@ QT_BEGIN_NAMESPACE
             }
         }
     }
-    \endcode
+    \endqml
 
     \note If you want to disable the default behavior that occurs when the
     user clicks on the delegate (like changing the current index), you can set
@@ -203,7 +205,7 @@ QT_BEGIN_NAMESPACE
     If no indicator is visible, the space will be between the left
     edge of the view and the left edge of the contentItem.
 
-    \sa rightMargin, indentation, {QQuickControl::}{spacing}
+    \sa rightMargin, indentation, {QtQuick.Controls::Control::}{spacing}
 */
 
 /*!
@@ -212,7 +214,7 @@ QT_BEGIN_NAMESPACE
     This property holds the space between the right edge of the view
     and the right edge of the contentItem.
 
-    \sa leftMargin, indentation, {QQuickControl::}{spacing}
+    \sa leftMargin, indentation, {QtQuick.Controls::Control::}{spacing}
 */
 
 using namespace Qt::Literals::StringLiterals;
@@ -299,7 +301,7 @@ QQuickTreeViewDelegate::QQuickTreeViewDelegate(QQuickItem *parent)
     // pointer handlers, we inform the button about its pressed state from the tap
     // handler instead. This will ensure that we emit button signals like
     // pressed, clicked, and doubleClicked.
-    connect(tapHandler, &QQuickTapHandler::pressedChanged, [this, d, tapHandler] {
+    connect(tapHandler, &QQuickTapHandler::pressedChanged, this, [this, d, tapHandler] {
         auto view = treeView();
         if (view && !view->pointerNavigationEnabled())
             return;

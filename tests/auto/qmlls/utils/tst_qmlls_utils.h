@@ -56,6 +56,10 @@ private slots:
 
     void findDefinitionFromLocation_data();
     void findDefinitionFromLocation();
+    void findMultipleDefinitionsFromLocation_data();
+    void findMultipleDefinitionsFromLocation();
+
+    void findDefinitionFromAbsoluteLocation();
 
     void findLocationOfItem_data();
     void findLocationOfItem();
@@ -79,11 +83,18 @@ private slots:
     void completions();
 
     void cmakeBuildCommand();
+    void maxFilesToSearch();
+
+    void findFilePathsFromFileNames_data();
+    void findFilePathsFromFileNames();
+    void findFilePathFromFileName_data();
+    void findFilePathFromFileName();
 
 private:
     using EnvironmentAndFile = std::tuple<QQmlJS::Dom::DomItem, QQmlJS::Dom::DomItem>;
 
-    EnvironmentAndFile createEnvironmentAndLoadFile(const QString &file);
+    EnvironmentAndFile createEnvironmentAndLoadFile(const QString &file,
+                                                    const QStringList &extraBuildDir = {});
 
     ExpectedCompletions quickSnippets(const QStringView firstPrefix,
                                       const QStringView secondPrefix) const;

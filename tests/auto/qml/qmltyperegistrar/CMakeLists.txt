@@ -16,6 +16,7 @@ endif()
 add_subdirectory(VersionZero)
 add_subdirectory(UnregisteredTypes)
 add_subdirectory(foreign)
+add_subdirectory(Namespaced)
 
 qt_manual_moc(moc_files OUTPUT_MOC_JSON_FILES json_list noextheader
               TARGETS Qt6::Qml)
@@ -36,21 +37,36 @@ qt_internal_add_test(tst_qmltyperegistrar
         typereferencinganother.h
         # noextheader special case
         tst_qmltyperegistrar.cpp tst_qmltyperegistrar.h
-        foo.cpp foo.h duplicatedExports.h
+        foo.cpp foo.h duplicatedExports.h lowercaseEnum.h
         inaccessible/base.h
         inaccessible/property.h
+        opaquetypes.h
+        mytype.h
         ${moc_files}
     INCLUDE_DIRECTORIES
         foreign
+        Namespaced                               # for namespaced.h
+        "${CMAKE_CURRENT_BINARY_DIR}/Namespaced" # for the export header
     LIBRARIES
         # Remove: Lforeign
         Qt::Qml
+        Qt::QmlPrivate
         foreign
         tst_qmltyperegistrarPrivate
         Qt::QmlTypeRegistrarPrivate
         tst_qmltyperegistrar_major_version_zero
+        tst_qmltyperegistrar_namespaced_module
         UnregisteredTypes
 )
+
+if (TARGET qmljsrootgen)
+    qt_internal_extend_target(tst_qmltyperegistrar
+        DEFINES
+            QT_QMLJSROOTGEN_PRESENT
+    )
+
+    add_dependencies(tst_qmltyperegistrar Qt::qmljsrootgen)
+endif()
 
 qt_internal_extend_target(tst_qmltyperegistrar CONDITION TARGET Qt::Quick
     LIBRARIES
@@ -100,8 +116,11 @@ qt_internal_add_resource(tst_qmltyperegistrar "resources"
     PREFIX
         "/"
     FILES
+        brokenEnums.json
         duplicatedExports.json
         missingTypes.json
+        processTwice.json
+        lowercaseEnum.json
 )
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)

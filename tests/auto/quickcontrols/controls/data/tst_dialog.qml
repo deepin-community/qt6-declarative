@@ -159,6 +159,37 @@ TestCase {
         compare(closedSpy.count, 4)
     }
 
+    function test_destructiveRoleDialogClose() {
+        let control = createTemporaryObject(dialog, testCase)
+        verify(control)
+
+        // Set up the dialog with a DestructiveRole button
+        control.standardButtons = Dialog.Discard
+
+        let discardedSpy = createTemporaryObject(signalSpy, testCase, {target: control, signalName: "discarded"})
+        verify(discardedSpy.valid)
+
+        let closedSpy = createTemporaryObject(signalSpy, testCase, {target: control, signalName: "closed"})
+        verify(closedSpy.valid)
+
+        control.open()
+        verify(control.visible)
+
+        let discardButton = control.standardButton(Dialog.Discard)
+        verify(discardButton)
+        discardButton.clicked()
+
+        // Check that the discarded() signal is emitted
+        compare(discardedSpy.count, 1)
+
+        if (control.visible)
+            control.close()
+
+       // Check that the dialog is closed
+       tryCompare(control, "visible", false)
+       compare(closedSpy.count, 1)
+    }
+
     function test_buttonBox_data() {
         return [
             { tag: "default" },
@@ -449,5 +480,226 @@ TestCase {
         window.closeAndOpen()
         tryCompare(window, "focusDialogVisible", false)
         tryCompare(window, "focusItemActiveFocus", true)
+    }
+
+    Component {
+        id: dialogWithDefaultButtonInButtonBox
+        Dialog {
+            property alias expectedFocusButton: defaultButton
+            property var otherButtons: [first, second]
+            popupType: Popup.Item
+            footer: DialogButtonBox {
+                Button {
+                    id: first
+                    text: "Foo"
+                }
+                Button {
+                    id: second
+                    text: "Bar"
+                    DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole
+                }
+                defaultButton: Button {
+                    id: defaultButton
+                    text: "Baz"
+                }
+            }
+        }
+    }
+
+    Component {
+        id: dialogWithAcceptRoleInButtonBox
+        Dialog {
+            property alias expectedFocusButton: acceptRole
+            property var otherButtons: [first]
+            popupType: Popup.Item
+            footer: DialogButtonBox {
+                Button {
+                    id: first
+                    text: "Foo"
+                }
+                Button {
+                    id: acceptRole
+                    text: "Bar"
+                    DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole
+                }
+            }
+        }
+    }
+
+    function test_focusShouldBeGivenToButtonInButtonBox_data() {
+        return [
+            { tag: "defaultButton", componentToUse: dialogWithDefaultButtonInButtonBox, focusFromAcceptRole: false},
+            { tag: "acceptRole", componentToUse: dialogWithAcceptRoleInButtonBox, focusFromAcceptRole: true}
+        ]
+    }
+
+    function test_focusShouldBeGivenToButtonInButtonBox(data) {
+        let control = createTemporaryObject(data.componentToUse, testCase)
+        verify(control)
+        let openedSpy = createTemporaryObject(signalSpy, testCase, {target: control, signalName: "opened"})
+        verify(openedSpy.valid)
+
+        control.open()
+        openedSpy.wait()
+        compare(openedSpy.count, 1)
+        verify(control.visible)
+
+        for (let i = 0; i < control.otherButtons.length; i++) {
+            compare(control.otherButtons[i].activeFocus, false)
+            compare(control.otherButtons[i].focus, false)
+            compare(control.otherButtons[i].highlighted, false)
+        }
+
+        compare(control.expectedFocusButton.focus, true)
+        compare(control.expectedFocusButton.activeFocus, true)
+        compare(control.expectedFocusButton.highlighted, !data.focusFromAcceptRole)
+        control.close()
+    }
+
+    Component {
+        id: dialogWithoutAcceptRoleOrDefaultButtonInButtonBox
+        Dialog {
+            popupType: Popup.Item
+            footer: DialogButtonBox {
+                Button {
+                    text: "Foo"
+                }
+                Button {
+                    text: "Bar"
+                }
+            }
+        }
+    }
+
+    function test_dialogWithoutAcceptRoleOrDefaultButtonInButtonBox() {
+        let control = createTemporaryObject(dialogWithoutAcceptRoleOrDefaultButtonInButtonBox, testCase)
+        verify(control)
+        let openedSpy = createTemporaryObject(signalSpy, testCase, {target: control, signalName: "opened"})
+        verify(openedSpy.valid)
+
+        control.open()
+        openedSpy.wait()
+        compare(openedSpy.count, 1)
+        verify(control.visible)
+
+        // None of the buttons should have focus
+        for (let i = 0; i < control.footer.count; i++) {
+            verify(control.footer.itemAt(i) instanceof Button)
+            compare(control.footer.itemAt(i).activeFocus, false)
+            compare(control.footer.itemAt(i).focus, false)
+            compare(control.footer.itemAt(i).highlighted, false)
+        }
+        control.close()
+    }
+
+    Component {
+        id: dialogWithDefaultStandardbuttonInButtonBox
+        Dialog {
+            popupType: Popup.Item
+            footer: DialogButtonBox {
+                standardButtons: DialogButtonBox.Yes | DialogButtonBox.No | DialogButtonBox.Cancel
+                defaultStandardButton: DialogButtonBox.Cancel
+            }
+        }
+    }
+
+
+    function test_dialogWithDefaultStandardButtonInButtonBox() {
+        let control = createTemporaryObject(dialogWithDefaultStandardbuttonInButtonBox, testCase)
+        verify(control)
+        let openedSpy = createTemporaryObject(signalSpy, testCase, {target: control, signalName: "opened"})
+        verify(openedSpy.valid)
+
+        control.open()
+        openedSpy.wait()
+        compare(openedSpy.count, 1)
+        verify(control.visible)
+
+        verify(control.footer instanceof DialogButtonBox)
+        let yes = control.footer?.standardButton(DialogButtonBox.Yes)
+        let no = control.footer?.standardButton(DialogButtonBox.No)
+        let cancel = control.footer?.standardButton(DialogButtonBox.Cancel)
+
+        compare(yes.activeFocus, false)
+        compare(yes.focus, false)
+        compare(yes.highlighted, false)
+        compare(no.activeFocus, false)
+        compare(no.focus, false)
+        compare(no.highlighted, false)
+        compare(cancel.activeFocus, true)
+        compare(cancel.focus, true)
+        compare(cancel.highlighted, true)
+
+        control.close()
+    }
+
+    function test_dontGiveButtonBoxFocusWhenEmpty() {
+        let control = createTemporaryObject(dialog, testCase)
+        verify(control)
+        let openedSpy = createTemporaryObject(signalSpy, testCase, {target: control, signalName: "opened"})
+        verify(openedSpy.valid)
+
+        control.open()
+        openedSpy.wait()
+        compare(openedSpy.count, 1)
+        verify(control.visible)
+
+        compare(control.footer?.focus, false)
+        compare(control.footer?.activeFocus, false)
+    }
+
+    function test_dontGiveButtonBoxFocusWhenButtonsAreDisabled() {
+        let control = createTemporaryObject(dialogWithoutAcceptRoleOrDefaultButtonInButtonBox, testCase)
+        verify(control)
+        let openedSpy = createTemporaryObject(signalSpy, testCase, {target: control, signalName: "opened"})
+        verify(openedSpy.valid)
+
+        for (let i = 0; i < control.footer.count; i++) {
+            control.footer.itemAt(i).enabled = false;
+        }
+
+        control.open()
+        openedSpy.wait()
+        compare(openedSpy.count, 1)
+        verify(control.visible)
+
+        compare(control.footer.focus, false)
+        compare(control.footer.activeFocus, false)
+    }
+
+    Component {
+        id: dialogWithDefaultButtonAndSubFocusItem
+        Dialog {
+            popupType: Popup.Item
+            contentItem: Button {
+                focus: true
+                text: "Prioritize me!"
+            }
+            footer: DialogButtonBox {
+                Button {
+                    text: "Foo"
+                }
+                Button {
+                    text: "Bar"
+                }
+            }
+        }
+    }
+
+    function test_dontGiveButtonBoxFocusWhenPopupItemHasSubFocusItem() {
+        let control = createTemporaryObject(dialogWithDefaultButtonAndSubFocusItem, testCase)
+        verify(control)
+        let openedSpy = createTemporaryObject(signalSpy, testCase, {target: control, signalName: "opened"})
+        verify(openedSpy.valid)
+
+        control.open()
+        openedSpy.wait()
+        compare(openedSpy.count, 1)
+        verify(control.visible)
+
+        compare(control.footer?.focus, false)
+        compare(control.footer?.activeFocus, false)
+        compare(control.contentItem?.focus, true)
+        compare(control.contentItem?.activeFocus, true)
     }
 }

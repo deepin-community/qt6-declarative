@@ -1,5 +1,6 @@
 // Copyright (C) 2016 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+// Qt-Security score:significant
 
 #include "qqmldelayedcallqueue_p.h"
 #include <private/qqmlengine_p.h>
@@ -85,15 +86,15 @@ QV4::ReturnedValue QQmlDelayedCallQueue::addUniquelyAndExecuteLater(QV4::Executi
     if (!func)
         THROW_GENERIC_ERROR("Qt.callLater: first argument not a function or signal");
 
-    QPair<QObject *, int> functionData = QV4::QObjectMethod::extractQtMethod(func);
+    std::pair<QObject *, int> functionData = QV4::QObjectMethod::extractQtMethod(func);
 
-    QVector<DelayedFunctionCall>::Iterator iter;
+    QList<DelayedFunctionCall>::Iterator iter;
     if (functionData.second != -1) {
         // This is a QObject function wrapper
         iter = self->m_delayedFunctionCalls.begin();
         while (iter != self->m_delayedFunctionCalls.end()) {
             DelayedFunctionCall& dfc = *iter;
-            QPair<QObject *, int> storedFunctionData = QV4::QObjectMethod::extractQtMethod(dfc.m_function.as<QV4::FunctionObject>());
+            std::pair<QObject *, int> storedFunctionData = QV4::QObjectMethod::extractQtMethod(dfc.m_function.as<QV4::FunctionObject>());
             if (storedFunctionData == functionData) {
                 break; // Already stored!
             }
@@ -154,7 +155,8 @@ void QQmlDelayedCallQueue::storeAnyArguments(DelayedFunctionCall &dfc, QQmlV4Fun
     QV4::ScopedArrayObject array(scope, engine->newArrayObject(length));
     uint i = 0;
     for (int j = offset, ej = args->length(); j < ej; ++i, ++j)
-        array->put(i, (*args)[j]);
+        // fromReturnedValue is safe, args should already ensure marking
+        array->put(i, QV4::Value::fromReturnedValue((*args)[j]));
     dfc.m_args.set(engine, array);
 }
 
@@ -162,10 +164,10 @@ void QQmlDelayedCallQueue::executeAllExpired_Later()
 {
     // Make a local copy of the list and clear m_delayedFunctionCalls
     // This ensures correct behavior in the case of recursive calls to Qt.callLater()
-    QVector<DelayedFunctionCall> delayedCalls = m_delayedFunctionCalls;
+    QList<DelayedFunctionCall> delayedCalls = m_delayedFunctionCalls;
     m_delayedFunctionCalls.clear();
 
-    QVector<DelayedFunctionCall>::Iterator iter = delayedCalls.begin();
+    QList<DelayedFunctionCall>::Iterator iter = delayedCalls.begin();
     while (iter != delayedCalls.end()) {
         DelayedFunctionCall& dfc = *iter;
         dfc.execute(m_engine);

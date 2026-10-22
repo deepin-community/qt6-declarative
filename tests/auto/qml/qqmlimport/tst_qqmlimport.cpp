@@ -4,6 +4,7 @@
 #include <private/qmlutils_p.h>
 #include <private/qqmlengine_p.h>
 #include <private/qqmlimport_p.h>
+#include <private/qqmlpluginimporter_p.h>
 
 #include <QtQuick/qquickview.h>
 #include <QtQuick/qquickitem.h>
@@ -18,6 +19,11 @@
 #include <QtCore/qscopeguard.h>
 #include <QtCore/qlibraryinfo.h>
 #include <QtCore/private/qlibraryinfo_p.h>
+#include <QtCore/qpluginloader.h>
+
+#include "MyStaticModule/mystaticmoduleplugin.h"
+
+using namespace Qt::StringLiterals;
 
 class TheThing : public QObject
 {
@@ -55,14 +61,17 @@ private slots:
     void interceptQmldir();
     void singletonVersionResolution();
     void removeDynamicPlugin();
+    void removeStaticPlugins();
     void partialImportVersions_data();
     void partialImportVersions();
     void registerModuleImport();
     void importDependenciesPrecedence();
+    void importFromNamespacedDirctoryResolvesCorrectly();
     void cleanup();
     void envResourceImportPath();
     void preferResourcePath_data();
     void preferResourcePath();
+    void preferResourcePathScript();
     void invalidFileImport_data();
     void invalidFileImport();
     void implicitWithDependencies();
@@ -71,6 +80,7 @@ private slots:
     void registerTypesFromImplicitImport_data();
     void registerTypesFromImplicitImport();
     void containsAllQtConfEntries();
+    void sanitizeUNCPath();
 
 private:
     QQmlModuleRegistration noimportRegistration;
@@ -101,8 +111,8 @@ void tst_QQmlImport::envResourceImportPath()
 
     qputenv("QML_IMPORT_PATH", envPaths.join(QDir::listSeparator()).toUtf8());
 
-    QQmlImportDatabase importDb(nullptr);
-    const QStringList importPaths = importDb.importPathList();
+    QQmlEngine engine;
+    const QStringList importPaths = QQmlTypeLoader::get(&engine)->importPathList();
 
     for (const QString &path : envPaths)
         QVERIFY((importPaths.contains(path.startsWith(u':') ? QLatin1String("qrc") + path : path)));
@@ -125,6 +135,23 @@ void tst_QQmlImport::preferResourcePath()
     QQmlComponent component(&engine, file);
     QVERIFY2(component.isReady(), component.errorString().toUtf8());
     QScopedPointer<QObject> o(component.create());
+    QCOMPARE(o->objectName(), "right");
+}
+
+void tst_QQmlImport::preferResourcePathScript()
+{
+    // A qualified import of a module with a "prefer" directive must resolve
+    // its scripts from the preferred (resource) location, just like its
+    // components. Otherwise the script next to the qmldir on disk would be
+    // used, which does not exist when the module is deployed with its files
+    // compiled into resources. QTBUG-143877
+    QQmlEngine engine;
+    engine.addImportPath(dataDirectory());
+
+    QQmlComponent component(&engine, testFileUrl("preferScriptQualified.qml"));
+    QVERIFY2(component.isReady(), component.errorString().toUtf8());
+    QScopedPointer<QObject> o(component.create());
+    QVERIFY(!o.isNull());
     QCOMPARE(o->objectName(), "right");
 }
 
@@ -187,10 +214,10 @@ void tst_QQmlImport::invalidImportUrl()
     const QUrl url = testFileUrl("fileDotSlashImport.qml");
     QQmlComponent component(&engine, url);
     QVERIFY(component.isError());
-    QCOMPARE(
-            component.errorString(),
-            url.toString() + QLatin1String(
-                    ":2 Cannot resolve URL for import \"file://./MyModuleName\"\n"));
+    QCOMPARE(component.errorString(),
+             url.toString()
+                     + QLatin1String(
+                             ":2:1: Cannot resolve URL for import \"file://./MyModuleName\"\n"));
 }
 
 void tst_QQmlImport::registerTypesFromImplicitImport_data()
@@ -228,6 +255,15 @@ void tst_QQmlImport::containsAllQtConfEntries()
     QVERIFY(importPaths.contains(u"qrc:/a/path"));
     QVERIFY(importPaths.contains(u"qrc:/another/path"));
     QVERIFY(importPaths.contains(u"qrc:/even/more/path"));
+}
+
+void tst_QQmlImport::sanitizeUNCPath()
+{
+    QString wildUNCPath = QStringLiteral("//Server2/Sh%re/foO/qmldir");
+    QQmlTypeLoader::sanitizeUNCPath(&wildUNCPath);
+
+    // It lowercases the "server" component of the path. The rest is left as-is
+    QCOMPARE(wildUNCPath, QStringLiteral("//server2/Sh%re/foO/qmldir"));
 }
 
 void tst_QQmlImport::testDesignerSupported()
@@ -413,7 +449,7 @@ public:
     {
         if (type != UrlString && !url.isEmpty() && url.isValid()) {
             QString str = url.toString(QUrl::None);
-            return str.replace(QStringLiteral("$(INTERCEPT)"), QStringLiteral("intercepted"));
+            return QUrl{str.replace("$(INTERCEPT)"_L1, "intercepted"_L1)};
         }
         return url;
     }
@@ -479,21 +515,44 @@ void tst_QQmlImport::singletonVersionResolution()
 void tst_QQmlImport::removeDynamicPlugin()
 {
     qmlClearTypeRegistrations();
+
     QQmlEngine engine;
+    QTest::ignoreMessage(QtWarningMsg, "Registered dynamic plugin!");
     {
         // Load something that adds a dynamic plugin
-        QQmlComponent component(&engine, testFileUrl("importQtQuickTooling.qml"));
-        // Make sure to use something other than QtTest here, since the !plugins.isEmpty()
-        // check will fail if we do.
+        QQmlComponent component(&engine, testFileUrl("importDynamicModule.qml"));
         QVERIFY2(component.isReady(), qPrintable(component.errorString()));
     }
-    QQmlImportDatabase *imports = &QQmlEnginePrivate::get(&engine)->importDatabase;
-    const QStringList &plugins = imports->dynamicPlugins();
+    const QStringList &plugins = QQmlPluginImporter::plugins();
+
+    QTest::ignoreMessage(QtWarningMsg, "Unregistered dynamic plugin!");
     QVERIFY(!plugins.isEmpty());
     for (const QString &plugin : plugins)
-        QVERIFY(imports->removeDynamicPlugin(plugin));
-    QVERIFY(imports->dynamicPlugins().isEmpty());
+        QVERIFY(QQmlPluginImporter::removePlugin(plugin));
+    QVERIFY(QQmlPluginImporter::plugins().isEmpty());
+
     qmlClearTypeRegistrations();
+}
+
+void tst_QQmlImport::removeStaticPlugins()
+{
+    qmlClearTypeRegistrations();
+
+    QVERIFY(!MyStaticModulePlugin::s_myStaticModulePluginRegistered);
+    QQmlEngine engine;
+    {
+        // Load something that adds a static plugin
+        QQmlComponent component(&engine, testFileUrl("importStaticModule.qml"));
+        QVERIFY2(component.isReady(), qPrintable(component.errorString()));
+    }
+    QVERIFY(MyStaticModulePlugin::s_myStaticModulePluginRegistered);
+    QVERIFY(QQmlMetaType::qmlType("MyStaticModule/MyCppComponent", QTypeRevision::fromVersion(1, 0))
+                    .isValid());
+    qmlClearTypeRegistrations();
+    QVERIFY(!MyStaticModulePlugin::s_myStaticModulePluginRegistered);
+    QVERIFY(!QQmlMetaType::qmlType("MyStaticModule/MyCppComponent",
+                                   QTypeRevision::fromVersion(1, 0))
+                     .isValid());
 }
 
 void tst_QQmlImport::partialImportVersions_data()
@@ -633,6 +692,23 @@ void tst_QQmlImport::importDependenciesPrecedence()
     QVERIFY(!instance.isNull());
     QCOMPARE(instance->property("a").toString(), QString::fromLatin1("a"));
     QCOMPARE(instance->property("b").toString(), QString::fromLatin1("b"));
+}
+
+void tst_QQmlImport::importFromNamespacedDirctoryResolvesCorrectly()
+{
+    QQmlEngine engine;
+    engine.addImportPath(dataDirectory());
+    QQmlComponent component(&engine);
+    component.loadFromModule("QtQml", "Timer"); // ensure Timer is resolved once to QtQml already
+    QHashedString module {};
+    QHashedString typeName { QLatin1String("Timer") };
+    QVERIFY(QQmlMetaType::qmlType(typeName, module, {}).isValid());
+
+    component.loadUrl(testFileUrl("UsingCustomTimer.qml"));
+    QVERIFY2(component.isReady(), qPrintable(component.errorString()));
+    QScopedPointer<QObject> root(component.create());
+    QVERIFY(root);
+    QVERIFY(root->property("success").toBool());
 }
 
 

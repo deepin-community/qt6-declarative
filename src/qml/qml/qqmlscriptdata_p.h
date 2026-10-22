@@ -1,5 +1,6 @@
 // Copyright (C) 2019 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+// Qt-Security score:significant
 
 #ifndef QQMLSCRIPTDATA_P_H
 #define QQMLSCRIPTDATA_P_H
@@ -16,10 +17,10 @@
 //
 
 #include <private/qqmlrefcount_p.h>
-#include <private/qqmlscriptblob_p.h>
 #include <private/qv4value_p.h>
 #include <private/qv4persistent_p.h>
 #include <private/qv4compileddata_p.h>
+#include <private/qv4scopedvalue_p.h>
 
 #include <QtCore/qurl.h>
 
@@ -39,7 +40,7 @@ public:
     QUrl url;
     QString urlString;
     QQmlRefPointer<QQmlTypeNameCache> typeNameCache;
-    QVector<QQmlRefPointer<QQmlScriptBlob>> scripts;
+    QList<QQmlRefPointer<QQmlScriptData>> scripts;
 
     QV4::ReturnedValue scriptValueForContext(const QQmlRefPointer<QQmlContextData> &parentCtxt);
 
@@ -50,13 +51,26 @@ public:
 
 private:
     friend class QQmlScriptBlob;
+    friend struct QV4::ExecutionEngine;
 
     QQmlRefPointer<QQmlContextData> qmlContextDataForContext(
             const QQmlRefPointer<QQmlContextData> &parentQmlContextData);
 
-    bool m_loaded = false;
+    template<typename WithExecutableCU>
+    QV4::ReturnedValue handleOwnScriptValueOrExecutableCU(
+            QV4::ExecutionEngine *v4,
+            WithExecutableCU &&withExecutableCU) const
+    {
+        QV4::Scope scope(v4);
+
+        if (!m_precompiledScript)
+            return QV4::Value::emptyValue().asReturnedValue();
+
+        return withExecutableCU(v4->executableCompilationUnit(
+                QQmlRefPointer<QV4::CompiledData::CompilationUnit>(m_precompiledScript)));
+    }
+
     QQmlRefPointer<QV4::CompiledData::CompilationUnit> m_precompiledScript;
-    QV4::PersistentValue m_value;
 };
 
 QT_END_NAMESPACE

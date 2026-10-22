@@ -1,5 +1,6 @@
 // Copyright (C) 2020 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+// Qt-Security score:significant
 
 #ifndef DOMTOP_H
 #define DOMTOP_H
@@ -208,7 +209,7 @@ public:
     };
 
     LoadResult loadFile(const FileToLoad &file, DomType fileType,
-                        DomCreationOptions creationOptions = {});
+                        DomCreationOption creationOption = {});
 
     void removePath(const QString &dir);
 
@@ -332,7 +333,7 @@ private:
     ReadResult readFileContent(const QString &canonicalPath) const;
 
     LoadResult load(const ContentWithDate &codeWithDate, const FileToLoad &file, DomType fType,
-                    DomCreationOptions creationOptions = {});
+                    DomCreationOption creationOption = {});
 
     // contains either Content to be parsed or LoadResult if loading / parsing is not needed
     using PreloadResult = std::variant<ContentWithDate, LoadResult>;
@@ -340,7 +341,7 @@ private:
 
     std::shared_ptr<QmlFile> parseQmlFile(const QString &code, const FileToLoad &file,
                                           const QDateTime &contentDate,
-                                          DomCreationOptions creationOptions);
+                                          DomCreationOption creationOption);
     std::shared_ptr<JsFile> parseJsFile(const QString &code, const FileToLoad &file,
                                         const QDateTime &contentDate);
     std::shared_ptr<ExternalItemPairBase> getPathValueOrNull(DomType fType,
@@ -385,7 +386,7 @@ private:
     // - current ExternalItemPair, current value in the map (might be empty, or equal to curValue)
     // - new current ExternalItemPair, value in the map after after the execution of this function
     template <typename T>
-    QPair<std::shared_ptr<ExternalItemPair<T>>, std::shared_ptr<ExternalItemPair<T>>>
+    std::pair<std::shared_ptr<ExternalItemPair<T>>, std::shared_ptr<ExternalItemPair<T>>>
     insertOrUpdateEntry(std::shared_ptr<T> newItem)
     {
         std::shared_ptr<ExternalItemPair<T>> curValue;
@@ -426,7 +427,7 @@ private:
                 map.insert(canonicalPath, newCurValue);
             }
         }
-        return qMakePair(curValue, newCurValue);
+        return std::make_pair(curValue, newCurValue);
     }
 
     // Inserts or updates an entry reflecting ExternalItem in the corresponding map
@@ -724,12 +725,18 @@ protected:
 private:
     struct TypeReader
     {
-        std::weak_ptr<DomEnvironment> m_env;
+        TypeReader(const std::weak_ptr<DomEnvironment> &env, const QStringList &importPaths)
+            : m_env(env), m_importPaths(importPaths)
+        {
+        }
 
-        QList<QQmlJS::DiagnosticMessage>
-        operator()(QQmlJSImporter *importer, const QString &filePath,
-                   const QSharedPointer<QQmlJSScope> &scopeToPopulate);
+        std::weak_ptr<DomEnvironment> m_env;
+        QStringList m_importPaths;
+
+        void operator()(QQmlJSImporter *importer, const QString &filePath,
+                        const QSharedPointer<QQmlJSScope> &scopeToPopulate);
     };
+
 public:
     enum class Option {
         Default = 0x0,
@@ -798,15 +805,15 @@ public:
     QSet<QString> globalScopeNames(const DomItem &self, EnvLookup lookup = EnvLookup::Normal) const;
 
     explicit DomEnvironment(const QStringList &loadPaths, Options options = Option::SingleThreaded,
-                            DomCreationOptions domCreationOptions = None,
+                            DomCreationOption domCreationOption = Default,
                             const std::shared_ptr<DomUniverse> &universe = nullptr);
     explicit DomEnvironment(const std::shared_ptr<DomEnvironment> &parent,
                             const QStringList &loadPaths, Options options = Option::SingleThreaded,
-                            DomCreationOptions domCreationOptions = None);
+                            DomCreationOption domCreationOption = Default);
     DomEnvironment(const DomEnvironment &o) = delete;
     static std::shared_ptr<DomEnvironment>
     create(const QStringList &loadPaths, Options options = Option::SingleThreaded,
-           DomCreationOptions creationOptions = DomCreationOption::None,
+           DomCreationOption creationOption = DomCreationOption::Default,
            const DomItem &universe = DomItem::empty);
 
     // TODO AddOption can easily be removed later. KeepExisting option only used in one
@@ -852,6 +859,7 @@ public:
 
     void clearReferenceCache();
     void setLoadPaths(const QStringList &v);
+    void setResourceFiles(const QStringList &v);
 
     // Helper structure reflecting the change in the map once loading / fetching is completed
     // formerItem - DomItem representing value (ExternalItemInfo) existing in the map before the
@@ -939,7 +947,7 @@ public:
         }
     }
     void populateFromQmlFile(MutableDomItem &&qmlFile);
-    DomCreationOptions domCreationOptions() const { return m_domCreationOptions; }
+    DomCreationOption domCreationOption() const { return m_domCreationOption; }
 
 private:
     friend class RefCacheEntry;
@@ -948,9 +956,9 @@ private:
                   std::optional<DomType> fileType = std::optional<DomType>(),
                   const ErrorHandler &h = nullptr);
 
-    void loadModuleDependency(const DomItem &self, const QString &uri, Version v,
-                              Callback loadCallback = nullptr, Callback endCallback = nullptr,
-                              const ErrorHandler & = nullptr);
+    void loadModuleDependency(
+            const DomItem &self, const QString &uri, Version v, const Callback &loadCallback = nullptr,
+            const Callback &endCallback = nullptr, const ErrorHandler & = nullptr);
 
     template <typename T>
     QSet<QString> getStrings(function_ref<QSet<QString>()> getBase, const QMap<QString, T> &selfMap,
@@ -1039,7 +1047,7 @@ private:
     }
 
     using FetchResult =
-            QPair<std::shared_ptr<ExternalItemInfoBase>, std::shared_ptr<ExternalItemInfoBase>>;
+            std::pair<std::shared_ptr<ExternalItemInfoBase>, std::shared_ptr<ExternalItemInfoBase>>;
     // This function tries to get an Info object about the ExternalItem from the current env
     // and depending on the result and options tries to fetch it from the Parent env,
     // saving a copy with an updated timestamp
@@ -1049,7 +1057,7 @@ private:
         const auto &path = file.canonicalPath();
         // lookup only in the current env
         if (auto value = lookup<T>(path, EnvLookup::NoBase)) {
-            return qMakePair(value, value);
+            return std::make_pair(value, value);
         }
         // try to find the file in the base(parent) Env and insert if found
         if (options() & Option::NoReload) {
@@ -1068,14 +1076,14 @@ private:
                     auto &map = getMutableRefToMap<T>();
                     const auto &it = map.find(path);
                     if (it != map.end())
-                        return qMakePair(*it, *it);
+                        return std::make_pair(*it, *it);
                     // otherwise insert
                     map.insert(path, curV);
                 }
-                return qMakePair(baseV, curV);
+                return std::make_pair(baseV, curV);
             }
         }
-        return qMakePair(nullptr, nullptr);
+        return std::make_pair(nullptr, nullptr);
     }
 
     Callback getLoadCallbackFor(DomType fileType, const Callback &loadCallback);
@@ -1097,6 +1105,7 @@ private:
     std::shared_ptr<DomEnvironment> m_lastValidBase;
     const std::shared_ptr<DomUniverse> m_universe;
     QStringList m_loadPaths; // paths for qml
+    QStringList m_resourcePaths;
     QString m_globalScopeName;
     QMap<QString, QMap<int, std::shared_ptr<ModuleIndex>>> m_moduleIndexWithUri;
     QMap<QString, std::shared_ptr<ExternalItemInfo<GlobalScope>>> m_globalScopeWithName;
@@ -1111,18 +1120,25 @@ private:
     QList<Import> m_implicitImports;
     QList<Callback> m_allLoadedCallback;
     QHash<Path, RefCacheEntry> m_referenceCache;
-    DomCreationOptions m_domCreationOptions;
+    DomCreationOption m_domCreationOption;
 
     struct SemanticAnalysis
     {
         SemanticAnalysis(const QStringList &loadPaths);
-        void setLoadPaths(const QStringList &loadPaths);
+        void updateLoadPaths(const QStringList &loadPaths);
+        void setResourceFiles(const QStringList &qrcFiles);
 
         std::shared_ptr<QQmlJSResourceFileMapper> m_mapper;
         std::shared_ptr<QQmlJSImporter> m_importer;
+        QStringList m_resourceFiles;
     };
     std::optional<SemanticAnalysis> m_semanticAnalysis;
-    SemanticAnalysis &semanticAnalysis();
+public:
+    SemanticAnalysis semanticAnalysis();
+
+private:
+    SemanticAnalysis semanticAnalysisUnlocked();
+    SemanticAnalysis prepareSemanticAnalysisForFileLoading();
 };
 Q_DECLARE_OPERATORS_FOR_FLAGS(DomEnvironment::Options)
 
