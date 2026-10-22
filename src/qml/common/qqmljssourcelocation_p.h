@@ -1,5 +1,6 @@
 // Copyright (C) 2021 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+// Qt-Security score:significant
 
 #ifndef QQMLJSSOURCELOCATION_P_H
 #define QQMLJSSOURCELOCATION_P_H
@@ -24,16 +25,140 @@ namespace QQmlJS {
 
 class SourceLocation
 {
+    // see also Lexer::illegalFileLengthError() and its enforcement in qqmljs.g
+    static constexpr bool qSizeTypeCanHoldQuint32()
+    {
+        return sizeof(qsizetype) > sizeof(quint32);
+    }
 public:
-    explicit SourceLocation(quint32 offset = 0, quint32 length = 0, quint32 line = 0, quint32 column = 0)
+    explicit constexpr SourceLocation(quint32 offset = 0, quint32 length = 0, quint32 line = 0, quint32 column = 0)
         : offset(offset), length(length),
           startLine(line), startColumn(column)
-    { }
+    {
+        if constexpr (!qSizeTypeCanHoldQuint32()) {
+            constexpr quint32 maxLength = quint32(std::numeric_limits<qsizetype>::max());
+
+            // note: no overflow when adding offset and length because:
+            // offset + length <= (maxLength - 1) + (maxLength - 1) = std::numeric_limits<quint32>::max()
+            Q_ASSERT_X(length < maxLength && offset < maxLength && offset + length < maxLength,
+                       "QQmlJS::SourceLocation", "File size is limited to 2GB!");
+            Q_ASSERT_X(line < maxLength, "QQmlJS::SourceLocation",
+                       "Line exceeded maxLength of 2^31 - 1");
+            Q_ASSERT_X(column < maxLength, "QQmlJS::SourceLocation",
+                       "Column exceeded maxLength of 2^31 - 1");
+        }
+    }
+
+    static SourceLocation fromQSizeType(qsizetype offset, qsizetype length = 0, qsizetype line = 0,
+                                        qsizetype column = 0)
+    {
+        if constexpr (qSizeTypeCanHoldQuint32()) {
+            constexpr qsizetype maxLength = qsizetype(std::numeric_limits<quint32>::max());
+
+            Q_ASSERT_X(offset + length < maxLength, "QQmlJS::SourceLocation",
+                       "File size is limited to 4GB!");
+            Q_ASSERT_X(line < maxLength, "QQmlJS::SourceLocation",
+                       "Line exceeded maxLength of 2^32 - 1");
+            Q_ASSERT_X(column < maxLength, "QQmlJS::SourceLocation",
+                       "Column exceeded maxLength of 2^32 - 1");
+        }
+        return SourceLocation(quint32(offset), quint32(length), quint32(line), quint32(column));
+    }
+
+private:
+    struct LocationInfo
+    {
+        quint32 offset;
+        quint32 startLine;
+        quint32 startColumn;
+    };
+
+    template <typename Predicate>
+    static LocationInfo findLocationIf(QStringView text, Predicate &&predicate,
+                                       const SourceLocation &startHint = SourceLocation{})
+    {
+        quint32 i = startHint.isValid() ? startHint.offset : 0;
+        quint32 endLine = startHint.isValid() ? startHint.startLine : 1;
+        quint32 endColumn = startHint.isValid() ? startHint.startColumn : 1;
+        const quint32 end = quint32(text.size());
+
+        for (; i < end; ++i) {
+            if (predicate(i, endLine, endColumn))
+                return LocationInfo{ i, endLine, endColumn };
+
+            const QChar currentChar = text.at(i);
+            const bool isLineFeed = currentChar == u'\n';
+            const bool isCarriageReturn = currentChar == u'\r';
+            // note: process the newline on the "\n" part of "\r\n", and treat "\r" as normal
+            // character
+            const bool isHalfANewline =
+                    isCarriageReturn && (i + 1 < end && text.at(i + 1) == u'\n');
+
+            if (isHalfANewline || (!isCarriageReturn && !isLineFeed)) {
+                ++endColumn;
+                continue;
+            }
+
+            // catch positions after the end of the line
+            if (predicate(i, endLine, std::numeric_limits<quint32>::max()))
+                return LocationInfo{ i, endLine, endColumn };
+
+            // catch positions after the end of the file and return the last character of the last
+            // line
+            if (i == end - 1) {
+                if (predicate(i, std::numeric_limits<quint32>::max(),
+                              std::numeric_limits<quint32>::max())) {
+                    return LocationInfo{ i, endLine, endColumn };
+                }
+            }
+
+            ++endLine;
+            endColumn = 1;
+        }
+
+        // not found, return last position
+        return LocationInfo{ i, endLine, endColumn };
+    }
+
+public:
+    static quint32 offsetFrom(QStringView text, quint32 line, quint32 column,
+                              const SourceLocation &startHint = SourceLocation{})
+    {
+        // sanity check that hint can actually be used
+        const SourceLocation hint =
+                (startHint.startLine < line
+                 || (startHint.startLine == line && startHint.startColumn <= column))
+                ? startHint
+                : SourceLocation{};
+
+        const auto result = findLocationIf(
+                text,
+                [line, column](quint32, quint32 currentLine, quint32 currentColumn) {
+                    return line <= currentLine && column <= currentColumn;
+                },
+                hint);
+        return result.offset;
+    }
+    static std::pair<quint32, quint32>
+    rowAndColumnFrom(QStringView text, quint32 offset,
+                     const SourceLocation &startHint = SourceLocation{})
+    {
+        // sanity check that hint can actually be used
+        const SourceLocation hint = startHint.offset <= offset ? startHint : SourceLocation{};
+
+        const auto result = findLocationIf(
+                text,
+                [offset](quint32 currentOffset, quint32, quint32) {
+                    return offset == currentOffset;
+                },
+                hint);
+        return std::make_pair(result.startLine, result.startColumn);
+    }
 
     bool isValid() const { return *this != SourceLocation(); }
 
-    quint32 begin() const { return offset; }
-    quint32 end() const { return offset + length; }
+    qsizetype begin() const { return qsizetype(offset); }
+    qsizetype end() const { return qsizetype(offset) + length; }
 
     // Returns a zero length location at the start of the current one.
     SourceLocation startZeroLengthLocation() const
@@ -43,30 +168,15 @@ public:
     // Returns a zero length location at the end of the current one.
     SourceLocation endZeroLengthLocation(QStringView text) const
     {
-        quint32 i = offset;
-        quint32 endLine = startLine;
-        quint32 endColumn = startColumn;
-        while (i < end()) {
-            QChar c = text.at(i);
-            switch (c.unicode()) {
-            case '\n':
-                if (i + 1 < end() && text.at(i + 1) == QLatin1Char('\r'))
-                    ++i;
-                Q_FALLTHROUGH();
-            case '\r':
-                ++endLine;
-                endColumn = 1;
-                break;
-            default:
-                ++endColumn;
-            }
-            ++i;
-        }
-        return SourceLocation(offset + length, 0, endLine, endColumn);
+        auto [row, column] = rowAndColumnFrom(text, offset + length, *this);
+        return SourceLocation{ offset + length, 0, row, column };
     }
 
 // attributes
     // ### encode
+
+    // Those quint32 can be casted to qsizetype because the Parser aborts on files with size >=
+    // std::min(std::numeric_limits<quint32>::max(), std::numeric_limits<qsizetype>::max()).
     quint32 offset;
     quint32 length;
     quint32 startLine;
@@ -99,6 +209,8 @@ public:
         return res;
     }
 };
+
+inline static constexpr SourceLocation s_documentOrigin(0, 0, 1, 1);
 
 } // namespace QQmlJS
 

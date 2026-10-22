@@ -1,5 +1,6 @@
 // Copyright (C) 2020 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+// Qt-Security score:significant
 
 #ifndef QQMLCONTEXTDATA_P_H
 #define QQMLCONTEXTDATA_P_H
@@ -15,13 +16,13 @@
 // We mean it.
 //
 
-#include <QtQml/private/qtqmlglobal_p.h>
-#include <QtQml/private/qqmlcontext_p.h>
-#include <QtQml/private/qqmlguard_p.h>
-#include <QtQml/private/qqmltypenamecache_p.h>
-#include <QtQml/private/qqmlnotifier_p.h>
-#include <QtQml/private/qv4identifierhash_p.h>
-#include <QtQml/private/qv4executablecompilationunit_p.h>
+#include <private/qqmlcontext_p.h>
+#include <private/qqmlguard_p.h>
+#include <private/qqmlnotifier_p.h>
+#include <private/qqmltypenamecache_p.h>
+#include <private/qtqmlglobal_p.h>
+#include <private/qv4executablecompilationunit_p.h>
+#include <private/qv4identifierhash_p.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -57,6 +58,8 @@ public:
     {
         return m_typeCompilationUnit;
     }
+    void setTypeCompilationUnit(const QQmlRefPointer<QV4::ExecutableCompilationUnit> &unit);
+
     void initFromTypeCompilationUnit(const QQmlRefPointer<QV4::ExecutableCompilationUnit> &unit,
                                      int subComponentIndex);
 
@@ -65,8 +68,13 @@ public:
     }
 
     void emitDestruction();
-    void clearContext();
+    void clearExpressions();
     void clearContextRecursively();
+    void clearChildrenAndSiblings();
+    void clearImportedScripts();
+    void clearOwnedObjects();
+    void clearContextGuards();
+    void clearIdValues();
     void invalidate();
 
     bool isValid() const
@@ -172,7 +180,7 @@ public:
         return m_propertyNameCache.value(name);
     }
 
-    int propertyIndex(QV4::String *name) const
+    int propertyIndex(QV4::Heap::String *name) const
     {
         ensurePropertyNames();
         return m_propertyNameCache.value(name);
@@ -181,16 +189,17 @@ public:
     QString propertyName(int index) const
     {
         ensurePropertyNames();
-        return m_propertyNameCache.findId(index);
+        return m_propertyNameCache.key<QString>(index);
     }
 
     void addPropertyNameAndIndex(const QString &name, int index)
     {
-        Q_ASSERT(!m_propertyNameCache.isEmpty());
+        Q_ASSERT(m_propertyNameCache.isValid());
         m_propertyNameCache.add(name, index);
     }
 
     void setExpressions(QQmlJavaScriptExpression *expressions) { m_expressions = expressions; }
+    QQmlJavaScriptExpression *expressions() const { return m_expressions; }
     QQmlJavaScriptExpression *takeExpressions()
     {
         QQmlJavaScriptExpression *expressions = m_expressions;
@@ -274,8 +283,29 @@ public:
     bool isRootObjectInCreation() const { return m_isRootObjectInCreation; }
     void setRootObjectInCreation(bool rootInCreation) { m_isRootObjectInCreation = rootInCreation; }
 
-    QV4::PersistentValue importedScripts() const { return m_importedScripts; }
-    void setImportedScripts(const QV4::PersistentValue &scripts) { m_importedScripts = scripts; }
+    QV4::ReturnedValue importedScripts() const
+    {
+        if (m_hasWeakImportedScripts)
+            return m_weakImportedScripts.value();
+        else
+            return m_importedScripts.value();
+    }
+    void setImportedScripts(QV4::ExecutionEngine *engine, QV4::Value scripts) {
+        // setImportedScripts should not be called on an invalidated context
+        Q_ASSERT(!m_hasWeakImportedScripts);
+        m_importedScripts.set(engine, scripts);
+    }
+
+    /*
+       we can safely pass a ReturnedValue here, as setImportedScripts will directly store
+       scripts in a persistentValue, without any intermediate allocation that could trigger
+       a gc run
+    */
+    void setImportedScripts(QV4::ExecutionEngine *engine, QV4::ReturnedValue scripts) {
+        // setImportedScripts should not be called on an invalidated context
+        Q_ASSERT(!m_hasWeakImportedScripts);
+        m_importedScripts.set(engine, scripts);
+    }
 
     QQmlRefPointer<QQmlContextData> linkedContext() const { return m_linkedContext; }
     void setLinkedContext(const QQmlRefPointer<QQmlContextData> &context) { m_linkedContext = context; }
@@ -343,7 +373,7 @@ private:
           m_unresolvedNames(false), m_hasEmittedDestruction(false), m_isRootObjectInCreation(false),
           m_ownedByParent(ownership == OwnedByParent),
           m_ownedByPublicContext(ownership == OwnedByPublicContext), m_hasExtraObject(false),
-          m_dummy(0), m_publicContext(publicContext), m_incubator(nullptr)
+          m_hasWeakImportedScripts(false), m_dummy(0), m_publicContext(publicContext), m_incubator(nullptr)
     {
         Q_ASSERT(!m_ownedByParent || !m_ownedByPublicContext);
         if (!m_parent)
@@ -369,9 +399,9 @@ private:
 
     void ensurePropertyNames() const
     {
-        if (m_propertyNameCache.isEmpty())
+        if (!m_propertyNameCache.isValid())
             initPropertyNames();
-        Q_ASSERT(!m_propertyNameCache.isEmpty());
+        Q_ASSERT(m_propertyNameCache.isValid());
     }
 
     // My parent context and engine
@@ -388,7 +418,8 @@ private:
     quint32 m_ownedByParent:1;
     quint32 m_ownedByPublicContext:1;
     quint32 m_hasExtraObject:1; // used in QQmlDelegateModelItem::dataForObject to find the corresponding QQmlDelegateModelItem of an object
-    Q_DECL_UNUSED_MEMBER quint32 m_dummy:23;
+    quint32 m_hasWeakImportedScripts:1;
+    Q_DECL_UNUSED_MEMBER quint32 m_dummy:22;
     QQmlContext *m_publicContext = nullptr;
 
     union {
@@ -411,7 +442,14 @@ private:
     QObject *m_contextObject = nullptr;
 
     // Any script blocks that exist on this context
-    QV4::PersistentValue m_importedScripts; // This is a JS Array
+    union {
+        /* an invalidated context transitions from a strong reference to the scripts
+           to a weak one, so that the context doesn't needlessly holds on to the scripts,
+           but closures can still access them if needed
+         */
+        QV4::PersistentValue m_importedScripts = {}; // This is a JS Array
+        QV4::WeakValue m_weakImportedScripts;
+    };
 
     QUrl m_baseUrl;
     QString m_baseUrlString;

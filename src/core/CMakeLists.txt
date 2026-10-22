@@ -20,7 +20,11 @@ qt_internal_add_qml_module(QmlCore
     PUBLIC_LIBRARIES
         Qt::Core
         Qt::Qml
-    )
+    LIBRARIES
+        Qt::QmlPrivate
+    PRIVATE_MODULE_INTERFACE
+        Qt::QmlPrivate
+)
 
 qt_internal_extend_target(QmlCore CONDITION QT_FEATURE_settings
     SOURCES
@@ -31,8 +35,16 @@ qt_internal_extend_target(QmlCore CONDITION QT_FEATURE_settings
 qt_internal_extend_target(QmlCore CONDITION QT_FEATURE_permissions
     SOURCES
         qqmlpermissions_p.h
+        qqmlpermissions.cpp
 )
 
 qt_internal_add_docs(QmlCore
     doc/qtqmlcore.qdocconf
+)
+
+target_sources(QmlCore
+    PRIVATE
+        doc/src/qmlpermissions.qdoc
+        doc/src/qtqmlcore-qmltypes.qdoc
+        doc/src/qtqmlcore.qdoc
 )

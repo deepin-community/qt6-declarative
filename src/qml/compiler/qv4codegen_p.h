@@ -1,5 +1,7 @@
 // Copyright (C) 2017 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+// Qt-Security score:significant
+
 #ifndef QV4CODEGEN_P_H
 #define QV4CODEGEN_P_H
 
@@ -25,6 +27,8 @@
 #include <private/qv4calldata_p.h>
 
 #include <QtCore/qsharedpointer.h>
+#include <QtCore/qxpfunctional.h>
+
 #include <stack>
 
 QT_BEGIN_NAMESPACE
@@ -51,6 +55,11 @@ public:
     virtual void reportVarUsedBeforeDeclaration(const QString &name, const QString &fileName,
                                                 QQmlJS::SourceLocation declarationLocation,
                                                 QQmlJS::SourceLocation accessLocation);
+    virtual void reportFunctionUsedBeforeDeclaration(const QString &name, const QString &fileName,
+                                                     QQmlJS::SourceLocation declarationLocation,
+                                                     QQmlJS::SourceLocation accessLocation);
+
+    virtual QQmlJS::AST::Visitor *unreachableVisitor() { return nullptr; }
     virtual ~CodegenWarningInterface() = default;
 };
 
@@ -70,18 +79,15 @@ public:
             CodegenWarningInterface *iface = defaultCodegenWarningInterface(),
             bool storeSourceLocations = false);
 
-    void generateFromProgram(const QString &fileName,
-                             const QString &finalUrl,
-                             const QString &sourceCode,
-                             QQmlJS::AST::Program *ast,
-                             Module *module,
-                             ContextType contextType = ContextType::Global);
+    static bool isNameGlobal(QAnyStringView name);
+    static void forEachGlobalName(qxp::function_ref<void(QLatin1StringView)> &&handler);
 
-    void generateFromModule(const QString &fileName,
-                            const QString &finalUrl,
-                            const QString &sourceCode,
-                            QQmlJS::AST::ESModule *ast,
-                            Module *module);
+    void generateFromProgram(
+            const QString &sourceCode, QQmlJS::AST::Program *ast, Module *module,
+            ContextType contextType = ContextType::Global);
+
+    void generateFromModule(const QString &sourceCode, QQmlJS::AST::ESModule *ast, Module *module);
+    void generateFromModule(const Value &value, Module *module);
 
 public:
     class VolatileMemoryLocationScanner;
@@ -543,7 +549,7 @@ public:
     }
 
     // Returns index in _module->functions
-    virtual int defineFunction(const QString &name, QQmlJS::AST::Node *ast,
+    int defineFunction(const QString &name, QQmlJS::AST::Node *ast,
                                QQmlJS::AST::FormalParameterList *formals,
                                QQmlJS::AST::StatementList *body);
 
@@ -619,12 +625,12 @@ protected:
     bool visit(QQmlJS::AST::TypeAnnotation *ast) override;
 
     // expressions
-    bool visit(QQmlJS::AST::Expression *ast) override;
     bool visit(QQmlJS::AST::ArrayPattern *ast) override;
     bool visit(QQmlJS::AST::ArrayMemberExpression *ast) override;
     bool visit(QQmlJS::AST::BinaryExpression *ast) override;
     bool visit(QQmlJS::AST::CallExpression *ast) override;
     void endVisit(QQmlJS::AST::CallExpression *ast) override;
+    bool visit(QQmlJS::AST::CommaExpression *ast) override;
     bool visit(QQmlJS::AST::ConditionalExpression *ast) override;
     bool visit(QQmlJS::AST::DeleteExpression *ast) override;
     void endVisit(QQmlJS::AST::DeleteExpression *ast) override;
@@ -738,6 +744,9 @@ public:
             bool debugMode, const QString &url, const QString &sourceCode,
             const QDateTime &sourceTimeStamp, QList<QQmlJS::DiagnosticMessage> *diagnostics);
 
+    static const QV4::CompiledData::Unit *generateNativeModuleUnitData(
+            bool debugMode, const QString &url, const QV4::Value &value);
+
     Context *currentContext() const { return _context; }
     BytecodeGenerator *generator() const { return bytecodeGenerator; }
 
@@ -750,12 +759,6 @@ public:
             _returnLabel = new BytecodeGenerator::Label(bytecodeGenerator->newLabel());
         return *_returnLabel;
     }
-
-    void setGlobalNames(const QSet<QString>& globalNames) {
-        m_globalNames = globalNames;
-    }
-
-    static const char *s_globalNames[];
 
 protected:
     friend class ScanFunctions;
@@ -807,7 +810,6 @@ protected:
     bool functionEndsWithReturn = false;
     bool _tailCallsAreAllowed = true;
     bool storeSourceLocations = false;
-    QSet<QString> m_globalNames;
 
     struct OptionalChainState
     {
@@ -815,8 +817,10 @@ protected:
         std::vector<Moth::BytecodeGenerator::Jump> jumpsToPatch;
         bool actuallyHasOptionals = false;
     };
+    using OptionalChainStates = std::stack<OptionalChainState, std::vector<OptionalChainState>>;
+
     QSet<QQmlJS::AST::Node*> m_seenOptionalChainNodes;
-    std::stack<OptionalChainState> m_optionalChainsStates;
+    OptionalChainStates *m_optionalChainsStates = nullptr;
 
     ControlFlow *controlFlow = nullptr;
 

@@ -1,5 +1,6 @@
 // Copyright (C) 2017 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+// Qt-Security score:significant reason:default
 
 import QtQuick
 import QtQuick.Templates as T
@@ -38,12 +39,14 @@ T.TextField {
 
     Material.containerStyle: Material.Outlined
 
+    ContextMenu.menu: TextEditingContextMenu {
+        editor: control
+    }
+
     cursorDelegate: CursorDelegate { }
 
     FloatingPlaceholderText {
         id: placeholder
-        // Don't set this to control.leftPadding, because we don't want it to change if the user changes leftPadding.
-        x: control.Material.textFieldHorizontalPadding
         width: control.width - (control.leftPadding + control.rightPadding)
         text: control.placeholderText
         font: control.font
@@ -57,6 +60,8 @@ T.TextField {
         controlHasText: control.length > 0
         controlImplicitBackgroundHeight: control.implicitBackgroundHeight
         controlHeight: control.height
+        leftPadding: control.leftPadding
+        floatingLeftPadding: control.Material.textFieldHorizontalPadding
     }
 
     background: MaterialTextContainer {

@@ -1,5 +1,6 @@
 // Copyright (C) 2021 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+// Qt-Security score:significant reason:default
 
 #include "qquicktreeview_p_p.h"
 
@@ -20,7 +21,7 @@
     A TreeView has a \l model that defines the data to be displayed, and a
     \l delegate that defines how the data should be displayed.
 
-    TreeView inherits \l TableView. This means that even if the model
+    TreeView inherits \l TableView. This means that, despite the model
     has a parent-child tree structure, TreeView is internally using a
     proxy model that converts that structure into a flat table
     model that can be rendered by TableView. Each node in the tree ends up
@@ -29,13 +30,46 @@
     parent-child depth in the model, it will end up looking like a tree, even
     if it's technically still just a flat list of items.
 
-    To allow for maximum flexibility, TreeView itself will not position the delegate
-    items into a tree structure. This burden is placed on the delegate.
-    \l {Qt Quick Controls} offers a ready-made TreeViewDelegate that can be
-    used for this, which has the advantage that it works out-of-the-box and
-    renders a tree which follows the style of the platform where the application runs.
+    \section2 Declare a TreeView
 
-    Even if TreeViewDelegate is customizable, there might be situations
+    TreeView is a data bound control, so it cannot show anything without a
+    data model. You cannot declare tree nodes in QML.
+
+    When you declare a TreeView, you need to specify:
+
+    \list
+      \li \b{A data model}. TreeView can work with data models that derive from
+        \l QAbstractItemModel.
+      \li \b{A delegate}. A delegate is a template that specifies how the tree
+        nodes are displayed in the UI.
+    \endlist
+
+    \qml
+    TreeView {
+        // The model needs to be a QAbstractItemModel
+        model: myTreeModel
+        // You can set a custom delegate or use a built-in TreeViewDelegate
+        delegate: TreeViewDelegate {}
+    }
+    \endqml
+
+    \section2 Creating a data model
+
+    A TreeView only accepts a model that inherits \l QAbstractItemModel.
+
+    For information on how to create and use a custom tree model, see the
+    example: \l {Qt Quick Controls - Table of Contents}.
+
+    \section2 Customize tree nodes
+
+    For better flexibility, TreeView itself doesn't position the delegate items
+    into a tree structure. This burden is placed on the delegate.
+    \l {Qt Quick Controls} offers a ready-made \l TreeViewDelegate that can be
+    used for this, which has the advantage that it works out-of-the-box and
+    renders a tree which follows the style of the platform where the application
+    runs.
+
+    Even though \l TreeViewDelegate is customizable, there might be situations
     where you want to render the tree in a different way, or ensure that
     the delegate ends up as minimal as possible, perhaps for performance reasons.
     Creating your own delegate from scratch is easy, since TreeView offers
@@ -46,8 +80,6 @@
 
     \snippet qml/treeview/qml-customdelegate.qml 0
 
-    More information on how to create and use a custom tree model can be found
-    in the example \l {Qt Quick Controls - Table of Contents}
 
     The properties that are marked as \c required will be filled in by
     TreeView, and are similar to attached properties. By marking them as
@@ -82,6 +114,8 @@
 
     See also \l {Required Properties}.
 
+    \section2 End-user interaction
+
     By default, TreeView \l {toggleExpanded()}{toggles} the expanded state
     of a row when you double tap on it. Since this is in conflict with
     double tapping to edit a cell, TreeView sets \l {TableView::}{editTriggers} to
@@ -90,7 +124,6 @@
     If you change \l {TableView::}{editTriggers} to also contain \c TableView.DoubleTapped,
     toggling the expanded state with a double tap will be disabled.
 
-    \note A TreeView only accepts a model that inherits \l QAbstractItemModel.
 */
 
 /*!
@@ -126,7 +159,7 @@
 */
 
 /*!
-    \qmlmethod QtQuick::TreeView::expand(row)
+    \qmlmethod void QtQuick::TreeView::expand(row)
 
     Expands the tree node at the given \a row in the view.
 
@@ -139,7 +172,7 @@
 */
 
 /*!
-    \qmlmethod QtQuick::TreeView::expandRecursively(row = -1, depth = -1)
+    \qmlmethod void QtQuick::TreeView::expandRecursively(row = -1, depth = -1)
     \since 6.4
 
     Expands the tree node at the given \a row in the view recursively down to
@@ -162,7 +195,7 @@
 */
 
 /*!
-    \qmlmethod QtQuick::TreeView::expandToIndex(QModelIndex index)
+    \qmlmethod void QtQuick::TreeView::expandToIndex(QModelIndex index)
     \since 6.4
 
     Expands the tree from the given model \a index, and recursively all the way up
@@ -180,7 +213,7 @@
 */
 
 /*!
-    \qmlmethod QtQuick::TreeView::collapse(row)
+    \qmlmethod void QtQuick::TreeView::collapse(row)
 
     Collapses the tree node at the given \a row in the view.
 
@@ -193,7 +226,7 @@
 */
 
 /*!
-    \qmlmethod QtQuick::TreeView::collapseRecursively(row = -1)
+    \qmlmethod void QtQuick::TreeView::collapseRecursively(row = -1)
     \since 6.4
 
     Collapses the tree node at the given \a row in the view recursively down to
@@ -213,7 +246,7 @@
 */
 
 /*!
-    \qmlmethod QtQuick::TreeView::toggleExpanded(row)
+    \qmlmethod void QtQuick::TreeView::toggleExpanded(row)
 
     Toggles if the tree node at the given \a row should be expanded.
     This is a convenience for doing:
@@ -282,13 +315,9 @@ void QQuickTreeViewPrivate::setModelImpl(const QVariant &newModel)
     Q_Q(QQuickTreeView);
 
     m_assignedModel = newModel;
-    QVariant effectiveModel = m_assignedModel;
-    if (effectiveModel.userType() == qMetaTypeId<QJSValue>())
-        effectiveModel = effectiveModel.value<QJSValue>().toVariant();
-
-    if (effectiveModel.isNull())
+    if (m_assignedModel.isNull())
         m_treeModelToTableModel.setModel(nullptr);
-    else if (const auto qaim = qvariant_cast<QAbstractItemModel*>(effectiveModel))
+    else if (const auto qaim = qvariant_cast<QAbstractItemModel *>(m_assignedModel))
         m_treeModelToTableModel.setModel(qaim);
     else
         qmlWarning(q) << "TreeView only accepts a model of type QAbstractItemModel";
@@ -298,20 +327,8 @@ void QQuickTreeViewPrivate::setModelImpl(const QVariant &newModel)
     emit q->modelChanged();
 }
 
-void QQuickTreeViewPrivate::initItemCallback(int serializedModelIndex, QObject *object)
-{
-    updateRequiredProperties(serializedModelIndex, object, true);
-    QQuickTableViewPrivate::initItemCallback(serializedModelIndex, object);
-}
-
-void QQuickTreeViewPrivate::itemReusedCallback(int serializedModelIndex, QObject *object)
-{
-    updateRequiredProperties(serializedModelIndex, object, false);
-    QQuickTableViewPrivate::itemReusedCallback(serializedModelIndex, object);
-}
-
 void QQuickTreeViewPrivate::dataChangedCallback(
-        const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles)
+        const QModelIndex &topLeft, const QModelIndex &bottomRight, const QList<int> &roles)
 {
     Q_Q(QQuickTreeView);
     Q_UNUSED(roles);
@@ -323,24 +340,28 @@ void QQuickTreeViewPrivate::dataChangedCallback(
             if (!item)
                 continue;
 
-            const int serializedModelIndex = modelIndexAtCell(QPoint(column, row));
-            updateRequiredProperties(serializedModelIndex, item, false);
+            const int flatIndex = column * m_treeModelToTableModel.rowCount() + row;
+            updateItemProperties(flatIndex, item, false);
         }
     }
 }
 
-void QQuickTreeViewPrivate::updateRequiredProperties(int serializedModelIndex, QObject *object, bool init)
+void QQuickTreeViewPrivate::updateItemProperties(int flatIndex, QObject *object, bool init)
 {
     Q_Q(QQuickTreeView);
-    const QPoint cell = cellAtModelIndex(serializedModelIndex);
-    const int row = cell.y();
-    const int column = cell.x();
+    QQuickTableViewPrivate::updateItemProperties(flatIndex, object, init);
 
-    setRequiredProperty("treeView", QVariant::fromValue(q), serializedModelIndex, object, init);
-    setRequiredProperty("isTreeNode", column == kTreeColumn, serializedModelIndex, object, init);
-    setRequiredProperty("hasChildren", m_treeModelToTableModel.hasChildren(row), serializedModelIndex, object, init);
-    setRequiredProperty("expanded", q->isExpanded(row), serializedModelIndex, object, init);
-    setRequiredProperty("depth", m_treeModelToTableModel.depthAtRow(row), serializedModelIndex, object, init);
+    // Use the model's row count rather than cellAtModelIndex(), since a pending rebuild
+    // can leave the table size in TableView stale relative to m_treeModelToTableModel.
+    const int availableRows = m_treeModelToTableModel.rowCount();
+    const int column = flatIndex / availableRows;
+    const int row = flatIndex % availableRows;
+
+    setRequiredProperty("treeView", QVariant::fromValue(q), flatIndex, object, init);
+    setRequiredProperty("isTreeNode", column == kTreeColumn, flatIndex, object, init);
+    setRequiredProperty("hasChildren", m_treeModelToTableModel.hasChildren(row), flatIndex, object, init);
+    setRequiredProperty("expanded", q->isExpanded(row), flatIndex, object, init);
+    setRequiredProperty("depth", m_treeModelToTableModel.depthAtRow(row), flatIndex, object, init);
 }
 
 void QQuickTreeViewPrivate::updateSelection(const QRect &oldSelection, const QRect &newSelection)
@@ -402,7 +423,7 @@ QQuickTreeView::QQuickTreeView(QQuickItem *parent)
 
     auto tapHandler = new QQuickTapHandler(this);
     tapHandler->setAcceptedModifiers(Qt::NoModifier);
-    connect(tapHandler, &QQuickTapHandler::doubleTapped, [this, tapHandler]{
+    connect(tapHandler, &QQuickTapHandler::doubleTapped, this, [this, tapHandler] {
         if (!pointerNavigationEnabled())
             return;
         if (editTriggers() & DoubleTapped)
@@ -487,9 +508,8 @@ void QQuickTreeView::expandRecursively(int row, int depth)
         if (isExpanded && depth == 1)
             return;
         expandRowRecursively(row);
-    } else {
+    } else if (const auto model = d->m_treeModelToTableModel.model()) {
         // Expand all root nodes recursively
-        const auto model = d->m_treeModelToTableModel.model();
         for (int r = 0; r < model->rowCount(); ++r) {
             const int rootRow = d->m_treeModelToTableModel.itemIndex(model->index(r, 0));
             if (rootRow != -1)
@@ -591,9 +611,8 @@ void QQuickTreeView::collapseRecursively(int row)
 
     if (row >= 0) {
         collapseRowRecursive(row);
-    } else {
+    } else if (const auto model = d->m_treeModelToTableModel.model()) {
         // Collapse all root nodes recursively
-        const auto model = d->m_treeModelToTableModel.model();
         for (int r = 0; r < model->rowCount(); ++r) {
             const int rootRow = d->m_treeModelToTableModel.itemIndex(model->index(r, 0));
             if (rootRow != -1)
@@ -668,8 +687,10 @@ void QQuickTreeView::keyPressEvent(QKeyEvent *event)
         break;
     }
 
-    if (!event->isAccepted())
+    if (!event->isAccepted()) {
+        event->accept();
         QQuickTableView::keyPressEvent(event);
+    }
 }
 
 QT_END_NAMESPACE

@@ -3,6 +3,7 @@
 
 /*!
 \page qtquick-bestpractices.html
+\meta {keywords} {qmltopic}
 \title Best Practices for QML and Qt Quick
 \brief Lists best practices for working with QML and Qt Quick.
 \ingroup best-practices
@@ -13,7 +14,7 @@ challenging in certain situations. The following sections elaborate on some of
 the best practices that will help you get better results when developing
 applications.
 
-\section1 Custom UI Controls
+\section1 Use Built-in Controls over Custom UI Controls
 
 A fluid and modern UI is key for any application's success in today's world, and
 that's where QML makes so much sense for a designer or developer. Qt offers the
@@ -57,16 +58,16 @@ See \l{QML Coding Conventions}.
 
 \section1 Bundle Application Resources
 
-Most applications depend on resources such as images and icons to provide a
+Most applications depend on resources, such as images and icons, to provide a
 rich user experience. It can often be a challenge to make these resources
 available to the application regardless of the target OS. Most popular OS-es
-employ stricter security policies that restrict access to the file system,
+employ security policies that restrict access to the file system,
 making it harder to load these resources. As an alternative, Qt offers its own
 \l {The Qt Resource System}{resource system} that is built into the
 application binary, enabling access to the application's resources regardless
 of the target OS.
 
-For example, consider the following project directory structure:
+For example, for a C++ project, consider the following directory structure:
 
 \badcode
 MyModule
@@ -94,8 +95,8 @@ qt_add_qml_module(my_module
 
 All QML files listed under \c {QML_FILES} will automatically get compiled \l {Ahead-of-Time Compilation}{ahead of time}.
 
-You should keep the QML files in the same directory as the CMakeLists.txt with
-the qt_add_qml_module. Otherwise their \l{The Implicit Import}{implicit imports}
+You should keep the QML files in the \e same directory as the CMakeLists.txt with
+the \l {qt_add_qml_module}. Otherwise, their \l{The Implicit Import}{implicit imports}
 will be different from the \l{QML Modules} they belong to. This is a frequent
 source of mistakes.
 
@@ -108,8 +109,8 @@ source of mistakes.
 
 One of the key goals that most application developers want to achieve is to
 create a maintainable application. One of the ways to achieve this goal is
-to separate the user interface from the business logic. The following are a few
-reasons why an application's UI should be written in QML:
+to separate the user interface, the frontend, from the business logic, the backend.
+The following are a few reasons why an application's UI should be written in QML:
 
 \list
  \li Declarative languages are strongly suited for defining UIs.
@@ -120,13 +121,13 @@ reasons why an application's UI should be written in QML:
  \li JavaScript can easily be used in QML to respond to events.
 \endlist
 
-Being a strongly typed language, C++ is best suited for an application's
-business logic. Typically, such code performs tasks such as complex calculations
-or data processing, which are faster in C++ than QML.
+Strongly typed languages, such as C++, are best suited for an application's
+business logic, the backend. Typically, such code performs tasks such as complex calculations
+or data processing, which are faster in strongly typed languages than in QML.
 
-Qt offers various approaches to integrate QML and C++ code in an application.
+Qt offers various approaches to integrate QML with a strongly typed language in an application.
 A typical use case is displaying a list of data in a user interface.
-If the data set is static, simple, and/or small, a model written in QML can be
+If the data set is static, simple, and small, a model written in QML can be
 sufficient.
 
 The following snippet demonstrates examples of models written in QML:
@@ -137,8 +138,8 @@ The following snippet demonstrates examples of models written in QML:
     model: 10
 \endqml
 
-Use \l {QAbstractItemModel Subclass}{C++} for dynamic data sets that are large
-or frequently modified.
+For larger and more dynamic data sets, use a strongly typed language, such as
+\l {QAbstractItemModel Subclass}{C++}, to handle the business logic.
 
 \section2 Exposing Data from C++ to QML
 
@@ -180,6 +181,12 @@ to a \e {.qml} file.
 \list
     \li \l{Qt Design Studio: UI Files}
 \endlist
+
+\section1 Using Qt Quick Views
+
+\section2 Store State in Models
+
+See \l {Avoid Storing State in Delegates}.
 
 \section1 Using Qt Quick Layouts
 
@@ -252,6 +259,41 @@ property int size
 property MyMenu optionsMenu
 \endcode
 
+\section1 Property change signals
+
+Prefer using the explicit interaction signals over the value changed signals to
+avoid subtle bugs.
+
+Using \c {valueChanged} can lead to event cascades where the value is constantly
+changed because it is somehow rounded or normalized.
+
+Using explicit interaction signals alone avoids this whole class of issues.
+
+For example, \l Slider has these similar signals: \l {Slider::}{moved} and
+\c {valueChanged}.
+
+\qml
+Slider {
+    value: someValueFromBackend
+
+    onValueChanged: pushToBackend(value)
+    // or
+    onMoved: pushToBackend(value)
+}
+\endqml
+
+Both cases look similar, and you may want to use \c {valueChanged}.
+
+Developers often overlook the fact that the \l Slider can automatically change
+its value, for example, because of clamping to minimum/maximum values or
+rounding. In this case, the \c {valueChanged} signal is emitted. If you use the
+\c {valueChanged} signal, you may notice it is emitted at unexpected moments.
+
+To avoid possible issues, use an interaction signal: the signal that is emitted
+when user interacts with the control. In this example, if you use the
+\l {Slider::}{moved} signal, the slot will only be triggered if the user
+changes the control.
+
 \section1 Performance
 
 For information on performance in QML and Qt Quick,
@@ -293,6 +335,83 @@ Rectangle {
     color: "red"
 }
 \endcode
+
+\section1 Don't store state in delegates
+
+Don't store a state in a delegate. The issue here is that the delegate is
+created and destroyed multiple times, so the saved state will be lost.
+
+\qml
+// Wrong approach:
+ListView {
+    // ...
+
+    delegate: Button {
+        // ...
+        property bool someStateProperty
+        onClicked: someStateProperty = true
+    }
+}
+\endqml
+
+Instead, store the state outside of the delegate. For example, in a model.
+When the delegate is destroyed, the saved state is not lost.
+
+\qml
+// Right approach:
+ListView {
+    // ...
+
+    delegate: Button {
+        // ...
+        onClicked: model.someStateProperty = true
+    }
+}
+\endqml
+
+\section1 Make user-facing strings translatable
+
+It is recommended to make user-facing strings translatable from the beginning.
+See \l {Writing Source Code for Translation}.
+
+\qml
+ToolButton {
+    id: selectionToolButton
+    // ...
+    icon.source: "qrc:/images/selection.png"
+
+    Tooltip.Text: qsTr("Select pixels within an area and move them")
+
+    onClicked: canvas.tool = ImageCanvas.SelectionTool
+}
+\endqml
+
+\section1 Do not customize native styles
+
+Native styles (Windows and macOS styles) don't support customization.
+Ensure you don't customize a native style.
+
+\qml *
+// Wrong approach:
+import QtQuick.Controls.Windows
+
+// Don't customize a native style
+Button {
+    background: Rectangle { /\1...\1/ }
+}
+\endqml
+
+\include customizing-native-styles.qdocinc
+
+\qml *
+// Right approach:
+import QtQuick.Controls.Basic
+
+// You can customize a commonly available style
+Button {
+    background: Rectangle { /\1...\1/ }
+}
+\endqml
 
 \section1 Tools and Utilities
 
@@ -336,6 +455,7 @@ With this in place, your application's UI should scale depending
 on the display resolution on offer.
 
 \image qtquickcontrols-gallery-welcome.png
+       {Gallery example welcome screen with Qt logo}
 
 \section2 Related Information
 

@@ -1,5 +1,6 @@
 // Copyright (C) 2019 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+// Qt-Security score:significant
 #ifndef QV4STATICVALUE_P_H
 #define QV4STATICVALUE_P_H
 
@@ -478,11 +479,7 @@ struct StaticValue
 
     static double toInteger(double d)
     {
-        if (std::isnan(d))
-            return +0;
-        if (!d || std::isinf(d))
-            return d;
-        return d >= 0 ? std::floor(d) : std::ceil(d);
+        return QJSNumberCoercion::roundTowards0(d);
     }
 
     static int toInt32(double d)
@@ -620,7 +617,8 @@ struct StaticValue
 #  error "unsupported pointer size"
 #endif
 };
-Q_STATIC_ASSERT(std::is_trivial_v<StaticValue>);
+static_assert(std::is_trivially_copyable_v<StaticValue>);
+static_assert(std::is_trivially_default_constructible_v<StaticValue>);
 
 struct Encode {
     static constexpr ReturnedValue undefined() {

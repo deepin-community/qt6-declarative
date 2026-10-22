@@ -6,7 +6,8 @@ project(wearableexample VERSION 1 LANGUAGES CXX)
 
 set(CMAKE_AUTOMOC ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Quick QuickControls2 OPTIONAL_COMPONENTS Positioning Location)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Quick QuickControls2)
+find_package(Qt6 QUIET OPTIONAL_COMPONENTS Positioning Location)
 
 qt_standard_project_setup()
 
@@ -32,9 +33,9 @@ if(TARGET Qt6::Positioning)
 endif()
 
 if(TARGET Qt6::Location)
-target_link_libraries(wearableexample PUBLIC
-    Qt6::Location
-)
+    target_link_libraries(wearableexample PUBLIC
+        Qt6::Location
+    )
 endif()
 
 if(UNIX AND NOT APPLE AND CMAKE_CROSSCOMPILING)
@@ -60,7 +61,6 @@ install(TARGETS wearableexample
 qt_generate_deploy_qml_app_script(
     TARGET wearableexample
     OUTPUT_SCRIPT deploy_script
-    MACOS_BUNDLE_POST_BUILD
     NO_UNSUPPORTED_PLATFORM_ERROR
     DEPLOY_USER_QML_MODULES_ON_UNSUPPORTED_PLATFORM
 )

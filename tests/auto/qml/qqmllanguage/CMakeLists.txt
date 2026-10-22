@@ -28,20 +28,13 @@ qt_internal_add_test(tst_qqmllanguage
         Qt::Gui
         Qt::GuiPrivate
         Qt::Network
+        Qt::Qml
         Qt::QmlPrivate
         Qt::QuickTestUtilsPrivate
     TESTDATA ${test_data}
 )
 
 add_subdirectory(testhelper)
-
-#### Keys ignored in scope 1:.:.:qqmllanguage.pro:<TRUE>:
-# OTHER_FILES = "data/readonlyObjectProperty.qml"
-# QML_IMPORT_NAME = "StaticTest"
-# QML_IMPORT_VERSION = "1.0"
-
-## Scopes:
-#####################################################################
 
 if(ANDROID)
     # Resources:
@@ -60,6 +53,34 @@ if(ANDROID)
     )
 endif()
 
+# These modules rely on resource paths in qmldir "prefer" directives, so they
+# must always be compiled into the binary regardless of platform.
+qt_internal_add_resource(tst_qqmllanguage "modulewithinternaltypessubdir"
+    PREFIX
+        "/"
+    FILES
+        data/modulewithinternaltypessubdir/qmldir
+        data/modulewithinternaltypessubdir/Qml/qmldir
+        data/modulewithinternaltypessubdir/Qml/MyInternalType.qml
+        data/modulewithinternaltypessubdir/Qml/MyPublicType.qml
+        data/modulewithinternaltypessubdir/submodule/qmldir
+        data/modulewithinternaltypessubdir/submodule/SubType.qml
+)
+
+qt_internal_add_resource(tst_qqmllanguage "modulewithinternaltypescomplexsubdir"
+    PREFIX
+        "/"
+    FILES
+        data/modulewithinternaltypescomplexsubdir/qmldir
+        data/modulewithinternaltypescomplexsubdir/A.qml
+        data/modulewithinternaltypescomplexsubdir/sub1/qmldir
+        data/modulewithinternaltypescomplexsubdir/sub1/B.qml
+        data/modulewithinternaltypescomplexsubdir/sub2/qmldir
+        data/modulewithinternaltypescomplexsubdir/sub2/usesB.qml
+        data/modulewithinternaltypescomplexsubdir/submodule/qmldir
+        data/modulewithinternaltypescomplexsubdir/submodule/SubType.qml
+)
+
 qt_internal_extend_target(tst_qqmllanguage CONDITION ANDROID OR IOS
     DEFINES
         QT_QMLTEST_DATADIR=":/data"
@@ -70,9 +91,18 @@ qt_internal_extend_target(tst_qqmllanguage CONDITION NOT ANDROID AND NOT IOS
         QT_QMLTEST_DATADIR="${CMAKE_CURRENT_SOURCE_DIR}/data"
 )
 
-set_target_properties(tst_qqmllanguage PROPERTIES
-    QT_QML_MODULE_VERSION 1.0
-    QT_QML_MODULE_URI StaticTest
+qt6_add_qml_module(tst_qqmllanguage
+    URI StaticTest
+    VERSION 1.0
+    QML_FILES
+        data/InnerObject.qml
+        data/ObjectWithProperty.qml
+        data/outerObject.qml
+        data/testlib.js
+    RESOURCE_PREFIX "/"
+    NO_GENERATE_EXTRA_QMLDIRS
 )
 
-_qt_internal_qml_type_registration(tst_qqmllanguage)
+add_subdirectory(OtherModuleTest)
+target_link_libraries(tst_qqmllanguage PUBLIC other_module)
+target_link_libraries(tst_qqmllanguage PUBLIC other_moduleplugin)

@@ -1,15 +1,4 @@
+# Fixed in 6.12.1
+upstream_71381b2_fix_js_crash_sparc64.diff
 
-CVE-2025-12385-qtdeclarative-6.8-0001.patch
-CVE-2025-12385-qtdeclarative-6.8-0002.patch
-fix-qml-cache-reload-crush-0003.patch
-Sanitize-source-string-used-in-output.patch
-QTCR-4340300-PS3.diff
-fix-qml-cache-invalid-timestamp-handle.patch
-Fix-QML-touchscreen-multi-finger-swipe-not-working.patch
-fix-gc-Assume-less-if-hasConstWrapper-is-set.path
-qt6-declarative-add-multi-seat-event.patch
-QQuickFlickable-fix-jump-back-when-scrolling-to-edge.patch
-CVE-2026-79616_fix-oob-read-in-QQuickSvgParser.patch
-Quick-Remove-revision-from-Accessible.id.patch
-QQuickFlickable-use-pixelDelta-for-real-touchpads.patch
-fix-QSvgFontEngine-glyphIndex-signature.patch
+# Fixed in 6.11.3 (?) / 6.12.0

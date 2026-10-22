@@ -99,8 +99,8 @@ private:
 
     qint64 m_frameCount = 0;
     QSize m_thumbnailSize;
-    QVector<double> m_cpuTimes;
-    QVector<double> m_gpuTimes;
+    QList<double> m_cpuTimes;
+    QList<double> m_gpuTimes;
 
     QLabel *m_apiMsg;
     QLabel *m_statusMsg;
@@ -110,7 +110,7 @@ private:
 
     QScrollArea *m_scrollArea;
     QGridLayout *m_grid;
-    QVector<QWidget *> m_gridWidgets;
+    QList<QWidget *> m_gridWidgets;
 
 public:
 #if QT_CONFIG(vulkan)
@@ -119,7 +119,7 @@ public:
 
     ImageLabel *m_focus = nullptr;
     QLabel *m_fullSizeViewerWindow = nullptr;
-    QVector<QImage> m_frames;
+    QList<QImage> m_frames;
 
     bool m_mirrorVertically = false;
 };
@@ -161,7 +161,7 @@ MainWindow::MainWindow()
                                 "This is due to widgets themselves relying on QPropertyAnimation and similar, which are driven by the same QAnimationDriver.\n"
                                 "In any case, the functionality of the widgets are not affected, just the rendering may lag behind.\n"
                                 "When not checked, Qt Quick animations advance based on the system time, i.e. the time elapsed since the last press of the Next button."));
-    QObject::connect(animCheckBox, &QCheckBox::stateChanged, animCheckBox, [this, animCheckBox, animSlider, animLabel] {
+    QObject::connect(animCheckBox, &QCheckBox::checkStateChanged, animCheckBox, [this, animCheckBox, animSlider, animLabel] {
         if (animCheckBox->isChecked()) {
             animSlider->setEnabled(true);
             animLabel->setEnabled(true);
@@ -183,7 +183,7 @@ MainWindow::MainWindow()
 //! [anim-slider]
 
     QCheckBox *mirrorCheckBox = new QCheckBox(tr("Mirror vertically"));
-    QObject::connect(mirrorCheckBox, &QCheckBox::stateChanged, mirrorCheckBox, [this, mirrorCheckBox] {
+    QObject::connect(mirrorCheckBox, &QCheckBox::checkStateChanged, mirrorCheckBox, [this, mirrorCheckBox] {
         m_mirrorVertically = mirrorCheckBox->isChecked();
     });
     controlLayout->addWidget(mirrorCheckBox);
@@ -489,7 +489,7 @@ void MainWindow::render()
                     QImage::Format_RGBA8888_Premultiplied);
     QImage result;
     if (rhi->isYUpInFramebuffer())
-        result = wrapperImage.mirrored();
+        result = wrapperImage.flipped();
     else
         result = wrapperImage.copy();
 
@@ -524,7 +524,7 @@ void MainWindow::render()
     m_frameCount += 1;
 
     double v = 0;
-    for (double t : m_cpuTimes)
+    for (double t : std::as_const(m_cpuTimes))
         v += t;
     v /= m_cpuTimes.count();
     m_avgCpuMsg->setText(tr("Avg. CPU render time: %1 ms").arg(v, 0, 'f', 4));
@@ -533,7 +533,7 @@ void MainWindow::render()
         m_cpuTimes.append(v);
     }
     v = 0;
-    for (double t : m_gpuTimes)
+    for (double t : std::as_const(m_gpuTimes))
         v += t;
     v /= m_gpuTimes.count();
     m_avgGpuMsg->setText(tr("Avg. GPU render time: %1 ms").arg(v, 0, 'f', 4));

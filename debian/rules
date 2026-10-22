@@ -1,36 +1,80 @@
 #!/usr/bin/make -f
 
+# 净室打包:强制 nodoc(等价 DEB_BUILD_PROFILES=nodoc),保证 dpkg-buildpackage -b -us -uc 裸命令可用
+DEB_BUILD_PROFILES := $(filter-out nodoc,$(DEB_BUILD_PROFILES)) nodoc
+export DEB_BUILD_PROFILES
+
 # Use already defined DEB_HOST_* variables.
 include /usr/share/dpkg/architecture.mk
 
-export DEB_BUILD_MAINT_OPTIONS = hardening=+all optimize=+lto
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
 # QT_HOST_PATH isn't passed in cross-builds
 ifneq ($(DEB_BUILD_ARCH),$(DEB_HOST_ARCH))
 	extra_cmake_args += \
 		-DQT_HOST_PATH=/usr \
 		-DQT_HOST_PATH_CMAKE_DIR=/usr/lib/${DEB_BUILD_MULTIARCH}/cmake \
-		-DQT_BUILD_TOOLS_WHEN_CROSSCOMPILING=ON
+		-DQT_FORCE_BUILD_TOOLS=ON
+endif
+
+# Disable the JIT on x32 for now, because of 32bit vs 64bit assembler mismatches
+ifeq (x32, $(DEB_HOST_ARCH))
+	extra_cmake_args += -DFEATURE_qml_jit=OFF
+endif
+
+# enable ccache with corresponding build-profile
+ifneq ($(filter ccache,$(DEB_BUILD_PROFILES)),)
+	extra_cmake_args += -DQT_USE_CCACHE=ON
 endif
 
 %:
-	dh $@ --with pkgkde_symbolshelper --buildsystem=cmake+ninja
+	dh $@ --buildsystem=cmake+ninja
 
 override_dh_auto_configure:
 	dh_auto_configure -- \
 		--log-level=STATUS \
+		-DCMAKE_BUILD_RPATH_USE_ORIGIN=ON \
 		-DCMAKE_LIBRARY_PATH=$(DEB_HOST_MULTIARCH) \
+		-DINSTALL_PUBLICBINDIR=/usr/bin \
+		-DQT_QML_NO_CACHEGEN=ON \
 		$(extra_cmake_args)
 
+override_dh_shlibdeps:
+	dh_shlibdeps --dpkg-shlibdeps-params=--ignore-missing-info
+
+override_dh_makeshlibs:
+	dh_makeshlibs \
+		-XlibQt6LabsStyleKitImpl \
+		-XlibQt6QuickControls2Impl \
+		-XlibQt6QuickControls2Basic \
+		-XlibQt6QuickControls2BasicStyleImpl \
+		-XlibQt6QuickControls2Fusion \
+		-XlibQt6QuickControls2FusionStyleImpl \
+		-XlibQt6QuickControls2Imagine \
+		-XlibQt6QuickControls2ImagineStyleImpl \
+		-XlibQt6QuickControls2Material \
+		-XlibQt6QuickControls2MaterialStyleImpl \
+		-XlibQt6QuickControls2Universal \
+		-XlibQt6QuickControls2UniversalStyleImpl
+
+override_dh_qmldeps:
+	LD_LIBRARY_PATH=debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/ dh_qmldeps
+
+ifneq (,$(filter nodoc,$(DEB_BUILD_PROFILES)))
 override_dh_auto_build-indep:
 	dh_auto_build -- docs
+endif
 
+ifneq (,$(filter nodoc,$(DEB_BUILD_PROFILES)))
 override_dh_auto_install-indep:
 	DESTDIR=$(CURDIR)/debian/tmp dh_auto_build -- install_docs
 	# Remove build path from index files.
 	find $(CURDIR)/debian/tmp/usr/share/qt6/doc -type f -name *.index -exec \
                sed -i 's@$(CURDIR)/@@g' {} \;
+endif
 
 execute_after_dh_auto_install-arch:
 	# Reproducible builds: remove build paths from .prl files
 	sed -i -e '/^QMAKE_PRL_BUILD_DIR/d' debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/libQt6*.prl
+	# Reproducible builds: remove kernel version from build artifacts
+	sed -i '/^[[:space:]]*"version":.*deb/d' debian/tmp/usr/lib/${DEB_HOST_MULTIARCH}/qt6/modules/*.json

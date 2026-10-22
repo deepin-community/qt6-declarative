@@ -18,12 +18,13 @@
 
 #include <QtQuick/QQuickItem>
 #include <QtCore/private/qglobal_p.h>
+#include <QtCore/qrect.h>
 
 QT_BEGIN_NAMESPACE
 
 class QQuickShaderEffectSource;
 
-class QGfxSourceProxy : public QQuickItem
+class QGfxSourceProxyME : public QQuickItem
 {
     Q_OBJECT
     Q_PROPERTY(QQuickItem *input READ input WRITE setInput NOTIFY inputChanged RESET resetInput FINAL)
@@ -40,8 +41,8 @@ public:
     };
     Q_ENUM(Interpolation)
 
-    QGfxSourceProxy(QQuickItem *parentItem = nullptr);
-    ~QGfxSourceProxy();
+    QGfxSourceProxyME(QQuickItem *parentItem = nullptr);
+    ~QGfxSourceProxyME();
 
     QQuickItem *input() const { return m_input; }
     void setInput(QQuickItem *input);

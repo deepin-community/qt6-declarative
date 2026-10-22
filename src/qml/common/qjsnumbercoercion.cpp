@@ -1,5 +1,6 @@
 // Copyright (C) 2020 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+// Qt-Security score:insignificant
 
 #include "qjsnumbercoercion.h"
 
@@ -58,5 +59,12 @@ QT_BEGIN_NAMESPACE
   Compares \a lhs and \a rhs bit by bit without causing a compile warning.
   Returns the \c true if they are equal, or \c false if not.
  */
+
+/*!
+  \fn double QJSNumberCoercion::roundTowards0(double d)
+  \internal
+
+  Rounds \a d towards 0 by JavaScript \e ToInteger rules and returns the result.
+*/
 
 QT_END_NAMESPACE

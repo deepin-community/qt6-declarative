@@ -1,5 +1,6 @@
 // Copyright (C) 2019 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only WITH Qt-GPL-exception-1.0
+// Qt-Security score:significant
 
 #include "qqmltyperegistrarutils_p.h"
 #include "qqmltypesclassdescription_p.h"
@@ -70,12 +71,12 @@ MetaType FoundType::select(const MetaType &category, QAnyStringView relation) co
 }
 
 FoundType QmlTypesClassDescription::findType(
-        const QVector<MetaType> &types, const QVector<MetaType> &foreign,
+        const QList<MetaType> &types, const QList<MetaType> &foreign,
         const QAnyStringView &name, const QList<QAnyStringView> &namespaces)
 {
     const auto tryFindType = [&](QAnyStringView qualifiedName) -> FoundType {
         FoundType result;
-        for (const QVector<MetaType> &t : {types, foreign}) {
+        for (const QList<MetaType> &t : {types, foreign}) {
             const auto [first, last] = std::equal_range(
                     t.begin(), t.end(), qualifiedName, Compare());
             for (auto it = first; it != last; ++it) {
@@ -98,7 +99,9 @@ FoundType QmlTypesClassDescription::findType(
                             : FoundType::ForeignTypes;
                 } else {
                     warning(result.native)
-                            << "Multiple C++ types called" << qualifiedName << "found!"
+                            << "Multiple C++ types called" << qualifiedName << "found!\n"
+                            << "(other occurrence in :"
+                            << it->inputFile() << ":" << it->lineNumber() << ")\n"
                             << "This violates the One Definition Rule!";
                 }
             }
@@ -127,10 +130,11 @@ FoundType QmlTypesClassDescription::findType(
 }
 
 void QmlTypesClassDescription::collectSuperClasses(
-        const MetaType &classDef, const QVector<MetaType> &types,
-        const QVector<MetaType> &foreign, CollectMode mode,  QTypeRevision defaultRevision)
+        const MetaType &classDef, const QList<MetaType> &types,
+        const QList<MetaType> &foreign, CollectMode mode,  QTypeRevision defaultRevision)
 {
     const QList<QAnyStringView> namespaces = MetaTypesJsonProcessor::namespaces(classDef);
+    QAnyStringView superClassCandidate;
     for (const BaseType &superObject : std::as_const(classDef.superClasses())) {
         if (superObject.access == Access::Public) {
             const QAnyStringView superName = superObject.name;
@@ -141,11 +145,17 @@ void QmlTypesClassDescription::collectSuperClasses(
                 collect(other, types, foreign, superMode, defaultRevision);
                 if (mode == TopLevel && superClass.isEmpty())
                     superClass = other.qualifiedClassName();
+            } else {
+                // If we cannot resolve anything but find a correctly formed superObject,
+                // we can at least populate the name. Further tooling might locate the type
+                // in a different module.
+                superClassCandidate = superName;
             }
-
-            // If we cannot locate a type for it, there is no point in recording the superClass
         }
     }
+
+    if (mode == TopLevel && superClass.isEmpty())
+        superClass = superClassCandidate;
 }
 
 void QmlTypesClassDescription::collectInterfaces(const MetaType &classDef)
@@ -154,11 +164,23 @@ void QmlTypesClassDescription::collectInterfaces(const MetaType &classDef)
         implementsInterfaces << interfaceName(iface);
 }
 
+void QmlTypesClassDescription::handleRegisterEnumClassesUnscoped(
+        const MetaType &classDef, QAnyStringView value)
+{
+    if (value == S_FALSE)
+        enforcesScopedEnums = true;
+    else if (value == S_TRUE)
+        warning(classDef) << "Setting RegisterEnumClassesUnscoped to true has no effect.";
+    else
+        warning(classDef) << "Unrecognized value for RegisterEnumClassesUnscoped:" << value;
+}
+
 void QmlTypesClassDescription::collectLocalAnonymous(
-        const MetaType &classDef, const QVector<MetaType> &types,
-        const QVector<MetaType> &foreign, QTypeRevision defaultRevision)
+        const MetaType &classDef, const QList<MetaType> &types,
+        const QList<MetaType> &foreign, QTypeRevision defaultRevision)
 {
     file = classDef.inputFile();
+    lineNumber = classDef.lineNumber();
 
     resolvedClass = classDef;
     className = classDef.qualifiedClassName();
@@ -181,8 +203,8 @@ void QmlTypesClassDescription::collectLocalAnonymous(
             defaultProp = obj.value;
         else if (obj.name == S_PARENT_PROPERTY)
             parentProp = obj.value;
-        else if (obj.name == S_REGISTER_ENUM_CLASSES_UNSCOPED && obj.value == S_FALSE)
-            registerEnumClassesScoped = true;
+        else if (obj.name == S_REGISTER_ENUM_CLASSES_UNSCOPED)
+            handleRegisterEnumClassesUnscoped(classDef, obj.value);
     }
 
     collectInterfaces(classDef);
@@ -190,11 +212,13 @@ void QmlTypesClassDescription::collectLocalAnonymous(
 }
 
 void QmlTypesClassDescription::collect(
-        const MetaType &classDef, const QVector<MetaType> &types,
-        const QVector<MetaType> &foreign, CollectMode mode, QTypeRevision defaultRevision)
+        const MetaType &classDef, const QList<MetaType> &types,
+        const QList<MetaType> &foreign, CollectMode mode, QTypeRevision defaultRevision)
 {
-    if (file.isEmpty())
+    if (file.isEmpty()) {
         file = classDef.inputFile();
+        lineNumber = classDef.lineNumber();
+    }
 
     const QAnyStringView classDefName = classDef.className();
     const QList<QAnyStringView> namespaces = MetaTypesJsonProcessor::namespaces(classDef);
@@ -219,8 +243,8 @@ void QmlTypesClassDescription::collect(
         }
 
         if (name == S_REGISTER_ENUM_CLASSES_UNSCOPED) {
-            if (mode != RelatedType && value == S_FALSE)
-                registerEnumClassesScoped = true;
+            if (mode != RelatedType)
+                handleRegisterEnumClassesUnscoped(classDef, value);
             continue;
         }
 
@@ -266,6 +290,8 @@ void QmlTypesClassDescription::collect(
                 javaScriptExtensionType = extension.javaScript.qualifiedClassName();
                 nativeExtensionType = extension.native.qualifiedClassName();
             }
+            if (value == classDefName)
+                isSelfExtension = true;
         } else if (name == S_EXTENSION_IS_JAVA_SCRIPT) {
             if (value == S_TRUE)
                 extensionIsJavaScript = true;
@@ -316,7 +342,7 @@ void QmlTypesClassDescription::collect(
 
             // Default properties and enum classes are always local.
             defaultProp = {};
-            registerEnumClassesScoped = false;
+            enforcesScopedEnums = false;
 
             // Foreign type can have a default property or an attached type,
             // or RegisterEnumClassesUnscoped classinfo.
@@ -328,8 +354,7 @@ void QmlTypesClassDescription::collect(
                 } else if (parentProp.isEmpty() && foreignName == S_PARENT_PROPERTY) {
                     parentProp = foreignValue;
                 } else if (foreignName == S_REGISTER_ENUM_CLASSES_UNSCOPED) {
-                    if (foreignValue == S_FALSE)
-                        registerEnumClassesScoped = true;
+                    handleRegisterEnumClassesUnscoped(resolved, foreignValue);
                 } else if (foreignName == S_ATTACHED) {
                     if (const FoundType attached = collectRelated(
                                 foreignValue, types, foreign, defaultRevision, namespaces)) {
@@ -354,6 +379,10 @@ void QmlTypesClassDescription::collect(
                                 = element.select(resolved, "Sequence value").qualifiedClassName();
                     }
                 }
+            }
+            if (mode == TopLevel) {
+                resolvedFile = resolved.inputFile();
+                lineNumberInResolvedFile = resolved.lineNumber();
             }
         } else {
             className = foreignTypeName;
@@ -444,7 +473,7 @@ void QmlTypesClassDescription::collect(
 }
 
 FoundType QmlTypesClassDescription::collectRelated(
-        QAnyStringView related, const QVector<MetaType> &types, const QVector<MetaType> &foreign,
+        QAnyStringView related, const QList<MetaType> &types, const QList<MetaType> &foreign,
         QTypeRevision defaultRevision, const QList<QAnyStringView> &namespaces)
 {
     if (FoundType other = findType(types, foreign, related, namespaces)) {
@@ -542,6 +571,8 @@ void ResolvedTypeAlias::handlePointer()
     if (type.back() == '*'_L1) {
         isPointer = true;
         type = type.chopped(1);
+        while (type.back().isSpace())
+            type.chop(1);
     }
 }
 

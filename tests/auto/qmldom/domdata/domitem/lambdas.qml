@@ -23,7 +23,7 @@ Item {
         function *myGeneratorDeclaration(a, b) { yield 5 };
         let myGenerator = function*(tic, tac, toe) { yield tic + tac - toe };
     }
-    
+
     function *generatorInQmlObject() {
         function nested(q,w,e,r) { return q + w + e - r; }
         function *nested2(a,z,e,r) { yield a + z + e - r; yield 42; }
@@ -37,5 +37,26 @@ Item {
         const tradition = (function (a) {
             return a + 100;
         });
+    }
+
+    Component.onCompleted: {
+        function a() { return 45;}
+    }
+
+    property var propertyWithFunction: {
+        function funcInProperty() { return 45; }
+        return funcInProperty();
+    }
+
+    // QTBUG-149244 — declaration directly inside a binding body
+    property var c: { function test() {} }
+
+    // QTBUG-149244 — declaration nested in a block inside a binding body
+    property var d: {
+        if (true) {
+            function test() {}
+            return test()
+        }
+        return 0
     }
 }

@@ -4,20 +4,27 @@
 #include <qtest.h>
 #include <qtesttouch.h>
 #include <QtTest/QSignalSpy>
+#include <QtTest/QTestAccessibility>
 #include <QtTest/private/qtesthelpers_p.h>
 #include <QtQml/qqmlcomponent.h>
 #include <QtQml/qqmlcontext.h>
 #include <QtQuick/qquickview.h>
 #include <QtQuick/qquickitem.h>
+#include <QtQuick/qquickrendercontrol.h>
 #include <QtQuick/private/qquickitem_p.h>
 #include <QtQuick/private/qquickmousearea_p.h>
 #include <QtQuick/private/qquicktaphandler_p.h>
 #include <QtQuickTemplates2/private/qquickbutton_p.h>
+#include <QtQuickTemplates2/private/qquickoverlay_p.h>
+#include <QtQuickTemplates2/private/qquickpopup_p.h>
+#include <QtQuickTest/quicktest.h>
 #include <QtQuickTestUtils/private/qmlutils_p.h>
 #include <QtQuickTestUtils/private/visualtestutils_p.h>
 #include <QtGui/QWindow>
 #include <QtGui/QScreen>
+#include <QtGui/QAccessible>
 #include <QtGui/QImage>
+#include <QtGui/qpa/qplatformaccessibility.h>
 #include <QtCore/QDebug>
 #include <QtQml/qqmlengine.h>
 
@@ -28,6 +35,8 @@
 #include <QtWidgets/private/qapplication_p.h>
 
 #include <QtQuickWidgets/QQuickWidget>
+
+using namespace Qt::StringLiterals;
 
 #if QT_CONFIG(graphicsview)
 # include <QtWidgets/QGraphicsView>
@@ -108,6 +117,11 @@ class tst_qquickwidget : public QQmlDataTest
 public:
     tst_qquickwidget();
 
+#if QT_CONFIG(accessibility)
+private:
+    bool initAccessibility();
+#endif
+
 private slots:
     void showHide();
     void reparentAfterShow();
@@ -120,6 +134,7 @@ private slots:
     void renderingSignals();
     void grab();
     void grabBeforeShow();
+    void grabBeforeShowAndThenShow();
     void reparentToNewWindow();
     void nullEngine();
     void keyEvents();
@@ -134,16 +149,32 @@ private slots:
     void touchTapHandler();
     void touchMultipleWidgets();
     void tabKey();
+    void focusChain_data();
+    void focusChain();
     void resizeOverlay();
+    void overlayGeometry_data();
+    void overlayGeometry();
     void controls();
     void focusOnClick();
 #if QT_CONFIG(graphicsview)
     void focusOnClickInProxyWidget();
 #endif
     void focusPreserved();
+    void renderWindowUnderNativeParent();
+#if QT_CONFIG(accessibility)
     void accessibilityHandlesViewChange();
+    void accessibleParentOfQuickItems();
+    void accessibleWindowUnderNativeParent();
+#endif
     void cleanupRhi();
     void dontRecreateRootElementOnWindowChange();
+    void preserveClearColorOnWindowChange();
+    void setInitialProperties();
+    void fromModuleCtor();
+    void loadFromModule_data();
+    void loadFromModule();
+    void nonItem();
+    void focusTabFence();
 
 private:
     QPointingDevice *device = QTest::createTouchDevice();
@@ -154,6 +185,19 @@ tst_qquickwidget::tst_qquickwidget()
     : QQmlDataTest(QT_QMLTEST_DATADIR)
 {
 }
+
+#if QT_CONFIG(accessibility)
+bool tst_qquickwidget::initAccessibility()
+{
+    // Copied from tst_QQuickAccessible::initTestCase()
+    QTestAccessibility::initialize();
+    QPlatformIntegration *pfIntegration = QGuiApplicationPrivate::platformIntegration();
+    if (!pfIntegration->accessibility())
+        return false;
+    pfIntegration->accessibility()->setActive(true);
+    return true;
+}
+#endif
 
 void tst_qquickwidget::showHide()
 {
@@ -222,6 +266,7 @@ void tst_qquickwidget::resizemodeitem()
     QCOMPARE(view->size(), QSize(200, 200));
     QCOMPARE(view->size(), view->sizeHint());
     QCOMPARE(view->size(), view->initialSize());
+    QCOMPARE(view->quickWindow()->contentItem()->size(), view->size());
 
     // size update from view
     view->resize(QSize(80,100));
@@ -230,6 +275,8 @@ void tst_qquickwidget::resizemodeitem()
     QCOMPARE(item->height(), 100.0);
     QCOMPARE(view->size(), QSize(80, 100));
     QCOMPARE(view->size(), view->sizeHint());
+    QCOMPARE(view->quickWindow()->contentItem()->size(), view->size());
+
 
     view->setResizeMode(QQuickWidget::SizeViewToRootObject);
 
@@ -238,6 +285,8 @@ void tst_qquickwidget::resizemodeitem()
     QCOMPARE(item->width(), 80.0);
     QCOMPARE(item->height(), 100.0);
     QTRY_COMPARE(view->size(), QSize(60, 80));
+    QCOMPARE(view->quickWindow()->contentItem()->size(), view->size());
+
 
     // size update from root object
     item->setWidth(250);
@@ -247,6 +296,7 @@ void tst_qquickwidget::resizemodeitem()
     QTRY_COMPARE(view->size(), QSize(250, 350));
     QCOMPARE(view->size(), QSize(250, 350));
     QCOMPARE(view->size(), view->sizeHint());
+    QCOMPARE(view->quickWindow()->contentItem()->size(), view->size());
 
     // reset window
     window.hide();
@@ -264,6 +314,7 @@ void tst_qquickwidget::resizemodeitem()
     QCOMPARE(item->height(), 200.0);
     QCOMPARE(view->size(), view->sizeHint());
     QCOMPARE(view->size(), view->initialSize());
+    QCOMPARE(view->quickWindow()->contentItem()->size(), view->size());
 
     // size update from root object
     item->setWidth(80);
@@ -272,6 +323,7 @@ void tst_qquickwidget::resizemodeitem()
     QCOMPARE(item->height(), 100.0);
     QTRY_COMPARE(view->size(), QSize(80, 100));
     QCOMPARE(view->size(), view->sizeHint());
+    QCOMPARE(view->quickWindow()->contentItem()->size(), view->size());
 
     // size update from root object disabled
     view->setResizeMode(QQuickWidget::SizeRootObjectToView);
@@ -280,6 +332,7 @@ void tst_qquickwidget::resizemodeitem()
     QCOMPARE(view->width(), 80);
     QCOMPARE(view->height(), 100);
     QCOMPARE(QSize(item->width(), item->height()), view->sizeHint());
+    QCOMPARE(view->quickWindow()->contentItem()->size(), view->size());
 
     // size update from view
     view->resize(QSize(200,300));
@@ -287,6 +340,7 @@ void tst_qquickwidget::resizemodeitem()
     QCOMPARE(item->height(), 300.0);
     QCOMPARE(view->size(), QSize(200, 300));
     QCOMPARE(view->size(), view->sizeHint());
+    QCOMPARE(view->quickWindow()->contentItem()->size(), view->size());
 
     window.hide();
 
@@ -310,6 +364,8 @@ void tst_qquickwidget::resizemodeitem()
     QTRY_COMPARE(view->size(), QSize(300, 300));
     QCOMPARE(view->size(), view->sizeHint());
     QCOMPARE(view->initialSize(), QSize(200, 200)); // initial object size
+    QCOMPARE(view->quickWindow()->contentItem()->size(), view->size());
+
 }
 
 void tst_qquickwidget::layoutSizeChange()
@@ -336,13 +392,15 @@ void tst_qquickwidget::layoutSizeChange()
     QCOMPARE(item->height(), 200.0);
     window.show();
     QVERIFY(QTest::qWaitForWindowExposed(&window, 5000));
+
+    const QMargins safeMargins = window.windowHandle()->safeAreaMargins();
     QTRY_COMPARE(view->height(), 200);
-    QTRY_COMPARE(label->y(), 200);
+    QTRY_COMPARE(label->y() - safeMargins.top(), 200);
 
     item->setSize(QSizeF(100,100));
     QCOMPARE(item->height(), 100.0);
     QTRY_COMPARE(view->height(), 100);
-    QTRY_COMPARE(label->y(), 100);
+    QTRY_COMPARE(label->y() - safeMargins.top(), 100);
 }
 
 void tst_qquickwidget::errors()
@@ -355,6 +413,10 @@ void tst_qquickwidget::errors()
     view->setSource(testFileUrl("error1.qml"));
     QCOMPARE(view->status(), QQuickWidget::Error);
     QCOMPARE(view->errors().size(), 1);
+
+    QQuickWidget invalidRoot;
+    invalidRoot.setSource(testFileUrl("error2.qml")); // don't crash
+    QCOMPARE(invalidRoot.status(), QQuickWidget::Error);
 }
 
 void tst_qquickwidget::engine()
@@ -378,8 +440,8 @@ void tst_qquickwidget::readback()
 
     QImage img = view->grabFramebuffer();
     QVERIFY(!img.isNull());
-    QCOMPARE(img.width(), qCeil(view->width() * view->devicePixelRatio()));
-    QCOMPARE(img.height(), qCeil(view->height() * view->devicePixelRatio()));
+    // Match QQuickWidget's internal FBO size: size() * devicePixelRatio() via QSize::operator*(qreal).
+    QCOMPARE(img.size(), view->size() * view->devicePixelRatio());
 
     QRgb pix = img.pixel(5, 5);
     QCOMPARE(pix, qRgb(255, 0, 0));
@@ -431,6 +493,22 @@ void tst_qquickwidget::grab()
 void tst_qquickwidget::grabBeforeShow()
 {
     QQuickWidget widget;
+    QVERIFY(!widget.grab().isNull());
+}
+
+void tst_qquickwidget::grabBeforeShowAndThenShow()
+{
+    QQuickWidget widget;
+    QVERIFY(!widget.grab().isNull());
+
+    // QTBUG-145383: Without the corresponding patch, this behaves incorrectly
+    // due to never picking up the QRhi from QWidgetPrivate::rhi() and not
+    // switching over to it from the QQuickWidget's own offscreen QRhi; and so
+    // it shows "Texture ... belongs to QRhi ..., but client code attempted to
+    // use it with QRhi ..." warnings, and potentially crashes.
+
+    widget.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&widget));
     QVERIFY(!widget.grab().isNull());
 }
 
@@ -781,9 +859,9 @@ void tst_qquickwidget::tabKey()
     qqw2->setSource(testFileUrl("noActiveFocusOnTab.qml"));
     qqw2->move(100, 0);
     window1.show();
-    qqw->setFocus();
     QVERIFY(QTest::qWaitForWindowExposed(&window1, 5000));
-    QVERIFY(qqw->hasFocus());
+    qqw->setFocus();
+    QTRY_VERIFY(qqw->hasFocus());
     QQuickItem *item = qobject_cast<QQuickItem *>(qqw->rootObject());
     QQuickItem *topItem = item->findChild<QQuickItem *>("topRect");
     QQuickItem *middleItem = item->findChild<QQuickItem *>("middleRect");
@@ -804,7 +882,98 @@ void tst_qquickwidget::tabKey()
     QVERIFY(topItem2->property("activeFocus").toBool());
     QTest::keyClick(qqw2, Qt::Key_Tab);
     QTRY_VERIFY(qqw->hasFocus());
-    QVERIFY(middleItem->property("activeFocus").toBool());
+    // Focus-in by tab/backtab events makes the first/last focusable item to be focused
+    QVERIFY(topItem->property("activeFocus").toBool());
+}
+
+void tst_qquickwidget::focusChain_data()
+{
+    if (QGuiApplication::styleHints()->tabFocusBehavior() != Qt::TabFocusAllControls)
+        QSKIP("This function doesn't support NOT iterating all.");
+
+    QTest::addColumn<bool>("forward");
+
+    QTest::addRow("Forward") << true;
+    QTest::addRow("Backward") << false;
+}
+
+void tst_qquickwidget::focusChain()
+{
+    QFETCH(bool, forward);
+
+    QWidget window;
+    window.resize(300, 300);
+    QHBoxLayout layout(&window);
+    QQuickWidget qqw1;
+    qqw1.setObjectName("qqw1");
+    qqw1.setResizeMode(QQuickWidget::SizeRootObjectToView);
+    qqw1.setSource(testFileUrl("activeFocusOnTab.qml"));
+    QWidget middleWidget;
+    middleWidget.setObjectName("middleWidget");
+    middleWidget.setFocusPolicy(Qt::FocusPolicy::TabFocus);
+    QQuickWidget qqw2;
+    qqw2.setObjectName("qqw2");
+    qqw1.setResizeMode(QQuickWidget::SizeRootObjectToView);
+    qqw2.setSource(testFileUrl("activeFocusOnTab.qml"));
+    layout.addWidget(&qqw1);
+    layout.addWidget(&middleWidget);
+    layout.addWidget(&qqw2);
+    window.show();
+    QVERIFY(QTest::qWaitForWindowActive(&window));
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+
+    QQuickItem *root1 = qqw1.rootObject();
+    QVERIFY(root1);
+    QQuickItem *topItem1 = root1->findChild<QQuickItem *>("topRect");
+    topItem1->setObjectName("topRect1");
+    QVERIFY(topItem1);
+    QQuickItem *middleItem1 = root1->findChild<QQuickItem *>("middleRect");
+    middleItem1->setObjectName("middleRect1");
+    QVERIFY(middleItem1);
+    QQuickItem *bottomItem1 = root1->findChild<QQuickItem *>("bottomRect");
+    bottomItem1->setObjectName("bottomRect1");
+    QVERIFY(bottomItem1);
+
+    QQuickItem *root2 = qqw2.rootObject();
+    QVERIFY(root2);
+    QQuickItem *topItem2 = root2->findChild<QQuickItem *>("topRect");
+    topItem2->setObjectName("topRect2");
+    QVERIFY(topItem2);
+    QQuickItem *middleItem2 = root2->findChild<QQuickItem *>("middleRect");
+    middleItem2->setObjectName("middleRect2");
+    QVERIFY(middleItem2);
+    QQuickItem *bottomItem2 = root2->findChild<QQuickItem *>("bottomRect");
+    bottomItem2->setObjectName("bottomRect2");
+    QVERIFY(bottomItem2);
+
+    qqw1.setFocus();
+    QTRY_VERIFY(qqw1.hasFocus());
+
+    auto hasActiveFocus = [](const QObject *targetObject) -> bool
+    {
+        if (const QQuickItem *targetItem = qobject_cast<const QQuickItem *>(targetObject))
+            return targetItem->hasActiveFocus();
+        else if (const QWidget *targetWidget = qobject_cast<const QWidget *>(targetObject))
+            return targetWidget->hasFocus();
+        return false;
+    };
+
+    QList<QObject *> expectedFocusChain;
+    if (forward) {
+        expectedFocusChain << topItem1 << middleItem1 << bottomItem1 << &middleWidget << topItem2
+                           << middleItem2 << bottomItem2 << topItem1;
+    } else {
+        expectedFocusChain << topItem1 << bottomItem2 << middleItem2 << topItem2 << &middleWidget
+                           << bottomItem1 << middleItem1 << topItem1;
+    }
+
+    const Qt::Key tabKey = forward ? Qt::Key_Tab : Qt::Key_Backtab;
+
+    for (QObject *expectedFocusTarget : expectedFocusChain) {
+        const QByteArray objectName = expectedFocusTarget->objectName().toLatin1();
+        QTRY_VERIFY2(hasActiveFocus(expectedFocusTarget), "expectedFocusTarget: " + objectName);
+        QTest::keyClick(QGuiApplication::focusWindow(), tabKey);
+    }
 }
 
 class Overlay : public QQuickItem, public QQuickItemChangeListener
@@ -846,7 +1015,7 @@ void tst_qquickwidget::resizeOverlay()
     auto contentVerticalLayout = new QVBoxLayout(&widget);
     contentVerticalLayout->setContentsMargins(0, 0, 0, 0);
 
-    qmlRegisterType<Overlay>("Test", 1, 0, "Overlay");
+    qmlRegisterType<Overlay>("TestModule", 1, 0, "Overlay");
 
     auto quickWidget = new QQuickWidget(testFileUrl("resizeOverlay.qml"), &widget);
     QCOMPARE(quickWidget->status(), QQuickWidget::Ready);
@@ -873,6 +1042,55 @@ void tst_qquickwidget::resizeOverlay()
     QCOMPARE(rootItem->height(), 300);
     QCOMPARE(overlay->width(), rootItem->width());
     QCOMPARE(overlay->height(), rootItem->height());
+}
+
+/*
+    Overlaps with resizeOverlay, but uses a proper
+    Qt Quick Controls Overlay.
+*/
+void tst_qquickwidget::overlayGeometry_data()
+{
+    QTest::addColumn<QQuickWidget::ResizeMode>("resizeMode");
+
+    QTest::addRow("SizeRootObjectToView") << QQuickWidget::SizeRootObjectToView;
+    QTest::addRow("SizeViewToRootObject") << QQuickWidget::SizeViewToRootObject;
+}
+
+void tst_qquickwidget::overlayGeometry()
+{
+    QFETCH(const QQuickWidget::ResizeMode, resizeMode);
+
+    QWidget window;
+
+    QQuickWidget widget(testFileUrl("overlayGeometry.qml"), &window);
+    widget.setResizeMode(resizeMode);
+
+    QCOMPARE(widget.status(), QQuickWidget::Ready);
+    const auto *rootItem = qobject_cast<QQuickItem*>(widget.rootObject());
+    QVERIFY(rootItem);
+    const QSizeF preferredSize = rootItem->size();
+
+    auto *popup = rootItem->findChild<QQuickPopup *>("popup");
+    QVERIFY(popup);
+    popup->open();
+    QTRY_VERIFY(popup->isOpened());
+
+    const auto *overlay = QQuickOverlay::overlay(widget.quickWindow());
+    QVERIFY(overlay);
+
+    QTestPrivate::androidCompatibleShow(&window);
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    QCOMPARE(widget.size(), preferredSize.toSize());
+    QCOMPARE(overlay->position(), QPointF(0, 0));
+    QCOMPARE(overlay->size(), widget.size());
+
+    widget.resize((preferredSize * 2).toSize());
+    QCOMPARE(overlay->position(), QPointF(0, 0));
+    QCOMPARE(overlay->size(), widget.size());
+
+    // click outside the popup, make sure it closes
+    QTest::mouseClick(&widget, Qt::LeftButton, {}, QPoint(10, 10));
+    QTRY_VERIFY(!popup->isOpened());
 }
 
 void tst_qquickwidget::controls()
@@ -922,11 +1140,11 @@ void tst_qquickwidget::focusOnClick()
     QVERIFY(text2);
 
     QTest::mouseClick(window, Qt::LeftButton, Qt::KeyboardModifiers(), QPoint(75, 25));
-    QTRY_VERIFY(text1->hasActiveFocus());
+    QTRY_VERIFY_ACTIVE_FOCUS(text1);
     QVERIFY(!text2->hasActiveFocus());
 
     QTest::mouseClick(window, Qt::LeftButton, Qt::KeyboardModifiers(), QPoint(75, 75));
-    QTRY_VERIFY(text2->hasActiveFocus());
+    QTRY_VERIFY_ACTIVE_FOCUS(text2);
     QVERIFY(!text1->hasActiveFocus());
 
 }
@@ -934,6 +1152,9 @@ void tst_qquickwidget::focusOnClick()
 #if QT_CONFIG(graphicsview)
 void tst_qquickwidget::focusOnClickInProxyWidget()
 {
+#ifdef Q_OS_ANDROID
+    QSKIP("Crashes on Android, see QTBUG-139400");
+#endif
     QGraphicsScene scene(0,0,400,400);
 
     QGraphicsView view1(&scene);
@@ -968,7 +1189,7 @@ void tst_qquickwidget::focusOnClickInProxyWidget()
 
     // Click on text1
     QTest::mouseClick(window1, Qt::LeftButton, Qt::KeyboardModifiers(), QPoint(75, 25));
-    QTRY_VERIFY(text1->hasActiveFocus());
+    QTRY_VERIFY_ACTIVE_FOCUS(text1);
     QVERIFY(!text2->hasActiveFocus());
 
 
@@ -979,21 +1200,21 @@ void tst_qquickwidget::focusOnClickInProxyWidget()
 
     QVERIFY(QTest::qWaitForWindowExposed(&view2));
     QWindow *window2 = view2.windowHandle();
-    QVERIFY(window2);
+    QVERIFY(QTest::qWaitForWindowActive(window2));
 
     QTest::mouseClick(window2, Qt::LeftButton, Qt::KeyboardModifiers(), QPoint(300, 300));
     QTRY_VERIFY(!text1->hasActiveFocus());
     QTRY_VERIFY(!text2->hasActiveFocus());
 
     QTest::mouseClick(window2, Qt::LeftButton, Qt::KeyboardModifiers(), QPoint(75, 25));
-    QTRY_VERIFY(text1->hasActiveFocus());
+    QTRY_VERIFY_ACTIVE_FOCUS(text1);
     QVERIFY(!text2->hasActiveFocus());
 }
 #endif
 
 void tst_qquickwidget::focusPreserved()
 {
-    SKIP_IF_NO_WINDOW_ACTIVATION
+    SKIP_IF_NO_WINDOW_ACTIVATION;
     if (QGuiApplication::platformName() == "android")
         QSKIP("Test doesn't exit cleanly on Android and generates many warnings - QTBUG-112696");
 
@@ -1008,6 +1229,16 @@ void tst_qquickwidget::focusPreserved()
     root->setFlag(QQuickItem::ItemHasContents);
     content->setParentItem(root);
 
+    // added content2 and content3 to test more complicated case
+    QScopedPointer<QQuickItem> content2(new QQuickItem());
+    content2->setActiveFocusOnTab(true);
+    content2->setFocus(true);
+    content2->setParentItem(root);
+    QScopedPointer<QQuickItem> content3(new QQuickItem());
+    content3->setActiveFocusOnTab(true);
+    content3->setFocus(true);
+    content3->setParentItem(root);
+
     quick->setGeometry(0, 0, 200, 200);
     quick->show();
     quick->setFocus();
@@ -1015,7 +1246,11 @@ void tst_qquickwidget::focusPreserved()
     QVERIFY(QTest::qWaitForWindowExposed(quick.get()));
     QTRY_VERIFY(quick->hasFocus());
     QTRY_VERIFY(content->hasFocus());
-    QTRY_VERIFY(content->hasActiveFocus());
+    QTRY_VERIFY_ACTIVE_FOCUS(content.get());
+
+    content2->forceActiveFocus();
+    QVERIFY(content2->hasFocus());
+    QVERIFY_ACTIVE_FOCUS(content2.get());
 
     widget->show();
     widget->setFocus();
@@ -1029,10 +1264,89 @@ void tst_qquickwidget::focusPreserved()
     quick->setFocus();
     quick->activateWindow();
     QTRY_VERIFY(quick->hasFocus());
-    QTRY_VERIFY(content->hasFocus());
-    QTRY_VERIFY(content->hasActiveFocus());
+    QTRY_VERIFY(content2->hasFocus());
+    QTRY_VERIFY_ACTIVE_FOCUS(content2.get());
 }
 
+/*
+    Builds a top level T, a native child widget C below it, and a QQuickWidget
+    below C, and returns C. The QQuickWidget is offset inside C, and C inside T,
+    so a window and an offset that belong to different widgets never match.
+
+    Returns nullptr, having failed or skipped the test, if the hierarchy did not
+    come out as described. Callers must return immediately in that case.
+*/
+static QWidget *createNativeParentWithQuickWidget(QWidget *topLevel, QQuickWidget *quickWidget,
+                                                  const QUrl &source)
+{
+    topLevel->setObjectName("topLevel");
+    topLevel->resize(300, 300);
+
+    QWidget *nativeParent = new QWidget(topLevel);
+    nativeParent->setObjectName("nativeParent");
+    nativeParent->setGeometry(50, 60, 200, 200);
+    nativeParent->setAttribute(Qt::WA_NativeWindow);
+
+    quickWidget->setObjectName("quickWidget");
+    quickWidget->setParent(nativeParent);
+    quickWidget->setGeometry(10, 20, 100, 100);
+    quickWidget->setSource(source);
+
+    topLevel->show();
+    if (!QTest::qWaitForWindowExposed(topLevel)) {
+        QTest::qFail("Window was never exposed", __FILE__, __LINE__);
+        return nullptr;
+    }
+
+    if (!nativeParent->windowHandle()
+        || nativeParent->windowHandle() == topLevel->windowHandle()) {
+        QTest::qSkip("This platform does not give native child widgets their own window",
+                     __FILE__, __LINE__);
+        return nullptr;
+    }
+
+    // The QQuickWidget renders to a texture that the repaint manager flushes
+    // against the closest ancestor with a window, which is nativeParent here,
+    // not the top level
+    if (quickWidget->nativeParentWidget() != nativeParent) {
+        QTest::qFail("The QQuickWidget's native parent is not the native child widget",
+                     __FILE__, __LINE__);
+        return nullptr;
+    }
+
+    return nativeParent;
+}
+
+/*
+    QQuickWidgetRenderControl::renderWindow() must name the window that the
+    content is composited into. For a QQuickWidget below a native child widget
+    that is the native child's own window, since QWidgetRepaintManager::flush()
+    and QCALayerBackingStore::flushSubWindow() put the pixels there.
+*/
+void tst_qquickwidget::renderWindowUnderNativeParent()
+{
+    QWidget topLevel;
+    QQuickWidget quickWidget;
+
+    QWidget *nativeParent = createNativeParentWithQuickWidget(&topLevel, &quickWidget,
+                                                              testFileUrl("rectangle.qml"));
+    if (!nativeParent)
+        return;
+
+    QPoint offset;
+    QWindow *renderWindow = QQuickRenderControl::renderWindowFor(quickWidget.quickWindow(), &offset);
+    QVERIFY(renderWindow);
+
+    // Callers add the offset to a position in the returned window, so the two
+    // have to describe the same widget, whichever widget that turns out to be
+    QWidget *renderWidget = QWidget::find(renderWindow->winId());
+    QVERIFY(renderWidget);
+    QCOMPARE(offset, quickWidget.mapTo(renderWidget, QPoint()));
+
+    QCOMPARE(renderWindow, nativeParent->windowHandle());
+}
+
+#if QT_CONFIG(accessibility)
 /*
     Reparenting the QQuickWidget recreates the offscreen QQuickWindow.
     Since the accessible interface that is cached for the QQuickWidget dispatches
@@ -1075,6 +1389,83 @@ void tst_qquickwidget::accessibilityHandlesViewChange()
     (void)iface->child(0);
 }
 
+/*
+QTBUG-130116
+Since the quick widget reports the quick items as its children, then
+the quick items should report the quick widget as their parent.
+*/
+void tst_qquickwidget::accessibleParentOfQuickItems()
+{
+    if (!initAccessibility())
+        QSKIP("This platform does not support accessibility");
+
+    // These lines are copied from accessibilityHandlesViewChange()
+    if (QGuiApplication::platformName() == "offscreen")
+        QSKIP("Doesn't test anything on offscreen platform.");
+
+    QWidget window;
+    window.resize(300, 300);
+
+    QQuickWidget *quickWidget = new QQuickWidget(&window);
+    quickWidget->setSource(testFileUrl("button.qml"));
+
+    window.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+
+    auto *rootItem = quickWidget->rootObject();
+    QVERIFY(rootItem);
+
+    QQuickButton *button = rootItem->findChild<QQuickButton *>("button");
+    QVERIFY(button);
+
+    QAccessibleInterface *iface_quickWidget = QAccessible::queryAccessibleInterface(quickWidget);
+    QVERIFY(iface_quickWidget);
+
+    QAccessibleInterface *iface_button = QAccessible::queryAccessibleInterface(button);
+    QVERIFY(iface_button);
+
+    QAccessibleInterface *iface_popup = iface_button->parent();
+    QVERIFY(iface_popup);
+    QVERIFY(iface_popup->parent());
+    QCOMPARE(iface_popup->parent(), iface_quickWidget);
+}
+
+/*
+    QAccessibleWidget::window() answers with the closest native window, while
+    QAccessibleQuickItem::window() goes through renderWindow(). The two must
+    agree, or a platform bridge that asks which native view vends an element
+    gets one answer for the QQuickWidget and another for the items inside it.
+*/
+void tst_qquickwidget::accessibleWindowUnderNativeParent()
+{
+    if (!initAccessibility())
+        QSKIP("This platform does not support accessibility");
+    if (QGuiApplication::platformName() == "offscreen")
+        QSKIP("Doesn't test anything on offscreen platform.");
+
+    QWidget topLevel;
+    QQuickWidget quickWidget;
+
+    QWidget *nativeParent = createNativeParentWithQuickWidget(&topLevel, &quickWidget,
+                                                              testFileUrl("accessibleRectangle.qml"));
+    if (!nativeParent)
+        return;
+
+    QAccessibleInterface *quickWidgetIface = QAccessible::queryAccessibleInterface(&quickWidget);
+    QVERIFY(quickWidgetIface);
+    QCOMPARE(quickWidgetIface->window(), nativeParent->windowHandle());
+
+    QQuickItem *rect = quickWidget.rootObject()->findChild<QQuickItem *>("rect");
+    QVERIFY(rect);
+    QAccessibleInterface *rectIface = QAccessible::queryAccessibleInterface(rect);
+    QVERIFY(rectIface);
+
+    // The item is inside the QQuickWidget, so the window that presents the one
+    // presents the other
+    QCOMPARE(rectIface->window(), quickWidgetIface->window());
+}
+#endif
+
 class CreateDestroyWidget : public QWidget
 {
 public:
@@ -1107,6 +1498,121 @@ void tst_qquickwidget::dontRecreateRootElementOnWindowChange()
     QCoreApplication::sendEvent(quickWidget, &event);
 
     QVERIFY(!wasDestroyed);
+}
+
+void tst_qquickwidget::preserveClearColorOnWindowChange()
+{
+    auto *quickWidget = new QQuickWidget();
+    quickWidget->setSource(testFileUrl("rectangle.qml"));
+
+    QColor color("#F00BAA");
+    quickWidget->setClearColor(color);
+
+    QVERIFY(quickWidget->quickWindow()->color() == color);
+
+    QEvent event(QEvent::WindowChangeInternal);
+    QCoreApplication::sendEvent(quickWidget, &event);
+
+    QVERIFY(quickWidget->quickWindow()->color() == color);
+}
+
+void tst_qquickwidget::setInitialProperties()
+{
+    QQuickWidget widget;
+    widget.setInitialProperties({{"z", 4}, {"width", 100}});
+    widget.setSource(testFileUrl("resizemodeitem.qml"));
+    widget.show();
+    QObject *rootObject = widget.rootObject();
+    QVERIFY(rootObject);
+    QCOMPARE(rootObject->property("z").toInt(), 4);
+    QCOMPARE(rootObject->property("width").toInt(), 100);
+}
+
+void tst_qquickwidget::fromModuleCtor()
+{
+    QQuickWidget widget("QtQuick", "Rectangle");
+    // creation is always synchronous for C++ defined types, so we don't need _TRY
+    QObject *rootObject = widget.rootObject();
+    QVERIFY(rootObject);
+    QCOMPARE(rootObject->metaObject()->className(), "QQuickRectangle");
+}
+
+void tst_qquickwidget::loadFromModule_data()
+{
+    QTest::addColumn<QString>("module");
+    QTest::addColumn<QString>("typeName");
+    QTest::addColumn<QUrl>("url");
+    QTest::addColumn<QQuickWidget::Status>("status");
+
+    QTest::addRow("Item") << u"QtQuick"_s << u"Item"_s << QUrl() << QQuickWidget::Ready;
+    QTest::addRow("composite") << u"QQuickWidgetTestHelpers"_s << u"TestQml"_s << QUrl("qrc:/qt/qml/QQuickWidgetTestHelpers/data/TestQml.qml") << QQuickWidget::Ready;
+    QTest::addRow("nonexistent") << u"missing"_s << u"Type"_s << QUrl() << QQuickWidget::Error;
+}
+
+void tst_qquickwidget::loadFromModule()
+{
+    QFETCH(QString, module);
+    QFETCH(QString, typeName);
+    QFETCH(QUrl, url);
+    QFETCH(QQuickWidget::Status, status);
+
+    QQuickWidget widget;
+    widget.loadFromModule(module, typeName);
+    QTRY_COMPARE(widget.status(), status);
+    QCOMPARE(widget.source(), url);
+    if (status == QQuickWidget::Ready) {
+        QPointer<QObject> rootObject = widget.rootObject();
+        QVERIFY(rootObject);
+        // loadFromModule sets the source and deletes
+        // any object that was previously created
+        widget.loadFromModule("QtTest", "SignalSpy");
+        QVERIFY(rootObject.isNull());
+        QCOMPARE(widget.status(), QQuickWidget::Ready);
+        QVERIFY(widget.source().toString().endsWith("SignalSpy.qml"));
+    }
+}
+
+void tst_qquickwidget::nonItem()
+{
+    QQuickWidget widget;
+    QTest::ignoreMessage(QtDebugMsg, "Completed");
+    QTest::ignoreMessage(
+            QtWarningMsg,
+            QRegularExpression(
+                    "QQuickWidget only supports loading of root objects "
+                    "that derive from QQuickItem"));
+    widget.setSource(testFileUrl("nonItem.qml"));
+    QCOMPARE(widget.status(), QQuickWidget::Error);
+    QCOMPARE(widget.rootObject(), nullptr);
+}
+
+void tst_qquickwidget::focusTabFence()
+{
+    QWidget widget;
+    auto *quickWidget = new QQuickWidget;
+    quickWidget->setSource(testFileUrl("itemWithPopupInside.qml"));
+    quickWidget->setParent(&widget);
+    widget.show();
+    QVERIFY(QTest::qWaitForWindowExposed(widget.windowHandle()));
+
+    auto *textField1 = quickWidget->rootObject()->findChild<QQuickItem *>("textField1");
+    QVERIFY(textField1);
+    auto *textField2 = quickWidget->rootObject()->findChild<QQuickItem *>("textField2");
+    QVERIFY(textField2);
+
+    widget.setFocus();
+    QTRY_VERIFY(widget.hasFocus());
+    textField1->forceActiveFocus();
+    QTRY_COMPARE(quickWidget->quickWindow()->activeFocusItem(), textField1);
+
+    QTest::keyClick(quickWidget, Qt::Key_Tab);
+    QTRY_COMPARE(quickWidget->quickWindow()->activeFocusItem(), textField2);
+    QTest::keyClick(quickWidget, Qt::Key_Tab);
+    QTRY_COMPARE(quickWidget->quickWindow()->activeFocusItem(), textField1);
+    QTest::keyClick(quickWidget, Qt::Key_Tab);
+    QTRY_COMPARE(quickWidget->quickWindow()->activeFocusItem(), textField2);
+    QTest::keyClick(quickWidget, Qt::Key_Tab);
+    QTRY_COMPARE(quickWidget->quickWindow()->activeFocusItem(), textField1);
 }
 
 QTEST_MAIN(tst_qquickwidget)

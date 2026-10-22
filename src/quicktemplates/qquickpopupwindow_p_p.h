@@ -1,5 +1,6 @@
 // Copyright (C) 2024 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+// Qt-Security score:significant reason:default
 
 #ifndef QQUICKPOPUPWINDOW_P_P_H
 #define QQUICKPOPUPWINDOW_P_P_H
@@ -30,7 +31,6 @@ class Q_QUICKTEMPLATES2_EXPORT QQuickPopupWindow : public QQuickWindowQmlImpl
 
 public:
     explicit QQuickPopupWindow(QQuickPopup *popup, QWindow *parent = nullptr);
-    ~QQuickPopupWindow();
     QQuickPopup *popup() const;
 
 protected:
@@ -41,13 +41,15 @@ protected:
 
 private:
     void windowChanged(QWindow *window);
-    QPoint global2Local(const QPoint& pos) const;
+    std::optional<QPoint> global2Local(const QPoint &pos) const;
     void parentWindowXChanged(int newX);
     void parentWindowYChanged(int newY);
     void handlePopupPositionChangeFromWindowSystem(const QPoint &pos);
     void implicitWidthChanged();
     void implicitHeightChanged();
-
+#if QT_CONFIG(wayland)
+    QRect parentControlGeometry() const;
+#endif
     Q_DISABLE_COPY(QQuickPopupWindow)
     Q_DECLARE_PRIVATE(QQuickPopupWindow)
 };

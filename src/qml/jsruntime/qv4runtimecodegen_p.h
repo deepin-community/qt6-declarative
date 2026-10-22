@@ -1,5 +1,6 @@
 // Copyright (C) 2017 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+// Qt-Security score:significant
 #ifndef QV4RUNTIMECODEGEN_P_H
 #define QV4RUNTIMECODEGEN_P_H
 
@@ -28,10 +29,9 @@ public:
         , engine(engine)
     {}
 
-    void generateFromFunctionExpression(const QString &fileName,
-                                        const QString &sourceCode,
-                                        QQmlJS::AST::FunctionExpression *ast,
-                                        Compiler::Module *module);
+    void generateFromFunctionExpression(
+            const QString &sourceCode, QQmlJS::AST::FunctionExpression *ast,
+            Compiler::Module *module);
 
     void throwSyntaxError(const QQmlJS::SourceLocation &loc, const QString &detail) override;
     void throwReferenceError(const QQmlJS::SourceLocation &loc, const QString &detail) override;

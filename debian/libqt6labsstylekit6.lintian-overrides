@@ -1,0 +1,8 @@
+# This dependency has been added to track external packages building against
+# our private headers. It is ok if internal packages depend on the ABI one.
+libqt6labsstylekit6: symbols-declares-dependency-on-other-package qt6-declarative-private-abi *
+
+# The following is a private library installed into a public path
+libqt6labsstylekit6: ships-undeclared-shared-library libQt6LabsStyleKitImpl 6 for usr/lib/*/libQt6LabsStyleKitImpl.so.6.* [shlibs]
+
+libqt6labsstylekit6: shared-library-symbols-not-tracked libQt6LabsStyleKitImpl 6 for usr/lib/*/libQt6LabsStyleKitImpl.so.6.* [symbols]

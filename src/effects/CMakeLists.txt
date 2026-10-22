@@ -5,41 +5,48 @@
 ## QuickEffects Module:
 #####################################################################
 
-qt_internal_add_qml_module(QuickEffectsPrivate
+set_source_files_properties(BlurItem.qml PROPERTIES QT_QML_INTERNAL_TYPE TRUE)
+
+qt_internal_add_qml_module(QuickEffects
     URI "QtQuick.Effects"
     VERSION "${PROJECT_VERSION}"
     PLUGIN_TARGET effectsplugin
     CLASS_NAME QtQuickEffectsPlugin
     DEPENDENCIES
         QtQuick/auto
-    INTERNAL_MODULE
     SOURCES
         qquickmultieffect.cpp qquickmultieffect_p.h qquickmultieffect_p_p.h
         qgfxsourceproxy.cpp qgfxsourceproxy_p.h
         qtquickeffectsglobal_p.h
+        qquickrectangularshadow.cpp qquickrectangularshadow_p.h qquickrectangularshadow_p_p.h
+    QML_FILES
+        BlurItem.qml
     DEFINES
         QT_NO_INTEGER_EVENT_COORDINATES
         QT_NO_URL_CAST_FROM_STRING
+    LIBRARIES
+        Qt::CorePrivate
+        Qt::GuiPrivate
+        Qt::QmlPrivate
+        Qt::QuickPrivate
     PUBLIC_LIBRARIES
+        Qt::Core
+        Qt::Gui
+        Qt::Qml
+        Qt::Quick
+    PRIVATE_MODULE_INTERFACE
         Qt::CorePrivate
         Qt::GuiPrivate
         Qt::QmlPrivate
         Qt::QuickPrivate
     )
 
-qt_internal_add_resource(QuickEffectsPrivate "effects"
-    PREFIX
-        "/"
-    FILES
-        "data/BlurItem.qml"
-)
-
-qt_internal_extend_target(QuickEffectsPrivate CONDITION MSVC
+qt_internal_extend_target(QuickEffects CONDITION MSVC
     DEFINES
         _CRT_SECURE_NO_WARNINGS
 )
 
-qt_internal_extend_target(QuickEffectsPrivate CONDITION EXISTS "qqml_enable_gcov"
+qt_internal_extend_target(QuickEffects CONDITION EXISTS "qqml_enable_gcov"
     LIBRARIES
         gcov
     COMPILE_OPTIONS
@@ -57,7 +64,16 @@ set(EFFECT_SHADER_ARGS
             "/"
 )
 
-qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders1"
+qt_internal_add_shaders(QuickEffects "rectangularshadow_shaders1"
+    ${EFFECT_SHADER_ARGS}
+    BATCHABLE
+    FILES
+        "data/shaders/rectangularshadow.vert"
+        "data/shaders/rectangularshadow.frag"
+        "data/shaders/rectangularshadow4r.frag"
+)
+
+qt_internal_add_shaders(QuickEffects "multieffect_shaders1"
     ${EFFECT_SHADER_ARGS}
     BATCHABLE
     FILES
@@ -72,7 +88,7 @@ qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders1"
 # s = Shadow
 # [n] = Amount of blur items used
 
-qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders2"
+qt_internal_add_shaders(QuickEffects "multieffect_shaders2"
     ${EFFECT_SHADER_ARGS}
     BATCHABLE
     FILES
@@ -81,7 +97,7 @@ qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders2"
         "data/shaders/multieffect_c.vert.qsb"
 )
 
-qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders3"
+qt_internal_add_shaders(QuickEffects "multieffect_shaders3"
     ${EFFECT_SHADER_ARGS}
     BATCHABLE
     FILES
@@ -92,7 +108,7 @@ qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders3"
         SHADOW
 )
 
-qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders4"
+qt_internal_add_shaders(QuickEffects "multieffect_shaders4"
     ${EFFECT_SHADER_ARGS}
     FILES
         "data/shaders/multieffect.frag"
@@ -100,7 +116,7 @@ qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders4"
         "data/shaders/multieffect_c0.frag.qsb"
 )
 
-qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders5"
+qt_internal_add_shaders(QuickEffects "multieffect_shaders5"
     ${EFFECT_SHADER_ARGS}
     FILES
         "data/shaders/multieffect.frag"
@@ -111,7 +127,7 @@ qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders5"
 )
 
 # Special shaders for non-blurred shadows (cs0 and cms0)
-qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders6"
+qt_internal_add_shaders(QuickEffects "multieffect_shaders6"
     ${EFFECT_SHADER_ARGS}
     FILES
         "data/shaders/multieffect.frag"
@@ -122,7 +138,7 @@ qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders6"
         BL0
 )
 
-qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders7"
+qt_internal_add_shaders(QuickEffects "multieffect_shaders7"
     ${EFFECT_SHADER_ARGS}
     FILES
         "data/shaders/multieffect.frag"
@@ -135,7 +151,7 @@ qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders7"
 )
 
 # Shaders for different blur levels
-qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders8"
+qt_internal_add_shaders(QuickEffects "multieffect_shaders8"
     ${EFFECT_SHADER_ARGS}
     FILES
         "data/shaders/multieffect.frag"
@@ -146,7 +162,7 @@ qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders8"
         BL1
 )
 
-qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders9"
+qt_internal_add_shaders(QuickEffects "multieffect_shaders9"
     ${EFFECT_SHADER_ARGS}
     FILES
         "data/shaders/multieffect.frag"
@@ -157,7 +173,7 @@ qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders9"
         BL1
 )
 
-qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders10"
+qt_internal_add_shaders(QuickEffects "multieffect_shaders10"
     ${EFFECT_SHADER_ARGS}
     FILES
         "data/shaders/multieffect.frag"
@@ -169,7 +185,7 @@ qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders10"
         BL1
 )
 
-qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders11"
+qt_internal_add_shaders(QuickEffects "multieffect_shaders11"
     ${EFFECT_SHADER_ARGS}
     FILES
         "data/shaders/multieffect.frag"
@@ -181,7 +197,7 @@ qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders11"
         BL1
 )
 
-qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders12"
+qt_internal_add_shaders(QuickEffects "multieffect_shaders12"
     ${EFFECT_SHADER_ARGS}
     FILES
         "data/shaders/multieffect.frag"
@@ -193,7 +209,7 @@ qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders12"
         BL1
 )
 
-qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders13"
+qt_internal_add_shaders(QuickEffects "multieffect_shaders13"
     ${EFFECT_SHADER_ARGS}
     FILES
         "data/shaders/multieffect.frag"
@@ -207,7 +223,7 @@ qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders13"
 )
 
 # level 2
-qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders14"
+qt_internal_add_shaders(QuickEffects "multieffect_shaders14"
     ${EFFECT_SHADER_ARGS}
     FILES
         "data/shaders/multieffect.frag"
@@ -219,7 +235,7 @@ qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders14"
         BL2
 )
 
-qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders15"
+qt_internal_add_shaders(QuickEffects "multieffect_shaders15"
     ${EFFECT_SHADER_ARGS}
     FILES
         "data/shaders/multieffect.frag"
@@ -231,7 +247,7 @@ qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders15"
         BL2
 )
 
-qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders16"
+qt_internal_add_shaders(QuickEffects "multieffect_shaders16"
     ${EFFECT_SHADER_ARGS}
     FILES
         "data/shaders/multieffect.frag"
@@ -244,7 +260,7 @@ qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders16"
         BL2
 )
 
-qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders17"
+qt_internal_add_shaders(QuickEffects "multieffect_shaders17"
     ${EFFECT_SHADER_ARGS}
     FILES
         "data/shaders/multieffect.frag"
@@ -257,7 +273,7 @@ qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders17"
         BL2
 )
 
-qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders18"
+qt_internal_add_shaders(QuickEffects "multieffect_shaders18"
     ${EFFECT_SHADER_ARGS}
     FILES
         "data/shaders/multieffect.frag"
@@ -270,7 +286,7 @@ qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders18"
         BL2
 )
 
-qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders19"
+qt_internal_add_shaders(QuickEffects "multieffect_shaders19"
     ${EFFECT_SHADER_ARGS}
     FILES
         "data/shaders/multieffect.frag"
@@ -285,7 +301,7 @@ qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders19"
 )
 
 # level 3
-qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders20"
+qt_internal_add_shaders(QuickEffects "multieffect_shaders20"
     ${EFFECT_SHADER_ARGS}
     FILES
         "data/shaders/multieffect.frag"
@@ -298,7 +314,7 @@ qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders20"
         BL3
 )
 
-qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders21"
+qt_internal_add_shaders(QuickEffects "multieffect_shaders21"
     ${EFFECT_SHADER_ARGS}
     FILES
         "data/shaders/multieffect.frag"
@@ -311,7 +327,7 @@ qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders21"
         BL3
 )
 
-qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders22"
+qt_internal_add_shaders(QuickEffects "multieffect_shaders22"
     ${EFFECT_SHADER_ARGS}
     FILES
         "data/shaders/multieffect.frag"
@@ -325,7 +341,7 @@ qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders22"
         BL3
 )
 
-qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders23"
+qt_internal_add_shaders(QuickEffects "multieffect_shaders23"
     ${EFFECT_SHADER_ARGS}
     FILES
         "data/shaders/multieffect.frag"
@@ -339,7 +355,7 @@ qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders23"
         BL3
 )
 
-qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders24"
+qt_internal_add_shaders(QuickEffects "multieffect_shaders24"
     ${EFFECT_SHADER_ARGS}
     FILES
         "data/shaders/multieffect.frag"
@@ -353,7 +369,7 @@ qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders24"
         BL3
 )
 
-qt_internal_add_shaders(QuickEffectsPrivate "multieffect_shaders25"
+qt_internal_add_shaders(QuickEffects "multieffect_shaders25"
     ${EFFECT_SHADER_ARGS}
     FILES
         "data/shaders/multieffect.frag"

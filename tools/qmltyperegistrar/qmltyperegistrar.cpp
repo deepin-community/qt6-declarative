@@ -112,6 +112,11 @@ int main(int argc, char **argv)
     mergeQtConf.setFlags(QCommandLineOption::HiddenFromHelp);
     parser.addOption(mergeQtConf);
 
+    QCommandLineOption mergeQtConfPaths("merge-qt-conf-merged-paths"_L1);
+    mergeQtConfPaths.setValueName("qtconf final paths list"_L1);
+    mergeQtConfPaths.setFlags(QCommandLineOption::HiddenFromHelp);
+    parser.addOption(mergeQtConfPaths);
+
     parser.addPositionalArgument(QStringLiteral("[MOC generated json file]"),
                                  QStringLiteral("MOC generated json output."));
 
@@ -121,8 +126,8 @@ int main(int argc, char **argv)
 
     parser.process(arguments);
 
-    if (parser.isSet(mergeQtConf)) {
-        return mergeQtConfFiles(parser.value(mergeQtConf));
+    if (parser.isSet(mergeQtConf) && parser.isSet(mergeQtConfPaths)) {
+        return mergeQtConfFiles(parser.value(mergeQtConf), parser.value(mergeQtConfPaths));
     }
 
     const QString module = parser.value(importNameOption);
@@ -151,6 +156,15 @@ int main(int argc, char **argv)
     if (!processor.processTypes(files))
         return EXIT_FAILURE;
 
+    if (parser.isSet(extract)) {
+        if (!parser.isSet(outputOption)) {
+            error(module) << "The output file name must be provided";
+            return EXIT_FAILURE;
+        }
+        QString baseName = parser.value(outputOption);
+        return QmlTypeRegistrar::runExtract(baseName, parser.value(namespaceOption), processor);
+    }
+
     processor.postProcessTypes();
 
     if (!parser.isSet(jsroot)) {
@@ -160,15 +174,6 @@ int main(int argc, char **argv)
     }
 
     processor.postProcessForeignTypes();
-
-    if (parser.isSet(extract)) {
-        if (!parser.isSet(outputOption)) {
-            error(module) << "The output file name must be provided";
-            return EXIT_FAILURE;
-        }
-        QString baseName = parser.value(outputOption);
-        return QmlTypeRegistrar::runExtract(baseName, processor);
-    }
 
     QmlTypeRegistrar typeRegistrar;
     typeRegistrar.setIncludes(processor.includes());
@@ -181,7 +186,7 @@ int main(int argc, char **argv)
 
     typeRegistrar.setModuleVersions(moduleVersion, pastMajorVersions,
                                     parser.isSet(followForeignVersioningOption));
-    typeRegistrar.setTypes(processor.types(), processor.foreignTypes());
+    typeRegistrar.setTypes(processor.types(), processor.foreignTypes(), processor.opaqueTypes());
 
     if (!parser.isSet(jsroot)) {
         if (module.isEmpty()) {
@@ -209,7 +214,7 @@ int main(int argc, char **argv)
     typeRegistrar.setReferencedTypes(processor.referencedTypes());
     typeRegistrar.setUsingDeclarations(processor.usingDeclarations());
     const QString qmltypes = parser.value(pluginTypesOption);
-    if (!typeRegistrar.generatePluginTypes(qmltypes)) {
+    if (!typeRegistrar.generatePluginTypes(qmltypes, parser.isSet(jsroot))) {
         error(qmltypes) << "Cannot generate qmltypes file";
         return EXIT_FAILURE;
     }

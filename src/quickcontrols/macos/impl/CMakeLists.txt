@@ -3,18 +3,41 @@
 
 set(qml_files
     "CheckIndicator.qml"
+    "CopyAction.qml"
+    "CutAction.qml"
+    "DeleteAction.qml"
+    "PasteAction.qml"
+    "RedoAction.qml"
+    "SelectAllAction.qml"
+    "SliderHandle.qml"
     "SwitchHandle.qml"
     "SwitchIndicator.qml"
+    "TextEditingContextMenu.qml"
+    "UndoAction.qml"
+)
+
+set_source_files_properties(
+    CopyAction.qml
+    CutAction.qml
+    DeleteAction.qml
+    PasteAction.qml
+    RedoAction.qml
+    SelectAllAction.qml
+    TextEditingContextMenu.qml
+    UndoAction.qml
+    PROPERTIES
+        QT_QML_SOURCE_VERSIONS "6.11"
 )
 
 qt_internal_add_qml_module(QuickControls2MacOSStyleImpl
     URI "QtQuick.Controls.macOS.impl"
     VERSION "${PROJECT_VERSION}"
-    PAST_MAJOR_VERSIONS 6
+    PAST_MAJOR_VERSIONS 2
     CLASS_NAME QtQuickControls2macOSStyleImplPlugin
     DEPENDENCIES
         QtQuick/auto
     PLUGIN_TARGET qtquickcontrols2macosstyleimplplugin
+    NO_PRIVATE_MODULE
     QML_FILES
         ${qml_files}
     DEFINES

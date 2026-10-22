@@ -1,5 +1,6 @@
 // Copyright (C) 2016 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+// Qt-Security score:significant reason:default
 
 #include <QtQuick/private/qquickapplication_p.h>
 
@@ -62,21 +63,23 @@ QT_BEGIN_NAMESPACE
 */
 
 /*!
-    \qmlproperty Qt::ApplicationState Application::state
+    \qmlproperty enumeration Application::state
 
     This property represents the current state of the application.
+
+    See the C++ \l Qt::ApplicationState enum for possible values.
 
     \qml
     Timer {
         interval: 1000; repeat: true
-        active: Application.state === Qt.Qt.ApplicationActive
+        active: Application.state === Qt.ApplicationActive
         onTriggered: imageFetcher.fetchLatestImages()
     }
     \endqml
 */
 
 /*!
-    \qmlproperty Qt::LayoutDirection Application::layoutDirection
+    \qmlproperty enumeration Application::layoutDirection
 
     This read-only property can be used to query the default layout
     direction of the application. On system start-up, the default layout
@@ -85,6 +88,8 @@ QT_BEGIN_NAMESPACE
     are read from right to left, and \c Qt.LeftToRight where the reading
     direction flows from left to right. You can bind to this property to
     customize your application layouts to support both layout directions.
+
+    See the C++ \l Qt::LayoutDirection enum for possible values.
 
     \qml
     RowLayout {
@@ -101,14 +106,13 @@ QT_BEGIN_NAMESPACE
  */
 
 /*!
-    \qmlproperty QFont Application::font
+    \qmlproperty font Application::font
     Returns the default application font as returned by
     \l QGuiApplication::font().
 */
 
-
 /*!
-    \qmlproperty QString Application::displayName
+    \qmlproperty string Application::displayName
 
     This property represents the application display name set on the
     QGuiApplication instance. This property can be written to in order to set
@@ -124,7 +128,7 @@ QT_BEGIN_NAMESPACE
 */
 
 /*!
-    \qmlproperty QQmlListProperty<QQuickScreenInfo> Application::screens
+    \qmlproperty list<Screen> Application::screens
 
     An array containing the descriptions of all connected screens. The
     elements of the array are objects with the same properties as the
@@ -142,34 +146,34 @@ QT_BEGIN_NAMESPACE
 */
 
 /*!
-    \qmlproperty QStringList Application::arguments
+    \qmlproperty list<string> Application::arguments
 
     This is a string list of the arguments the executable was invoked with.
  */
 
 /*!
-    \qmlproperty QString Application::name
+    \qmlproperty string Application::name
 
     This is the application name set on the QCoreApplication instance. This
     property can be written to in order to set the application name.
  */
 
 /*!
-    \qmlproperty QString Application::version
+    \qmlproperty string Application::version
 
     This is the application version set on the QCoreApplication instance. This
     property can be written to in order to set the application version.
  */
 
 /*!
-    \qmlproperty QString Application::organization
+    \qmlproperty string Application::organization
 
     This is the organization name set on the QCoreApplication instance.
     This property can be written to in order to set the organization name.
  */
 
 /*!
-    \qmlproperty QString Application::domain
+    \qmlproperty string Application::domain
 
     This is the organization domain set on the QCoreApplication instance.
     This property can be written to in order to set the organization domain.
@@ -276,31 +280,40 @@ void QQuickApplication::setDisplayName(const QString &displayName)
     return QGuiApplication::setApplicationDisplayName(displayName);
 }
 
-qsizetype screens_count(QQmlListProperty<QQuickScreenInfo> *prop)
-{
-    return static_cast<QVector<QQuickScreenInfo *> *>(prop->data)->size();
-}
-
-QQuickScreenInfo *screens_at(QQmlListProperty<QQuickScreenInfo> *prop, qsizetype idx)
-{
-    return static_cast<QVector<QQuickScreenInfo *> *>(prop->data)->at(idx);
-}
-
 QQmlListProperty<QQuickScreenInfo> QQuickApplication::screens()
 {
-    return QQmlListProperty<QQuickScreenInfo>(this,
-        const_cast<QVector<QQuickScreenInfo *> *>(&m_screens), &screens_count, &screens_at);
+    using screens_type = decltype(m_screens);
+
+    auto screens_count = [](QQmlListProperty<QQuickScreenInfo> *prop) -> qsizetype
+    {
+        return static_cast<screens_type *>(prop->data)->size();
+    };
+
+    auto screens_at = [](QQmlListProperty<QQuickScreenInfo> *prop, qsizetype idx) -> QQuickScreenInfo *
+    {
+        return static_cast<screens_type *>(prop->data)->at(idx).get();
+    };
+
+    return QQmlListProperty<QQuickScreenInfo>(this, &m_screens, screens_count, screens_at);
 }
 
 void QQuickApplication::updateScreens()
 {
     const QList<QScreen *> screenList = QGuiApplication::screens();
-    m_screens.resize(screenList.size());
-    for (int i = 0; i < screenList.size(); ++i) {
-        if (!m_screens[i])
-            m_screens[i] = new QQuickScreenInfo(this);
-        m_screens[i]->setWrappedScreen(screenList[i]);
+
+    const qsizetype oldSize = m_screens.size();
+    const qsizetype newSize = screenList.size();
+
+    m_screens.resize(newSize);
+
+    for (qsizetype i = oldSize;  i < newSize; ++i) {
+        // initialize new elements
+        m_screens[i] = std::make_unique<QQuickScreenInfo>(this);
     }
+
+    for (qsizetype i = 0; i < newSize; ++i)
+        m_screens[i]->setWrappedScreen(screenList[i]);
+
     emit screensChanged();
 }
 

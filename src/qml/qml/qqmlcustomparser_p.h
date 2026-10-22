@@ -1,5 +1,6 @@
 // Copyright (C) 2016 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+// Qt-Security score:significant
 
 #ifndef QQMLCUSTOMPARSER_H
 #define QQMLCUSTOMPARSER_H
@@ -43,10 +44,14 @@ public:
     void clearErrors();
     Flags flags() const { return m_flags; }
 
-    virtual void verifyBindings(const QQmlRefPointer<QV4::ExecutableCompilationUnit> &, const QList<const QV4::CompiledData::Binding *> &) = 0;
-    virtual void applyBindings(QObject *, const QQmlRefPointer<QV4::ExecutableCompilationUnit> &, const QList<const QV4::CompiledData::Binding *> &) = 0;
+    virtual void verifyBindings(
+            const QQmlRefPointer<QV4::CompiledData::CompilationUnit> &,
+            const QList<const QV4::CompiledData::Binding *> &) = 0;
+    virtual void applyBindings(
+            QObject *, const QQmlRefPointer<QV4::ExecutableCompilationUnit> &,
+            const QList<const QV4::CompiledData::Binding *> &) = 0;
 
-    QVector<QQmlError> errors() const { return exceptions; }
+    QList<QQmlError> errors() const { return exceptions; }
 
 protected:
     void error(const QV4::CompiledData::Binding *binding, const QString& description)
@@ -58,9 +63,10 @@ protected:
     int evaluateEnum(const QString &, bool *ok) const;
 
     const QMetaObject *resolveType(const QString&) const;
+    QQmlTypeLoader *typeLoader() const;
 
 private:
-    QVector<QQmlError> exceptions;
+    QList<QQmlError> exceptions;
     QQmlEnginePrivate *engine;
     const QQmlPropertyValidator *validator;
     Flags m_flags;

@@ -1,0 +1,9 @@
+Document: qt6-qtqmlnetwork-manual
+Title: Qt 6 Qt QML Network
+Author: The Qt Company Ltd
+Abstract: This is the HTML documentation for Qt 6 Qt QML Network
+Section: Programming/C++
+
+Format: HTML
+Index: /usr/share/doc/qt6-declarative-doc-html/html/qtqmlnetwork/qtqmlnetwork.index
+Files: /usr/share/doc/qt6-declarative-doc-html/html/qtqmlnetwork/*.html

@@ -2,8 +2,9 @@
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GFDL-1.3-no-invariants-only
 /*!
 \page qtqml-typesystem-valuetypes.html
+\meta {keywords} {qmltopic}
 \title QML Value Types
-\brief Description of QML value types
+\brief Description of QML value types.
 
 QML supports built-in and custom value types.
 
@@ -47,7 +48,6 @@ document, with the following exceptions:
 \list
   \li \c void, which marks the absence of a value
   \li \c list must be used in conjunction with an object or value type as element
-  \li \c enumeration cannot be used directly as the enumeration must be defined by a registered QML object type
 \endlist
 
 \section2 Built-in Value Types Provided By The QML Language
@@ -238,10 +238,26 @@ property is only invoked when the property is reassigned to a different object v
     \qml
         var message = "There are %1 items"
         var count = 20
-        console.log(message.arg(count))
+        console.log(message.arg(count))  // "There are 20 items"
     \endqml
 
-    The example above prints "There are 20 items".
+    \since 6.12
+    The \c {arg()} method also supports multiple arguments, allowing you to
+    replace multiple placeholders in a single call:
+
+    \qml
+        var message = "%1 of %2 files copied. Errors: %3"
+        console.log(message.arg(5, 7, 0))  // "5 of 7 files copied. Errors: 0"
+    \endqml
+
+    Using multiple arguments is more efficient than chaining \c {arg()} calls
+    and protects against issues when arguments themselves contain placeholders:
+
+    \qml
+        var result = "%1 %2".arg("%1f", "Hello")  // "%1f Hello" (correct)
+        // Compare with chained calls:
+        var result = "%1 %2".arg("%1f").arg("Hello")  // "Hellof %2" (incorrect)
+    \endqml
 
     The QML string value type supports most of the ECMAScript string features,
     such as template (string) literals, string interpolation, multi-line
@@ -549,58 +565,10 @@ property is only invoked when the property is reassigned to a different object v
 */
 
 /*!
-    \qmlvaluetype enumeration
-    \ingroup qmlvaluetypes
-    \brief a named enumeration value.
+   \qmlvaluetype regex
+   \ingroup qmlvaluetypes
+   \internal
+   \brief Represents regular expressions.
 
-    The \c enumeration type refers to a named enumeration value.
-
-    Each named value can be referred to as \c {<Type>.<value>}. For
-    example, the \l Text type has an \c AlignRight enumeration value:
-
-    \qml
-    Text { horizontalAlignment: Text.AlignRight }
-    \endqml
-
-    (For backwards compatibility, the enumeration value may also be
-    specified as a string, e.g. "AlignRight". This form is not
-    recommended for new code.)
-
-    When integrating with C++, note that any \c enum value
-    \l{qtqml-cppintegration-data.html}{passed into QML from C++} is automatically
-    converted into an \c enumeration value, and vice-versa.
-
-    This value type is provided by the QML language.  Some enumeration values
-    are provided by the QtQuick import.
-
-    \section1 Using the enumeration Type in QML
-
-    The \c enumeration type is a representation of a C++ \c enum type. It is
-    not possible to refer to the \c enumeration type in QML itself; instead, the
-    \l int or \l var types can be used when referring to \c enumeration values
-    from QML code.
-
-    For example:
-
-    \qml
-    import QtQuick 2.0
-
-    Item {
-        // refer to Text.AlignRight using an int type
-        property int enumValue: textItem.horizontalAlignment
-
-        signal valueEmitted(int someValue)
-
-        Text {
-            id: textItem
-            horizontalAlignment: Text.AlignRight
-        }
-
-        // emit valueEmitted() signal, which expects an int, with Text.AlignRight
-        Component.onCompleted: valueEmitted(Text.AlignRight)
-    }
-    \endqml
-
-    \sa {QML Value Types}
-    \sa {qtqml-syntax-objectattributes.html#enumeration-attributes}{Enumeration Attributes}
+   \sa {QML Value Types}
 */

@@ -1,9 +1,14 @@
 // Copyright (C) 2022 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only WITH Qt-GPL-exception-1.0
+// Qt-Security score:significant
 
 #include "qqmljsutils_p.h"
 #include "qqmljstyperesolver_p.h"
 #include "qqmljsscopesbyid_p.h"
+
+#include <QtCore/qvarlengtharray.h>
+#include <QtCore/qdir.h>
+#include <QtCore/qdiriterator.h>
 
 #include <algorithm>
 
@@ -29,8 +34,7 @@ resolveAlias(ScopeForId scopeForId, const QQmlJSMetaProperty &property,
 
     // TODO: one could optimize the generated alias code for aliases pointing to aliases
     //  e.g., if idA.myAlias -> idB.myAlias2 -> idC.myProp, then one could directly generate
-    //  idA.myProp as pointing to idC.myProp.
-    //  This gets complicated when idB.myAlias is in a different Component than where the
+    //  idA.myProp as pointing to idC.myProp. //  This gets complicated when idB.myAlias is in a different Component than where the
     //  idA.myAlias is defined: scopeForId currently only contains the ids of the current
     //  component and alias resolution on the ids of a different component fails then.
     if (QQmlJSMetaProperty nextProperty = property; nextProperty.isAlias()) {
@@ -80,10 +84,7 @@ QQmlJSUtils::ResolvedAlias QQmlJSUtils::resolveAlias(const QQmlJSTypeResolver *t
 {
     return ::resolveAlias(
             [&](const QString &id, const QQmlJSScope::ConstPtr &referrer) {
-                const QQmlJSRegisterContent content = typeResolver->scopedType(referrer, id);
-                if (content.variant() == QQmlJSRegisterContent::ObjectById)
-                    return content.type();
-                return QQmlJSScope::ConstPtr();
+                return typeResolver->typeForId(referrer, id);
             },
             property, owner, visitor);
 }
@@ -100,9 +101,9 @@ QQmlJSUtils::ResolvedAlias QQmlJSUtils::resolveAlias(const QQmlJSScopesById &idS
             property, owner, visitor);
 }
 
-std::optional<QQmlJSFixSuggestion> QQmlJSUtils::didYouMean(const QString &userInput,
-                                                     QStringList candidates,
-                                                     QQmlJS::SourceLocation location)
+std::optional<QQmlJSFixSuggestion> QQmlJSUtils::didYouMean(
+        const QString &userInput, QStringList candidates, const QString &filename,
+        const QQmlJS::SourceLocation &location)
 {
     QString shortestDistanceWord;
     int shortestDistance = userInput.size();
@@ -123,8 +124,8 @@ std::optional<QQmlJSFixSuggestion> QQmlJSUtils::didYouMean(const QString &userIn
          * Roughly based on
          * https://en.wikipedia.org/wiki/Levenshtein_distance#Iterative_with_two_matrix_rows.
          */
-        QList<int> v0(candidate.size() + 1);
-        QList<int> v1(candidate.size() + 1);
+        QVarLengthArray<int> v0(candidate.size() + 1);
+        QVarLengthArray<int> v1(candidate.size() + 1);
 
         std::iota(v0.begin(), v0.end(), 0);
 
@@ -151,7 +152,7 @@ std::optional<QQmlJSFixSuggestion> QQmlJSUtils::didYouMean(const QString &userIn
         return QQmlJSFixSuggestion {
             u"Did you mean \"%1\"?"_s.arg(shortestDistanceWord),
             location,
-            shortestDistanceWord
+            { QQmlJSDocumentEdit{ filename, location, shortestDistanceWord } }
         };
     } else {
         return {};
@@ -214,8 +215,8 @@ bool canStrictlyCompareWithVar(
     Q_ASSERT(typeResolver);
 
     const QQmlJSScope::ConstPtr varType = typeResolver->varType();
-    const bool leftIsVar = typeResolver->equals(lhsType, varType);
-    const bool righttIsVar = typeResolver->equals(rhsType, varType);
+    const bool leftIsVar = (lhsType == varType);
+    const bool righttIsVar = (rhsType == varType);
     return leftIsVar != righttIsVar;
 }
 
@@ -230,11 +231,9 @@ bool canCompareWithQObject(
 {
     Q_ASSERT(typeResolver);
     return (lhsType->isReferenceType()
-            && (rhsType->isReferenceType()
-                || typeResolver->equals(rhsType, typeResolver->nullType())))
+            && (rhsType->isReferenceType() || rhsType == typeResolver->nullType()))
             || (rhsType->isReferenceType()
-                && (lhsType->isReferenceType()
-                    || typeResolver->equals(lhsType, typeResolver->nullType())));
+                && (lhsType->isReferenceType() || lhsType == typeResolver->nullType()));
 }
 
 /*! \internal
@@ -247,8 +246,162 @@ bool canCompareWithQUrl(
         const QQmlJSScope::ConstPtr &rhsType)
 {
     Q_ASSERT(typeResolver);
-    return typeResolver->equals(lhsType, typeResolver->urlType())
-            && typeResolver->equals(rhsType, typeResolver->urlType());
+    return lhsType == typeResolver->urlType() && rhsType == typeResolver->urlType();
+}
+
+/*!
+   \internal
+
+    Utility method that searches qrc files in given folders. Do not use this when the order or
+   selection of the returned qrc files matters.
+*/
+QStringList QQmlJSUtils::resourceFilesFromBuildFolders(const QStringList &buildFolders)
+{
+    QStringList result;
+    for (const QString &path : buildFolders) {
+        for (auto it : QDirListing{ path, QStringList{ u"*.qrc"_s },
+                                    QDirListing::IteratorFlag::Recursive
+                                            | QDirListing::IteratorFlag::FilesOnly
+                                            | QDirListing::IteratorFlag::IncludeHidden }) {
+            result.append(it.filePath());
+        }
+    }
+    return result;
+}
+
+enum FilterType {
+    LocalFileFilter,
+    ResourceFileFilter
+};
+
+/*!
+\internal
+Obtain a QML module qrc entry from its qmldir entry.
+
+Contains a heuristic for QML modules without nested-qml-module-with-prefer-feature
+that tries to find a parent directory that contains a qmldir entry in the qrc.
+*/
+static QQmlJSResourceFileMapper::Entry
+qmlModuleEntryFromBuildPath(const QQmlJSResourceFileMapper *mapper,
+                            const QString &pathInBuildFolder, FilterType type)
+{
+    const QString cleanPath = QDir::cleanPath(pathInBuildFolder);
+    QStringView directoryPath = cleanPath;
+
+    while (!directoryPath.isEmpty()) {
+        const qsizetype lastSlashIndex = directoryPath.lastIndexOf(u'/');
+        if (lastSlashIndex == -1)
+            return {};
+
+        directoryPath.truncate(lastSlashIndex);
+        const QString qmldirPath = u"%1/qmldir"_s.arg(directoryPath);
+        const QQmlJSResourceFileMapper::Filter qmldirFilter = type == LocalFileFilter
+                ? QQmlJSResourceFileMapper::localFileFilter(qmldirPath)
+                : QQmlJSResourceFileMapper::resourceFileFilter(qmldirPath);
+
+        QQmlJSResourceFileMapper::Entry result = mapper->entry(qmldirFilter);
+        if (result.isValid()) {
+            result.resourcePath.chop(std::char_traits<char>::length("/qmldir"));
+            result.filePath.chop(std::char_traits<char>::length("/qmldir"));
+            return result;
+        }
+    }
+    return {};
+}
+
+/*!
+\internal
+Obtains the source folder path from a build folder QML file path via the passed \c mapper.
+
+This works on proper QML modules when using the nested-qml-module-with-prefer-feature
+from 6.8 and uses a heuristic when the qmldir with the prefer entry is missing.
+*/
+QString QQmlJSUtils::qmlSourcePathFromBuildPath(const QQmlJSResourceFileMapper *mapper,
+                                                const QString &pathInBuildFolder)
+{
+    if (!mapper)
+        return pathInBuildFolder;
+
+    const auto qmlModuleEntry =
+            qmlModuleEntryFromBuildPath(mapper, pathInBuildFolder, LocalFileFilter);
+    if (!qmlModuleEntry.isValid())
+        return pathInBuildFolder;
+    const QString qrcPath = qmlModuleEntry.resourcePath
+            + QStringView(pathInBuildFolder).sliced(qmlModuleEntry.filePath.size());
+
+    const auto entry = mapper->entry(QQmlJSResourceFileMapper::resourceFileFilter(qrcPath));
+    return entry.isValid()? entry.filePath : pathInBuildFolder;
+}
+
+/*!
+\internal
+Obtains the source folder path from a build folder QML file path via the passed \c mapper, see also
+\l QQmlJSUtils::qmlSourcePathFromBuildPath.
+*/
+QString QQmlJSUtils::qmlBuildPathFromSourcePath(const QQmlJSResourceFileMapper *mapper,
+                                                const QString &pathInSourceFolder)
+{
+    if (!mapper)
+        return pathInSourceFolder;
+
+    // A source file may appear under multiple resource paths across different qrc files.
+    // Iterate all entries to find the one that resolves to a module build path.
+    const auto allEntries =
+            mapper->filter(QQmlJSResourceFileMapper::localFileFilter(pathInSourceFolder));
+
+    for (const auto &mapEntry : allEntries) {
+        const QString qrcPath = mapEntry.resourcePath;
+        if (qrcPath.isEmpty())
+            continue;
+
+        const auto moduleBuildEntry =
+                qmlModuleEntryFromBuildPath(mapper, qrcPath, ResourceFileFilter);
+        if (!moduleBuildEntry.isValid())
+            continue;
+
+        const auto qrcFolderPath = qrcPath.first(qrcPath.lastIndexOf(u'/'));
+        return moduleBuildEntry.filePath + qrcFolderPath.sliced(moduleBuildEntry.resourcePath.size())
+                + pathInSourceFolder.sliced(pathInSourceFolder.lastIndexOf(u'/'));
+    }
+
+    return pathInSourceFolder;
+}
+
+/*!
+  \internal
+  Returns the name of \a scope based on \a type.
+*/
+QString QQmlJSUtils::getScopeName(const QQmlJSScope::ConstPtr &scope, QQmlJSScope::ScopeType type)
+{
+    Q_ASSERT(scope);
+    if (type == QQmlSA::ScopeType::GroupedPropertyScope
+        || type == QQmlSA::ScopeType::AttachedPropertyScope)
+        return scope->internalName();
+
+    if (!scope->isComposite())
+        return scope->internalName();
+
+    if (scope->isInlineComponent() && scope->inlineComponentName().has_value())
+        return scope->inlineComponentName().value();
+
+    if (scope->isFileRootComponent())
+        return QFileInfo(scope->filePath()).baseName();
+
+    return scope->baseTypeName();
+}
+
+QString QQmlJSUtils::fileSelectorFor(const QQmlJSScope::ConstPtr &scope)
+{
+    if (!scope)
+        return { };
+    const auto factory = scope.factory();
+    const QString filePath = factory ? factory->filePath() : scope->filePath();
+    QString dir = QFileInfo(filePath).dir().dirName();
+    if (dir.startsWith("+"_L1)) {
+        dir.slice(1);
+        return dir;
+    }
+    return { };
 }
 
 QT_END_NAMESPACE

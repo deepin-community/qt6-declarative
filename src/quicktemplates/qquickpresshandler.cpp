@@ -1,5 +1,6 @@
 // Copyright (C) 2017 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+// Qt-Security score:significant reason:default
 
 #include "qquickpresshandler_p_p.h"
 
@@ -39,26 +40,26 @@ void QQuickPressHandler::mousePressEvent(QMouseEvent *event)
 
 void QQuickPressHandler::mouseMoveEvent(QMouseEvent *event)
 {
-    if (qAbs(int(event->position().x() - pressPos.x())) > QGuiApplication::styleHints()->startDragDistance())
+    if (qAbs(event->position().x() - pressPos.x()) > QGuiApplication::styleHints()->startDragDistance())
         timer.stop();
 }
 
 void QQuickPressHandler::mouseReleaseEvent(QMouseEvent *event)
 {
-    if (!longPress) {
+    if (!longPress)
         timer.stop();
 
-        if (isSignalConnected(control, "released(QQuickMouseEvent*)", releasedSignalIndex)) {
-            QQuickMouseEvent mev;
-            mev.reset(pressPos.x(), pressPos.y(), event->button(), event->buttons(),
-                      event->modifiers(), false/*isClick*/, false/*wasHeld*/);
-            mev.setAccepted(true);
-            QQuickMouseEvent *mevPtr = &mev;
-            void *args[] = { nullptr, &mevPtr };
-            QMetaObject::metacall(control, QMetaObject::InvokeMetaMethod, releasedSignalIndex, args);
-            event->setAccepted(mev.isAccepted());
-        }
+    if (isSignalConnected(control, "released(QQuickMouseEvent*)", releasedSignalIndex)) {
+        QQuickMouseEvent mev;
+        mev.reset(pressPos.x(), pressPos.y(), event->button(), event->buttons(),
+                  event->modifiers(), false/*isClick*/, false/*wasHeld*/);
+        mev.setAccepted(true);
+        QQuickMouseEvent *mevPtr = &mev;
+        void *args[] = { nullptr, &mevPtr };
+        QMetaObject::metacall(control, QMetaObject::InvokeMetaMethod, releasedSignalIndex, args);
+        event->setAccepted(mev.isAccepted());
     }
+
 }
 
 void QQuickPressHandler::timerEvent(QTimerEvent *)

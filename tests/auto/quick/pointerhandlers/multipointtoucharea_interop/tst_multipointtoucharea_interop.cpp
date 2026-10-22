@@ -1,7 +1,8 @@
 // Copyright (C) 2017 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only
 
-#include <QtTest/QtTest>
+#include <QtTest/QTest>
+#include <QtTest/QSignalSpy>
 
 #include <QtQml/qqmlengine.h>
 #include <QtQml/qqmlproperty.h>
@@ -37,7 +38,7 @@ private slots:
 
 private:
     void createView(QScopedPointer<QQuickView> &window, const char *fileName);
-    QPointingDevice *touchDevice = QTest::createTouchDevice();
+    std::unique_ptr<QPointingDevice> touchscreen{QTest::createTouchDevice()};
 };
 
 void tst_MptaInterop::createView(QScopedPointer<QQuickView> &window, const char *fileName)
@@ -78,7 +79,7 @@ void tst_MptaInterop::touchDrag()
     QVERIFY(tp.at(3)); // the QML declares four touchpoints
     QSignalSpy mptaPressedSpy(mpta, SIGNAL(pressed(QList<QObject*>)));
     QSignalSpy mptaReleasedSpy(mpta, SIGNAL(released(QList<QObject*>)));
-    QTest::QTouchEventSequence touch = QTest::touchEvent(window, touchDevice);
+    QTest::QTouchEventSequence touch = QTest::touchEvent(window, touchscreen.get());
 
     // Press one touchpoint:
     // DragHandler gets a passive grab
@@ -87,7 +88,7 @@ void tst_MptaInterop::touchDrag()
     QPoint p1 = mpta->mapToScene(QPointF(20, 20)).toPoint();
     touch.press(1, p1).commit();
     QQuickTouchUtils::flush(window);
-    auto devPriv = QPointingDevicePrivate::get(touchDevice);
+    auto devPriv = QPointingDevicePrivate::get(touchscreen.get());
     QCOMPARE(tp.at(0)->property("pressed").toBool(), true);
     QTRY_VERIFY(devPriv->pointById(1)->passiveGrabbers.contains(drag));
 
@@ -104,7 +105,7 @@ void tst_MptaInterop::touchDrag()
     }
     if (dragStoleGrab)
         qCDebug(lcPointerTests, "DragHandler stole the grab after %d events", dragStoleGrab);
-    QVERIFY(dragStoleGrab > 1);
+    QCOMPARE_GT(dragStoleGrab, 1);
 
     touch.release(1, p1).commit();
     QQuickTouchUtils::flush(window);
@@ -128,8 +129,8 @@ void tst_MptaInterop::touchesThenPinch()
     QSignalSpy mptaPressedSpy(mpta, SIGNAL(pressed(QList<QObject*>)));
     QSignalSpy mptaReleasedSpy(mpta, SIGNAL(released(QList<QObject*>)));
     QSignalSpy mptaCanceledSpy(mpta, SIGNAL(canceled(QList<QObject*>)));
-    QTest::QTouchEventSequence touch = QTest::touchEvent(window, touchDevice);
-    auto devPriv = QPointingDevicePrivate::get(touchDevice);
+    QTest::QTouchEventSequence touch = QTest::touchEvent(window, touchscreen.get());
+    auto devPriv = QPointingDevicePrivate::get(touchscreen.get());
 
     // Press one touchpoint:
     // DragHandler gets a passive grab
@@ -161,7 +162,7 @@ void tst_MptaInterop::touchesThenPinch()
     QCOMPARE(devPriv->pointById(1)->exclusiveGrabber, mpta);
     QCOMPARE(devPriv->pointById(2)->exclusiveGrabber, mpta);
     QCOMPARE(devPriv->pointById(3)->exclusiveGrabber, mpta);
-    QVERIFY(!pinch->active());
+    QCOMPARE(pinch->active(), false);
 
     // Start moving: PinchHandler steals the exclusive grab from MPTA as soon as dragThreshold is exceeded
     int pinchStoleGrab = 0;
@@ -184,8 +185,8 @@ void tst_MptaInterop::touchesThenPinch()
         }
     }
     qCDebug(lcPointerTests) << "pinch started after" << pinchStoleGrab << "moves; ended with scale" << pinch->activeScale() << "rot" << pinch->rotation();
-    QTRY_VERIFY(pinch->rotation() > 4);
-    QVERIFY(pinch->activeScale() > 1);
+    QTRY_COMPARE_GT(pinch->rotation(), 4);
+    QCOMPARE_GT(pinch->activeScale(), 1);
 
     // Press one more point (pinkie finger)
     QPoint p4 = mpta->mapToScene(QPointF(300, 200)).toPoint();
@@ -253,7 +254,7 @@ void tst_MptaInterop::touchesThenPinch()
     qCDebug(lcPointerTests) << "drag started after" << dragTookGrab
                             << "moves; ended with translation" << drag->activeTranslation();
     QCOMPARE(devPriv->pointById(2)->exclusiveGrabber, drag);
-    QTRY_VERIFY(drag->activeTranslation().x() > 0);
+    QTRY_COMPARE_GT(drag->activeTranslation().x(), 0);
 
     touch.release(2, p2).commit();
     QQuickTouchUtils::flush(window);
@@ -311,7 +312,7 @@ void tst_MptaInterop::dragHandlerInParentStealingGrabFromItem() // QTBUG-75025
     }
     if (dragStoleGrab)
         qCDebug(lcPointerTests, "DragHandler stole the grab after %d events", dragStoleGrab);
-    QVERIFY(dragStoleGrab > 1);
+    QCOMPARE_GT(dragStoleGrab, 1);
     QCOMPARE(handler->active(), true);
     QCOMPARE(window->rootObject()->property("touchpointPressed").toBool(), false);
 

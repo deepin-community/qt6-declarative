@@ -30,6 +30,7 @@ qt_add_qml_module(qquickwidgetversuswindow_opengl
     QML_FILES test.qml
     RESOURCE_PREFIX /qquickwidgetversuswindow_opengl
     NO_RESOURCE_TARGET_PATH
+    DEPENDENCIES QtQuick
 )
 
 qt6_add_shaders(qquickwidgetversuswindow_opengl "shaders"
@@ -50,7 +51,6 @@ install(TARGETS qquickwidgetversuswindow_opengl
 qt_generate_deploy_qml_app_script(
     TARGET qquickwidgetversuswindow_opengl
     OUTPUT_SCRIPT deploy_script
-    MACOS_BUNDLE_POST_BUILD
     NO_UNSUPPORTED_PLATFORM_ERROR
     DEPLOY_USER_QML_MODULES_ON_UNSUPPORTED_PLATFORM
 )

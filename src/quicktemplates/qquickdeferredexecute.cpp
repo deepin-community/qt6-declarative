@@ -1,5 +1,6 @@
 // Copyright (C) 2017 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+// Qt-Security score:significant reason:default
 
 #include "qquickdeferredexecute_p_p.h"
 
@@ -9,9 +10,36 @@
 #include <QtQml/private/qqmlcomponent_p.h>
 #include <QtQml/private/qqmlobjectcreator_p.h>
 
+#include <private/qv4resolvedtypereference_p.h>
+
 #include <deque>
 
 QT_BEGIN_NAMESPACE
+
+/*!
+    \internal
+
+    For the history behind why these functions were introduced, see
+    the comments of QTBUG-50992, specifically
+    \l {https://bugreports.qt.io/browse/QTBUG-50992?focusedId=325677&page=com.atlassian.jira.plugin.system.issuetabpanels:comment-tabpanel#comment-325677}{this}.
+
+    The first commit to the QML engine to support deferred properties seems to
+    be 59b8d719d6122d86a4cc650911788cc4d778ce29.
+
+    The first commit to add support for it in Controls was
+    458eb65f730178bc93ba7b18f0e4dd2a13efad2e.
+
+    In short, deferred execution solved two issues:
+
+    \list 1
+    \li Incubation issues when using asynchronous loaders, AKA QTBUG-50992.
+    \li Performance issues from creating two items unnecessarily when a
+        styled control was customized, which is explained in more detail
+        in the commit message of 458eb65f730178bc93ba7b18f0e4dd2a13efad2e.
+    \endlist
+
+    \sa qmlExecuteDeferred
+*/
 
 namespace QtQuickPrivate {
 
@@ -57,7 +85,8 @@ static bool beginDeferred(QQmlEnginePrivate *enginePriv, const QQmlProperty &pro
         state.setCompletePending(true);
 
         QQmlContextData *creationContext = nullptr;
-        state.initCreator(deferData->context->parent(), deferData->compilationUnit, creationContext);
+
+        state.initCreator(deferData->context->parent(), deferData->compilationUnit, creationContext, deferData->inlineComponentName);
 
         enginePriv->inProgressCreations++;
 
@@ -81,11 +110,14 @@ static bool beginDeferred(QQmlEnginePrivate *enginePriv, const QQmlProperty &pro
 }
 
 void beginDeferred(QObject *object, const QString &property,
-                   QQuickUntypedDeferredPointer *delegate, bool isOwnState)
+                   QQuickUntypedDeferredPointer *delegate, bool isOwnState, QQmlEngine *engine)
 {
     QQmlData *data = QQmlData::get(object);
-    if (data && !data->deferredData.isEmpty() && !data->wasDeleted(object) && data->context) {
-        QQmlEnginePrivate *ep = QQmlEnginePrivate::get(data->context->engine());
+    // If object is an attached object, its QQmlData won't have a context, hence why we provide
+    // the option to pass an engine explicitly.
+    if (data && !data->deferredData.isEmpty() && !data->wasDeleted(object) && (data->context || engine)) {
+        QQmlEnginePrivate *ep = QQmlEnginePrivate::get(
+            data->context && data->context->engine() ? data->context->engine() : engine);
 
         QQmlComponentPrivate::DeferredState state;
         if (beginDeferred(ep, QQmlProperty(object, property), &state)) {
@@ -109,7 +141,8 @@ void cancelDeferred(QObject *object, const QString &property)
         cancelDeferred(data, QQmlProperty(object, property).index());
 }
 
-void completeDeferred(QObject *object, const QString &property, QQuickUntypedDeferredPointer *delegate)
+void completeDeferred(QObject *object, const QString &property, QQuickUntypedDeferredPointer *delegate,
+    QQmlEngine *engine)
 {
     Q_UNUSED(property);
     QQmlComponentPrivate::DeferredState *state = delegate->deferredState();
@@ -129,7 +162,8 @@ void completeDeferred(QObject *object, const QString &property, QQuickUntypedDef
 
         QQmlComponentPrivate::DeferredState localState = std::move(*state);
         delegate->clearDeferredState();
-        QQmlEnginePrivate *ep = QQmlEnginePrivate::get(data->context->engine());
+        QQmlEnginePrivate *ep = QQmlEnginePrivate::get(
+            data->context && data->context->engine() ? data->context->engine() : engine);
         QQmlComponentPrivate::completeDeferred(ep, &localState);
     } else {
         delegate->clearDeferredState();

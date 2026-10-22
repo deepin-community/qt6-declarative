@@ -1,5 +1,6 @@
 // Copyright (C) 2017 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+// Qt-Security score:significant reason:default
 
 #ifndef QQUICKPOPUPPOSITIONER_P_P_H
 #define QQUICKPOPUPPOSITIONER_P_P_H
@@ -43,6 +44,8 @@ protected:
 
     void removeAncestorListeners(QQuickItem *item);
     void addAncestorListeners(QQuickItem *item);
+
+    void repositionPopupWindow();
 
     bool m_positioning = false;
     QQuickItem *m_parentItem = nullptr;

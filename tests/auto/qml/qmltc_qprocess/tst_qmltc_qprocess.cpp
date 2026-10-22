@@ -58,6 +58,8 @@ private slots:
     void componentDefinitionInnerRequiredProperty();
     void componentDefinitionInnerRequiredPropertyFromOutside();
     void innerLevelRequiredProperty();
+    void customParsed();
+    void typeWithUnknownPropertyType();
 };
 
 #ifndef TST_QMLTC_QPROCESS_RESOURCES
@@ -107,7 +109,7 @@ QString tst_qmltc_qprocess::runQmltc(const QString &inputFile,
     QProcess process;
     process.start(m_qmltcPath, args);
     handleResult(process); // may fail the test
-    errors = process.readAllStandardError();
+    errors = QString::fromLocal8Bit(process.readAllStandardError());
 
     if (QTest::currentTestFailed()) {
         qDebug() << "Command:" << process.program() << args.join(u' ');
@@ -167,33 +169,28 @@ void tst_qmltc_qprocess::inlineComponent()
         const auto errors = runQmltc(u"inlineComponentInvalidAlias.qml"_s, false);
         QVERIFY(errors.contains(u"Cannot resolve alias \"myHello\" [unresolved-alias]"_s));
     }
-    {
-        const auto errors = runQmltc(u"inlineComponentWithEnum.qml"_s, false);
-        QVERIFY(errors.contains(
-                u"inlineComponentWithEnum.qml:5:9: Enums declared inside of inline component are ignored. [syntax]"_s));
-    }
 }
 
 void tst_qmltc_qprocess::singleton()
 {
     {
         const auto errors = runQmltc(u"singletonUncreatable.qml"_s, false);
-        QVERIFY(errors.contains("singletonUncreatable.qml:4:1: Type UncreatableType is not "
-                                "creatable. [uncreatable-type]"));
+        QVERIFY(errors.contains(u"singletonUncreatable.qml:4:1: Type UncreatableType is not "_s
+                                u"creatable. [uncreatable-type]"_s));
     }
     {
         const auto errors = runQmltc(u"uncreatable.qml"_s, false);
         QVERIFY(errors.contains(
-                "uncreatable.qml:6:5: Type UncreatableType is not creatable. [uncreatable-type]"));
-        QVERIFY(errors.contains("uncreatable.qml:7:5: Singleton Type SingletonThing is not "
-                                "creatable. [uncreatable-type]"));
-        QVERIFY(errors.contains("uncreatable.qml:8:5: Singleton Type SingletonType is not "
-                                "creatable. [uncreatable-type]"));
-        QVERIFY(errors.contains("uncreatable.qml:10:18: Singleton Type SingletonThing is not "
-                                "creatable. [uncreatable-type]"));
-        QVERIFY(errors.contains("uncreatable.qml:15:18: Singleton Type SingletonType is not "
-                                "creatable. [uncreatable-type]"));
-        QVERIFY(!errors.contains("NotSingletonType"));
+                u"uncreatable.qml:6:5: Type UncreatableType is not creatable. [uncreatable-type]"_s));
+        QVERIFY(errors.contains(u"uncreatable.qml:7:5: Singleton Type SingletonThing is not "_s
+                                u"creatable. [uncreatable-type]"_s));
+        QVERIFY(errors.contains(u"uncreatable.qml:8:5: Singleton Type SingletonType is not "_s
+                                u"creatable. [uncreatable-type]"_s));
+        QVERIFY(errors.contains(u"uncreatable.qml:10:18: Singleton Type SingletonThing is not "_s
+                                u"creatable. [uncreatable-type]"_s));
+        QVERIFY(errors.contains(u"uncreatable.qml:15:18: Singleton Type SingletonType is not "_s
+                                u"creatable. [uncreatable-type]"_s));
+        QVERIFY(!errors.contains(u"NotSingletonType"_s));
     }
 }
 
@@ -205,8 +202,11 @@ void tst_qmltc_qprocess::warningsAsErrors()
 
 void tst_qmltc_qprocess::invalidAliasRevision()
 {
+    // This isn't actually invalid. Revisions are only relevant for unqualified lookup
+    // but alias expressions are always qualified.
     const auto errors = runQmltc(u"invalidAliasRevision.qml"_s, false);
-    QVERIFY(errors.contains(u"Cannot resolve alias \"unexistingProperty\" [unresolved-alias]"_s));
+    QVERIFY2(!errors.contains(u"Cannot resolve alias \"unexistingProperty\" [unresolved-alias]"_s),
+             qPrintable(errors));
 }
 
 void tst_qmltc_qprocess::topLevelComponent()
@@ -289,10 +289,10 @@ void tst_qmltc_qprocess::exports()
 {
     const QString fileName = u"dummy.qml"_s;
     QStringList extraArgs;
-    extraArgs << "--export"
-              << "MYLIB_EXPORT_MACRO"
-              << "--exportInclude"
-              << "exportheader.h";
+    extraArgs << u"--export"_s
+              << u"MYLIB_EXPORT_MACRO"_s
+              << u"--exportInclude"_s
+              << u"exportheader.h"_s;
     const auto errors = runQmltc(fileName, true, extraArgs);
 
     const QString headerName = m_tmpPath + u"/"_s + QFileInfo(fileName).baseName() + u".h"_s;
@@ -336,7 +336,8 @@ void tst_qmltc_qprocess::componentDefinitionInnerRequiredProperty()
     {
         const auto errors = runQmltc(u"componentDefinitionInnerRequiredProperty.qml"_s, false);
         QVERIFY(errors.contains(
-                u"componentDefinitionInnerRequiredProperty.qml:11:13: Component is missing required property bar from here [required]"
+                u"componentDefinitionInnerRequiredProperty.qml:11:13: "
+                "Component is missing required property bar from Rectangle [required]"
         ));
     }
 }
@@ -357,9 +358,32 @@ void tst_qmltc_qprocess::innerLevelRequiredProperty()
     {
         const auto errors = runQmltc(u"innerLevelRequiredProperty.qml"_s, false);
         QVERIFY(errors.contains(
-                u"innerLevelRequiredProperty.qml:7:5: Component is missing required property foo from here [required]"
+                u"innerLevelRequiredProperty.qml:7:5: Component is missing required property foo from Item [required]"
         ));
     }
+}
+
+void tst_qmltc_qprocess::customParsed()
+{
+    const auto errors = runQmltc(u"customParsed.qml"_s, false);
+    QVERIFY(errors.contains(
+            u"customParsed.qml:5:9: Cannot assign to non-existent default property [missing-property]"
+    ));
+    QVERIFY(errors.contains(
+            u"customParsed.qml:5:23: Could not find property \"a\". [missing-property]"
+    ));
+    QVERIFY(errors.contains(
+            u"customParsed.qml:: qmltc does not support custom parsers such as ListModel or old forms "
+            "of Connections and PropertyChanges. [compiler]"
+    ));
+}
+
+void tst_qmltc_qprocess::typeWithUnknownPropertyType()
+{
+    const auto errors = runQmltc(u"typeWithUnknownPropertyType.qml"_s, false);
+    QVERIFY(errors.contains(
+            u"typeWithUnknownPropertyType.qml:3:1: Type of property 'u' is unknown [compiler]"
+    ));
 }
 
 QTEST_MAIN(tst_qmltc_qprocess)

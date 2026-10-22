@@ -12,8 +12,13 @@
 #include <QtQuick/qquickview.h>
 #include <QtQuickTestUtils/private/qmlutils_p.h>
 #include <QtQuickTestUtils/private/viewtestutils_p.h>
+#include <QtQuickControlsTestUtils/private/controlstestutils_p.h>
 #include <QtQuickTemplates2/private/qquicktextfield_p.h>
 #include <QtQuickControlsTestUtils/private/qtest_quickcontrols_p.h>
+#include <QStyleHints>
+
+using namespace QQuickControlsTestUtils;
+using namespace QQuickVisualTestUtils;
 
 class tst_QQuickTextField : public QQmlDataTest
 {
@@ -26,6 +31,7 @@ private slots:
     void initTestCase() override;
     void touchscreenDoesNotSelect_data();
     void touchscreenDoesNotSelect();
+    void releaseAfterPressAndHold();
 
 private:
     QScopedPointer<QPointingDevice> touchDevice = QScopedPointer<QPointingDevice>(QTest::createTouchDevice());
@@ -38,12 +44,12 @@ tst_QQuickTextField::tst_QQuickTextField()
 
 void tst_QQuickTextField::initTestCase()
 {
-#ifdef Q_OS_ANDROID
-    if (QNativeInterface::QAndroidApplication::sdkVersion() > 23)
-        QSKIP("Crashes on Android 7+, figure out why (QTBUG-107028)");
-#endif
     QQmlDataTest::initTestCase();
     qputenv("QML_NO_TOUCH_COMPRESSION", "1");
+    // Showing a native menu is a blocking call, so the test will timeout.
+    QCoreApplication::setAttribute(Qt::AA_DontUseNativeMenuWindows);
+
+    setFastAnimations(true);
 }
 
 void tst_QQuickTextField::touchscreenDoesNotSelect_data()
@@ -94,6 +100,27 @@ void tst_QQuickTextField::touchscreenDoesNotSelect()
         // if the env var is set, fall back to old behavior: touch swipe _does_ select text if selectByMouse is true
         QCOMPARE(textField->selectedText().isEmpty(), !selectByTouch);
     }
+}
+
+void tst_QQuickTextField::releaseAfterPressAndHold()
+{
+    QQuickView window;
+    QVERIFY(QQuickTest::showView(window, testFileUrl("mouseselection_default.qml")));
+
+    QQuickTextField *textField = qobject_cast<QQuickTextField *>(window.rootObject());
+    QVERIFY(textField != nullptr);
+
+    QSignalSpy releasedSpy(textField, &QQuickTextField::released);
+    QSignalSpy pressAndHoldSpy(textField, &QQuickTextField::pressAndHold);
+
+    const QPoint clickPosition(textField->width() / 2, textField->height() / 2);
+
+    QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, clickPosition);
+    QTest::qWait(QGuiApplication::styleHints()->mousePressAndHoldInterval() + 100);
+    QCOMPARE(pressAndHoldSpy.count(), 1);
+
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, clickPosition);
+    QCOMPARE(releasedSpy.count(), 1);
 }
 
 QTEST_QUICKCONTROLS_MAIN(tst_QQuickTextField)

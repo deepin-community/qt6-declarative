@@ -1,5 +1,6 @@
 // Copyright (C) 2017 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+// Qt-Security score:significant reason:default
 
 #include "qquickuniversalstyle_p.h"
 #include "qquickuniversaltheme_p.h"
@@ -21,6 +22,7 @@ public:
 
     QString name() const override;
     void initializeTheme(QQuickTheme *theme) override;
+    void updateTheme() override;
 
     QQuickUniversalTheme theme;
 };
@@ -40,6 +42,11 @@ void QtQuickControls2UniversalStylePlugin::initializeTheme(QQuickTheme *theme)
 {
     QQuickUniversalStyle::initGlobals();
     this->theme.initialize(theme);
+}
+
+void QtQuickControls2UniversalStylePlugin::updateTheme()
+{
+    theme.updateTheme();
 }
 
 QT_END_NAMESPACE

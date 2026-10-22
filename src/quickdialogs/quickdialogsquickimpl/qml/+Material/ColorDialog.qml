@@ -1,8 +1,8 @@
 // Copyright (C) 2022 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+// Qt-Security score:significant reason:default
 
 import QtQuick
-import QtQuick.Controls
 import QtQuick.Controls.impl
 import QtQuick.Controls.Material
 import QtQuick.Controls.Material.impl
@@ -15,10 +15,10 @@ ColorDialogImpl {
     id: control
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,
-                            contentWidth + leftPadding + rightPadding,
+                            implicitContentWidth + leftPadding + rightPadding,
                             implicitFooterWidth)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset,
-                             contentHeight + topPadding + bottomPadding
+                             implicitContentHeight + topPadding + bottomPadding
                              + (implicitHeaderHeight > 0 ? implicitHeaderHeight + spacing : 0)
                              + (implicitFooterHeight > 0 ? implicitFooterHeight + spacing : 0))
 
@@ -76,6 +76,8 @@ ColorDialogImpl {
 
             Layout.alignment: Qt.AlignRight
             Layout.rightMargin: 24
+
+            Accessible.name: qsTr("Eyedropper")
         }
     }
 
@@ -123,6 +125,8 @@ ColorDialogImpl {
                     }
                 }
             }
+
+            Accessible.name: qsTr("Hue")
 
             Layout.fillWidth: true
             Layout.leftMargin: 12
@@ -181,6 +185,8 @@ ColorDialogImpl {
                 }
             }
 
+            Accessible.name: qsTr("Alpha")
+
             Layout.fillWidth: true
             Layout.leftMargin: 12
             Layout.rightMargin: 12
@@ -188,9 +194,7 @@ ColorDialogImpl {
 
         ColorInputs {
             id: inputs
-
             color: control.color
-
             Layout.fillWidth: true
             Layout.leftMargin: 12
             Layout.rightMargin: 12
@@ -235,6 +239,7 @@ ColorDialogImpl {
         DialogButtonBox {
             id: buttonBox
             standardButtons: control.standardButtons
+            defaultStandardButton: T.Dialog.Ok
             spacing: 12
             horizontalPadding: 0
 

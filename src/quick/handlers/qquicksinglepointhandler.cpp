@@ -1,11 +1,14 @@
 // Copyright (C) 2018 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+// Qt-Security score:significant reason:default
 
 #include "qquicksinglepointhandler_p.h"
 #include "qquicksinglepointhandler_p_p.h"
+#include <private/qquickdeliveryagent_p_p.h>
+
+#include <private/qquickdeliveryagent_p.h>
 
 QT_BEGIN_NAMESPACE
-Q_DECLARE_LOGGING_CATEGORY(lcTouchTarget)
 
 /*!
     \qmltype SinglePointHandler
@@ -110,7 +113,8 @@ void QQuickSinglePointHandler::handlePointerEventImpl(QPointerEvent *event)
     QQuickPointerDeviceHandler::handlePointerEventImpl(event);
     QEventPoint *currentPoint = const_cast<QEventPoint *>(event->pointById(d->pointInfo.id()));
     Q_ASSERT(currentPoint);
-    d->pointInfo.reset(event, *currentPoint);
+    if (!QQuickDeliveryAgentPrivate::isSynthMouse(event))
+        d->pointInfo.reset(event, *currentPoint);
     handleEventPoint(event, *currentPoint);
     emit pointChanged();
 }

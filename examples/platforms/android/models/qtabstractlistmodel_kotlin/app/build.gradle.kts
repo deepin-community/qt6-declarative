@@ -1,25 +1,24 @@
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
     id("org.qtproject.qt.gradleplugin") version "1.+"
 }
 
 //! [build.gradle QtBuild config]
 QtBuild {
     // Relative for Qt (Installer or MaintenanceTool) installations.
-    qtPath = file("../../../../../../../6.8.0")
+    qtPath = file("../../../../../../../6.12.0")
     projectPath = file("../../qtabstractlistmodel")
 }
 //! [build.gradle QtBuild config]
 
 android {
     namespace = "com.example.qtabstractlistmodel_kotlin"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.qtabstractlistmodel_kotlin"
         minSdk = 28
-        targetSdk = 34
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
@@ -33,16 +32,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
-    packaging {
-        jniLibs {
-            useLegacyPackaging = true
-        }
-    }
-    kotlinOptions {
-        jvmTarget = "1.8"
+    kotlin {
+        jvmToolchain(17)
     }
 }
 
