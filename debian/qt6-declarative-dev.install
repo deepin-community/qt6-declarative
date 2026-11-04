@@ -2442,3 +2442,9 @@ usr/lib/${DEB_HOST_MULTIARCH}/libQt6QmlLS.a
 usr/lib/${DEB_HOST_MULTIARCH}/libQt6QmlLS.prl
 usr/lib/${DEB_HOST_MULTIARCH}/libQt6QmlPreview.a
 usr/lib/${DEB_HOST_MULTIARCH}/libQt6QmlPreview.prl
+
+# restore FluentWinUI3 style impl dev files (built but not listed in 6.12 repack)
+usr/include/${DEB_HOST_MULTIARCH}/qt6/QtQuickControls2FluentWinUI3StyleImpl/
+usr/lib/${DEB_HOST_MULTIARCH}/cmake/Qt6QuickControls2FluentWinUI3StyleImpl/
+usr/lib/${DEB_HOST_MULTIARCH}/libQt6QuickControls2FluentWinUI3StyleImpl.so
+usr/lib/${DEB_HOST_MULTIARCH}/libQt6QuickControls2FluentWinUI3StyleImpl.prl

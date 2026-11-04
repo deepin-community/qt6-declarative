@@ -157,3 +157,6 @@ usr/lib/${DEB_HOST_MULTIARCH}/qt6/mkspecs/modules/qt_lib_quickwidgets_private.pr
 
 
 
+
+# restore FluentWinUI3 style impl private headers
+usr/include/${DEB_HOST_MULTIARCH}/qt6/QtQuickControls2FluentWinUI3StyleImpl/*/QtQuickControls2FluentWinUI3StyleImpl/private/*.h
