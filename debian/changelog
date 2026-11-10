@@ -1,3 +1,9 @@
+qt6-declarative (6.8.0+dfsg-0deepin18) unstable; urgency=medium
+
+  * Add CVE-2026-121815 security patches.
+
+ -- zhanghongyuan <zhanghongyuan@uniontech.com>  Tue, 10 Nov 2026 13:54:36 +0800
+
 qt6-declarative (6.8.0+dfsg-0deepin17) unstable; urgency=medium
 
   * Add patch: fix QSvgFontEngine::glyphIndex signature to match the

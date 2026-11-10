@@ -13,3 +13,5 @@ CVE-2026-79616_fix-oob-read-in-QQuickSvgParser.patch
 Quick-Remove-revision-from-Accessible.id.patch
 QQuickFlickable-use-pixelDelta-for-real-touchpads.patch
 fix-QSvgFontEngine-glyphIndex-signature.patch
+# CVE-2026-121815 QV4: Fix JS stack overflow when parsing JSON
+CVE-2026-121815_qv4-fix-js-stack-overflow-when-parsing-json.patch
