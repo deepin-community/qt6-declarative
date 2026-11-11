@@ -1,3 +1,13 @@
+qt6-declarative (6.8.0+dfsg-0deepin18) unstable; urgency=medium
+
+  * Add upstream patch: avoid QQuickWindowQmlImpl screen info object
+    accumulation by reusing QQuickScreenInfo across reads of Window.screen
+    and invalidating it on screen changes (QTBUG-104404, QTBUG-127065).
+  * Include regression tests for screen info reuse, invalidation and
+    binding updates after screen changes.
+
+ -- Wu JiangYu <wujiangyu@uniontech.com>  Wed, 11 Nov 2026 13:55:46 +0800
+
 qt6-declarative (6.8.0+dfsg-0deepin17) unstable; urgency=medium
 
   * Add patch: fix QSvgFontEngine::glyphIndex signature to match the
