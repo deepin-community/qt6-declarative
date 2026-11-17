@@ -1,3 +1,9 @@
+qt6-declarative (6.12.0+dfsg-0deepin1) unstable; urgency=medium
+
+  * Add CVE-2026-121815 security patches.
+
+ -- zhanghongyuan <zhanghongyuan@uniontech.com>  Tue, 17 Nov 2026 22:08:00 +0800
+
 qt6-declarative (6.12.0+dfsg-0deepin0) unstable; urgency=medium
 
   * Cleanroom rebuild against Qt 6.12.0 upstream tarball
