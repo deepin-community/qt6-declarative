@@ -2,3 +2,7 @@
 upstream_71381b2_fix_js_crash_sparc64.diff
 
 # Fixed in 6.11.3 (?) / 6.12.0
+
+# CVE-2026-121815 QV4 JS stack overflow when parsing JSON (backport from qt/qtdeclarative)
+# rebased for Qt 6.12.0
+CVE-2026-121815_qv4-fix-js-stack-overflow-when-parsing-json.patch
