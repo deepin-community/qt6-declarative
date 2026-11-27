@@ -15,3 +15,4 @@ QQuickFlickable-use-pixelDelta-for-real-touchpads.patch
 fix-QSvgFontEngine-glyphIndex-signature.patch
 Avoid-QQuickWindowImpl-space-leak.patch
 CVE-2026-121815_qv4-fix-js-stack-overflow-when-parsing-json.patch
+CVE-2026-123706_fix-buffer-size-mismatch-in-rare-fallback-path-in-qt-quick-s.patch
